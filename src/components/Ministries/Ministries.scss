@@ -1,0 +1,180 @@
+.ministries {
+  max-width: 1400px;
+  margin: 50px auto;
+  padding: 0 60px;
+
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+
+  &__left {
+    .section-tag {
+      color: #0d5b3e;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      font-size: 2.6rem;
+      line-height: 1.1;
+      margin: 12px 0 18px;
+      color: #1f2937;
+      font-weight: 700;
+    }
+
+    .line {
+      width: 70px;
+      height: 4px;
+      background: #f4c41d;
+      border-radius: 50px;
+      margin-bottom: 18px;
+    }
+
+    p {
+      color: #6b7280;
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 22px;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+}
+
+.ministries-btn {
+  background: #0d5b3e;
+  color: white;
+  border: none;
+  border-radius: 12px;
+
+  padding: 12px 18px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  cursor: pointer;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  transition: all .3s ease;
+}
+
+.ministries-btn:hover {
+  background: #083b2a;
+  transform: translateY(-2px);
+}
+
+.card {
+  background: #fff;
+
+  border-radius: 16px;
+
+  padding: 22px 18px;
+
+  min-height: 200px;
+
+  display: flex;
+  flex-direction: column;
+
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .05);
+
+  transition: all .3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.icon {
+  margin-bottom: 12px;
+
+  svg {
+    width: 48px;
+    height: 48px;
+    stroke-width: 1.8;
+  }
+}
+
+.icon.green svg {
+  color: #0d5b3e;
+}
+
+.icon.yellow svg {
+  color: #f4c41d;
+}
+
+.card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+
+  line-height: 1.25;
+
+  margin-bottom: 8px;
+}
+
+.card p {
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+
+  flex: 1;
+}
+
+.card a {
+  margin-top: 12px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  text-decoration: none;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  color: #0d5b3e;
+}
+
+.card:nth-child(2) a,
+.card:nth-child(4) a {
+  color: #f4c41d;
+}
+
+@media (max-width: 1200px) {
+  .ministries {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .ministries__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .ministries {
+    padding: 0 20px;
+    margin: 40px auto;
+  }
+
+  .ministries__left h2 {
+    font-size: 2rem;
+  }
+
+  .ministries__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    min-height: auto;
+  }
+}

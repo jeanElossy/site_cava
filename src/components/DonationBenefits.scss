@@ -1,0 +1,136 @@
+@use "../styles/variables" as *;
+
+.donation-benefits {
+  padding: 0 60px 50px;
+
+  &__container {
+    max-width: 1400px;
+    margin: 0 auto;
+
+    background: #f7f7f2;
+
+    border: 1px solid #ececec;
+    border-radius: 22px;
+
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+
+    overflow: hidden;
+  }
+}
+
+.benefit-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+
+  padding: 30px;
+
+  position: relative;
+
+  &:not(:last-child)::after {
+    content: "";
+
+    position: absolute;
+
+    top: 50%;
+    right: 0;
+
+    transform: translateY(-50%);
+
+    width: 1px;
+    height: 70px;
+
+    background: #dddddd;
+  }
+
+  &__icon {
+    width: 58px;
+    height: 58px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #0c4d2f;
+
+    font-size: 2rem;
+  }
+
+  &__content {
+    h3 {
+      margin: 0 0 8px;
+
+      color: #111;
+
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 0;
+
+      color: #666;
+
+      font-size: 0.92rem;
+
+      line-height: 1.7;
+    }
+  }
+}
+
+@media (max-width: 1100px) {
+  .donation-benefits {
+    &__container {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .benefit-card {
+    &:nth-child(2)::after {
+      display: none;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .donation-benefits {
+    padding: 0 25px 30px;
+
+    &__container {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .benefit-card {
+    padding: 24px;
+
+    &:not(:last-child)::after {
+      display: none;
+    }
+
+    border-bottom: 1px solid #e5e5e5;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &__icon {
+      width: 50px;
+      height: 50px;
+
+      font-size: 1.7rem;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .benefit-card {
+    flex-direction: column;
+    align-items: flex-start;
+
+    gap: 14px;
+  }
+}

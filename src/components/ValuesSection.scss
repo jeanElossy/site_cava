@@ -1,0 +1,160 @@
+@use "../styles/variables" as *;
+
+.values-section {
+  padding: 35px 0 30px;
+
+  background: #fff;
+
+  &__container {
+    max-width: 1400px;
+    margin: 0 auto;
+
+    padding: 0 60px;
+  }
+
+  &__header {
+    margin-bottom: 40px;
+
+    h2 {
+      margin: 0;
+
+      color: #0c4d2f;
+
+      font-size: 3rem;
+      font-weight: 700;
+
+      text-transform: uppercase;
+    }
+  }
+
+  &__line {
+    width: 50px;
+    height: 4px;
+
+    margin-top: 15px;
+
+    background: #f4c61d;
+
+    border-radius: 20px;
+  }
+
+  &__grid {
+    display: grid;
+
+    grid-template-columns: repeat(5, 1fr);
+
+    gap: 24px;
+  }
+}
+
+.value-card {
+  padding: 28px;
+
+  background: #fff;
+
+  border: 1px solid #e8e8e8;
+  border-radius: 18px;
+
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-6px);
+
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+  }
+
+  &__icon {
+    width: 70px;
+    height: 70px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #fff;
+
+    font-size: 1.8rem;
+
+    margin-bottom: 22px;
+
+    &--green {
+      background: #0c4d2f;
+    }
+
+    &--gold {
+      background: #f4c61d;
+    }
+  }
+
+  h3 {
+    margin: 0 0 15px;
+
+    color: #0c4d2f;
+
+    font-size: 1.15rem;
+    font-weight: 700;
+
+    line-height: 1.4;
+
+    min-height: 52px;
+  }
+
+  p {
+    margin: 0;
+
+    color: #555;
+
+    font-size: 0.95rem;
+    line-height: 1.8;
+  }
+}
+
+@media (max-width: 1200px) {
+  .values-section {
+    &__grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .values-section {
+    padding: 50px 0 70px;
+
+    &__container {
+      padding: 0 25px;
+    }
+
+    &__header {
+      h2 {
+        font-size: 2.2rem;
+      }
+    }
+
+    &__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .values-section {
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+
+    &__header {
+      h2 {
+        font-size: 1.8rem;
+      }
+    }
+  }
+
+  .value-card {
+    h3 {
+      min-height: auto;
+    }
+  }
+}

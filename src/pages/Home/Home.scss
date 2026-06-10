@@ -1,0 +1,38 @@
+.home-grid {
+  max-width: 1400px;
+  margin: 50px auto;
+
+  padding: 0 60px;
+
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 20px;
+
+  align-items: stretch;
+}
+
+.home-grid > div {
+  height: 100%;
+}
+
+.home-grid .events-card,
+.home-grid .verse-card,
+.home-grid .message-card {
+  transition: all .35s ease;
+}
+
+.home-grid .events-card:hover,
+.home-grid .verse-card:hover,
+.home-grid .message-card:hover {
+  transform: translateY(-8px);
+
+  box-shadow: 0 25px 45px rgba(0, 0, 0, .15);
+}
+
+@media (max-width: 1100px) {
+  .home-grid {
+    grid-template-columns: 1fr;
+    padding: 0 20px;
+  }
+}

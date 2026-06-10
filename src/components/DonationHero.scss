@@ -1,0 +1,160 @@
+@use "../styles/variables" as *;
+
+.donation-hero {
+  position: relative;
+
+  min-height: 640px;
+
+  display: flex;
+  align-items: center;
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  overflow: hidden;
+
+  &__overlay {
+    position: absolute;
+    inset: 0;
+
+    background:
+      linear-gradient(
+        90deg,
+        rgba(0, 65, 35, 0.95) 0%,
+        rgba(0, 65, 35, 0.88) 35%,
+        rgba(0, 65, 35, 0.45) 60%,
+        rgba(0, 0, 0, 0.1) 100%
+      );
+
+    z-index: 1;
+  }
+
+  &__container {
+    position: relative;
+    z-index: 2;
+
+    width: 100%;
+    max-width: 1400px;
+
+    margin: 0 auto;
+
+    padding: 140px 60px 90px;
+  }
+
+  &__content {
+    max-width: 620px;
+
+    color: #fff;
+
+    animation: fadeUp 1s ease forwards;
+  }
+
+  &__breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    margin-bottom: 25px;
+
+    color: rgba(255, 255, 255, 0.92);
+
+    font-size: 1rem;
+    font-weight: 500;
+
+    span {
+      color: #f4c61d;
+    }
+  }
+
+  h1 {
+    margin: 0;
+
+    font-size: clamp(3rem, 5vw, 4.8rem);
+    font-weight: 700;
+
+    line-height: 1.1;
+
+    color: #fff;
+  }
+
+  &__line {
+    width: 65px;
+    height: 4px;
+
+    margin: 28px 0;
+
+    border-radius: 50px;
+
+    background: #f4c61d;
+
+    animation: lineGrow 1.2s ease;
+  }
+
+  p {
+    margin: 0;
+
+    color: rgba(255, 255, 255, 0.95);
+
+    font-size: 1.5rem;
+    line-height: 1.7;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(35px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lineGrow {
+  from {
+    width: 0;
+  }
+
+  to {
+    width: 65px;
+  }
+}
+
+@media (max-width: 992px) {
+  .donation-hero {
+    min-height: 560px;
+
+    &__container {
+      padding: 130px 40px 70px;
+    }
+
+    h1 {
+      font-size: 3.5rem;
+    }
+
+    p {
+      font-size: 1.2rem;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .donation-hero {
+    min-height: auto;
+
+    &__container {
+      padding: 120px 25px 70px;
+    }
+
+    h1 {
+      font-size: 2.8rem;
+    }
+
+    p {
+      font-size: 1.05rem;
+    }
+  }
+}

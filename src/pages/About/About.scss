@@ -1,0 +1,29 @@
+.about-page {
+  background: #fff;
+
+  > section:not(:first-child) {
+    margin-top: 0;
+  }
+}
+
+
+
+.about-page {
+  background: #fff;
+
+  .vision-mission {
+    margin-top: 20px;
+  }
+
+  .values-section {
+    margin-top: 10px;
+  }
+
+  .stats-section {
+    margin-top: -10px;
+  }
+
+  .join-family {
+    margin-top: 10px;
+  }
+}

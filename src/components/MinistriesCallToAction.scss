@@ -1,0 +1,227 @@
+@use "../styles/variables" as *;
+
+.ministries-cta {
+  padding: 0 60px 30px;
+
+  &__container {
+    position: relative;
+
+    max-width: 1400px;
+    margin: 0 auto;
+
+    display: grid;
+    grid-template-columns: 1.3fr 0.9fr;
+
+    overflow: hidden;
+
+    border-radius: 28px;
+
+    background: linear-gradient(
+      135deg,
+      #014321 0%,
+      #066232 45%,
+      #014321 100%
+    );
+
+    min-height: 210px;
+  }
+
+  &__container::before {
+    content: "";
+
+    position: absolute;
+
+    left: -120px;
+    top: -120px;
+
+    width: 320px;
+    height: 320px;
+
+    border-radius: 50%;
+
+    border: 1px solid rgba(244, 198, 29, 0.18);
+  }
+
+  &__container::after {
+    content: "";
+
+    position: absolute;
+
+    left: 230px;
+    top: -100px;
+
+    width: 260px;
+    height: 260px;
+
+    border-radius: 50%;
+
+    background: radial-gradient(
+      rgba(244, 198, 29, 0.08),
+      transparent 75%
+    );
+  }
+
+  &__content {
+    position: relative;
+    z-index: 2;
+
+    display: flex;
+    align-items: center;
+    gap: 24px;
+
+    padding: 40px 55px;
+
+    color: white;
+  }
+
+  &__icon {
+    width: 70px;
+    height: 70px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #f4c61d;
+
+    border: 1px solid rgba(244, 198, 29, 0.25);
+
+    font-size: 1.8rem;
+
+    flex-shrink: 0;
+  }
+
+  &__text {
+    h2 {
+      margin: 0 0 12px;
+
+      color: #fff;
+
+      font-size: 1.8rem;
+      font-weight: 700;
+
+      line-height: 1.2;
+    }
+
+    p {
+      margin: 0 0 22px;
+
+      color: rgba(255, 255, 255, 0.92);
+
+      font-size: 1rem;
+      line-height: 1.8;
+
+      max-width: 420px;
+    }
+  }
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 14px 24px;
+
+    border: none;
+    border-radius: 12px;
+
+    background: #f4c61d;
+    color: #111;
+
+    font-size: 0.95rem;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-3px);
+
+      gap: 14px;
+    }
+
+    svg {
+      font-size: 1.1rem;
+    }
+  }
+
+  &__image {
+    height: 100%;
+
+    img {
+      width: 100%;
+      height: 100%;
+
+      object-fit: cover;
+
+      display: block;
+    }
+  }
+}
+
+@media (max-width: 1100px) {
+  .ministries-cta {
+    &__container {
+      grid-template-columns: 1fr;
+    }
+
+    &__image {
+      height: 320px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .ministries-cta {
+    padding: 0 25px 25px;
+
+    &__content {
+      padding: 35px 30px;
+
+      flex-direction: column;
+      align-items: flex-start;
+
+      gap: 18px;
+    }
+
+    &__icon {
+      width: 60px;
+      height: 60px;
+
+      font-size: 1.5rem;
+    }
+
+    &__text {
+      h2 {
+        font-size: 2rem;
+      }
+
+      p {
+        font-size: 1rem;
+      }
+    }
+
+    &__image {
+      height: 250px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .ministries-cta {
+    padding: 0 20px 20px;
+
+    &__content {
+      padding: 28px 24px;
+    }
+
+    &__text {
+      h2 {
+        font-size: 1.8rem;
+      }
+    }
+  }
+}
