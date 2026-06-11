@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import Home from "../pages/Home/Home";
 import About from "../pages/About/About";
 import Ministries from "../pages/Ministries/Ministries";
+import MinistryDetails from "../pages/MinistryDetails/MinistryDetails";
 import Events from "../pages/Events/Events";
 import Media from "../pages/Media/Media";
 import Contact from "../pages/Contact/Contact";
@@ -29,6 +30,11 @@ const AppRoutes = () => {
       />
 
       <Route
+        path="/ministries/:slug"
+        element={<MinistryDetails />}
+      />
+
+      <Route
         path="/events"
         element={<Events />}
       />
@@ -48,8 +54,6 @@ const AppRoutes = () => {
         element={<Donate />}
       />
 
-      {/* Route 404 */}
-
       <Route
         path="*"
         element={<NotFound />}
@@ -60,3 +64,4 @@ const AppRoutes = () => {
 };
 
 export default AppRoutes;
+
