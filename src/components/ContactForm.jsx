@@ -87,9 +87,10 @@ const ContactForm = () => {
             <div>
               <h4>Téléphone</h4>
 
-              <p>+225 07 12 34 56 78</p>
+              <p>+225 07 88 06 15 84</p>
+              <p>+225 27 22 23 71 97</p>
 
-              <span>Lun - Ven : 08h00 - 17h00</span>
+              <span>Lun - dimanche : 08h00 - 17h00</span>
             </div>
           </div>
 
@@ -122,7 +123,7 @@ const ContactForm = () => {
               <span>
                 Abidjan, Côte d'Ivoire
                 <br />
-                Quartier Angré, 7e Tranche
+                Quartier Angré chateau, non loin de l'institut des jesuites
               </span>
             </div>
           </div>
