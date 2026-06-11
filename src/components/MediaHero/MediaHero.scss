@@ -101,3 +101,67 @@
     margin-bottom: 20px;
   }
 }
+
+
+
+
+/* ==========================
+   ANIMATIONS
+========================== */
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(45px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lineGrow {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+
+  to {
+    width: 70px;
+    opacity: 1;
+  }
+}
+
+.media-hero__title {
+  opacity: 0;
+  animation: fadeUp 1s ease forwards;
+}
+
+.media-hero__line {
+  opacity: 0;
+  animation:
+    lineGrow 0.8s ease forwards;
+  animation-delay: 0.35s;
+}
+
+.media-hero__text {
+  opacity: 0;
+  animation: fadeUp 1s ease forwards;
+  animation-delay: 0.6s;
+}
+
+
+.media-hero {
+  animation: heroZoom 8s ease-out forwards;
+}
+
+@keyframes heroZoom {
+  from {
+    background-size: 105%;
+  }
+
+  to {
+    background-size: 100%;
+  }
+}

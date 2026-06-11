@@ -54,19 +54,19 @@ const Navbar = () => {
             Accueil
           </NavLink>
 
-          <NavLink to="/a-propos">
+          <NavLink to="/about">
             À propos
           </NavLink>
 
-          <NavLink to="/ministeres">
+          <NavLink to="/ministries">
             Ministères
           </NavLink>
 
-          <NavLink to="/evenements">
+          <NavLink to="/events">
             Événements
           </NavLink>
 
-          <NavLink to="/medias">
+          <NavLink to="/media">
             Médias
           </NavLink>
 
@@ -77,7 +77,7 @@ const Navbar = () => {
         </nav>
 
         <NavLink
-          to="/faire-un-don"
+          to="/donate"
           className="navbar__don"
         >
           Faire un don
@@ -111,22 +111,22 @@ const Navbar = () => {
               <span>Accueil</span>
             </NavLink>
 
-            <NavLink to="/a-propos" onClick={closeMenu}>
+            <NavLink to="/about" onClick={closeMenu}>
               <Info size={20} />
               <span>À propos</span>
             </NavLink>
 
-            <NavLink to="/ministeres" onClick={closeMenu}>
+            <NavLink to="/ministries" onClick={closeMenu}>
               <Church size={20} />
               <span>Ministères</span>
             </NavLink>
 
-            <NavLink to="/evenements" onClick={closeMenu}>
+            <NavLink to="/events" onClick={closeMenu}>
               <Calendar size={20} />
               <span>Événements</span>
             </NavLink>
 
-            <NavLink to="/medias" onClick={closeMenu}>
+            <NavLink to="/media" onClick={closeMenu}>
               <PlayCircle size={20} />
               <span>Médias</span>
             </NavLink>
@@ -139,7 +139,7 @@ const Navbar = () => {
           </div>
 
           <NavLink
-            to="/faire-un-don"
+            to="/donate"
             className="navbar__mobile-don"
             onClick={closeMenu}
           >

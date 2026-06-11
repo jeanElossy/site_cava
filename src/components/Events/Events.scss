@@ -10,12 +10,14 @@
 
   padding: 24px;
 
-  height: 380px;
+  min-height: 520px;
 
   display: flex;
   flex-direction: column;
 
-  box-shadow: 0 15px 30px rgba(0, 0, 0, .12);
+  box-shadow:
+    0 15px 30px
+    rgba(0, 0, 0, .12);
 }
 
 .events-header {
@@ -32,23 +34,30 @@
   }
 
   h3 {
+    margin: 0;
+
     font-size: 1rem;
     font-weight: 700;
-    margin: 0;
   }
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
 }
 
 .event {
   background: white;
 
-  border-radius: 12px;
+  border-radius: 14px;
 
-  padding: 12px;
-
-  margin-bottom: 12px;
+  padding: 14px;
 
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+
   gap: 12px;
 
   cursor: pointer;
@@ -57,22 +66,30 @@
 
   &:hover {
     transform: translateX(5px);
+
+    box-shadow:
+      0 8px 20px
+      rgba(0, 0, 0, .08);
   }
 
   svg:last-child {
     color: #1f2937;
+
     flex-shrink: 0;
+
+    margin-top: 6px;
   }
 }
 
 .event-date {
-  width: 52px;
-  height: 60px;
+  width: 56px;
+  height: 64px;
 
   border-radius: 10px;
 
   display: flex;
   flex-direction: column;
+
   align-items: center;
   justify-content: center;
 
@@ -80,23 +97,31 @@
 
   span {
     font-size: 18px;
+
     font-weight: 700;
+
     line-height: 1;
   }
 
   small {
     font-size: 10px;
+
     font-weight: 700;
+
     line-height: 1;
+
+    margin-top: 4px;
   }
 
   &.green {
     background: #0d5b3e;
+
     color: white;
   }
 
   &.yellow {
     background: #f4c41d;
+
     color: #1f2937;
   }
 }
@@ -105,24 +130,48 @@
   flex: 1;
 
   h4 {
+    margin: 0 0 4px;
+
     color: #1f2937;
-    margin-bottom: 4px;
+
     font-size: 14px;
-    font-weight: 600;
+
+    font-weight: 700;
+
+    line-height: 1.3;
   }
 
   p {
+    margin: 0 0 6px;
+
     color: #6b7280;
+
     font-size: 12px;
+
     line-height: 1.4;
   }
+}
+
+.event-description {
+  display: block;
+
+  color: #0d5b3e;
+
+  font-size: 11px;
+
+  font-weight: 600;
+
+  line-height: 1.4;
 }
 
 .events-link {
   margin-top: auto;
 
+  padding-top: 18px;
+
   display: inline-flex;
   align-items: center;
+
   gap: 10px;
 
   color: #f4c41d;
@@ -136,5 +185,23 @@
 
   &:hover {
     gap: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .events-card {
+    min-height: auto;
+  }
+
+  .event {
+    padding: 12px;
+  }
+
+  .event-content h4 {
+    font-size: 13px;
+  }
+
+  .event-description {
+    font-size: 10px;
   }
 }

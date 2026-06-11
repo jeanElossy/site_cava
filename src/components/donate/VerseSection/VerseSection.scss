@@ -1,0 +1,172 @@
+.verse-section {
+  position: relative;
+
+  padding: 40px 30px;
+
+  overflow: hidden;
+
+
+  &__container {
+    position: relative;
+
+    z-index: 2;
+
+    max-width: 1000px;
+
+    margin: 0 auto;
+  }
+}
+
+.verse-card {
+  text-align: center;
+
+  padding: 70px 60px;
+
+  border-radius: 32px;
+
+  backdrop-filter: blur(20px);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(8, 59, 42, 0.95),
+      rgba(12, 107, 67, 0.92)
+    );
+
+  border:
+    1px solid rgba(
+      255,
+      255,
+      255,
+      .1
+    );
+
+  box-shadow:
+    0 25px 60px
+      rgba(0,0,0,.18);
+
+  &__icon {
+    width: 84px;
+    height: 84px;
+
+    margin: 0 auto 24px;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background:
+      linear-gradient(
+        135deg,
+        #f4c61d,
+        #ffd95f
+      );
+
+    color: #083b2a;
+
+    font-size: 2rem;
+
+    box-shadow:
+      0 15px 35px
+        rgba(244,198,29,.3);
+  }
+
+  &__badge {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 10px 18px;
+
+    border-radius: 999px;
+
+    background:
+      rgba(255,255,255,.1);
+
+    color: #f4c61d;
+
+    font-size: .85rem;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1px;
+
+    margin-bottom: 28px;
+  }
+
+  blockquote {
+    margin: 0;
+
+    color: white;
+
+    font-size: clamp(
+      1.7rem,
+      3vw,
+      2.8rem
+    );
+
+    font-weight: 700;
+
+    line-height: 1.6;
+
+    max-width: 850px;
+
+    margin-inline: auto;
+  }
+
+  &__reference {
+    margin-top: 32px;
+
+    color: rgba(
+      255,
+      255,
+      255,
+      .85
+    );
+
+    font-size: 1rem;
+
+    font-weight: 600;
+
+    letter-spacing: 2px;
+
+    text-transform: uppercase;
+  }
+}
+
+@media (max-width: 992px) {
+  .verse-card {
+    padding: 50px 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .verse-section {
+    padding: 80px 20px;
+  }
+
+  .verse-card {
+    padding: 40px 24px;
+
+    border-radius: 24px;
+  }
+
+  .verse-card__icon {
+    width: 70px;
+    height: 70px;
+
+    font-size: 1.6rem;
+  }
+
+  .verse-card blockquote {
+    font-size: 1.35rem;
+  }
+}

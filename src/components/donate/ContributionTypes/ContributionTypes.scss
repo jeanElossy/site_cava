@@ -1,0 +1,301 @@
+.contribution-types {
+  position: relative;
+
+  padding: 70px 60px;
+
+  overflow: hidden;
+
+  &::before {
+    content: "";
+
+    position: absolute;
+
+    top: -300px;
+    left: -300px;
+
+    width: 700px;
+    height: 700px;
+
+    border-radius: 50%;
+
+    background:
+      radial-gradient(
+        rgba(12, 77, 47, .05),
+        transparent 70%
+      );
+
+    pointer-events: none;
+  }
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.section-header {
+  text-align: center;
+
+  max-width: 760px;
+
+  margin: 0 auto 70px;
+
+  h2 {
+    margin-bottom: 18px;
+
+    font-size: 3rem;
+
+    font-weight: 800;
+
+    color: #083b2a;
+
+    line-height: 1.1;
+  }
+
+  p {
+    color: #6f6f6f;
+
+    font-size: 1.08rem;
+
+    line-height: 1.9;
+  }
+}
+
+/* =========================
+   GRID
+========================= */
+
+.types-grid {
+  max-width: 1400px;
+
+  margin: auto;
+
+  display: grid;
+
+  grid-template-columns: repeat(5, 1fr);
+
+  gap: 24px;
+}
+
+/* =========================
+   CARD
+========================= */
+
+.type-card {
+  position: relative;
+
+  overflow: hidden;
+
+  border: none;
+
+  border-radius: 28px;
+
+  padding: 35px 22px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.96),
+      rgba(255,255,255,.92)
+    );
+
+  backdrop-filter: blur(18px);
+
+  box-shadow:
+    0 12px 35px rgba(0,0,0,.06);
+
+  cursor: pointer;
+
+  text-align: center;
+
+  transition: .45s ease;
+
+  opacity: 0;
+
+  transform: translateY(40px);
+
+  animation: cardReveal .8s ease forwards;
+
+  &:nth-child(1){animation-delay:.1s;}
+  &:nth-child(2){animation-delay:.2s;}
+  &:nth-child(3){animation-delay:.3s;}
+  &:nth-child(4){animation-delay:.4s;}
+  &:nth-child(5){animation-delay:.5s;}
+
+  &::before {
+    content: "";
+
+    position: absolute;
+
+    top: -120px;
+    right: -120px;
+
+    width: 240px;
+    height: 240px;
+
+    border-radius: 50%;
+
+    background:
+      radial-gradient(
+        rgba(244,198,29,.12),
+        transparent 70%
+      );
+
+    transition: .5s ease;
+  }
+
+  &:hover {
+    transform:
+      translateY(-12px);
+
+    box-shadow:
+      0 25px 60px rgba(0,0,0,.12);
+
+    &::before {
+      transform: scale(1.2);
+    }
+
+    .type-icon {
+      transform:
+        rotate(-8deg)
+        scale(1.08);
+    }
+  }
+}
+
+/* =========================
+   ACTIVE
+========================= */
+
+.type-card.active {
+  background:
+    linear-gradient(
+      135deg,
+      #014321,
+      #0c6d3c
+    );
+
+  box-shadow:
+    0 25px 60px rgba(1,67,33,.25);
+
+  h3,
+  p {
+    color: white;
+  }
+
+  .type-icon {
+    background:
+      rgba(255,255,255,.12);
+
+    color: #f4c61d;
+
+    box-shadow:
+      0 10px 30px rgba(0,0,0,.15);
+  }
+}
+
+/* =========================
+   ICON
+========================= */
+
+.type-icon {
+  width: 82px;
+  height: 82px;
+
+  margin: 0 auto 22px;
+
+  border-radius: 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 2rem;
+
+  color: #0c4d2f;
+
+  background:
+    linear-gradient(
+      135deg,
+      #f7faf8,
+      #eef6f1
+    );
+
+  box-shadow:
+    0 12px 25px rgba(12,77,47,.08);
+
+  transition: .45s ease;
+}
+
+/* =========================
+   TITRE
+========================= */
+
+.type-card h3 {
+  margin-bottom: 12px;
+
+  font-size: 1.15rem;
+
+  font-weight: 700;
+
+  color: #083b2a;
+}
+
+/* =========================
+   TEXTE
+========================= */
+
+.type-card p {
+  margin: 0;
+
+  color: #737373;
+
+  font-size: .95rem;
+
+  line-height: 1.7;
+}
+
+/* =========================
+   ANIMATION
+========================= */
+
+@keyframes cardReveal {
+  from {
+    opacity: 0;
+    transform: translateY(45px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================
+   TABLETTE
+========================= */
+
+@media (max-width: 1200px) {
+  .types-grid {
+    grid-template-columns:
+      repeat(3, 1fr);
+  }
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 768px) {
+
+  .contribution-types {
+    padding: 80px 25px;
+  }
+
+  .section-header h2 {
+    font-size: 2.2rem;
+  }
+
+  .types-grid {
+    grid-template-columns: 1fr;
+  }
+}

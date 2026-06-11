@@ -1,5 +1,6 @@
 import { ArrowRight, CalendarDays } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 import heroBg from "../../assets/images/hero-bg.jpg.png";
 import logoCava from "../../assets/logo/logo_cava.gif";
@@ -43,16 +44,25 @@ const Hero = () => {
           </p>
 
           <div className="hero__buttons">
-            <button className="btn-yellow">
+
+            <Link
+              to="/about"
+              className="btn-yellow"
+            >
               Nous découvrir
               <ArrowRight size={20} />
-            </button>
+            </Link>
 
-            <button className="btn-outline">
+            <Link
+              to="/events"
+              className="btn-outline"
+            >
               Nos cultes
               <CalendarDays size={18} />
-            </button>
+            </Link>
+
           </div>
+
         </motion.div>
 
         <img

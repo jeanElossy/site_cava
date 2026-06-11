@@ -13,23 +13,22 @@ const MediaHero = () => {
       <div className="media-hero__overlay" />
 
       <div className="media-hero__container">
-
         <div className="media-hero__content">
 
-          <h1>Médias</h1>
+          <h1 className="media-hero__title">
+            Médias
+          </h1>
 
           <div className="media-hero__line" />
 
-          <p>
+          <p className="media-hero__text">
             Retrouvez nos messages,
             louanges et contenus édifiants
             pour nourrir votre foi au quotidien.
           </p>
 
         </div>
-
       </div>
-
     </section>
   );
 };

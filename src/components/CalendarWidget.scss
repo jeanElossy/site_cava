@@ -1,0 +1,190 @@
+@use "../styles/variables" as *;
+
+.calendar-widget {
+  background: #fff;
+
+  border: 1px solid #ececec;
+  border-radius: 24px;
+
+  padding: 26px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+
+  h3 {
+    margin: 0 0 24px;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    color: #0c4d2f;
+    font-size: 1.9rem;
+    font-weight: 700;
+  }
+
+  svg {
+    color: #0c4d2f;
+  }
+
+  &__body {
+    background: #ffffff;
+
+    border: 1px solid #f1f1f1;
+    border-radius: 18px;
+
+    padding: 28px 22px;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 26px;
+
+    span {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #111;
+    }
+
+    button {
+      width: 40px;
+      height: 40px;
+
+      border: none;
+      border-radius: 50%;
+
+      background: transparent;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      cursor: pointer;
+
+      transition: 0.3s;
+
+      &:hover {
+        background: #f6f6f6;
+      }
+    }
+  }
+
+  &__weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+
+    margin-bottom: 18px;
+
+    span {
+      text-align: center;
+
+      font-size: 0.95rem;
+      font-weight: 600;
+
+      color: #666;
+    }
+  }
+
+  &__days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+
+    gap: 12px;
+  }
+
+  .day {
+    width: 44px;
+    height: 44px;
+
+    margin: auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    color: #222;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+
+    &:hover {
+      background: #f5f5f5;
+    }
+
+    &.active {
+      background: #014321;
+
+      color: white;
+      font-weight: 700;
+
+      box-shadow: 0 8px 20px rgba(1, 67, 33, 0.25);
+    }
+  }
+
+  &__legend {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+
+    margin-top: 28px;
+
+    color: #555;
+    font-size: 0.95rem;
+
+    div {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+
+  border-radius: 50%;
+
+  &.green {
+    background: #014321;
+  }
+
+  &.yellow {
+    background: #f4c61d;
+  }
+}
+
+@media (max-width: 768px) {
+  .calendar-widget {
+    padding: 20px;
+
+    overflow-x: auto;
+
+    h3 {
+      font-size: 1.5rem;
+    }
+
+    &__days,
+    &__weekdays {
+      gap: 4px;
+    }
+
+    .day {
+      width: 34px;
+      height: 34px;
+
+      font-size: 0.85rem;
+    }
+
+    &__legend {
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+  }
+}
