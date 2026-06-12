@@ -33,6 +33,7 @@ const AppRoutes = () => {
         path="/ministries/:slug"
         element={<MinistryDetails />}
       />
+      
 
       <Route
         path="/events"

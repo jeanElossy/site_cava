@@ -1,59 +1,78 @@
 import { useParams } from "react-router-dom";
 
+import Navbar from "../../components/Navbar/Navbar";
+import Footer from "../../components/Footer/Footer";
 
+import MinistryHero from "../../components/MinistryDetails/MinistryHero";
+import MinistryMission from "../../components/MinistryDetails/MinistryMission";
+import MinistryLeaders from "../../components/MinistryDetails/MinistryLeaders";
+import MinistryGallery from "../../components/MinistryDetails/MinistryGallery";
+import MinistryEvents from "../../components/MinistryDetails/MinistryEvents";
+import MinistryTestimonials from "../../components/MinistryDetails/MinistryTestimonials";
+import MinistryCTA from "../../components/MinistryDetails/MinistryCTA";
 
-const ministries = {
-  "enfance-jeunesse": {
-    title: "Enfance & Jeunesse",
-    description:
-      "Accompagner les enfants et les jeunes dans leur marche avec Christ.",
-  },
-
-  "louange-adoration": {
-    title: "Louange & Adoration",
-    description:
-      "Élever un son qui transforme les cœurs et attire la présence de Dieu.",
-  },
-
-  "enseignement": {
-    title: "Enseignement",
-    description:
-      "La parole de Dieu enseignée avec clarté pour une vie transformée.",
-  },
-
-  "action-sociale": {
-    title: "Action Sociale",
-    description:
-      "Manifester l'amour de Christ par des actions concrètes.",
-  },
-};
+import ministries from "../../components/MinistryDetails/data/ministries";
 
 const MinistryDetails = () => {
   const { slug } = useParams();
 
-  const ministry =
-    ministries[slug];
+  const ministry = ministries[slug];
 
   if (!ministry) {
     return (
-      <div>
-        Ministère introuvable
-      </div>
+      <>
+        <Navbar />
+
+        <main
+          style={{
+            minHeight: "70vh",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <h1>Ministère introuvable</h1>
+        </main>
+
+        <Footer />
+      </>
     );
   }
 
   return (
-    <section>
+    <>
+      <Navbar />
 
-      <h1>
-        {ministry.title}
-      </h1>
+      <main className="ministry-details">
 
-      <p>
-        {ministry.description}
-      </p>
+        <MinistryHero ministry={ministry} />
 
-    </section>
+        <MinistryMission ministry={ministry} />
+
+        <MinistryLeaders
+          leaders={ministry.leaders || []}
+        />
+
+        <MinistryGallery
+          images={ministry.gallery || []}
+        />
+
+        <MinistryEvents
+          events={ministry.events || []}
+        />
+
+        <MinistryTestimonials
+          testimonials={
+            ministry.testimonials || []
+          }
+        />
+
+        <MinistryCTA ministry={ministry} />
+
+      </main>
+
+      <Footer />
+    </>
   );
 };
 

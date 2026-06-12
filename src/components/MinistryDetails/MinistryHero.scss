@@ -1,0 +1,194 @@
+@use "../../styles/variables" as *;
+
+.ministry-hero {
+  position: relative;
+
+  min-height: 720px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+
+  text-align: center;
+}
+
+.ministry-hero__image {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.ministry-hero__overlay {
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.15) 0%,
+      rgba(3, 46, 32, 0.45) 40%,
+      rgba(3, 46, 32, 0.82) 100%
+    );
+
+  z-index: 1;
+}
+
+.ministry-hero__content {
+  position: relative;
+
+  z-index: 2;
+
+  max-width: 900px;
+
+  width: 100%;
+
+  padding: 40px 20px;
+
+  color: white;
+}
+
+.ministry-hero__badge {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 10px 22px;
+
+  margin-top:100px;
+
+  border-radius: 999px;
+
+  border: 2px solid $secondary;
+
+  color: $secondary;
+
+  font-size: 0.9rem;
+
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  letter-spacing: 1px;
+
+  background:
+    rgba(255, 255, 255, 0.04);
+
+  backdrop-filter: blur(10px);
+}
+
+.ministry-hero__title {
+  font-size: clamp(3.5rem, 7vw, 6rem);
+
+  font-weight: 800;
+
+  line-height: 1.05;
+
+  margin-bottom: 24px;
+
+  color: white;
+}
+
+.ministry-hero__description {
+  max-width: 760px;
+
+  margin: 0 auto;
+
+  font-size: 1.35rem;
+
+  line-height: 1.7;
+
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.ministry-hero__actions {
+  display: flex;
+
+  justify-content: center;
+
+  gap: 18px;
+
+  flex-wrap: wrap;
+
+  margin-top: 40px;
+}
+
+.btn-primary,
+.btn-outline {
+  height: 58px;
+
+  padding: 0 32px;
+
+  border-radius: 14px;
+
+  font-size: 1rem;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.3s ease;
+}
+
+.btn-primary {
+  border: none;
+
+  background: $secondary;
+
+  color: #1a1a1a;
+
+  box-shadow:
+    0 12px 30px rgba(255, 193, 7, 0.25);
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px);
+}
+
+.btn-outline {
+  background: transparent;
+
+  color: white;
+
+  border: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+.btn-outline:hover {
+  background:
+    rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 768px) {
+  .ministry-hero {
+    min-height: 620px;
+  }
+
+  .ministry-hero__title {
+    font-size: 3rem;
+  }
+
+  .ministry-hero__description {
+    font-size: 1.05rem;
+  }
+
+  .ministry-hero__actions {
+    flex-direction: column;
+
+    align-items: center;
+  }
+
+  .btn-primary,
+  .btn-outline {
+    width: 100%;
+
+    max-width: 320px;
+  }
+}

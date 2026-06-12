@@ -1,0 +1,164 @@
+@use "../../styles/variables" as *;
+
+/* =========================
+   VERSION HERO
+========================= */
+
+.ministry-stats--hero {
+  background: transparent;
+
+  margin-top: 50px;
+}
+
+.ministry-stats--hero .container {
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, 1fr);
+
+  gap: 0;
+
+  max-width: 1000px;
+
+  margin: 0 auto;
+}
+
+.ministry-stats--hero .stat-card {
+  background: transparent;
+
+  border: none;
+
+  border-right:
+    1px solid
+    rgba(255, 255, 255, 0.2);
+
+  border-radius: 0;
+
+  padding: 0 24px;
+
+  box-shadow: none;
+
+  text-align: center;
+}
+
+.ministry-stats--hero .stat-card:last-child {
+  border-right: none;
+}
+
+.ministry-stats--hero .stat-card__icon {
+  font-size: 2rem;
+
+  color: #f7c600;
+
+  margin-bottom: 12px;
+}
+
+.ministry-stats--hero h3 {
+  font-size: 2.8rem;
+
+  font-weight: 800;
+
+  color: white;
+
+  margin-bottom: 8px;
+}
+
+.ministry-stats--hero span {
+  color:
+    rgba(255, 255, 255, 0.85);
+
+  font-size: 0.95rem;
+}
+
+/* =========================
+   VERSION SECTION
+========================= */
+
+.ministry-stats .container {
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, 1fr);
+
+  gap: 24px;
+}
+
+.ministry-stats .stat-card {
+  text-align: center;
+
+  background:
+    linear-gradient(
+      135deg,
+      #053824,
+      #0a5c3d
+    );
+
+  border:
+    1px solid rgba(255, 255, 255, 0.08);
+
+  border-radius: 24px;
+
+  backdrop-filter: blur(10px);
+
+  padding: 40px 20px;
+
+  transition: 0.3s ease;
+}
+
+.ministry-stats .stat-card:hover {
+  transform: translateY(-8px);
+}
+
+.ministry-stats .stat-card__icon {
+  font-size: 2rem;
+
+  color: #f7c600;
+
+  margin-bottom: 15px;
+}
+
+.ministry-stats .stat-card h3 {
+  font-size: 3rem;
+
+  color: white;
+
+  margin-bottom: 10px;
+}
+
+.ministry-stats .stat-card span {
+  color:
+    rgba(255, 255, 255, 0.85);
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 992px) {
+  .ministry-stats .container,
+  .ministry-stats--hero .container {
+    grid-template-columns:
+      repeat(2, 1fr);
+
+    gap: 25px;
+  }
+
+  .ministry-stats--hero .stat-card {
+    border-right: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .ministry-stats .container,
+  .ministry-stats--hero .container {
+    grid-template-columns: 1fr;
+  }
+
+  .ministry-stats--hero h3 {
+    font-size: 2.2rem;
+  }
+
+  .ministry-stats--hero .stat-card {
+    padding: 15px 0;
+  }
+}

@@ -44,7 +44,7 @@ const LastMessage = () => {
           du Centre Apostolique Vie et Abondance.
         </p>
 
-        <a href="/">
+        <a href="/media">
           Voir tous les messages
           <ArrowRight size={16} />
         </a>

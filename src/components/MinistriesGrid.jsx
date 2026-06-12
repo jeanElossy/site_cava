@@ -18,8 +18,14 @@ import homegroupImg from "../assets/images/homegroup.jpg";
 import socialImg from "../assets/images/social.jpg";
 import evangelismImg from "../assets/images/evangelism.jpg";
 
+
+import { Link } from "react-router-dom";
+
+
+
 const ministries = [
   {
+    slug: "enfance-jeunesse",
     title: "Enfance & Jeunesse",
     description:
       "Accompagner les enfants et les jeunes dans leur marche avec Christ.",
@@ -27,7 +33,9 @@ const ministries = [
     icon: <FaUsers />,
     color: "green",
   },
+
   {
+    slug: "louange-adoration",
     title: "Louange & Adoration",
     description:
       "Élever un son qui transforme les cœurs et attire la présence de Dieu.",
@@ -35,7 +43,9 @@ const ministries = [
     icon: <FaHandsHelping />,
     color: "gold",
   },
+
   {
+    slug: "enseignement",
     title: "Enseignement",
     description:
       "La parole de Dieu enseignée avec clarté pour une vie transformée.",
@@ -43,7 +53,9 @@ const ministries = [
     icon: <FaBookOpen />,
     color: "green",
   },
+
   {
+    slug: "groupes-de-maison",
     title: "Groupes de maison",
     description:
       "Vivre la foi en petits groupes, partager et s'encourager mutuellement.",
@@ -51,7 +63,9 @@ const ministries = [
     icon: <FaHome />,
     color: "gold",
   },
+
   {
+    slug: "action-sociale",
     title: "Action Sociale",
     description:
       "Manifester l'amour de Christ par des actions concrètes envers notre prochain.",
@@ -59,7 +73,9 @@ const ministries = [
     icon: <FaPeopleCarry />,
     color: "green",
   },
+
   {
+    slug: "evangelisation",
     title: "Évangélisation",
     description:
       "Annoncer l'Évangile et gagner des âmes pour le Royaume de Dieu.",
@@ -68,6 +84,7 @@ const ministries = [
     color: "gold",
   },
 ];
+
 
 const MinistriesGrid = () => {
   return (
@@ -104,10 +121,14 @@ const MinistriesGrid = () => {
 
               <p>{ministry.description}</p>
 
-              <button>
+              <Link
+                to={`/ministries/${ministry.slug}`}
+                className="ministry-card__button"
+              >
                 En savoir plus
                 <HiArrowRight />
-              </button>
+              </Link>
+
 
             </div>
           </article>
