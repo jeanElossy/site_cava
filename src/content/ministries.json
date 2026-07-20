@@ -1,0 +1,158 @@
+{
+  "enfance-jeunesse": {
+    "_id": "6a5e4da15532ad9570cfd514",
+    "slug": "enfance-jeunesse",
+    "title": "Enfance & Jeunesse",
+    "description": "Accompagner les enfants et les jeunes dans leur marche avec Christ.",
+    "image": "/images/ministries/enfance.jpg",
+    "color": "green",
+    "mission": {
+      "title": "Notre Mission",
+      "description": "Former des disciples engagés et accompagner chacun dans sa croissance spirituelle."
+    },
+    "vision": {
+      "title": "Notre Vision",
+      "description": "Voir des vies transformées par l'Évangile et équipées pour servir leur génération."
+    },
+    "stats": [],
+    "leaders": [],
+    "gallery": [],
+    "testimonials": [],
+    "order": 1,
+    "status": "published",
+    "createdAt": "2026-07-20T16:32:33.907Z",
+    "updatedAt": "2026-07-20T16:32:33.907Z",
+    "__v": 0,
+    "id": "6a5e4da15532ad9570cfd514"
+  },
+  "louange-adoration": {
+    "_id": "6a5e4da25532ad9570cfd517",
+    "slug": "louange-adoration",
+    "title": "Louange & Adoration",
+    "description": "Élever un son qui transforme les cœurs et attire la présence de Dieu.",
+    "image": "/images/ministries/louange-hero.jpg",
+    "color": "gold",
+    "mission": {
+      "title": "Notre Mission",
+      "description": "Former des disciples engagés et accompagner chacun dans sa croissance spirituelle."
+    },
+    "vision": {
+      "title": "Notre Vision",
+      "description": "Voir des vies transformées par l'Évangile et équipées pour servir leur génération."
+    },
+    "stats": [],
+    "leaders": [],
+    "gallery": [],
+    "testimonials": [],
+    "order": 2,
+    "status": "published",
+    "createdAt": "2026-07-20T16:32:34.246Z",
+    "updatedAt": "2026-07-20T16:32:34.246Z",
+    "__v": 0,
+    "id": "6a5e4da25532ad9570cfd517"
+  },
+  "enseignement": {
+    "_id": "6a5e4da25532ad9570cfd51a",
+    "slug": "enseignement",
+    "title": "Enseignement",
+    "description": "La parole de Dieu enseignée avec clarté pour une vie transformée.",
+    "image": "/images/ministries/enseignement.jpg",
+    "color": "green",
+    "mission": {
+      "title": "Notre Mission",
+      "description": "Former des disciples engagés et accompagner chacun dans sa croissance spirituelle."
+    },
+    "vision": {
+      "title": "Notre Vision",
+      "description": "Voir des vies transformées par l'Évangile et équipées pour servir leur génération."
+    },
+    "stats": [],
+    "leaders": [],
+    "gallery": [],
+    "testimonials": [],
+    "order": 3,
+    "status": "published",
+    "createdAt": "2026-07-20T16:32:34.574Z",
+    "updatedAt": "2026-07-20T16:32:34.574Z",
+    "__v": 0,
+    "id": "6a5e4da25532ad9570cfd51a"
+  },
+  "groupes-de-maison": {
+    "_id": "6a5e4da25532ad9570cfd51d",
+    "slug": "groupes-de-maison",
+    "title": "Groupes de maison",
+    "description": "Vivre la foi en petits groupes, partager et s'encourager mutuellement.",
+    "image": "/images/ministries/homegroup.jpg",
+    "color": "gold",
+    "mission": {
+      "title": "Notre Mission",
+      "description": "Former des disciples engagés et accompagner chacun dans sa croissance spirituelle."
+    },
+    "vision": {
+      "title": "Notre Vision",
+      "description": "Voir des vies transformées par l'Évangile et équipées pour servir leur génération."
+    },
+    "stats": [],
+    "leaders": [],
+    "gallery": [],
+    "testimonials": [],
+    "order": 4,
+    "status": "published",
+    "createdAt": "2026-07-20T16:32:34.913Z",
+    "updatedAt": "2026-07-20T16:32:34.913Z",
+    "__v": 0,
+    "id": "6a5e4da25532ad9570cfd51d"
+  },
+  "action-sociale": {
+    "_id": "6a5e4da35532ad9570cfd520",
+    "slug": "action-sociale",
+    "title": "Action Sociale",
+    "description": "Manifester l'amour de Christ par des actions concrètes envers notre prochain.",
+    "image": "/images/ministries/sociale.jpg",
+    "color": "green",
+    "mission": {
+      "title": "Notre Mission",
+      "description": "Former des disciples engagés et accompagner chacun dans sa croissance spirituelle."
+    },
+    "vision": {
+      "title": "Notre Vision",
+      "description": "Voir des vies transformées par l'Évangile et équipées pour servir leur génération."
+    },
+    "stats": [],
+    "leaders": [],
+    "gallery": [],
+    "testimonials": [],
+    "order": 5,
+    "status": "published",
+    "createdAt": "2026-07-20T16:32:35.261Z",
+    "updatedAt": "2026-07-20T16:32:35.261Z",
+    "__v": 0,
+    "id": "6a5e4da35532ad9570cfd520"
+  },
+  "evangelisation": {
+    "_id": "6a5e4da35532ad9570cfd523",
+    "slug": "evangelisation",
+    "title": "Évangélisation",
+    "description": "Annoncer l'Évangile et gagner des âmes pour le Royaume de Dieu.",
+    "image": "/images/ministries/evangelisation.jpg",
+    "color": "gold",
+    "mission": {
+      "title": "Notre Mission",
+      "description": "Former des disciples engagés et accompagner chacun dans sa croissance spirituelle."
+    },
+    "vision": {
+      "title": "Notre Vision",
+      "description": "Voir des vies transformées par l'Évangile et équipées pour servir leur génération."
+    },
+    "stats": [],
+    "leaders": [],
+    "gallery": [],
+    "testimonials": [],
+    "order": 6,
+    "status": "published",
+    "createdAt": "2026-07-20T16:32:35.650Z",
+    "updatedAt": "2026-07-20T16:32:35.650Z",
+    "__v": 0,
+    "id": "6a5e4da35532ad9570cfd523"
+  }
+}

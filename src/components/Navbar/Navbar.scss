@@ -301,3 +301,18 @@
     }
   }
 }
+
+/* Un septième lien (« Communauté ») a été ajouté au menu principal :
+   on resserre l'espacement entre 993px et 1200px pour éviter que la
+   barre ne déborde juste au-dessus du basculement en menu mobile. */
+@media (max-width: 1200px) {
+  .navbar {
+    &__desktop {
+      gap: 22px;
+
+      a {
+        font-size: 0.95rem;
+      }
+    }
+  }
+}

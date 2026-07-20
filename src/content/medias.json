@@ -1,0 +1,116 @@
+{
+  "messages": [
+    {
+      "id": "6a5e4da35532ad9570cfd526",
+      "title": "Marcher par la foi",
+      "author": "Pasteur Jean Koffi",
+      "duration": "45:30",
+      "image": "/images/media/message1.jpg",
+      "video": null,
+      "date": "04 mai 2025"
+    },
+    {
+      "id": "6a5e4da45532ad9570cfd529",
+      "title": "La puissance de la prière",
+      "author": "Pasteur Marcel N'Guessan",
+      "duration": "38:22",
+      "image": "/images/media/message2.jpg",
+      "video": null,
+      "date": "27 avril 2025"
+    },
+    {
+      "id": "6a5e4da45532ad9570cfd52c",
+      "title": "Vivre avec l'Esprit",
+      "author": "Pasteur Jean Koffi",
+      "duration": "42:16",
+      "image": "/images/media/message3.jpg",
+      "video": null,
+      "date": "20 avril 2025"
+    },
+    {
+      "id": "6a5e4da45532ad9570cfd52f",
+      "title": "La grâce qui transforme",
+      "author": "Pasteur Marcel N'Guessan",
+      "duration": "36:45",
+      "image": "/images/media/message4.jpg",
+      "video": null,
+      "date": "13 avril 2025"
+    }
+  ],
+  "louanges": [
+    {
+      "id": "6a5e4da55532ad9570cfd532",
+      "title": "Tout est possible",
+      "author": "CAVA Worship",
+      "duration": "03:52",
+      "image": "/images/media/song1.jpg",
+      "video": null,
+      "date": "04 mai 2025"
+    },
+    {
+      "id": "6a5e4da55532ad9570cfd535",
+      "title": "Jésus tu es bon",
+      "author": "CAVA Worship",
+      "duration": "06:14",
+      "image": "/images/media/song2.jpg",
+      "video": null,
+      "date": "27 avril 2025"
+    },
+    {
+      "id": "6a5e4da55532ad9570cfd538",
+      "title": "Ta présence",
+      "author": "CAVA Worship",
+      "duration": "07:08",
+      "image": "/images/media/song3.jpg",
+      "video": null,
+      "date": "20 avril 2025"
+    },
+    {
+      "id": "6a5e4da65532ad9570cfd53b",
+      "title": "Mon cœur t'appartient",
+      "author": "CAVA Worship",
+      "duration": "04:45",
+      "image": "/images/media/song4.jpg",
+      "video": null,
+      "date": "13 avril 2025"
+    }
+  ],
+  "temoignages": [
+    {
+      "id": "6a5e4da65532ad9570cfd53e",
+      "title": "Dieu a changé ma vie",
+      "author": "Marie Kouassi",
+      "duration": "08:24",
+      "image": "/images/media/temoignage1.jpg",
+      "video": null,
+      "date": "11 mai 2025"
+    },
+    {
+      "id": "6a5e4da75532ad9570cfd541",
+      "title": "Guéri par la grâce de Dieu",
+      "author": "Jean Baptiste",
+      "duration": "06:18",
+      "image": "/images/media/temoignage2.jpg",
+      "video": null,
+      "date": "04 mai 2025"
+    },
+    {
+      "id": "6a5e4da75532ad9570cfd544",
+      "title": "Une restauration familiale",
+      "author": "Sarah N'Guessan",
+      "duration": "10:12",
+      "image": "/images/media/temoignage3.jpg",
+      "video": null,
+      "date": "27 avril 2025"
+    },
+    {
+      "id": "6a5e4da75532ad9570cfd547",
+      "title": "De l'échec à la victoire",
+      "author": "Koffi Emmanuel",
+      "duration": "07:45",
+      "image": "/images/media/temoignage4.jpg",
+      "video": null,
+      "date": "20 avril 2025"
+    }
+  ]
+}

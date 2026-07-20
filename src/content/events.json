@@ -1,0 +1,71 @@
+{
+  "culte-s-offrir-a-dieu": {
+    "id": "6a5e4da05532ad9570cfd50b",
+    "slug": "culte-s-offrir-a-dieu",
+    "title": "Culte S'OFFRIR À DIEU",
+    "description": "Temps d'adoration, de prière et d'enseignement.",
+    "content": [
+      "Un culte spécial placé sous le thème « S'offrir à Dieu ». Une invitation à remettre à Dieu non seulement nos activités, mais notre vie entière.",
+      "La matinée articule un temps de louange conduit par l'équipe d'adoration, un message centré sur les Écritures, puis un moment de prière et de consécration personnelle."
+    ],
+    "day": "15",
+    "month": "JUIN",
+    "dateLong": "Dimanche 15 Juin 2025 - 08h30",
+    "time": "08h30",
+    "endTime": "11h30",
+    "location": "CAVA, Abidjan",
+    "address": "Angré château, non loin de l'institut des jésuites",
+    "audience": "Ouvert à tous",
+    "theme": "",
+    "speaker": null,
+    "image": "/images/events/event-1.jpg",
+    "color": "green"
+  },
+  "ecole-de-la-foi": {
+    "id": "6a5e4da15532ad9570cfd50e",
+    "slug": "ecole-de-la-foi",
+    "title": "ÉCOLE DE LA FOI",
+    "description": "Formation biblique et croissance spirituelle.",
+    "content": [
+      "Un enseignement structuré pour affermir les bases de la foi et apprendre à lire les Écritures par soi-même.",
+      "Chaque séance associe un temps d'enseignement et un temps d'échange, afin que les questions trouvent une réponse concrète."
+    ],
+    "day": "17",
+    "month": "JUIN",
+    "dateLong": "Mardi 17 Juin 2025 - 18h30",
+    "time": "18h30",
+    "endTime": "20h30",
+    "location": "CAVA, Abidjan",
+    "address": "Angré château, non loin de l'institut des jésuites",
+    "audience": "Ouvert à tous",
+    "theme": "",
+    "speaker": null,
+    "image": "/images/events/event-2.jpg",
+    "color": "yellow"
+  },
+  "camp-de-formation-spirituelle": {
+    "id": "6a5e4da15532ad9570cfd511",
+    "slug": "camp-de-formation-spirituelle",
+    "title": "Camp de Formation Spirituelle",
+    "description": "Deux journées de formation, de prière et de communion fraternelle.",
+    "content": [
+      "Deux journées pour se former, prier ensemble et approfondir sa marche avec Christ, loin des sollicitations du quotidien.",
+      "Le camp alterne enseignements, ateliers en petits groupes et temps de prière."
+    ],
+    "day": "27",
+    "month": "JUIN",
+    "dateLong": "Vendredi 27 Juin 2025 - 09h00",
+    "time": "09h00",
+    "endTime": "17h00",
+    "location": "CAVA, Abidjan",
+    "address": "Angré château, non loin de l'institut des jésuites",
+    "audience": "Ouvert à tous",
+    "theme": "Persévérer dans la discipline spirituelle",
+    "speaker": {
+      "name": "Pasteur Israël Liaide",
+      "role": "Orateur invité"
+    },
+    "image": "/images/events/event-3.jpg",
+    "color": "yellow"
+  }
+}

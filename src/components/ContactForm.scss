@@ -222,6 +222,34 @@
       padding: 0 28px;
     }
   }
+
+  // Mention honnête : le message est enregistré, pas encore envoyé.
+  &__success-note {
+    padding: 14px 18px;
+
+    border-left: 3px solid #b8860b;
+    border-radius: 6px;
+
+    background: rgba(184, 134, 11, 0.08);
+
+    color: #6b5200;
+
+    font-size: 0.88rem;
+    line-height: 1.65;
+    text-align: left;
+  }
+
+  button[disabled] {
+    opacity: 0.65;
+
+    cursor: not-allowed;
+
+    &:hover {
+      transform: none;
+
+      box-shadow: none;
+    }
+  }
 }
 
 /* ======================

@@ -1,0 +1,168 @@
+@use "../../../styles/variables" as *;
+
+// Tout est imbriqué sous `.community-hero` : les SCSS du projet sont
+// fusionnés en une feuille unique, une classe déclarée à la racine
+// deviendrait globale.
+.community-hero {
+  position: relative;
+
+  min-height: 620px;
+
+  display: flex;
+  align-items: center;
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  overflow: hidden;
+
+  &__overlay {
+    position: absolute;
+    inset: 0;
+
+    background: linear-gradient(
+      90deg,
+      rgba(0, 65, 35, 0.94) 0%,
+      rgba(0, 65, 35, 0.88) 35%,
+      rgba(0, 65, 35, 0.45) 60%,
+      rgba(0, 0, 0, 0.1) 100%
+    );
+
+    z-index: 1;
+  }
+
+  &__container {
+    position: relative;
+    z-index: 2;
+
+    width: 100%;
+    max-width: 1400px;
+
+    margin: 0 auto;
+
+    padding: 140px 60px 80px;
+  }
+
+  &__content {
+    max-width: 640px;
+
+    color: #fff;
+  }
+
+  &__breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    margin-bottom: 26px;
+
+    font-size: 1rem;
+    font-weight: 500;
+
+    color: rgba(255, 255, 255, 0.85);
+
+    a {
+      color: rgba(255, 255, 255, 0.85);
+
+      text-decoration: none;
+
+      transition: color 0.3s ease;
+
+      &:hover {
+        color: $secondary;
+      }
+
+      &:focus-visible {
+        outline: 2px solid $secondary;
+        outline-offset: 3px;
+      }
+    }
+
+    [aria-current="page"] {
+      color: #fff;
+
+      font-weight: 600;
+    }
+  }
+
+  h1 {
+    margin: 0 0 15px;
+
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+
+    color: #fff;
+  }
+
+  h2 {
+    margin: 0;
+
+    color: rgba(255, 255, 255, 0.95);
+
+    font-size: 2rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  &__line {
+    width: 60px;
+    height: 4px;
+
+    margin: 28px 0;
+
+    border-radius: 50px;
+
+    background: $secondary;
+  }
+
+  blockquote {
+    margin: 0;
+
+    max-width: 500px;
+
+    color: rgba(255, 255, 255, 0.92);
+
+    font-size: 1.15rem;
+    line-height: 1.8;
+    font-style: italic;
+  }
+
+  p {
+    margin-top: 16px;
+
+    color: $secondary;
+
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  @media (max-width: 992px) {
+    min-height: 540px;
+
+    &__container {
+      padding: 130px 40px 70px;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    min-height: auto;
+
+    &__container {
+      padding: 120px 25px 70px;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+    }
+
+    blockquote {
+      font-size: 1rem;
+    }
+  }
+}

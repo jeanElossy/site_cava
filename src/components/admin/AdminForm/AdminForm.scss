@@ -1,0 +1,217 @@
+@use "../../../styles/variables" as *;
+
+.admin-form {
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+
+    label {
+      color: #33403a;
+
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+
+      padding: 11px 13px;
+
+      border: 1px solid #d9dfdc;
+      border-radius: 9px;
+
+      background: #fff;
+
+      color: #1f2a25;
+
+      font-family: inherit;
+      font-size: 0.92rem;
+
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+      &:hover {
+        border-color: #c2cbc6;
+      }
+
+      &:focus {
+        border-color: $primary;
+
+        outline: none;
+
+        box-shadow: 0 0 0 3px rgba(13, 91, 62, 0.15);
+      }
+
+      &:focus-visible {
+        outline: 2px solid $primary;
+        outline-offset: 1px;
+      }
+    }
+
+    textarea {
+      resize: vertical;
+
+      min-height: 96px;
+    }
+
+    &--wide {
+      grid-column: 1 / -1;
+    }
+
+    &--inline {
+      grid-column: 1 / -1;
+
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+
+      input {
+        width: 18px;
+        height: 18px;
+
+        flex-shrink: 0;
+
+        accent-color: $primary;
+      }
+
+      label {
+        font-weight: 500;
+      }
+    }
+  }
+
+  &__required {
+    color: #b91c1c;
+  }
+
+  &__fieldset {
+    grid-column: 1 / -1;
+
+    margin: 0;
+    padding: 18px;
+
+    border: 1px solid #e2e7e4;
+    border-radius: 12px;
+
+    background: #fafbfa;
+
+    display: grid;
+    gap: 14px;
+
+    legend {
+      padding: 0 8px;
+
+      color: $primary-dark;
+
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+  }
+
+  &__help {
+    margin: 0;
+
+    color: #7b847f;
+
+    font-size: 0.79rem;
+    line-height: 1.55;
+  }
+
+  &__error {
+    margin: 18px 0 0;
+    padding: 12px 15px;
+
+    border: 1px solid rgba(185, 28, 28, 0.3);
+    border-radius: 9px;
+
+    background: rgba(185, 28, 28, 0.05);
+
+    color: #991b1b;
+
+    font-size: 0.87rem;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+
+    margin-top: 24px;
+    padding-top: 20px;
+
+    border-top: 1px solid #eceeed;
+  }
+
+  &__button {
+    padding: 11px 24px;
+
+    border: 1px solid transparent;
+    border-radius: 9px;
+
+    background: $primary;
+
+    color: #fff;
+
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: $transition;
+
+    &:hover:not([disabled]) {
+      background: $primary-dark;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary-dark;
+      outline-offset: 2px;
+    }
+
+    &[disabled] {
+      opacity: 0.6;
+
+      cursor: not-allowed;
+    }
+
+    &--ghost {
+      border-color: #d9dfdc;
+
+      background: #fff;
+
+      color: #4c554f;
+
+      &:hover:not([disabled]) {
+        border-color: #c2cbc6;
+
+        background: #f4f6f5;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+
+    &__actions {
+      flex-direction: column-reverse;
+    }
+
+    &__button {
+      width: 100%;
+    }
+  }
+}

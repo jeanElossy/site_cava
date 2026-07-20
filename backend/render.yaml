@@ -1,0 +1,67 @@
+# Configuration de déploiement Render.
+#
+# À placer à la racine du dépôt ou à sélectionner depuis l'interface
+# Render (Blueprint). Les variables marquées `sync: false` ne sont PAS
+# écrites ici : elles se renseignent dans le tableau de bord Render,
+# pour qu'aucun secret ne se retrouve dans le dépôt.
+
+services:
+  - type: web
+    name: cava-api
+    runtime: node
+    plan: free
+
+    # Le backend vit dans un sous-dossier du dépôt.
+    rootDir: backend
+
+    buildCommand: npm ci
+    startCommand: npm start
+
+    # Render interroge cette route pour savoir si le service est vivant.
+    healthCheckPath: /api/health
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Render fournit lui-même le port d'écoute : ne pas le forcer.
+
+      # Un seul proxy devant l'API chez Render. Sans ce réglage, la
+      # limitation de débit compterait toutes les requêtes sur l'IP du
+      # proxy et bloquerait tout le monde d'un coup.
+      - key: TRUST_PROXY
+        value: 1
+
+      # --- À renseigner dans le tableau de bord Render ---
+
+      # Chaîne de connexion MongoDB Atlas.
+      - key: MONGODB_URI
+        sync: false
+
+      # Secret de signature des jetons. Render peut le générer :
+      # utiliser « Generate » dans l'interface.
+      - key: JWT_SECRET
+        generateValue: true
+
+      - key: JWT_EXPIRES_IN
+        value: 7d
+
+      # Origines autorisées à appeler l'API, séparées par des virgules.
+      # Y mettre l'URL Vercel du site, et l'URL de préversion si
+      # l'administration y est activée.
+      - key: CORS_ORIGIN
+        sync: false
+
+      # Webhook de reconstruction du site (bouton « Publier »).
+      # Laisser vide tant qu'il n'est pas créé côté Vercel.
+      - key: VERCEL_DEPLOY_HOOK
+        sync: false
+
+      # Utilisés uniquement par `npm run seed`, à lancer une seule fois
+      # depuis le shell Render. Peuvent être retirés ensuite.
+      - key: SEED_ADMIN_NAME
+        sync: false
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false

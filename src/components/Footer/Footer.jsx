@@ -126,6 +126,12 @@ const Footer = () => {
             </li>
 
             <li>
+              <Link to="/communaute">
+                Communauté
+              </Link>
+            </li>
+
+            <li>
               <Link to="/contact">
                 Contact
               </Link>

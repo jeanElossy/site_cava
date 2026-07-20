@@ -1,3 +1,5 @@
+import { lazy, Suspense } from "react";
+
 import { Routes, Route } from "react-router-dom";
 
 import Home from "../pages/Home/Home";
@@ -7,11 +9,53 @@ import MinistryDetails from "../pages/MinistryDetails/MinistryDetails";
 import Events from "../pages/Events/Events";
 import EventDetails from "../pages/EventDetails/EventDetails";
 import Media from "../pages/Media/Media";
+import Communaute from "../pages/Communaute/Communaute";
 import Contact from "../pages/Contact/Contact";
 import Donate from "../pages/Donate/Donate";
 import LegalNotice from "../pages/LegalNotice/LegalNotice";
 import PrivacyPolicy from "../pages/PrivacyPolicy/PrivacyPolicy";
 import NotFound from "../pages/NotFound/NotFound";
+
+// INTERRUPTEUR DE DÉPLOIEMENT
+//
+// L'administration n'est incluse que si `VITE_ENABLE_ADMIN` vaut
+// "true". Sur une build de production publique, la route /admin
+// n'existe alors pas du tout : ni écran de connexion, ni bundle
+// JavaScript téléchargeable, ni surface à sonder.
+//
+// Ce n'est PAS ce qui protège les données — c'est l'API qui refuse
+// les requêtes non authentifiées. C'est une réduction de surface
+// d'exposition, pas un mécanisme de sécurité.
+//
+// Pour activer l'admin sur un déploiement : définir VITE_ENABLE_ADMIN=true
+// dans les variables d'environnement, et protéger l'accès en amont
+// (mot de passe d'hébergement, préversion privée, ou réseau restreint).
+const ADMIN_ENABLED =
+  import.meta.env.VITE_ENABLE_ADMIN === "true" ||
+  import.meta.env.DEV;
+
+// L'import dynamique est placé DANS la branche conditionnelle, et non
+// à la racine du module. Vite remplace `import.meta.env.*` par une
+// littérale à la compilation : quand l'admin est désactivé, la branche
+// devient du code mort et Rollup supprime l'`import()` — le chunk
+// n'est alors même pas généré. Déclaré au niveau du module, il aurait
+// été émis quoi qu'il arrive.
+const AdminRoutes = ADMIN_ENABLED
+  ? lazy(() => import("./AdminRoutes"))
+  : null;
+
+const AdminFallback = () => (
+  <p
+    style={{
+      padding: "80px 20px",
+      textAlign: "center",
+      color: "#6a736e",
+    }}
+    role="status"
+  >
+    Chargement de l&apos;espace d&apos;administration…
+  </p>
+);
 
 const AppRoutes = () => {
   return (
@@ -54,6 +98,11 @@ const AppRoutes = () => {
       />
 
       <Route
+        path="/communaute"
+        element={<Communaute />}
+      />
+
+      <Route
         path="/contact"
         element={<Contact />}
       />
@@ -72,6 +121,17 @@ const AppRoutes = () => {
         path="/politique-confidentialite"
         element={<PrivacyPolicy />}
       />
+
+      {ADMIN_ENABLED && (
+        <Route
+          path="/admin/*"
+          element={
+            <Suspense fallback={<AdminFallback />}>
+              <AdminRoutes />
+            </Suspense>
+          }
+        />
+      )}
 
       <Route
         path="*"

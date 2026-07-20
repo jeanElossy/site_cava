@@ -1,0 +1,146 @@
+@use "../../../styles/variables" as *;
+
+.admin-modal {
+  position: fixed;
+  inset: 0;
+
+  z-index: 1200;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+
+  padding: 40px 20px;
+
+  overflow-y: auto;
+
+  &__backdrop {
+    position: fixed;
+    inset: 0;
+
+    background: rgba(8, 30, 22, 0.55);
+
+    backdrop-filter: blur(2px);
+  }
+
+  &__dialog {
+    position: relative;
+    z-index: 1;
+
+    width: 100%;
+    max-width: 640px;
+
+    border-radius: 16px;
+
+    background: #fff;
+
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.28);
+
+    animation: adminModalIn 0.22s ease-out;
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+
+    padding: 24px 26px;
+
+    border-bottom: 1px solid #e8ebe9;
+
+    h2 {
+      margin: 0;
+
+      font-size: 1.2rem;
+      font-weight: 700;
+
+      color: $primary-dark;
+    }
+
+    p {
+      margin: 6px 0 0;
+
+      color: #7b847f;
+
+      font-size: 0.87rem;
+      line-height: 1.55;
+    }
+  }
+
+  &__close {
+    flex-shrink: 0;
+
+    width: 36px;
+    height: 36px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #e0e5e2;
+    border-radius: 9px;
+
+    background: #fff;
+
+    color: #6a736e;
+
+    cursor: pointer;
+
+    transition: $transition;
+
+    &:hover {
+      border-color: #c9d0cc;
+
+      background: #f4f6f5;
+
+      color: $primary-dark;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
+    }
+  }
+
+  &__body {
+    padding: 26px;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0;
+
+    &__dialog {
+      max-width: none;
+      min-height: 100%;
+
+      border-radius: 0;
+    }
+
+    &__body {
+      padding: 20px;
+    }
+
+    &__header {
+      padding: 20px;
+    }
+  }
+}
+
+@keyframes adminModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-modal__dialog {
+    animation: none;
+  }
+}

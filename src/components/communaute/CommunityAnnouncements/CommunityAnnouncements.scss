@@ -1,0 +1,309 @@
+@use "../../../styles/variables" as *;
+
+.community-news {
+  padding: 100px 0;
+
+  background: #fff;
+
+  &__container {
+    max-width: 1400px;
+
+    margin: 0 auto;
+    padding: 0 60px;
+  }
+
+  &__header {
+    max-width: 680px;
+
+    margin: 0 auto 50px;
+
+    text-align: center;
+  }
+
+  &__eyebrow {
+    display: inline-block;
+
+    padding: 7px 16px;
+
+    border-radius: 50px;
+
+    background: rgba(13, 91, 62, 0.08);
+
+    color: $primary;
+
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    margin: 18px 0 0;
+
+    font-size: 2.4rem;
+    font-weight: 700;
+
+    color: $primary-dark;
+  }
+
+  &__line {
+    width: 60px;
+    height: 4px;
+
+    margin: 20px auto 24px;
+
+    border-radius: 50px;
+
+    background: $secondary;
+  }
+
+  &__header p {
+    margin: 0;
+
+    color: #5b6560;
+
+    font-size: 1.05rem;
+    line-height: 1.8;
+  }
+
+  &__grid {
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  &__card {
+    display: flex;
+    flex-direction: column;
+
+    padding: 28px;
+
+    border: 1px solid $border-color;
+    border-radius: 22px;
+
+    background: #fff;
+
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.05);
+
+    transition: $transition;
+
+    &:hover {
+      transform: translateY(-5px);
+
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.09);
+    }
+
+    &--pinned {
+      border-color: rgba(13, 91, 62, 0.35);
+
+      background: linear-gradient(
+        180deg,
+        rgba(13, 91, 62, 0.05),
+        #fff 45%
+      );
+    }
+
+    h3 {
+      margin: 0 0 10px;
+
+      font-size: 1.15rem;
+      font-weight: 700;
+      line-height: 1.4;
+
+      color: $primary-dark;
+    }
+
+  }
+
+  &__text {
+    margin: 0 0 14px;
+
+    color: #6a736e;
+
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  &__card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    margin-bottom: 14px;
+  }
+
+  &__tag {
+    padding: 5px 12px;
+
+    border-radius: 50px;
+
+    background: rgba(13, 91, 62, 0.1);
+
+    color: $primary;
+
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  &__pin {
+    display: inline-flex;
+
+    color: $secondary-dark;
+
+    font-size: 0.9rem;
+  }
+
+  &__date {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    margin: auto 0 0;
+
+    padding-top: 14px;
+
+    border-top: 1px solid $border-color;
+
+    color: #8a938e;
+
+    font-size: 0.85rem;
+  }
+
+  &__skeleton {
+    height: 210px;
+
+    border-radius: 22px;
+
+    background: linear-gradient(
+      90deg,
+      #f1f3f2 25%,
+      #e6e9e8 37%,
+      #f1f3f2 63%
+    );
+    background-size: 400% 100%;
+
+    animation: communityNewsShimmer 1.4s ease infinite;
+  }
+
+  &__state {
+    max-width: 560px;
+
+    margin: 0 auto;
+    padding: 44px 30px;
+
+    border: 1px dashed $border-color;
+    border-radius: 22px;
+
+    background: $bg-light;
+
+    text-align: center;
+
+    svg {
+      margin-bottom: 14px;
+
+      color: $primary;
+
+      font-size: 1.8rem;
+    }
+
+    p {
+      margin: 0;
+
+      color: #6a736e;
+
+      font-size: 0.98rem;
+      line-height: 1.7;
+    }
+
+    button {
+      margin-top: 18px;
+      padding: 11px 24px;
+
+      border: 0;
+      border-radius: 50px;
+
+      background: $primary;
+
+      color: #fff;
+
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+
+      cursor: pointer;
+
+      transition: $transition;
+
+      &:hover {
+        background: $primary-dark;
+      }
+
+      &:focus-visible {
+        outline: 2px solid $primary-dark;
+        outline-offset: 3px;
+      }
+    }
+
+    &--error {
+      border-color: rgba(185, 28, 28, 0.35);
+
+      background: rgba(185, 28, 28, 0.05);
+
+      svg {
+        color: #b91c1c;
+      }
+    }
+  }
+
+  @media (max-width: 1200px) {
+    &__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 992px) {
+    padding: 80px 0;
+
+    &__container {
+      padding: 0 40px;
+    }
+
+    h2 {
+      font-size: 2rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 60px 0;
+
+    &__container {
+      padding: 0 20px;
+    }
+
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+
+    h2 {
+      font-size: 1.7rem;
+    }
+  }
+}
+
+@keyframes communityNewsShimmer {
+  from {
+    background-position: 100% 50%;
+  }
+
+  to {
+    background-position: 0 50%;
+  }
+}

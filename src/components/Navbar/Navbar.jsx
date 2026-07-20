@@ -9,6 +9,7 @@ import {
   Church,
   Calendar,
   PlayCircle,
+  Users,
   Phone
 } from "lucide-react";
 
@@ -70,6 +71,10 @@ const Navbar = () => {
             Médias
           </NavLink>
 
+          <NavLink to="/communaute">
+            Communauté
+          </NavLink>
+
           <NavLink to="/contact">
             Contact
           </NavLink>
@@ -129,6 +134,11 @@ const Navbar = () => {
             <NavLink to="/media" onClick={closeMenu}>
               <PlayCircle size={20} />
               <span>Médias</span>
+            </NavLink>
+
+            <NavLink to="/communaute" onClick={closeMenu}>
+              <Users size={20} />
+              <span>Communauté</span>
             </NavLink>
 
             <NavLink to="/contact" onClick={closeMenu}>

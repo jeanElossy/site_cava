@@ -2,186 +2,67 @@
 
 ## Objectif
 
-Ce document enregistre les décisions importantes prises au cours du développement.
+Ce document est le **journal des décisions validées** du projet. Il existe pour une seule raison : garder une trace des choix déjà tranchés, afin que Claude (ou un nouveau développeur) ne les remette pas en question sans raison.
 
-Avant de proposer une modification importante, Claude doit consulter ce document afin d'éviter de remettre en question des choix déjà validés.
+Avant de proposer un changement qui touche un choix déjà consigné ici, Claude doit lire ce document et respecter la décision existante.
 
----
-
-# Principe
-
-Une décision validée est considérée comme une règle du projet.
-
-Si une meilleure solution est proposée, Claude doit :
-
-- expliquer pourquoi
-- présenter les avantages
-- présenter les inconvénients
-- demander une validation
-
-Ne jamais modifier une décision importante sans confirmation.
+Ce fichier ne redéfinit ni la stack ni l'architecture en détail (voir `CLAUDE.md`) ni les standards de code (voir les skills du projet). Il ne contient **que** les décisions et leur justification — pas les règles générales, qui vivent ailleurs.
 
 ---
 
-# Stack
+## Principe
 
-Frontend Web
+Une décision consignée ici est une règle du projet.
 
-- React
-- JavaScript (JSX)
-- Vite
+Si Claude pense qu'une meilleure solution existe, il ne modifie jamais la décision de lui-même. Il doit :
 
-Frontend Mobile
+1. expliquer pourquoi la nouvelle approche serait meilleure,
+2. présenter avantages et inconvénients,
+3. présenter l'impact sur l'existant,
+4. demander une validation explicite.
 
-- React Native
-- Expo
-- JavaScript (JSX)
-
-Backend
-
-- Node.js
-- Express
-
-Base de données
-
-- MongoDB
-- Mongoose
+Ce n'est qu'après validation que la décision est mise à jour ici (l'ancienne étant conservée dans l'historique, jamais effacée — l'historique est utile).
 
 ---
 
-# Architecture
+## Comment ajouter une décision
 
-Le projet suit une architecture modulaire.
+Chaque décision importante prise en cours de projet est ajoutée dans l'historique ci-dessous, au format :
 
-Frontend
+```markdown
+## AAAA-MM-JJ — Titre court de la décision
 
-Pages
+**Décision :** ce qui a été décidé.
 
-↓
+**Raison :** pourquoi ce choix plutôt qu'un autre.
 
-Components
+**Alternatives écartées :** ce qui a été envisagé et pourquoi ça n'a pas été retenu.
 
-↓
+**Impact :** ce que cette décision implique pour la suite (ce que les futures modifications doivent respecter).
+```
 
-Services
-
-↓
-
-API
-
-Backend
-
-Routes
-
-↓
-
-Controllers
-
-↓
-
-Services
-
-↓
-
-Models
-
-↓
-
-MongoDB
+Le champ « Alternatives écartées » est le plus utile à long terme : il évite de reproposer une option déjà rejetée et d'en rediscuter à chaque fois.
 
 ---
 
-# Conventions
+## Historique des décisions
 
-Toujours :
+> Ajouter les nouvelles décisions en haut de cette section (la plus récente en premier).
 
-- utiliser JavaScript
-- utiliser JSX
-- créer des composants réutilisables
-- respecter les dossiers existants
-- éviter la duplication
+### Exemple de format (à remplacer par les vraies décisions)
 
----
+## 2026-07-15 — Navigation web via React Router
 
-# Dépendances
+**Décision :** utiliser React Router pour la navigation du frontend web.
 
-Avant d'ajouter une nouvelle dépendance :
+**Raison :** architecture jugée la plus adaptée au projet et cohérente avec la stack React + Vite.
 
-- vérifier si une solution existe déjà dans le projet
-- expliquer pourquoi elle est nécessaire
-- demander une validation
+**Alternatives écartées :** (à compléter — ex: routing maison, autre librairie, et pourquoi).
 
----
-
-# Interface utilisateur
-
-Toujours respecter :
-
-- l'identité graphique du projet
-- les composants existants
-- les couleurs officielles
-- les espacements
-- les bonnes pratiques UX
-
----
-
-# Sécurité
-
-Toujours :
-
-- valider les données
-- protéger les routes privées
-- utiliser les variables d'environnement
-- protéger les secrets
-
----
-
-# Performance
-
-Toujours rechercher :
-
-- composants inutiles
-- imports inutiles
-- appels API inutiles
-- re-render inutiles
-- calculs coûteux
-
----
-
-# Évolutions futures
-
-Avant de proposer une évolution importante :
-
-- vérifier qu'elle respecte l'architecture actuelle
-- vérifier qu'elle reste compatible avec les fonctionnalités existantes
-- expliquer les impacts
-
----
-
-# Historique des décisions
-
-Ajouter ici les décisions importantes au fur et à mesure du projet.
-
-Exemple :
-
-## 2026-07-15
-
-Décision :
-
-Utilisation de React Router pour la navigation.
-
-Raison :
-
-Architecture plus adaptée au projet.
-
-Impact :
-
-Toutes les nouvelles pages devront utiliser React Router.
+**Impact :** toutes les nouvelles pages doivent utiliser React Router ; ne pas introduire de second mécanisme de navigation sans nouvelle décision.
 
 ---
 
 ## Notes
 
-Ce document est vivant.
-
-Chaque décision importante doit être ajoutée afin que toute l'équipe conserve le même contexte.
+Ce document est vivant : chaque décision structurante doit y être ajoutée au moment où elle est prise, tant qu'elle est fraîche, pour que toute l'équipe (et Claude) partage le même contexte. Une décision non écrite ici sera tôt ou tard rediscutée inutilement.

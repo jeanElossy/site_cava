@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { inbox } from "../services/api";
+
 import "./ContactForm.scss";
 
 import {
@@ -25,6 +27,8 @@ const ContactForm = () => {
   const [values, setValues] = useState(EMPTY_FORM);
   const [error, setError] = useState("");
   const [isSent, setIsSent] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [sentName, setSentName] = useState("");
 
   const handleChange = (event) => {
     const { name, type, value, checked } = event.target;
@@ -39,10 +43,17 @@ const ContactForm = () => {
     }
   };
 
-  // Le site est statique : il n'y a aucun backend ni service d'envoi.
-  // On confirme donc la saisie localement, sans simuler d'appel réseau.
-  const handleSubmit = (event) => {
+  // Le message part vers `inbox.submit()`, la couture unique avec les
+  // données (`services/api.js`). Aujourd'hui il est donc enregistré dans
+  // le navigateur et consultable depuis /admin/messages ; il n'est PAS
+  // envoyé par e-mail tant que le backend n'existe pas. La confirmation
+  // affichée ci-dessous le dit explicitement — ne pas l'adoucir.
+  const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (isSending) {
+      return;
+    }
 
     if (!values.consent) {
       setError(
@@ -53,13 +64,33 @@ const ContactForm = () => {
     }
 
     setError("");
-    setIsSent(true);
+    setIsSending(true);
+
+    try {
+      await inbox.submit({
+        name: values.name.trim(),
+        email: values.email.trim(),
+        subject: values.subject.trim(),
+        message: values.message.trim(),
+      });
+
+      setSentName(values.name.trim());
+      setIsSent(true);
+    } catch (caught) {
+      setError(
+        caught?.message ??
+          "Votre message n'a pas pu être enregistré. Merci de réessayer."
+      );
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleReset = () => {
     setValues(EMPTY_FORM);
     setError("");
     setIsSent(false);
+    setSentName("");
   };
 
   return (
@@ -85,12 +116,18 @@ const ContactForm = () => {
             >
               <FaCheckCircle aria-hidden="true" />
 
-              <h3>Merci {values.name.trim() || "à vous"} !</h3>
+              <h3>Merci {sentName || "à vous"} !</h3>
 
               <p>
-                Votre message a bien été enregistré. Notre équipe vous
-                répondra dans les plus brefs délais. Pour une demande
-                urgente, vous pouvez nous appeler directement.
+                Votre message a bien été enregistré et sera relevé par
+                notre équipe.
+              </p>
+
+              <p className="contact-form__success-note">
+                À noter : le service d&apos;envoi automatique n&apos;est pas
+                encore en place. Votre message est conservé dans ce
+                navigateur en attendant d&apos;être relevé. Pour une demande
+                urgente, appelez-nous directement au +225 07 88 06 15 84.
               </p>
 
               <button type="button" onClick={handleReset}>
@@ -202,9 +239,18 @@ const ContactForm = () => {
                   </p>
                 )}
 
-                <button type="submit">
-                  Envoyer le message
-                  <span aria-hidden="true">➜</span>
+                <button
+                  type="submit"
+                  disabled={isSending}
+                  aria-busy={isSending}
+                >
+                  {isSending
+                    ? "Enregistrement…"
+                    : "Envoyer le message"}
+
+                  {!isSending && (
+                    <span aria-hidden="true">➜</span>
+                  )}
                 </button>
               </form>
 
