@@ -2,7 +2,7 @@
   background: #f7f7f7;
 }
 
-.media-hero {
+.media-page .media-hero {
   height: 580px;
 
   background-size: cover;
@@ -50,7 +50,7 @@
 }
 
 
-.media-grid {
+.media-page .media-grid {
   display: grid;
 
   grid-template-columns: repeat(4, 1fr);
@@ -60,7 +60,7 @@
 
 
 
-.media-card {
+.media-page .media-card {
   background: white;
   border-radius: 20px;
   overflow: hidden;
@@ -81,7 +81,7 @@
         grid-template-columns:1fr;
     }
 
-  .media-hero{
+  .media-page .media-hero{
     height:450px;
 
     h1{
@@ -89,7 +89,7 @@
     }
   }
 
-  .media-filters {
+  .media-page .media-filters {
     overflow-x: auto;
 
     padding: 0 20px;
@@ -99,11 +99,11 @@
     }
   }
 
-  .media-section {
+  .media-page .media-section {
     padding: 0 20px;
   }
 
-  .media-grid {
+  .media-page .media-grid {
     grid-template-columns: 1fr;
   }
 
@@ -119,7 +119,7 @@
     }
   }
 
-  .media-hero {
+  .media-page .media-hero {
     height: 500px;
 
     .container {

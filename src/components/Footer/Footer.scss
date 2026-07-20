@@ -150,6 +150,23 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* Confirmation affichée à la place du champ après inscription. */
+.newsletter__success {
+  padding: 16px;
+
+  border-radius: 12px;
+
+  border-left: 3px solid #ffd22e;
+
+  background: rgba(255, 255, 255, 0.08);
+
+  color: #fff;
+
+  font-weight: 600;
+
+  line-height: 1.5;
+}
+
 .newsletter input {
   flex: 1;
 

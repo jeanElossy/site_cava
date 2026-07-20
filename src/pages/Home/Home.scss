@@ -1,8 +1,10 @@
-.home-grid {
-  max-width: 1400px;
-  margin: 50px auto;
+@use "../../styles/mixins" as *;
 
-  padding: 0 60px;
+// Rangée « événements / verset / dernier message » de l'accueil.
+.home-grid {
+  @include container;
+
+  margin: 50px auto;
 
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -10,29 +12,51 @@
   gap: 20px;
 
   align-items: stretch;
+
+  > div {
+    height: 100%;
+  }
+
+  // Les trois cartes sont calées sur 400px dans leur propre SCSS. On les force
+  // à remplir la rangée pour qu'elles s'alignent en bas, comme sur la maquette.
+  .events-card,
+  .verse-card,
+  .message-card {
+    height: 100%;
+
+    transition: all .35s ease;
+
+    &:hover {
+      transform: translateY(-8px);
+
+      box-shadow: 0 25px 45px rgba(0, 0, 0, .15);
+    }
+  }
 }
 
-.home-grid > div {
-  height: 100%;
+/* ---- Tablette : 2 colonnes, la 3e carte passe sur toute la largeur ----
+   Sans ce palier, les trois cartes restaient sur une seule ligne jusqu'à
+   1100px et devenaient beaucoup trop étroites avant de basculer d'un coup
+   en pleine largeur. */
+@media (max-width: 1200px) {
+  .home-grid {
+    grid-template-columns: repeat(2, 1fr);
+
+    > div:last-child {
+      grid-column: 1 / -1;
+    }
+  }
 }
 
-.home-grid .events-card,
-.home-grid .verse-card,
-.home-grid .message-card {
-  transition: all .35s ease;
-}
-
-.home-grid .events-card:hover,
-.home-grid .verse-card:hover,
-.home-grid .message-card:hover {
-  transform: translateY(-8px);
-
-  box-shadow: 0 25px 45px rgba(0, 0, 0, .15);
-}
-
-@media (max-width: 1100px) {
+/* ---- Mobile / petite tablette : une seule colonne ---- */
+@media (max-width: 768px) {
   .home-grid {
     grid-template-columns: 1fr;
-    padding: 0 20px;
+
+    margin: 30px auto;
+
+    > div:last-child {
+      grid-column: auto;
+    }
   }
 }

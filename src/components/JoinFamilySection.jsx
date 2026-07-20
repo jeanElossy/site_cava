@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import "./JoinFamilySection.scss";
 
 import familyImage from "../assets/images/family.jpg";
@@ -19,10 +21,13 @@ const JoinFamilySection = () => {
             Nous serions honorés de vous accueillir parmi nous.
           </p>
 
-          <button className="join-family__button">
+          <Link
+            to="/contact"
+            className="join-family__button"
+          >
             Nous contacter
-            <HiArrowRight />
-          </button>
+            <HiArrowRight aria-hidden="true" />
+          </Link>
         </div>
 
         <div className="join-family__image">

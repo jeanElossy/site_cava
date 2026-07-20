@@ -47,7 +47,11 @@
   }
 }
 
-.value-card {
+// Imbriqué sous `.values-section` : `.value-card` est aussi utilisé par la
+// section Valeurs de l'accueil (`Values/Values.scss`). Tous les SCSS du projet
+// étant fusionnés en une feuille unique, ces règles débordaient sur l'accueil
+// — `min-height: 52px` sur le h3 y ajoutait notamment de la hauteur.
+.values-section .value-card {
   padding: 28px;
 
   background: #fff;
@@ -152,7 +156,7 @@
     }
   }
 
-  .value-card {
+  .values-section .value-card {
     h3 {
       min-height: auto;
     }

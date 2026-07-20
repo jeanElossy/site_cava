@@ -1,0 +1,257 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+// Tout est imbriqué sous `.events-sidebar` : les noms de blocs
+// (`calendar`, `newsletter`, `proposal`) sont génériques et ne doivent pas
+// exister à la racine de la feuille globale.
+.events-sidebar {
+  display: flex;
+  flex-direction: column;
+
+  gap: 24px;
+
+  &__proposal {
+    background: white;
+
+    border: 1px solid #ececec;
+    border-radius: 22px;
+
+    padding: 28px;
+  }
+
+  /* ---- Encart newsletter ---- */
+
+  &__newsletter {
+    position: relative;
+
+    overflow: hidden;
+
+    border-radius: 22px;
+
+    background: linear-gradient(
+      135deg,
+      #014321,
+      #066232
+    );
+
+    color: white;
+
+    padding: 26px 0 26px 26px;
+
+    min-height: 300px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    img {
+      width: 230px;
+
+      margin-right: -10px;
+      margin-bottom: -30px;
+
+      align-self: flex-end;
+
+      display: block;
+    }
+  }
+
+  &__newsletter-content {
+    max-width: 260px;
+
+    h2 {
+      margin: 0;
+
+      font-size: 2.1rem;
+      font-weight: 700;
+
+      line-height: 1.15;
+    }
+
+    span {
+      display: block;
+
+      width: 60px;
+      height: 4px;
+
+      margin: 18px 0;
+
+      border-radius: 999px;
+
+      background: #f4c61d;
+    }
+
+    p {
+      font-size: 1rem;
+      line-height: 1.75;
+    }
+
+    // Lien vers /contact présenté comme un bouton.
+    a {
+      margin-top: 12px;
+
+      border: none;
+      border-radius: 12px;
+
+      padding: 14px 24px;
+
+      background: #f4c61d;
+
+      color: #111;
+
+      font-weight: 700;
+
+      text-decoration: none;
+
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+
+      cursor: pointer;
+
+      transition: 0.3s;
+
+      &:hover {
+        transform: translateY(-2px);
+      }
+
+      &:focus-visible {
+        outline: 3px solid #fff;
+
+        outline-offset: 3px;
+      }
+    }
+  }
+
+  /* ---- Encart « Un événement à proposer ? » ---- */
+
+  &__proposal {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+
+    h2 {
+      margin: 0 0 10px;
+
+      color: #111;
+
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 0 0 15px;
+
+      color: #666;
+
+      line-height: 1.7;
+    }
+
+    // Lien vers /contact présenté comme un bouton.
+    a {
+      height: 52px;
+
+      padding: 0 24px;
+
+      border-radius: 12px;
+      border: 2px solid #014321;
+
+      background: white;
+
+      color: #014321;
+      font-weight: 700;
+
+      text-decoration: none;
+
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+
+      cursor: pointer;
+
+      transition: 0.3s;
+
+      &:hover {
+        background: #014321;
+        color: white;
+      }
+
+      &:focus-visible {
+        outline: 3px solid #f4c61d;
+
+        outline-offset: 3px;
+      }
+    }
+  }
+
+  &__proposal-icon {
+    font-size: 3.4rem;
+    color: #f4c61d;
+
+    flex-shrink: 0;
+
+    display: flex;
+  }
+}
+
+/* ---- Tablette large ---- */
+@media (max-width: 1200px) {
+  .events-sidebar__newsletter img {
+    width: 200px;
+  }
+}
+
+/* ---- Tablette : la colonne passe sous la liste ---- */
+@media (max-width: 992px) {
+  .events-sidebar {
+    gap: 22px;
+  }
+}
+
+/* ---- Mobile ---- */
+@media (max-width: 768px) {
+  .events-sidebar {
+    &__newsletter {
+      flex-direction: column;
+      align-items: flex-start;
+
+      padding: 25px;
+
+      min-height: auto;
+
+      img {
+        width: 260px;
+
+        margin: 20px auto -25px;
+        margin-right: -25px;
+
+        align-self: center;
+      }
+    }
+
+    &__newsletter-content {
+      max-width: 100%;
+
+      h2 {
+        font-size: 1.7rem;
+      }
+
+      a {
+        width: 100%;
+
+        justify-content: center;
+      }
+    }
+
+    &__proposal {
+      flex-direction: column;
+      text-align: center;
+
+      a {
+        width: 100%;
+
+        justify-content: center;
+      }
+    }
+  }
+}

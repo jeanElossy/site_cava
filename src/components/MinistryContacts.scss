@@ -34,7 +34,9 @@
   }
 }
 
-.ministry-card {
+// Imbriqué : `.ministry-card` est aussi la carte de la grille de la page
+// Ministères (`MinistriesGrid.scss`).
+.ministry-contacts .ministry-card {
   background: #fff;
 
   border: 1px solid #e8e8e8;
@@ -173,7 +175,9 @@
     }
   }
 
-  .ministry-card {
+  // Imbriqué : `.ministry-card` est aussi la carte de la grille de la page
+// Ministères (`MinistriesGrid.scss`).
+.ministry-contacts .ministry-card {
     min-height: auto;
 
     &__icon {

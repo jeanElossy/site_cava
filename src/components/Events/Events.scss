@@ -1,3 +1,15 @@
+// IMPORTANT — tout est imbriqué sous `.events-card`.
+//
+// Les classes `.event`, `.event-date`, `.event-content` et `.event-description`
+// sont aussi déclarées, en global, par d'autres composants :
+//   - `UpcomingEvents.scss`            → `.event-date`, `.event-content`
+//   - `EventDetails/EventDescription`  → `.event-description`
+//
+// Tous les SCSS du projet étant fusionnés en une feuille unique, ces règles
+// débordaient sur l'accueil. `.event-description` y injectait notamment
+// `padding: 80px 0 40px`, soit ~120px de vide par ligne d'événement.
+// Ne jamais redéclarer ces sélecteurs à la racine de ce fichier.
+
 .events-card {
   background: linear-gradient(
     135deg,
@@ -8,9 +20,9 @@
 
   border-radius: 20px;
 
-  padding: 24px;
+  padding: 18px;
 
-  min-height: 520px;
+  min-height: 400px;
 
   display: flex;
   flex-direction: column;
@@ -18,190 +30,254 @@
   box-shadow:
     0 15px 30px
     rgba(0, 0, 0, .12);
-}
 
-.events-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  .events-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 
-  margin-bottom: 18px;
+    margin-bottom: 14px;
 
-  color: white;
+    color: white;
 
-  svg {
-    color: #f4c41d;
+    svg {
+      color: #f4c41d;
+    }
+
+    h3 {
+      margin: 0;
+
+      font-size: .95rem;
+      font-weight: 700;
+    }
   }
 
-  h3 {
-    margin: 0;
+  .events-list {
+    display: flex;
+    flex-direction: column;
 
-    font-size: 1rem;
-    font-weight: 700;
-  }
-}
-
-.events-list {
-  display: flex;
-  flex-direction: column;
-
-  gap: 12px;
-}
-
-.event {
-  background: white;
-
-  border-radius: 14px;
-
-  padding: 14px;
-
-  display: flex;
-  align-items: flex-start;
-
-  gap: 12px;
-
-  cursor: pointer;
-
-  transition: all .3s ease;
-
-  &:hover {
-    transform: translateX(5px);
-
-    box-shadow:
-      0 8px 20px
-      rgba(0, 0, 0, .08);
+    gap: 10px;
   }
 
-  svg:last-child {
-    color: #1f2937;
+  .event {
+    background: white;
+
+    border-radius: 14px;
+
+    padding: 10px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    text-decoration: none;
+
+    color: inherit;
+
+    transition: all .3s ease;
+
+    &:hover {
+      transform: translateX(5px);
+
+      box-shadow:
+        0 8px 20px
+        rgba(0, 0, 0, .08);
+    }
+
+    &:focus-visible {
+      outline: 3px solid #f4c41d;
+
+      outline-offset: 3px;
+    }
+
+    > svg:last-child {
+      color: #1f2937;
+
+      flex-shrink: 0;
+    }
+  }
+
+  .event-date {
+    width: 46px;
+    height: 50px;
+
+    border-radius: 10px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
 
     flex-shrink: 0;
 
-    margin-top: 6px;
-  }
-}
+    // `color: inherit` est indispensable : `UpcomingEvents.scss` déclare en
+    // global `.event-date span { color: #555 }`, plus spécifique que la
+    // couleur héritée de `.green` / `.yellow`.
+    span {
+      font-size: 17px;
+      font-weight: 700;
 
-.event-date {
-  width: 56px;
-  height: 64px;
+      line-height: 1;
 
-  border-radius: 10px;
+      color: inherit;
+    }
 
-  display: flex;
-  flex-direction: column;
+    small {
+      font-size: 9px;
+      font-weight: 700;
 
-  align-items: center;
-  justify-content: center;
+      line-height: 1;
 
-  flex-shrink: 0;
+      margin-top: 3px;
 
-  span {
-    font-size: 18px;
+      color: inherit;
+    }
 
-    font-weight: 700;
+    &.green {
+      background: #0d5b3e;
 
-    line-height: 1;
-  }
+      color: white;
+    }
 
-  small {
-    font-size: 10px;
+    &.yellow {
+      background: #f4c41d;
 
-    font-weight: 700;
-
-    line-height: 1;
-
-    margin-top: 4px;
-  }
-
-  &.green {
-    background: #0d5b3e;
-
-    color: white;
+      color: #1f2937;
+    }
   }
 
-  &.yellow {
-    background: #f4c41d;
+  .event-content {
+    flex: 1;
 
-    color: #1f2937;
+    min-width: 0;
+
+    h4 {
+      margin: 0 0 2px;
+
+      color: #1f2937;
+
+      font-size: 13px;
+      font-weight: 700;
+
+      line-height: 1.25;
+    }
+
+    p {
+      margin: 0 0 6px;
+
+      color: #6b7280;
+
+      font-size: 11px;
+
+      line-height: 1.3;
+    }
   }
-}
 
-.event-content {
-  flex: 1;
+  // Visuel de l'événement, avec sa description en surimpression.
+  .event-media {
+    position: relative;
 
-  h4 {
-    margin: 0 0 4px;
+    height: 50px;
 
-    color: #1f2937;
+    border-radius: 10px;
+
+    overflow: hidden;
+
+    img {
+      position: absolute;
+      inset: 0;
+
+      width: 100%;
+      height: 100%;
+
+      object-fit: cover;
+    }
+
+    // Dégradé sombre : le texte reste lisible quelle que soit l'image.
+    &::after {
+      content: "";
+
+      position: absolute;
+      inset: 0;
+
+      background: linear-gradient(
+        90deg,
+        rgba(4, 32, 22, .88) 0%,
+        rgba(4, 32, 22, .70) 55%,
+        rgba(4, 32, 22, .35) 100%
+      );
+    }
+
+    // Deux lignes maximum : garde la ligne d'événement compacte.
+    // `-webkit-box` est requis par `line-clamp`, d'où le centrage vertical
+    // obtenu par le padding plutôt que par flexbox.
+    &__text {
+      position: absolute;
+      inset: 0;
+
+      z-index: 1;
+
+      display: -webkit-box;
+
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+
+      overflow: hidden;
+
+      padding: 12px;
+
+      color: #fff;
+
+      font-size: 11px;
+      font-weight: 600;
+
+      line-height: 1.35;
+
+      text-shadow: 0 1px 3px rgba(0, 0, 0, .5);
+    }
+  }
+
+  .events-link {
+    margin-top: auto;
+
+    padding-top: 14px;
+
+    display: inline-flex;
+    align-items: center;
+
+    gap: 10px;
+
+    color: #f4c41d;
 
     font-size: 14px;
+    font-weight: 600;
 
-    font-weight: 700;
+    text-decoration: none;
 
-    line-height: 1.3;
-  }
+    transition: all .3s ease;
 
-  p {
-    margin: 0 0 6px;
-
-    color: #6b7280;
-
-    font-size: 12px;
-
-    line-height: 1.4;
-  }
-}
-
-.event-description {
-  display: block;
-
-  color: #0d5b3e;
-
-  font-size: 11px;
-
-  font-weight: 600;
-
-  line-height: 1.4;
-}
-
-.events-link {
-  margin-top: auto;
-
-  padding-top: 18px;
-
-  display: inline-flex;
-  align-items: center;
-
-  gap: 10px;
-
-  color: #f4c41d;
-
-  font-size: 15px;
-  font-weight: 600;
-
-  text-decoration: none;
-
-  transition: all .3s ease;
-
-  &:hover {
-    gap: 15px;
+    &:hover {
+      gap: 15px;
+    }
   }
 }
 
 @media (max-width: 768px) {
   .events-card {
     min-height: auto;
-  }
 
-  .event {
-    padding: 12px;
-  }
+    .event {
+      padding: 10px;
+    }
 
-  .event-content h4 {
-    font-size: 13px;
-  }
+    .event-content h4 {
+      font-size: 12px;
+    }
 
-  .event-description {
-    font-size: 10px;
+    .event-media__text {
+      font-size: 10px;
+    }
   }
 }

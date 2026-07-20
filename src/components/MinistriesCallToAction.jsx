@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import "./MinistriesCallToAction.scss";
 
 import { FaUsers } from "react-icons/fa";
@@ -25,10 +27,10 @@ const MinistriesCallToAction = () => {
               et impacter des vies.
             </p>
 
-            <button>
+            <Link to="/contact">
               Je veux m'impliquer
-              <HiArrowRight />
-            </button>
+              <HiArrowRight aria-hidden="true" />
+            </Link>
 
           </div>
 

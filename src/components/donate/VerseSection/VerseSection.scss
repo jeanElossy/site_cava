@@ -17,7 +17,10 @@
   }
 }
 
-.verse-card {
+// Imbriqué : `.verse-card` est aussi la carte Verset de l'accueil
+// (`Verse/Verse.scss`). Les SCSS étant fusionnés en une feuille unique,
+// une déclaration à la racine déborderait sur l'accueil.
+.verse-section .verse-card {
   text-align: center;
 
   padding: 70px 60px;
@@ -143,7 +146,10 @@
 }
 
 @media (max-width: 992px) {
-  .verse-card {
+  // Imbriqué : `.verse-card` est aussi la carte Verset de l'accueil
+// (`Verse/Verse.scss`). Les SCSS étant fusionnés en une feuille unique,
+// une déclaration à la racine déborderait sur l'accueil.
+.verse-section .verse-card {
     padding: 50px 30px;
   }
 }
@@ -153,7 +159,10 @@
     padding: 80px 20px;
   }
 
-  .verse-card {
+  // Imbriqué : `.verse-card` est aussi la carte Verset de l'accueil
+// (`Verse/Verse.scss`). Les SCSS étant fusionnés en une feuille unique,
+// une déclaration à la racine déborderait sur l'accueil.
+.verse-section .verse-card {
     padding: 40px 24px;
 
     border-radius: 24px;

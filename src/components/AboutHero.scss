@@ -46,6 +46,20 @@
     color: #fff;
   }
 
+  // Surtitre de la maquette, au-dessus du titre principal.
+  &__tag {
+    display: block;
+
+    margin-bottom: 14px;
+
+    color: $secondary;
+
+    font-size: .9rem;
+    font-weight: 700;
+
+    letter-spacing: 2px;
+  }
+
   &__subtitle {
     display: inline-block;
 

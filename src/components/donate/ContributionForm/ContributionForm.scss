@@ -148,7 +148,7 @@
    FORM GROUP
 =========================== */
 
-.form-group {
+.contribution-form .form-group {
   margin-bottom: 38px;
 
   opacity: 0;
@@ -227,7 +227,7 @@
    FREQUENCE
 =========================== */
 
-.frequency-grid {
+.contribution-form .frequency-grid {
   display: grid;
 
   grid-template-columns: repeat(2, 1fr);
@@ -278,7 +278,7 @@
    MONTANTS
 =========================== */
 
-.amount-grid {
+.contribution-form .amount-grid {
   display: grid;
 
   grid-template-columns: repeat(5, 1fr);
@@ -335,7 +335,7 @@
    DONATEUR
 =========================== */
 
-.donor-grid {
+.contribution-form .donor-grid {
   display: grid;
 
   grid-template-columns: repeat(2, 1fr);
@@ -343,7 +343,7 @@
   gap: 14px;
 }
 
-.checkbox {
+.contribution-form .checkbox {
   margin-top: 18px;
 
   display: flex !important;
@@ -371,7 +371,7 @@
    PAYMENT PREMIUM
 =========================== */
 
-.payment-grid {
+.contribution-form .payment-grid {
   display: grid;
 
   grid-template-columns: repeat(2, 1fr);
@@ -433,7 +433,7 @@
 
 /* Cercle du logo */
 
-.payment-logo-wrapper {
+.contribution-form .payment-logo-wrapper {
   width: 42px;
   height: 42px;
 
@@ -453,7 +453,7 @@
 
 /* Logo */
 
-.payment-logo {
+.contribution-form .payment-logo {
   width: 24px;
   height: 24px;
 
@@ -462,11 +462,11 @@
   transition: .3s ease;
 }
 
-.payment-grid button:hover .payment-logo {
+.contribution-form .payment-grid button:hover .payment-logo {
   transform: scale(1.08);
 }
 
-.payment-grid button.active .payment-logo-wrapper {
+.contribution-form .payment-grid button.active .payment-logo-wrapper {
   background: rgba(255,255,255,.15);
 }
 
@@ -477,7 +477,7 @@
    SUMMARY CARD PREMIUM
 =========================== */
 
-.summary-card {
+.contribution-form .summary-card {
   position: sticky;
 
   top: 120px;
@@ -538,7 +538,7 @@
   }
 }
 
-.summary-row {
+.contribution-form .summary-row {
   position: relative;
 
   z-index: 2;
@@ -570,7 +570,7 @@
    TOTAL
 =========================== */
 
-.summary-total {
+.contribution-form .summary-total {
   position: relative;
 
   z-index: 2;
@@ -609,7 +609,7 @@
    IMPACT CARD
 =========================== */
 
-.impact-card {
+.contribution-form .impact-card {
   position: relative;
 
   z-index: 2;
@@ -658,7 +658,254 @@
    PAY BUTTON PREMIUM
 =========================== */
 
-.pay-btn {
+/* ---------- Tunnel guidé : progression, étapes, navigation ---------- */
+
+.contribution-form .steps {
+  list-style: none;
+
+  margin: 0 0 30px;
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  &__item {
+    flex: 1;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    color: #9aa3ab;
+
+    font-size: .9rem;
+    font-weight: 600;
+
+    // Trait de liaison entre les étapes.
+    &:not(:last-child)::after {
+      content: "";
+
+      flex: 1;
+
+      height: 2px;
+
+      background: #e5e7eb;
+
+      transition: background .3s ease;
+    }
+
+    &--current {
+      color: #0d5b3e;
+
+      .steps__bullet {
+        background: #0d5b3e;
+
+        color: #fff;
+
+        box-shadow: 0 0 0 4px rgba(13, 91, 62, .15);
+      }
+    }
+
+    &--done {
+      color: #0d5b3e;
+
+      .steps__bullet {
+        background: #f4c41d;
+
+        color: #1f2937;
+      }
+
+      &::after {
+        background: #f4c41d;
+      }
+    }
+  }
+
+  &__bullet {
+    width: 34px;
+    height: 34px;
+
+    border-radius: 50%;
+
+    background: #e5e7eb;
+
+    color: #6b7280;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: .9rem;
+    font-weight: 700;
+
+    flex-shrink: 0;
+
+    transition: all .3s ease;
+  }
+}
+
+.contribution-form .step-panel {
+  animation: stepFade .35s ease;
+}
+
+@keyframes stepFade {
+  from {
+    opacity: 0;
+
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: translateY(0);
+  }
+}
+
+.contribution-form .step-error {
+  margin: 0 0 18px;
+
+  padding: 12px 14px;
+
+  border-left: 4px solid #c0392b;
+
+  border-radius: 8px;
+
+  background: rgba(192, 57, 43, .08);
+
+  color: #c0392b;
+
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.contribution-form .step-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 14px;
+
+  margin-top: 10px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 14px 26px;
+
+    border: none;
+    border-radius: 12px;
+
+    font-size: .95rem;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: all .3s ease;
+
+    &:focus-visible {
+      outline: 3px solid #0d5b3e;
+
+      outline-offset: 3px;
+    }
+  }
+
+  &__back {
+    background: transparent;
+
+    border: 1px solid #d1d5db !important;
+
+    color: #4b5563;
+
+    &:hover {
+      background: #f3f4f6;
+    }
+  }
+
+  // Seul bouton présent à l'étape 1 : il doit rester à droite.
+  &__next {
+    margin-left: auto;
+
+    background: #0d5b3e;
+
+    color: #fff;
+
+    &:hover {
+      transform: translateX(3px);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .contribution-form .steps {
+    &__label {
+      display: none;
+    }
+  }
+}
+
+// Message affiché à la soumission tant qu'aucun prestataire de paiement
+// n'est branché. Volontairement informatif, jamais une fausse confirmation.
+// Ce bloc s'affiche DANS le récapitulatif, qui est sur fond vert foncé :
+// il lui faut son propre fond clair, sinon le texte devient illisible.
+.contribution-form .pay-notice {
+  margin-top: 18px;
+
+  padding: 18px;
+
+  border-left: 4px solid #f4c41d;
+
+  border-radius: 12px;
+
+  background: #fff;
+
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .18);
+
+  p {
+    margin: 0 0 10px;
+
+    color: #1f2937;
+
+    font-size: .9rem;
+
+    line-height: 1.55;
+  }
+
+  strong {
+    color: #0d5b3e;
+  }
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    color: #0d5b3e;
+
+    font-size: .9rem;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    &:hover {
+      gap: 12px;
+    }
+
+    &:focus-visible {
+      outline: 2px solid #0d5b3e;
+
+      outline-offset: 3px;
+    }
+  }
+}
+
+.contribution-form .pay-btn {
   position: relative;
 
   overflow: hidden;
@@ -748,7 +995,7 @@
     }
   }
 
-  .summary-card {
+  .contribution-form .summary-card {
     position: relative;
 
     top: auto;
@@ -761,12 +1008,12 @@
     padding: 70px 25px;
   }
 
-  .amount-grid {
+  .contribution-form .amount-grid {
     grid-template-columns:
       repeat(3, 1fr);
   }
 
-  .donor-grid {
+  .contribution-form .donor-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -786,32 +1033,32 @@
     }
   }
 
-  .frequency-grid,
-  .payment-grid {
+  .contribution-form .frequency-grid,
+  .contribution-form .payment-grid {
     grid-template-columns: 1fr;
   }
 
-  .amount-grid {
+  .contribution-form .amount-grid {
     grid-template-columns:
       repeat(2, 1fr);
   }
 
-  .summary-card {
+  .contribution-form .summary-card {
     padding: 28px;
   }
 
-  .summary-total strong {
+  .contribution-form .summary-total strong {
     font-size: 1.5rem;
   }
 }
 
 @media (max-width: 480px) {
 
-  .amount-grid {
+  .contribution-form .amount-grid {
     grid-template-columns: 1fr;
   }
 
-  .summary-total {
+  .contribution-form .summary-total {
     flex-direction: column;
 
     align-items: flex-start;
@@ -819,11 +1066,11 @@
     gap: 8px;
   }
 
-  .summary-total strong {
+  .contribution-form .summary-total strong {
     font-size: 1.4rem;
   }
 
-  .pay-btn {
+  .contribution-form .pay-btn {
     height: 62px;
 
     font-size: .95rem;

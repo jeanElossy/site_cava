@@ -1,118 +1,122 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+// `.icon` et `.line` sont des noms génériques également utilisés par la
+// section Ministères de la même page : tout est imbriqué sous `.values`
+// pour éviter que les deux composants ne se écrasent mutuellement.
 .values {
-  background: #f8f8f8;
+  background: $bg-light;
   padding: 28px 0;
+
+  .container {
+    @include container;
+
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+
+    gap: 16px;
+  }
+
+  .value-card {
+    background: #ffffff;
+
+    border: 1px solid #ececec;
+
+    border-radius: 18px;
+
+    padding: 22px;
+
+    min-height: 165px;
+
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-5px);
+
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+    }
+
+    h3 {
+      font-size: 16px;
+
+      font-weight: 700;
+
+      color: $text-dark;
+
+      margin-bottom: 8px;
+
+      letter-spacing: 0.2px;
+    }
+
+    p {
+      color: #666;
+
+      font-size: 14px;
+
+      line-height: 1.5;
+    }
+  }
+
+  // Pastille ronde pleine, icône blanche (cf. maquette).
+  .icon {
+    width: 72px;
+    height: 72px;
+
+    border-radius: 50%;
+
+    @include flex-center;
+
+    margin-bottom: 16px;
+
+    flex-shrink: 0;
+
+    svg {
+      width: 34px;
+      height: 34px;
+
+      color: #ffffff;
+      stroke: #ffffff;
+      fill: none;
+
+      display: block;
+    }
+
+    &.green {
+      background: $primary;
+    }
+
+    &.yellow {
+      background: #f4c41d;
+    }
+  }
+
+  .line {
+    width: 32px;
+    height: 3px;
+
+    margin-top: 14px;
+
+    border-radius: 10px;
+
+    &.green {
+      background: $primary;
+    }
+
+    &.yellow {
+      background: #f4c41d;
+    }
+  }
 }
 
-.values .container {
-  max-width: 1400px;
-  margin: 0 auto;
-
-  padding: 0 60px;
-
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-
-  gap: 16px;
-}
-
-.value-card {
-  background: #ffffff;
-
-  border: 1px solid #ececec;
-
-  border-radius: 18px;
-
-  padding: 22px;
-
-  min-height: 165px;
-
-  transition: all 0.3s ease;
-}
-
-.value-card:hover {
-  transform: translateY(-5px);
-
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
-}
-
-.icon {
-  width: 72px;
-  height: 72px;
-
-  border-radius: 50%;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  margin-bottom: 16px;
-
-  flex-shrink: 0;
-}
-
-.icon svg {
-  width: 34px !important;
-  height: 34px !important;
-
-  color: #ffffff !important;
-  stroke: #ffffff !important;
-  fill: none;
-
-  display: block;
-}
-
-.icon.green {
-  background: #0d5b3e;
-}
-
-.icon.yellow {
-  background: #f4c41d;
-}
-
-.value-card h3 {
-  font-size: 16px;
-
-  font-weight: 700;
-
-  color: #1f2937;
-
-  margin-bottom: 8px;
-
-  letter-spacing: 0.2px;
-}
-
-.value-card p {
-  color: #666;
-
-  font-size: 14px;
-
-  line-height: 1.5;
-}
-
-.line {
-  width: 32px;
-  height: 3px;
-
-  margin-top: 14px;
-
-  border-radius: 10px;
-}
-
-.line.green {
-  background: #0d5b3e;
-}
-
-.line.yellow {
-  background: #f4c41d;
-}
-
-@media (max-width: 1100px) {
+/* ---- Tablette large : 4 → 2 colonnes ---- */
+@media (max-width: 1200px) {
   .values .container {
     grid-template-columns: repeat(2, 1fr);
     gap: 18px;
   }
 }
 
+/* ---- Mobile : 1 colonne ---- */
 @media (max-width: 768px) {
   .values {
     padding: 20px 0;
@@ -120,11 +124,9 @@
 
   .values .container {
     grid-template-columns: 1fr;
-
-    padding: 0 20px;
   }
 
-  .value-card {
+  .values .value-card {
     min-height: auto;
   }
 }

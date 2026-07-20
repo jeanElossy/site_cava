@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import heroImg from "../../assets/images/media-hero.jpg";
 
 import "./MediaHero.scss";
@@ -14,6 +16,17 @@ const MediaHero = () => {
 
       <div className="media-hero__container">
         <div className="media-hero__content">
+
+          <nav
+            className="media-hero__breadcrumb"
+            aria-label="Fil d'Ariane"
+          >
+            <Link to="/">Accueil</Link>
+
+            <span aria-hidden="true">/</span>
+
+            <span aria-current="page">Médias</span>
+          </nav>
 
           <h1 className="media-hero__title">
             Médias

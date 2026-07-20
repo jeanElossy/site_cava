@@ -10,7 +10,7 @@
 
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
 
-  h3 {
+  h2 {
     margin: 0 0 24px;
 
     display: flex;
@@ -144,7 +144,9 @@
   }
 }
 
-.dot {
+// Cloisonné sous `.calendar-widget` : `.dot` est un nom bien trop
+// générique pour vivre à la racine de la feuille globale.
+.calendar-widget .dot {
   width: 10px;
   height: 10px;
 
@@ -165,7 +167,7 @@
 
     overflow-x: auto;
 
-    h3 {
+    h2 {
       font-size: 1.5rem;
     }
 

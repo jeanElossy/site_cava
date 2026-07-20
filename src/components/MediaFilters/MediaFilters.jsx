@@ -19,12 +19,14 @@ export default function MediaFilters({
         {tabs.map((tab) => (
           <button
             key={tab}
+            type="button"
             className={
               active === tab
                 ? "media-filters__btn active"
                 : "media-filters__btn"
             }
             onClick={() => setActive(tab)}
+            aria-pressed={active === tab}
           >
             {tab}
           </button>

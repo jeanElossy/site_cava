@@ -1,14 +1,18 @@
+@use "../../styles/mixins" as *;
+
 .events-page {
   background: #f8f8f6;
   min-height: 100vh;
 }
 
+// Grille à deux colonnes de la page : liste à gauche, colonne
+// calendrier/encarts à droite. Elle appartient à la page — les composants
+// `UpcomingEvents` et `EventsSidebar` ne remplissent qu'une colonne chacun
+// et ne définissent plus de grille propre.
 .events-layout {
-  max-width: 1400px;
+  @include container;
 
   margin: 60px auto;
-
-  padding: 0 60px;
 
   display: grid;
   grid-template-columns: 1.6fr 1fr;
@@ -22,22 +26,36 @@
     display: flex;
     flex-direction: column;
     gap: 28px;
+
+    // Empêche les cartes de déborder de leur colonne.
+    min-width: 0;
   }
 }
 
-@media (max-width: 1100px) {
+/* ---- Tablette large ---- */
+@media (max-width: 1200px) {
+  .events-layout {
+    grid-template-columns: 1.4fr 1fr;
+
+    gap: 26px;
+  }
+}
+
+/* ---- Tablette : la colonne de droite passe sous la liste ---- */
+@media (max-width: 992px) {
   .events-layout {
     grid-template-columns: 1fr;
 
-    padding: 0 25px;
+    margin: 45px auto;
+
+    gap: 30px;
   }
 }
 
+/* ---- Mobile ---- */
 @media (max-width: 768px) {
   .events-layout {
-    margin: 40px auto;
-
-    padding: 0 20px;
+    margin: 32px auto;
 
     gap: 24px;
 

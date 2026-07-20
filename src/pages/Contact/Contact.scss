@@ -1,0 +1,15 @@
+@use "../../styles/variables" as *;
+
+// Enchaînement des sections de la page Contact.
+// Le détail visuel de chaque bloc vit dans le SCSS de son composant
+// (ContactHero, ContactForm, ContactSchedule, MinistryContacts, VisitMap) :
+// ce fichier ne gère que le fond et les raccords entre sections.
+.contact-page {
+  background: $bg-light;
+
+  // Compense la hauteur de la navbar fixe lors d'un saut d'ancre
+  // (« Envoyer une demande de prière » → formulaire).
+  section[id] {
+    scroll-margin-top: 100px;
+  }
+}

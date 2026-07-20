@@ -1,6 +1,6 @@
 import "./AboutHero.scss";
 
-import heroImage from "../assets/images/about-hero.jpg.png";
+import heroImage from "../assets/images/about-hero.jpg";
 
 const AboutHero = () => {
   return (
@@ -14,6 +14,10 @@ const AboutHero = () => {
 
       <div className="about-hero__container">
         <div className="about-hero__content">
+
+          <span className="about-hero__tag">
+            À PROPOS DE NOUS
+          </span>
 
           <h1>
             Une église centrée sur Christ,

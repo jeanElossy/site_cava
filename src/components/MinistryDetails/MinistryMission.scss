@@ -1,0 +1,99 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+.ministry-mission {
+  padding: 70px 0 50px;
+
+  background: $bg-light;
+
+  .container {
+    @include container;
+
+    display: grid;
+
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(340px, 1fr)
+    );
+
+    gap: 28px;
+  }
+}
+
+.mission-card {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 22px;
+
+  padding: 32px;
+
+  background: #fff;
+
+  border: 1px solid $border-color;
+
+  border-radius: $radius;
+
+  box-shadow: $shadow;
+
+  transition: $transition;
+
+  &:hover {
+    transform: translateY(-4px);
+  }
+
+  // Icône react-icons rendue directement dans la carte.
+  > svg {
+    @include flex-center;
+
+    flex-shrink: 0;
+
+    box-sizing: content-box;
+
+    width: 26px;
+    height: 26px;
+
+    padding: 17px;
+
+    border-radius: 50%;
+
+    background: linear-gradient(
+      145deg,
+      $primary 0%,
+      $primary-dark 100%
+    );
+
+    color: $secondary;
+  }
+
+  h3 {
+    font-size: 1.3rem;
+
+    font-weight: 700;
+
+    color: $primary;
+
+    margin-bottom: 10px;
+  }
+
+  p {
+    font-size: 0.97rem;
+
+    line-height: 1.7;
+
+    color: rgba(31, 41, 55, 0.78);
+  }
+}
+
+@media (max-width: 600px) {
+  .ministry-mission {
+    padding: 50px 0 30px;
+  }
+
+  .mission-card {
+    padding: 24px;
+
+    gap: 16px;
+  }
+}

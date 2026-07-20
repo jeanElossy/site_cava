@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import "./MinistriesHero.scss";
 
 import heroImage from "../assets/images/ministries-hero.jpg";
@@ -15,6 +17,17 @@ const MinistriesHero = () => {
       <div className="ministries-hero__container">
 
         <div className="ministries-hero__content">
+
+          <nav
+            className="ministries-hero__breadcrumb"
+            aria-label="Fil d'Ariane"
+          >
+            <Link to="/">Accueil</Link>
+
+            <span aria-hidden="true">/</span>
+
+            <span aria-current="page">Ministères</span>
+          </nav>
 
           <h1>Nos ministères</h1>
 

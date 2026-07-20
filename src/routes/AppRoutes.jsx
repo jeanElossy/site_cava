@@ -5,9 +5,12 @@ import About from "../pages/About/About";
 import Ministries from "../pages/Ministries/Ministries";
 import MinistryDetails from "../pages/MinistryDetails/MinistryDetails";
 import Events from "../pages/Events/Events";
+import EventDetails from "../pages/EventDetails/EventDetails";
 import Media from "../pages/Media/Media";
 import Contact from "../pages/Contact/Contact";
 import Donate from "../pages/Donate/Donate";
+import LegalNotice from "../pages/LegalNotice/LegalNotice";
+import PrivacyPolicy from "../pages/PrivacyPolicy/PrivacyPolicy";
 import NotFound from "../pages/NotFound/NotFound";
 
 const AppRoutes = () => {
@@ -41,6 +44,11 @@ const AppRoutes = () => {
       />
 
       <Route
+        path="/events/:slug"
+        element={<EventDetails />}
+      />
+
+      <Route
         path="/media"
         element={<Media />}
       />
@@ -53,6 +61,16 @@ const AppRoutes = () => {
       <Route
         path="/donate"
         element={<Donate />}
+      />
+
+      <Route
+        path="/mentions-legales"
+        element={<LegalNotice />}
+      />
+
+      <Route
+        path="/politique-confidentialite"
+        element={<PrivacyPolicy />}
       />
 
       <Route

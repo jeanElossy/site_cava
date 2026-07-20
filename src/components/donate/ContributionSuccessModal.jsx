@@ -1,8 +1,9 @@
+import { Link } from "react-router-dom";
+
 import "./ContributionSuccessModal.scss";
 
 import {
   FaCheckCircle,
-  FaDownload,
   FaHome,
   FaHeart,
 } from "react-icons/fa";
@@ -62,15 +63,21 @@ const ContributionSuccessModal = ({
 
         <div className="success-actions">
 
-          <button className="download-btn">
-            <FaDownload />
-            Télécharger le reçu
-          </button>
+          {/*
+            Le bouton « Télécharger le reçu » a été retiré : le site est
+            entièrement statique, il n'existe ni backend ni génération de
+            reçu. À réintroduire le jour où un service de paiement réel
+            sera branché.
+          */}
 
-          <button className="secondary-btn">
-            <FaHome />
+          <Link
+            to="/"
+            className="secondary-btn"
+            onClick={onClose}
+          >
+            <FaHome aria-hidden="true" />
             Accueil
-          </button>
+          </Link>
 
           <button
             className="secondary-btn"

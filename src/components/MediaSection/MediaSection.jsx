@@ -7,6 +7,8 @@ import "./MediaSection.scss";
 const MediaSection = ({
   title,
   buttonText,
+  onButtonClick,
+  onPlay,
   items
 }) => {
   return (
@@ -16,19 +18,27 @@ const MediaSection = ({
 
         <h2>{title}</h2>
 
-        <button>
-          {buttonText}
-          <ArrowRight size={18} />
-        </button>
+        {/*
+          Le bouton applique le filtre correspondant de la page Médias.
+          Il n'est rendu que si une action lui est fournie : lorsqu'un
+          filtre est déjà actif, il n'aurait plus de destination.
+        */}
+        {buttonText && onButtonClick && (
+          <button type="button" onClick={onButtonClick}>
+            {buttonText}
+            <ArrowRight size={18} aria-hidden="true" />
+          </button>
+        )}
 
       </div>
 
       <div className="media-grid">
 
-        {items.map((item, index) => (
+        {items.map((item) => (
           <MediaCard
-            key={index}
+            key={item.id}
             item={item}
+            onPlay={onPlay}
           />
         ))}
 

@@ -1,3 +1,10 @@
+// Enchaînement des sections de la page Ministères.
+// Le style de chaque bloc vit dans le SCSS de son composant
+// (MinistriesHero, MinistriesGrid, MinistriesCallToAction, MinistriesStats).
 .ministries-page {
   background: #fff;
+
+  > section:not(:first-child) {
+    margin-top: 0;
+  }
 }

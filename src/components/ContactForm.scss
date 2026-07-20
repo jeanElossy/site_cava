@@ -154,6 +154,74 @@
     color: #777;
     line-height: 1.6;
   }
+
+  /* Un champ = un label masqué + son contrôle */
+  &__field {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__error {
+    margin: 0;
+
+    padding: 12px 14px;
+
+    border-radius: 8px;
+
+    border-left: 3px solid #b42318;
+
+    background: #fef3f2;
+
+    color: #b42318;
+
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  /* Confirmation affichée à la place du formulaire après soumission */
+  &__success {
+    margin-top: 28px;
+
+    padding: 40px 30px;
+
+    text-align: center;
+
+    border: 1px solid rgba(11, 92, 52, 0.15);
+    border-radius: 14px;
+
+    background: rgba(11, 92, 52, 0.04);
+
+    > svg {
+      width: 54px;
+      height: 54px;
+
+      margin: 0 auto 18px;
+
+      color: #0b5c34;
+    }
+
+    h3 {
+      margin: 0 0 12px;
+
+      font-size: 1.5rem;
+      font-weight: 700;
+
+      color: #0b3d23;
+    }
+
+    p {
+      max-width: 460px;
+
+      margin: 0 auto 26px;
+    }
+
+    button {
+      margin: 0 auto;
+
+      padding: 0 28px;
+    }
+  }
 }
 
 /* ======================

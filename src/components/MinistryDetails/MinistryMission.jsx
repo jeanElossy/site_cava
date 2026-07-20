@@ -3,6 +3,8 @@ import {
   FaEye,
 } from "react-icons/fa";
 
+import "./MinistryMission.scss";
+
 const MinistryMission = ({
   ministry,
 }) => {

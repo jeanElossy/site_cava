@@ -1,54 +1,61 @@
-const MinistryTestimonials = ({
-  testimonials = [],
-}) => {
+import { motion } from "framer-motion";
+
+import { FaStar } from "react-icons/fa";
+
+import "./MinistryTestimonials.scss";
+
+const MinistryTestimonials = ({ testimonials = [] }) => {
+  if (testimonials.length === 0) {
+    return null;
+  }
+
   return (
-    <section className="ministry-testimonials">
+    <section
+      className="ministry-testimonials"
+      aria-labelledby="ministry-testimonials-title"
+    >
+      <div className="ministry-testimonials__container">
+        <header className="ministry-testimonials__header">
+          <h2 id="ministry-testimonials-title">Témoignages</h2>
 
-      <div className="container">
+          <div className="ministry-testimonials__line" />
+        </header>
 
-        <h2>
-          Témoignages
-        </h2>
+        <div className="ministry-testimonials__grid">
+          {testimonials.map((testimonial, index) => {
+            const rating = testimonial.rating || 5;
 
-        <div className="testimonials-grid">
-
-          {testimonials.length > 0 ? (
-            testimonials.map(
-              (
-                testimonial,
-                index
-              ) => (
+            return (
+              <motion.figure
+                key={testimonial.author}
+                className="testimonial-card"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.4, delay: index * 0.08 }}
+              >
                 <div
-                  key={index}
-                  className="testimonial-card"
+                  className="testimonial-card__rating"
+                  role="img"
+                  aria-label={`Note : ${rating} sur 5`}
                 >
-
-                  <p>
-                    "{testimonial.message}"
-                  </p>
-
-                  <span>
-                    {testimonial.author}
-                  </span>
-
+                  {Array.from({ length: rating }, (_, star) => (
+                    <FaStar key={star} aria-hidden="true" />
+                  ))}
                 </div>
-              )
-            )
-          ) : (
-            <div className="testimonial-card">
 
-              <p>
-                Aucun témoignage disponible
-                pour le moment.
-              </p>
+                <blockquote className="testimonial-card__quote">
+                  <p>« {testimonial.message} »</p>
+                </blockquote>
 
-            </div>
-          )}
-
+                <figcaption className="testimonial-card__author">
+                  — {testimonial.author}
+                </figcaption>
+              </motion.figure>
+            );
+          })}
         </div>
-
       </div>
-
     </section>
   );
 };

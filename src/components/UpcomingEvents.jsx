@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import "./UpcomingEvents.scss";
 
 import {
@@ -5,209 +7,91 @@ import {
   FaClock,
   FaMapMarkerAlt,
   FaArrowRight,
-  FaHeart,
 } from "react-icons/fa";
 
-import event1 from "../assets/images/event-1.jpg";
-import event2 from "../assets/images/event-2.jpg";
-import event3 from "../assets/images/event-3.jpg";
-import event4 from "../assets/images/event-4.jpg";
-import event5 from "../assets/images/event-5.jpg";
+import { eventsList } from "./EventDetails/data/events";
 
-import phoneNewsletter from "../assets/images/phone-newsletter.png";
+// Les données ne sont pas dupliquées ici : voir
+// `src/components/EventDetails/data/events.js`.
+const events = eventsList;
 
-import CalendarWidget from "./CalendarWidget";
-
-const events = [
-  {
-    day: "25",
-    month: "MAI",
-    image: event1,
-    title: "Culte dominical",
-    description:
-      "Rejoignez-nous pour un temps de louange, d'enseignement et de prière.",
-    time: "09h00",
-    location: "CAVA, Abidjan",
-  },
-  {
-    day: "01",
-    month: "JUIN",
-    image: event2,
-    title: "Réunion de prière",
-    description:
-      "Un moment spécial de prière d’intercession pour nos familles et notre nation.",
-    time: "18h00",
-    location: "CAVA, Abidjan",
-  },
-  {
-    day: "07",
-    month: "JUIN",
-    image: event3,
-    title: "Soirée de louange",
-    description:
-      "Une soirée de louange et d’adoration pour élever le nom de Jésus.",
-    time: "17h00",
-    location: "CAVA, Abidjan",
-  },
-  {
-    day: "15",
-    month: "JUIN",
-    image: event4,
-    title: "École du dimanche - Spéciale",
-    description:
-      "Un enseignement biblique adapté à tous les âges pour grandir dans la parole de Dieu.",
-    time: "09h00",
-    location: "CAVA, Abidjan",
-  },
-  {
-    day: "22",
-    month: "JUIN",
-    image: event5,
-    title: "Conférence des leaders",
-    description:
-      "Former, équiper et inspirer les leaders pour un impact durable.",
-    time: "09h00",
-    location: "CAVA, Abidjan",
-  },
-];
-
+/**
+ * Colonne de gauche de la page Événements : la liste « À venir ».
+ * Le calendrier et les encarts vivent dans `EventsSidebar` ; la grille à
+ * deux colonnes appartient à la page (`.events-layout`).
+ */
 const UpcomingEvents = () => {
   return (
-    <section className="upcoming-events">
-      <div className="upcoming-events__container">
+    <section
+      className="upcoming-events"
+      aria-labelledby="upcoming-events-title"
+    >
+      <header className="upcoming-events__title">
+        <div
+          className="upcoming-events__title-icon"
+          aria-hidden="true"
+        >
+          <FaCalendarAlt />
+        </div>
 
-        <div className="upcoming-events__left">
+        <div>
+          <h2 id="upcoming-events-title">À venir</h2>
+          <span aria-hidden="true" />
+        </div>
+      </header>
 
-          <div className="section-title">
-            <div className="section-icon">
-              <FaCalendarAlt />
-            </div>
-
-            <div>
-              <h2>À venir</h2>
-              <span />
-            </div>
-          </div>
-
-          {events.map((event, index) => (
-            <div className="event-card" key={index}>
-
-              <div className="event-date">
+      <ul className="upcoming-events__list">
+        {events.map((event) => (
+          <li key={event.slug}>
+            <Link
+              className="upcoming-events__card"
+              to={`/events/${event.slug}`}
+              aria-label={`${event.title} — ${event.dateLong}. Voir le détail.`}
+            >
+              <div
+                className="upcoming-events__date"
+                aria-hidden="true"
+              >
                 <strong>{event.day}</strong>
                 <span>{event.month}</span>
               </div>
 
-              <div className="event-image">
-                <img src={event.image} alt={event.title} />
+              <div className="upcoming-events__image">
+                <img
+                  src={event.image}
+                  alt={event.title}
+                  loading="lazy"
+                />
               </div>
 
-              <div className="event-content">
-
+              <div className="upcoming-events__content">
                 <h3>{event.title}</h3>
 
                 <p>{event.description}</p>
 
-                <div className="event-meta">
-
+                <div className="upcoming-events__meta">
                   <span>
-                    <FaClock />
+                    <FaClock aria-hidden="true" />
                     {event.time}
                   </span>
 
                   <span>
-                    <FaMapMarkerAlt />
+                    <FaMapMarkerAlt aria-hidden="true" />
                     {event.location}
                   </span>
-
                 </div>
-
               </div>
 
-              <button className="event-arrow">
+              <span
+                className="upcoming-events__arrow"
+                aria-hidden="true"
+              >
                 <FaArrowRight />
-              </button>
-
-            </div>
-          ))}
-
-          <button className="all-events-btn">
-            Voir tous les événements
-            <FaArrowRight />
-          </button>
-
-        </div>
-
-        <div className="upcoming-events__right">
-
-          <div className="calendar-card">
-
-            <h3>
-              <FaCalendarAlt />
-              Calendrier
-            </h3>
-
-            <CalendarWidget />
-
-          </div>
-
-          <div className="newsletter-card">
-
-            <div className="newsletter-content">
-
-              <h3>
-                Ne manquez aucun événement !
-              </h3>
-
-              <span />
-
-              <p>
-                Abonnez-vous à notre newsletter pour recevoir
-                toutes les actualités et invitations.
-              </p>
-
-              <button>
-                S'abonner
-                <FaArrowRight />
-              </button>
-
-            </div>
-
-            <img
-              src={phoneNewsletter}
-              alt="Newsletter"
-            />
-
-          </div>
-
-          <div className="proposal-card">
-
-            <div className="proposal-icon">
-              <FaHeart />
-            </div>
-
-            <div>
-
-              <h3>
-                Un événement à proposer ?
-              </h3>
-
-              <p>
-                Vous souhaitez organiser un événement
-                au sein de notre église ?
-              </p>
-
-              <button>
-                Nous contacter
-                <FaArrowRight />
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 };

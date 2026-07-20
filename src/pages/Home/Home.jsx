@@ -9,6 +9,8 @@ import LastMessage from "../../components/LastMessage/LastMessage";
 import Ministries from "../../components/Ministries/Ministries";
 import Footer from "../../components/Footer/Footer";
 
+import usePageMeta from "../../hooks/usePageMeta";
+
 import "./Home.scss";
 
 const fadeUp = {
@@ -26,6 +28,12 @@ const fadeUp = {
 };
 
 const Home = () => {
+  usePageMeta({
+    title: "Accueil",
+    description:
+      "Le Centre Apostolique Vie et Abondance (CAVA) est une église d'Abidjan centrée sur Christ : cultes, ministères, événements et enseignements.",
+  });
+
   return (
     <>
       <Navbar />

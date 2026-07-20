@@ -1,0 +1,119 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+.ministry-testimonials {
+  padding: 60px 0 90px;
+
+  background: $bg-light;
+
+  &__container {
+    @include container;
+  }
+
+  &__header {
+    text-align: center;
+
+    margin-bottom: 48px;
+
+    h2 {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+
+      font-weight: 800;
+
+      letter-spacing: 1px;
+
+      text-transform: uppercase;
+
+      color: $primary;
+    }
+  }
+
+  &__line {
+    width: 70px;
+    height: 4px;
+
+    margin: 14px auto 0;
+
+    border-radius: 999px;
+
+    background: $secondary;
+  }
+
+  &__grid {
+    display: grid;
+
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(320px, 1fr)
+    );
+
+    gap: 28px;
+  }
+}
+
+// Imbriqué : `.testimonial-card` est aussi utilisé par les témoignages
+// de la page Faire un don (`donate/Testimonials`).
+.ministry-testimonials .testimonial-card {
+  margin: 0;
+
+  padding: 30px;
+
+  background: #fff;
+
+  border: 1px solid $border-color;
+
+  border-radius: $radius;
+
+  box-shadow: $shadow;
+
+  transition: $transition;
+
+  &:hover {
+    transform: translateY(-4px);
+  }
+
+  &__rating {
+    display: flex;
+
+    gap: 5px;
+
+    margin-bottom: 16px;
+
+    color: $secondary;
+
+    font-size: 1rem;
+  }
+
+  &__quote {
+    margin: 0 0 14px;
+
+    p {
+      font-size: 1rem;
+
+      line-height: 1.75;
+
+      font-style: italic;
+
+      color: $text-dark;
+    }
+  }
+
+  &__author {
+    font-size: 0.92rem;
+    font-weight: 700;
+
+    color: $primary;
+  }
+}
+
+@media (max-width: 480px) {
+  .ministry-testimonials {
+    padding: 40px 0 60px;
+  }
+
+  // Imbriqué : `.testimonial-card` est aussi utilisé par les témoignages
+// de la page Faire un don (`donate/Testimonials`).
+.ministry-testimonials .testimonial-card {
+    padding: 24px;
+  }
+}

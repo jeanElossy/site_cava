@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import "./ContactForm.scss";
 
 import {
@@ -8,11 +10,60 @@ import {
   FaInstagram,
   FaYoutube,
   FaWhatsapp,
+  FaCheckCircle,
 } from "react-icons/fa";
 
+const EMPTY_FORM = {
+  name: "",
+  email: "",
+  subject: "",
+  message: "",
+  consent: false,
+};
+
 const ContactForm = () => {
+  const [values, setValues] = useState(EMPTY_FORM);
+  const [error, setError] = useState("");
+  const [isSent, setIsSent] = useState(false);
+
+  const handleChange = (event) => {
+    const { name, type, value, checked } = event.target;
+
+    setValues((previous) => ({
+      ...previous,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+
+    if (error) {
+      setError("");
+    }
+  };
+
+  // Le site est statique : il n'y a aucun backend ni service d'envoi.
+  // On confirme donc la saisie localement, sans simuler d'appel réseau.
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    if (!values.consent) {
+      setError(
+        "Merci d'accepter d'être contacté(e) pour que nous puissions vous répondre."
+      );
+
+      return;
+    }
+
+    setError("");
+    setIsSent(true);
+  };
+
+  const handleReset = () => {
+    setValues(EMPTY_FORM);
+    setError("");
+    setIsSent(false);
+  };
+
   return (
-    <section className="contact-form">
+    <section className="contact-form" id="contact-formulaire">
       <div className="contact-form__container">
         {/* FORMULAIRE */}
         <div className="contact-form__card contact-form__form">
@@ -26,51 +77,143 @@ const ContactForm = () => {
             délais.
           </p>
 
-          <form>
-            <div className="contact-form__row">
-              <input
-                type="text"
-                placeholder="Nom complet *"
-                required
-              />
+          {isSent ? (
+            <div
+              className="contact-form__success"
+              role="status"
+              aria-live="polite"
+            >
+              <FaCheckCircle aria-hidden="true" />
 
-              <input
-                type="email"
-                placeholder="E-mail *"
-                required
-              />
+              <h3>Merci {values.name.trim() || "à vous"} !</h3>
+
+              <p>
+                Votre message a bien été enregistré. Notre équipe vous
+                répondra dans les plus brefs délais. Pour une demande
+                urgente, vous pouvez nous appeler directement.
+              </p>
+
+              <button type="button" onClick={handleReset}>
+                Envoyer un autre message
+              </button>
             </div>
+          ) : (
+            <>
+              <form onSubmit={handleSubmit} noValidate={false}>
+                <div className="contact-form__row">
+                  <div className="contact-form__field">
+                    <label
+                      className="sr-only"
+                      htmlFor="contact-name"
+                    >
+                      Nom complet
+                    </label>
 
-            <input
-              type="text"
-              placeholder="Sujet *"
-              required
-            />
+                    <input
+                      id="contact-name"
+                      name="name"
+                      type="text"
+                      placeholder="Nom complet *"
+                      value={values.name}
+                      onChange={handleChange}
+                      autoComplete="name"
+                      required
+                    />
+                  </div>
 
-            <textarea
-              placeholder="Votre message *"
-              rows="7"
-              required
-            ></textarea>
+                  <div className="contact-form__field">
+                    <label
+                      className="sr-only"
+                      htmlFor="contact-email"
+                    >
+                      Adresse e-mail
+                    </label>
 
-            <label className="contact-form__checkbox">
-              <input type="checkbox" />
+                    <input
+                      id="contact-email"
+                      name="email"
+                      type="email"
+                      placeholder="E-mail *"
+                      value={values.email}
+                      onChange={handleChange}
+                      autoComplete="email"
+                      required
+                    />
+                  </div>
+                </div>
 
-              <span>
-                J'accepte d'être contacté(e) par l'équipe CAVA.
-              </span>
-            </label>
+                <div className="contact-form__field">
+                  <label
+                    className="sr-only"
+                    htmlFor="contact-subject"
+                  >
+                    Sujet
+                  </label>
 
-            <button type="submit">
-              Envoyer le message
-              <span>➜</span>
-            </button>
-          </form>
+                  <input
+                    id="contact-subject"
+                    name="subject"
+                    type="text"
+                    placeholder="Sujet *"
+                    value={values.subject}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
 
-          <small>
-            Vos informations sont confidentielles et ne seront jamais
-            partagées.
-          </small>
+                <div className="contact-form__field">
+                  <label
+                    className="sr-only"
+                    htmlFor="contact-message"
+                  >
+                    Votre message
+                  </label>
+
+                  <textarea
+                    id="contact-message"
+                    name="message"
+                    placeholder="Votre message *"
+                    rows="7"
+                    value={values.message}
+                    onChange={handleChange}
+                    required
+                  ></textarea>
+                </div>
+
+                <label className="contact-form__checkbox">
+                  <input
+                    type="checkbox"
+                    name="consent"
+                    checked={values.consent}
+                    onChange={handleChange}
+                  />
+
+                  <span>
+                    J'accepte d'être contacté(e) par l'équipe CAVA.
+                  </span>
+                </label>
+
+                {error && (
+                  <p
+                    className="contact-form__error"
+                    role="alert"
+                  >
+                    {error}
+                  </p>
+                )}
+
+                <button type="submit">
+                  Envoyer le message
+                  <span aria-hidden="true">➜</span>
+                </button>
+              </form>
+
+              <small>
+                Vos informations sont confidentielles et ne seront jamais
+                partagées.
+              </small>
+            </>
+          )}
         </div>
 
         {/* COORDONNÉES */}
@@ -132,19 +275,39 @@ const ContactForm = () => {
             <h4>Réseaux sociaux</h4>
 
             <div className="contact-social__icons">
-              <a href="#">
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Facebook"
+              >
                 <FaFacebookF />
               </a>
 
-              <a href="#">
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram"
+              >
                 <FaInstagram />
               </a>
 
-              <a href="#">
+              <a
+                href="https://youtube.com"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="YouTube"
+              >
                 <FaYoutube />
               </a>
 
-              <a href="#">
+              <a
+                href="https://wa.me/2250712345678"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="WhatsApp"
+              >
                 <FaWhatsapp />
               </a>
             </div>

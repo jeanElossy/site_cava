@@ -1,37 +1,47 @@
-const MinistryGallery = ({
-  images = [],
-}) => {
+import { motion } from "framer-motion";
+
+import "./MinistryGallery.scss";
+
+const MinistryGallery = ({ images = [], ministryTitle = "" }) => {
+  if (images.length === 0) {
+    return null;
+  }
+
   return (
-    <section className="ministry-gallery">
+    <section
+      className="ministry-gallery"
+      aria-labelledby="ministry-gallery-title"
+    >
+      <div className="ministry-gallery__container">
+        <header className="ministry-gallery__header">
+          <h2 id="ministry-gallery-title">Galerie</h2>
 
-      <div className="container">
+          <div className="ministry-gallery__line" />
+        </header>
 
-        <h2>
-          Galerie
-        </h2>
-
-        <div className="gallery-grid">
-
-          {images.length > 0 ? (
-            images.map(
-              (image, index) => (
-                <img
-                  key={index}
-                  src={image}
-                  alt={`Galerie ${index + 1}`}
-                />
-              )
-            )
-          ) : (
-            <div className="gallery-empty">
-              Aucune image disponible
-            </div>
-          )}
-
+        <div className="ministry-gallery__grid">
+          {images.map((image, index) => (
+            <motion.figure
+              key={image}
+              className="ministry-gallery__item"
+              initial={{ opacity: 0, scale: 0.97 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.4, delay: index * 0.06 }}
+            >
+              <img
+                src={image}
+                alt={
+                  ministryTitle
+                    ? `${ministryTitle} — photo ${index + 1}`
+                    : `Photo ${index + 1} du ministère`
+                }
+                loading="lazy"
+              />
+            </motion.figure>
+          ))}
         </div>
-
       </div>
-
     </section>
   );
 };

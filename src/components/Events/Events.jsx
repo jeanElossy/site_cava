@@ -6,55 +6,35 @@ import {
 
 import { Link } from "react-router-dom";
 
+import { eventsList } from "../EventDetails/data/events";
+
 import "./Events.scss";
 
-const events = [
-  {
-    day: "15",
-    month: "JUIN",
-    title: "Culte S'OFFRIR À DIEU",
-    date: "Dimanche 15 Juin 2025 - 08:30",
-    description:
-      "Temps d'adoration, de prière et d'enseignement.",
-    color: "green",
-  },
-  {
-    day: "17",
-    month: "JUIN",
-    title: "ÉCOLE DE LA FOI",
-    date: "Mercredi 17 Juin 2025 - 18:30",
-    description:
-      "Formation biblique et croissance spirituelle.",
-    color: "yellow",
-  },
-  {
-    day: "27",
-    month: "JUIN",
-    title: "Camp de Formation Spirituelle",
-    date: "27 au 28 Juin 2025 • 09h00 - 17h00",
-    description:
-      "Thème : Persévérer dans la discipline spirituelle • Orateur : Pasteur Israël Liaide",
-    color: "yellow",
-  },
-];
+// L'accueil affiche les 3 premiers événements de la source unique.
+// Les données ne sont plus dupliquées ici : voir
+// `src/components/EventDetails/data/events.js`.
+const events = eventsList.slice(0, 3);
 
 const Events = () => {
   return (
     <div className="events-card">
 
       <div className="events-header">
-        <Calendar size={20} />
+        <Calendar size={20} aria-hidden="true" />
         <h3>PROCHAINS ÉVÉNEMENTS</h3>
       </div>
 
       <div className="events-list">
-        {events.map((event, index) => (
-          <div
+        {events.map((event) => (
+          <Link
+            to={`/events/${event.slug}`}
             className="event"
-            key={index}
+            key={event.slug}
+            aria-label={`${event.title} — ${event.dateLong}. Voir le détail.`}
           >
             <div
               className={`event-date ${event.color}`}
+              aria-hidden="true"
             >
               <span>{event.day}</span>
               <small>{event.month}</small>
@@ -63,15 +43,30 @@ const Events = () => {
             <div className="event-content">
               <h4>{event.title}</h4>
 
-              <p>{event.date}</p>
+              <p>{event.dateLong}</p>
 
-              <span className="event-description">
-                {event.description}
-              </span>
+              {/*
+                Visuel de l'événement avec sa description en surimpression.
+                Le dégradé sombre garantit le contraste du texte quelle que
+                soit l'image.
+              */}
+              <div className="event-media">
+                <img
+                  src={event.image}
+                  alt=""
+                  aria-hidden="true"
+                  loading="lazy"
+                  decoding="async"
+                />
+
+                <span className="event-media__text">
+                  {event.description}
+                </span>
+              </div>
             </div>
 
-            <ChevronRight size={20} />
-          </div>
+            <ChevronRight size={20} aria-hidden="true" />
+          </Link>
         ))}
       </div>
 
@@ -80,7 +75,7 @@ const Events = () => {
         className="events-link"
       >
         Voir tous les événements
-        <ArrowRight size={18} />
+        <ArrowRight size={18} aria-hidden="true" />
       </Link>
 
     </div>

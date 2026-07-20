@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import "./EventsHero.scss";
 
 import heroImage from "../assets/images/events-hero.jpg";
@@ -15,6 +17,17 @@ const EventsHero = () => {
       <div className="events-hero__container">
 
         <div className="events-hero__content">
+
+          <nav
+            className="events-hero__breadcrumb"
+            aria-label="Fil d'Ariane"
+          >
+            <Link to="/">Accueil</Link>
+
+            <span aria-hidden="true">/</span>
+
+            <span aria-current="page">Événements</span>
+          </nav>
 
           <h1>Événements</h1>
 

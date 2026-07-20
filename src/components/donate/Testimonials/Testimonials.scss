@@ -27,7 +27,7 @@
   }
 }
 
-.section-header {
+.testimonials .section-header {
   text-align: center;
 
   margin-bottom: 60px;
@@ -57,7 +57,7 @@
   }
 }
 
-.section-badge {
+.testimonials .section-badge {
   display: inline-flex;
 
   align-items: center;
@@ -76,7 +76,7 @@
   font-weight: 700;
 }
 
-.testimonial-card {
+.testimonials .testimonial-card {
   position: relative;
 
   padding: 32px;
@@ -130,7 +130,7 @@
   }
 }
 
-.quote-icon {
+.testimonials .quote-icon {
   font-size: 2rem;
 
   color: #f4c61d;
@@ -138,7 +138,7 @@
   margin-bottom: 20px;
 }
 
-.testimonial-card p {
+.testimonials .testimonial-card p {
   color: #475569;
 
   line-height: 1.9;
@@ -148,7 +148,7 @@
   font-size: .95rem;
 }
 
-.testimonial-rating {
+.testimonials .testimonial-rating {
   display: flex;
 
   gap: 4px;
@@ -160,14 +160,14 @@
   }
 }
 
-.testimonial-author {
+.testimonials .testimonial-author {
   display: flex;
 
   align-items: center;
 
   gap: 14px;
 
-  .avatar {
+  .testimonials .avatar {
     width: 54px;
     height: 54px;
 
@@ -215,7 +215,7 @@
     padding: 70px 20px;
   }
 
-  .testimonial-card {
+  .testimonials .testimonial-card {
     padding: 24px;
   }
 }

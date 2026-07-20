@@ -128,37 +128,8 @@
   gap: 12px;
 }
 
-.download-btn {
-  width: 100%;
-
-  height: 58px;
-
-  border: none;
-  border-radius: 16px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-
-  background: linear-gradient(
-    135deg,
-    #014321,
-    #0a6b38
-  );
-
-  color: white;
-
-  font-weight: 700;
-
-  cursor: pointer;
-
-  transition: .25s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-  }
-}
+// `.download-btn` n'est plus utilisé : le bouton « Télécharger le reçu »
+// a été retiré du JSX faute de backend capable de générer un reçu.
 
 .secondary-btn {
   width: 100%;
@@ -179,12 +150,20 @@
 
   font-weight: 600;
 
+  text-decoration: none;
+
   cursor: pointer;
 
   transition: .25s ease;
 
   &:hover {
     background: #fafafa;
+  }
+
+  &:focus-visible {
+    outline: 3px solid #014321;
+
+    outline-offset: 3px;
   }
 }
 

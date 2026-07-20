@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { Link } from "react-router-dom";
 
 import {
@@ -19,6 +21,22 @@ import logo from "../../assets/logo/logo_cava.gif";
 import "./Footer.scss";
 
 const Footer = () => {
+  const [email, setEmail] = useState("");
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  // Le site est statique : aucun service d'envoi n'est branché. On confirme
+  // la saisie localement plutôt que de simuler un appel réseau.
+  const handleSubscribe = (event) => {
+    event.preventDefault();
+
+    if (!email.trim()) {
+      return;
+    }
+
+    setIsSubscribed(true);
+    setEmail("");
+  };
+
   return (
     <footer className="footer">
       <div className="footer__container">
@@ -107,7 +125,6 @@ const Footer = () => {
               </Link>
             </li>
 
-
             <li>
               <Link to="/contact">
                 Contact
@@ -145,16 +162,44 @@ const Footer = () => {
             pour recevoir nos actualités.
           </p>
 
-          <div className="newsletter">
-            <input
-              type="email"
-              placeholder="Votre e-mail"
-            />
+          {isSubscribed ? (
+            <p
+              className="newsletter__success"
+              role="status"
+              aria-live="polite"
+            >
+              Merci ! Votre adresse a bien été enregistrée.
+            </p>
+          ) : (
+            <form
+              className="newsletter"
+              onSubmit={handleSubscribe}
+            >
+              <label
+                className="sr-only"
+                htmlFor="footer-newsletter-email"
+              >
+                Votre adresse e-mail
+              </label>
 
-            <button type="button">
-              <Send size={18} />
-            </button>
-          </div>
+              <input
+                id="footer-newsletter-email"
+                type="email"
+                placeholder="Votre e-mail"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                autoComplete="email"
+                required
+              />
+
+              <button
+                type="submit"
+                aria-label="S'inscrire à la newsletter"
+              >
+                <Send size={18} aria-hidden="true" />
+              </button>
+            </form>
+          )}
         </div>
       </div>
 

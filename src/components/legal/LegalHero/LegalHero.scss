@@ -1,0 +1,55 @@
+@use "../../../styles/variables" as *;
+
+.legal-hero {
+  background: linear-gradient(
+    135deg,
+    $primary-dark 0%,
+    $primary 100%
+  );
+
+  &__container {
+    width: 100%;
+    max-width: 900px;
+
+    margin: auto;
+    padding: 150px 24px 70px;
+  }
+
+  &__title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    line-height: 1.2;
+
+    color: $text-light;
+  }
+
+  &__line {
+    width: 70px;
+    height: 4px;
+
+    background: $secondary;
+
+    margin: 20px 0 26px;
+  }
+
+  &__intro {
+    max-width: 720px;
+
+    color: rgba(255, 255, 255, 0.88);
+
+    font-size: 1.05rem;
+    line-height: 1.85;
+  }
+}
+
+@media (max-width: 768px) {
+  .legal-hero {
+    &__container {
+      padding: 120px 20px 50px;
+    }
+
+    &__intro {
+      font-size: 0.98rem;
+    }
+  }
+}

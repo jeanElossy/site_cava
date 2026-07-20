@@ -70,10 +70,19 @@
 
     cursor: pointer;
 
+    // C'est un <Link> vers /contact : on neutralise le style d'ancre.
+    text-decoration: none;
+
     transition: all 0.3s ease;
 
     &:hover {
       transform: translateY(-2px);
+    }
+
+    &:focus-visible {
+      outline: 3px solid #0d5b3e;
+
+      outline-offset: 3px;
     }
 
     svg {

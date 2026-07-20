@@ -1,3 +1,7 @@
+import { Link } from "react-router-dom";
+
+import { FaUsers, FaEnvelope } from "react-icons/fa";
+
 import "./MinistryHero.scss";
 
 import MinistryStats from "./MinistryStats";
@@ -41,13 +45,15 @@ const MinistryHero = ({
 
         <div className="ministry-hero__actions">
 
-          <button className="btn-primary">
+          <Link to="/contact" className="btn-primary">
+            <FaUsers aria-hidden="true" />
             Rejoindre le ministère
-          </button>
+          </Link>
 
-          <button className="btn-outline">
+          <Link to="/contact" className="btn-outline">
+            <FaEnvelope aria-hidden="true" />
             Nous contacter
-          </button>
+          </Link>
 
         </div>
 

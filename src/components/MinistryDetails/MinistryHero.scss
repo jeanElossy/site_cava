@@ -121,49 +121,67 @@
   margin-top: 40px;
 }
 
-.btn-primary,
-.btn-outline {
-  height: 58px;
+// Styles volontairement limités au héros : `.btn-primary` / `.btn-outline`
+// sont aussi déclarés dans Hero.scss et NotFound.scss, et tous les SCSS de
+// composants sont regroupés dans une seule feuille globale.
+.ministry-hero__actions {
+  .btn-primary,
+  .btn-outline {
+    display: inline-flex;
 
-  padding: 0 32px;
+    align-items: center;
+    justify-content: center;
 
-  border-radius: 14px;
+    gap: 10px;
 
-  font-size: 1rem;
+    height: 58px;
 
-  font-weight: 700;
+    padding: 0 32px;
 
-  cursor: pointer;
+    border-radius: 14px;
 
-  transition: 0.3s ease;
-}
+    font-size: 1rem;
 
-.btn-primary {
-  border: none;
+    font-weight: 700;
 
-  background: $secondary;
+    cursor: pointer;
 
-  color: #1a1a1a;
+    transition: 0.3s ease;
 
-  box-shadow:
-    0 12px 30px rgba(255, 193, 7, 0.25);
-}
+    &:focus-visible {
+      outline: 3px solid $secondary;
 
-.btn-primary:hover {
-  transform: translateY(-3px);
-}
+      outline-offset: 3px;
+    }
+  }
 
-.btn-outline {
-  background: transparent;
+  .btn-primary {
+    border: none;
 
-  color: white;
+    background: $secondary;
 
-  border: 2px solid rgba(255, 255, 255, 0.8);
-}
+    color: #1a1a1a;
 
-.btn-outline:hover {
-  background:
-    rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 12px 30px rgba(255, 193, 7, 0.25);
+
+    &:hover {
+      transform: translateY(-3px);
+    }
+  }
+
+  .btn-outline {
+    background: transparent;
+
+    color: white;
+
+    border: 2px solid rgba(255, 255, 255, 0.8);
+
+    &:hover {
+      background:
+        rgba(255, 255, 255, 0.08);
+    }
+  }
 }
 
 @media (max-width: 768px) {
@@ -183,12 +201,12 @@
     flex-direction: column;
 
     align-items: center;
-  }
 
-  .btn-primary,
-  .btn-outline {
-    width: 100%;
+    .btn-primary,
+    .btn-outline {
+      width: 100%;
 
-    max-width: 320px;
+      max-width: 320px;
+    }
   }
 }

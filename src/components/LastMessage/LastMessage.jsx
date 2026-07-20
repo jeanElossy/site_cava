@@ -1,9 +1,11 @@
+import { Link } from "react-router-dom";
+
 import {
   Play,
   ArrowRight
 } from "lucide-react";
 
-import messageImg from "../../assets/images/message.jpg.png";
+import messageImg from "../../assets/images/message.jpg";
 
 import "./LastMessage.scss";
 
@@ -20,9 +22,18 @@ const LastMessage = () => {
 
         <div className="overlay"></div>
 
-        <button className="play-btn">
-          <Play fill="currentColor" size={28} />
-        </button>
+        {/*
+          Il n'existe pas de lecteur vidéo sur le site et la CSP interdit
+          tout iframe externe : ce bouton renvoie vers la page Médias
+          plutôt que de simuler une lecture.
+        */}
+        <Link
+          to="/media"
+          className="play-btn"
+          aria-label="Regarder le dernier message sur la page Médias"
+        >
+          <Play fill="currentColor" size={28} aria-hidden="true" />
+        </Link>
 
         <span className="badge">
           Dernier message
@@ -44,10 +55,10 @@ const LastMessage = () => {
           du Centre Apostolique Vie et Abondance.
         </p>
 
-        <a href="/media">
+        <Link to="/media">
           Voir tous les messages
           <ArrowRight size={16} />
-        </a>
+        </Link>
 
       </div>
 

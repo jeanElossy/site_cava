@@ -117,8 +117,10 @@
     }
   }
 
-  button {
-    display: flex;
+  // Lien vers /contact présenté comme un bouton.
+  button,
+  a {
+    display: inline-flex;
     align-items: center;
     gap: 10px;
 
@@ -133,9 +135,17 @@
     font-size: 0.95rem;
     font-weight: 700;
 
+    text-decoration: none;
+
     cursor: pointer;
 
     transition: all 0.3s ease;
+
+    &:focus-visible {
+      outline: 3px solid #fff;
+
+      outline-offset: 3px;
+    }
 
     &:hover {
       transform: translateY(-3px);

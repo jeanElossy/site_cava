@@ -172,8 +172,12 @@
 
 /* BOUTON */
 
-.contribution-hero__left button {
+// Lien d'ancre vers #contribution-form, présenté comme un bouton.
+.contribution-hero__left button,
+.contribution-hero__left a {
   margin-top: 35px;
+
+  text-decoration: none;
 
   height: 60px;
 
@@ -270,8 +274,11 @@
     font-size: .60rem;
   }
 
-  .contribution-hero__left button {
+  .contribution-hero__left button,
+  .contribution-hero__left a {
     width: 100%;
+
+    justify-content: center;
   }
 }
 
@@ -331,7 +338,8 @@
 
 /* Bouton */
 
-.contribution-hero__left button {
+.contribution-hero__left button,
+.contribution-hero__left a {
   opacity: 0;
 
   animation: fadeUp .9s ease forwards;

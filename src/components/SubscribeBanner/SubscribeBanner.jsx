@@ -7,6 +7,27 @@ import {
   FaInstagram
 } from "react-icons/fa";
 
+// Mêmes destinations que les liens sociaux du pied de page.
+// (Navigation externe : la CSP restreint le chargement de ressources,
+// pas les liens sortants.)
+const socials = [
+  {
+    icon: <FaYoutube />,
+    label: "YouTube",
+    url: "https://youtube.com",
+  },
+  {
+    icon: <FaFacebookF />,
+    label: "Facebook",
+    url: "https://facebook.com",
+  },
+  {
+    icon: <FaInstagram />,
+    label: "Instagram",
+    url: "https://instagram.com",
+  },
+];
+
 const SubscribeBanner = () => {
   return (
     <section className="subscribe-banner">
@@ -24,15 +45,28 @@ const SubscribeBanner = () => {
 
         </div>
 
-        <button>
+        <a
+          className="subscribe-banner__cta"
+          href="https://youtube.com"
+          target="_blank"
+          rel="noreferrer"
+        >
           S'abonner
-          <ArrowRight size={18} />
-        </button>
+          <ArrowRight size={18} aria-hidden="true" />
+        </a>
 
         <div className="subscribe-banner__socials">
-          <FaYoutube />
-          <FaFacebookF />
-          <FaInstagram />
+          {socials.map((social) => (
+            <a
+              key={social.label}
+              href={social.url}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={social.label}
+            >
+              {social.icon}
+            </a>
+          ))}
         </div>
 
       </div>

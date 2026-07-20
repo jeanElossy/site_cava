@@ -1,3 +1,6 @@
+@use "../../styles/variables" as *;
+
+// `.quote` est un nom très générique : tout est imbriqué sous `.verse-card`.
 .verse-card {
   position: relative;
 
@@ -12,9 +15,9 @@
 
   color: white;
 
-  padding: 32px;
+  padding: 28px;
 
-  height: 380px;
+  height: 400px;
 
   overflow: hidden;
 
@@ -23,75 +26,91 @@
   justify-content: center;
 
   box-shadow: 0 15px 30px rgba(0, 0, 0, .12);
+
+  .quote {
+    color: #f4c41d;
+
+    font-size: 3.4rem;
+    font-weight: 700;
+
+    line-height: 1;
+
+    margin-bottom: 8px;
+  }
+
+  h2 {
+    font-size: 1.45rem;
+
+    line-height: 1.45;
+
+    font-weight: 500;
+
+    max-width: 95%;
+
+    margin-bottom: 16px;
+  }
+
+  p {
+    color: #f4c41d;
+
+    font-size: 1.1rem;
+
+    font-weight: 700;
+
+    margin: 0;
+  }
+
+  .verse-decoration {
+    position: absolute;
+
+    right: -50px;
+    bottom: -50px;
+
+    width: 220px;
+    height: 220px;
+
+    border-radius: 50%;
+
+    border: 1px solid rgba(244, 196, 29, .20);
+
+    &::before {
+      content: "";
+
+      position: absolute;
+
+      inset: 22px;
+
+      border-radius: 50%;
+
+      border: 1px solid rgba(244, 196, 29, .18);
+    }
+
+    &::after {
+      content: "";
+
+      position: absolute;
+
+      inset: 44px;
+
+      border-radius: 50%;
+
+      border: 1px solid rgba(244, 196, 29, .15);
+    }
+  }
 }
 
-.quote {
-  color: #f4c41d;
+@media (max-width: 768px) {
+  .verse-card {
+    padding: 26px;
 
-  font-size: 4.5rem;
-  font-weight: 700;
+    .quote {
+      font-size: 3.5rem;
+    }
 
-  line-height: 1;
+    h2 {
+      font-size: 1.4rem;
 
-  margin-bottom: 12px;
-}
-
-.verse-card h2 {
-  font-size: 1.7rem;
-
-  line-height: 1.5;
-
-  font-weight: 500;
-
-  max-width: 95%;
-
-  margin-bottom: 24px;
-}
-
-.verse-card p {
-  color: #f4c41d;
-
-  font-size: 1.1rem;
-
-  font-weight: 700;
-
-  margin: 0;
-}
-
-.verse-decoration {
-  position: absolute;
-
-  right: -50px;
-  bottom: -50px;
-
-  width: 220px;
-  height: 220px;
-
-  border-radius: 50%;
-
-  border: 1px solid rgba(244, 196, 29, .20);
-}
-
-.verse-decoration::before {
-  content: "";
-
-  position: absolute;
-
-  inset: 22px;
-
-  border-radius: 50%;
-
-  border: 1px solid rgba(244, 196, 29, .18);
-}
-
-.verse-decoration::after {
-  content: "";
-
-  position: absolute;
-
-  inset: 44px;
-
-  border-radius: 50%;
-
-  border: 1px solid rgba(244, 196, 29, .15);
+      margin-bottom: 18px;
+    }
+  }
 }

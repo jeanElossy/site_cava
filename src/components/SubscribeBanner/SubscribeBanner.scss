@@ -1,9 +1,9 @@
+@use "../../styles/mixins" as *;
+
 .subscribe-banner {
-  max-width: 1400px;
+  @include container;
 
   margin: 80px auto;
-
-  padding: 0 60px;
 
   &__content {
     background:
@@ -22,9 +22,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+
+    gap: 24px;
+
+    flex-wrap: wrap;
   }
 
-  button {
+  // Lien vers la chaîne YouTube, présenté comme un bouton.
+  &__cta {
     background: #ffd22e;
 
     color: #083b2a;
@@ -37,14 +42,48 @@
 
     font-weight: 700;
 
-    display: flex;
+    text-decoration: none;
+
+    display: inline-flex;
     gap: 10px;
     align-items: center;
+
+    transition: all .3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+
+    &:focus-visible {
+      outline: 3px solid #fff;
+
+      outline-offset: 3px;
+    }
   }
 
   &__socials {
     display: flex;
     gap: 15px;
+
+    a {
+      display: inline-flex;
+
+      color: white;
+
+      border-radius: 50%;
+
+      transition: all .3s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+      }
+
+      &:focus-visible {
+        outline: 3px solid #ffd22e;
+
+        outline-offset: 3px;
+      }
+    }
 
     svg {
       width: 48px;
@@ -55,6 +94,20 @@
       border-radius: 50%;
 
       border: 1px solid rgba(255,255,255,.25);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .subscribe-banner {
+    margin: 50px auto;
+
+    &__content {
+      padding: 32px 24px;
+
+      justify-content: center;
+
+      text-align: center;
     }
   }
 }

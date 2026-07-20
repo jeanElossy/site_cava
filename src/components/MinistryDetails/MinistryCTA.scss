@@ -1,0 +1,117 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+.ministry-cta {
+  position: relative;
+
+  padding: 90px 0;
+
+  overflow: hidden;
+
+  background: linear-gradient(
+    135deg,
+    $primary-dark 0%,
+    $primary 100%
+  );
+
+  text-align: center;
+
+  .overlay {
+    position: absolute;
+
+    inset: 0;
+
+    background: radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 210, 46, 0.12) 0%,
+      transparent 60%
+    );
+
+    pointer-events: none;
+  }
+
+  .container {
+    @include container;
+
+    position: relative;
+
+    z-index: 1;
+
+    max-width: 840px;
+  }
+
+  h2 {
+    font-size: clamp(1.9rem, 4vw, 2.7rem);
+
+    font-weight: 800;
+
+    line-height: 1.2;
+
+    color: $text-light;
+
+    margin-bottom: 18px;
+  }
+
+  p {
+    font-size: 1.05rem;
+
+    line-height: 1.75;
+
+    color: rgba(255, 255, 255, 0.9);
+
+    margin-bottom: 34px;
+  }
+
+  &__button {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    height: 58px;
+
+    padding: 0 38px;
+
+    border: none;
+
+    border-radius: 14px;
+
+    background: $secondary;
+
+    color: #1a1a1a;
+
+    font-size: 1rem;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    box-shadow: 0 12px 30px rgba(255, 193, 7, 0.25);
+
+    transition: $transition;
+
+    &:hover {
+      transform: translateY(-3px);
+    }
+
+    &:focus-visible {
+      outline: 3px solid $text-light;
+
+      outline-offset: 3px;
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .ministry-cta {
+    padding: 60px 0;
+  }
+
+  .ministry-cta__button {
+    width: 100%;
+
+    max-width: 320px;
+
+    justify-content: center;
+  }
+}

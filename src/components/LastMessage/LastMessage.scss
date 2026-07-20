@@ -1,3 +1,9 @@
+@use "../../styles/variables" as *;
+
+// Tous les styles sont volontairement imbriqués sous `.message-card` :
+// `.overlay`, `.badge` et `.play-btn` sont des noms très génériques et
+// tous les SCSS de composants sont regroupés dans une feuille globale
+// (`.badge` est notamment aussi déclaré dans ContributionHero.scss).
 .message-card {
   background: white;
 
@@ -7,138 +13,163 @@
 
   box-shadow: 0 10px 25px rgba(0, 0, 0, .08);
 
-  height: 380px;
+  height: 400px;
 
   display: flex;
   flex-direction: column;
-}
 
-.message-image {
-  position: relative;
+  .message-image {
+    position: relative;
 
-  height: 195px;
+    height: 170px;
 
-  flex-shrink: 0;
+    flex-shrink: 0;
 
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, .55),
+      rgba(0, 0, 0, .15)
+    );
+  }
+
+  // Lien vers /media présenté comme un bouton de lecture.
+  .play-btn {
+    position: absolute;
+
+    top: 50%;
+    left: 50%;
+
+    transform: translate(-50%, -50%);
+
+    width: 70px;
+    height: 70px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: white;
+
+    color: $primary;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition: .3s;
+
+    &:hover {
+      transform: translate(-50%, -50%) scale(1.08);
+    }
+
+    &:focus-visible {
+      outline: 3px solid $secondary;
+
+      outline-offset: 4px;
+    }
+  }
+
+  .badge {
+    position: absolute;
+
+    top: 14px;
+    left: 14px;
+
+    background: #f4c41d;
+
+    color: $primary-dark;
+
+    padding: 6px 12px;
+
+    border-radius: 30px;
+
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .message-content {
+    padding: 18px;
+
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+
+    small {
+      color: $primary;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    h3 {
+      margin: 10px 0;
+
+      font-size: 1.15rem;
+
+      line-height: 1.35;
+
+      color: $text-dark;
+    }
+
+    p {
+      color: #6b7280;
+
+      line-height: 1.5;
+
+      font-size: 14px;
+
+      margin-bottom: 15px;
+    }
+
+    a {
+      margin-top: auto;
+
+      color: $primary;
+
+      font-weight: 600;
+
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      text-decoration: none;
+
+      transition: .3s;
+
+      &:hover {
+        gap: 12px;
+      }
+
+      &:focus-visible {
+        outline: 3px solid $secondary;
+
+        outline-offset: 3px;
+      }
+    }
   }
 }
 
-.overlay {
-  position: absolute;
-  inset: 0;
+// La carte est plus haute sur tablette/mobile : on libère la hauteur fixe
+// pour éviter que le contenu ne déborde.
+@media (max-width: 992px) {
+  .message-card {
+    height: auto;
 
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, .55),
-    rgba(0, 0, 0, .15)
-  );
-}
-
-.play-btn {
-  position: absolute;
-
-  top: 50%;
-  left: 50%;
-
-  transform: translate(-50%, -50%);
-
-  width: 70px;
-  height: 70px;
-
-  border: none;
-
-  border-radius: 50%;
-
-  background: white;
-
-  color: #0d5b3e;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  cursor: pointer;
-
-  transition: .3s;
-}
-
-.play-btn:hover {
-  transform: translate(-50%, -50%) scale(1.08);
-}
-
-.badge {
-  position: absolute;
-
-  top: 14px;
-  left: 14px;
-
-  background: #f4c41d;
-
-  color: #083b2a;
-
-  padding: 6px 12px;
-
-  border-radius: 30px;
-
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.message-content {
-  padding: 18px;
-
-  flex: 1;
-
-  display: flex;
-  flex-direction: column;
-}
-
-.message-content small {
-  color: #0d5b3e;
-  font-weight: 600;
-  font-size: 12px;
-}
-
-.message-content h3 {
-  margin: 10px 0;
-
-  font-size: 1.15rem;
-
-  line-height: 1.35;
-
-  color: #1f2937;
-}
-
-.message-content p {
-  color: #6b7280;
-
-  line-height: 1.5;
-
-  font-size: 14px;
-
-  margin-bottom: 15px;
-}
-
-.message-content a {
-  margin-top: auto;
-
-  color: #0d5b3e;
-
-  font-weight: 600;
-
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  text-decoration: none;
-
-  transition: .3s;
-}
-
-.message-content a:hover {
-  gap: 12px;
+    min-height: 340px;
+  }
 }

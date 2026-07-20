@@ -2,7 +2,7 @@ import { ArrowRight, CalendarDays } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
-import heroBg from "../../assets/images/hero-bg.jpg.png";
+import heroBg from "../../assets/images/hero-bg.jpg";
 import logoCava from "../../assets/logo/logo_cava.gif";
 
 import "./Hero.scss";

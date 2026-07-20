@@ -1,0 +1,178 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+.ministry-events {
+  padding: 60px 0;
+
+  background: $bg-light;
+
+  &__container {
+    @include container;
+  }
+
+  &__header {
+    text-align: center;
+
+    margin-bottom: 48px;
+
+    h2 {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+
+      font-weight: 800;
+
+      letter-spacing: 1px;
+
+      text-transform: uppercase;
+
+      color: $primary;
+    }
+  }
+
+  &__line {
+    width: 70px;
+    height: 4px;
+
+    margin: 14px auto 0;
+
+    border-radius: 999px;
+
+    background: $secondary;
+  }
+
+  &__grid {
+    display: grid;
+
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(320px, 1fr)
+    );
+
+    gap: 24px;
+
+    list-style: none;
+  }
+}
+
+// Imbriqué : `.event-card` est aussi la carte d'événement de la page
+// Événements (`UpcomingEvents.scss`).
+.ministry-events .event-card {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 20px;
+
+  padding: 24px;
+
+  background: #fff;
+
+  border: 1px solid $border-color;
+
+  border-left: 4px solid $secondary;
+
+  border-radius: $radius;
+
+  box-shadow: $shadow;
+
+  transition: $transition;
+
+  &:hover {
+    transform: translateY(-4px);
+  }
+
+  &__date {
+    @include flex-center;
+
+    flex-direction: column;
+
+    flex-shrink: 0;
+
+    width: 72px;
+
+    padding: 10px 0;
+
+    border-radius: 12px;
+
+    background: rgba(255, 210, 46, 0.15);
+  }
+
+  &__day {
+    font-size: 1.7rem;
+    font-weight: 800;
+
+    line-height: 1;
+
+    color: $secondary-dark;
+  }
+
+  &__month {
+    margin-top: 4px;
+
+    font-size: 0.75rem;
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.5px;
+
+    color: $secondary-dark;
+  }
+
+  &__body {
+    h3 {
+      font-size: 1.15rem;
+
+      font-weight: 700;
+
+      color: $primary;
+
+      margin-bottom: 10px;
+    }
+  }
+
+  &__meta {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 8px 18px;
+
+    margin-bottom: 10px;
+
+    font-size: 0.88rem;
+
+    color: rgba(31, 41, 55, 0.7);
+
+    > span {
+      display: inline-flex;
+
+      align-items: center;
+
+      gap: 7px;
+    }
+
+    svg {
+      flex-shrink: 0;
+
+      color: $primary;
+    }
+  }
+
+  &__description {
+    font-size: 0.92rem;
+
+    line-height: 1.6;
+
+    color: rgba(31, 41, 55, 0.75);
+  }
+}
+
+@media (max-width: 480px) {
+  // Imbriqué : `.event-card` est aussi la carte d'événement de la page
+// Événements (`UpcomingEvents.scss`).
+.ministry-events .event-card {
+    padding: 20px;
+
+    gap: 14px;
+  }
+}

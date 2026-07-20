@@ -1,3 +1,5 @@
+import usePageMeta from "../../hooks/usePageMeta";
+
 import "./NotFound.scss";
 
 import { Link } from "react-router-dom";
@@ -11,6 +13,12 @@ import {
 } from "react-icons/fa";
 
 const NotFound = () => {
+  usePageMeta({
+    title: "Page introuvable",
+    description:
+      "La page que vous recherchez n'existe pas ou a été déplacée.",
+  });
+
   return (
     <main className="not-found">
 

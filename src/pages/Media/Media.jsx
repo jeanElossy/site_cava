@@ -8,124 +8,57 @@ import MediaFilters from "../../components/MediaFilters/MediaFilters";
 import MediaSection from "../../components/MediaSection/MediaSection";
 import SubscribeBanner from "../../components/SubscribeBanner/SubscribeBanner";
 
+import MediaPlayerModal from "../../components/MediaPlayerModal/MediaPlayerModal";
+
+import {
+  messages,
+  louanges,
+  temoignages,
+} from "../../components/Media/data/medias";
+
+import usePageMeta from "../../hooks/usePageMeta";
+
 import "./Media.scss";
 
-const messages = [
-  {
-    title: "Marcher par la foi",
-    author: "Pasteur Jean Koffi",
-    date: "04 Mai 2025",
-    duration: "45:30",
-    image: "/images/media/message1.jpg.png"
-  },
-  {
-    title: "La puissance de la prière",
-    author: "Pasteur Marcel N'Guessan",
-    date: "27 Avril 2025",
-    duration: "38:22",
-    image: "/images/media/message2.jpg.png"
-  },
-  {
-    title: "Vivre avec l'Esprit",
-    author: "Pasteur Jean Koffi",
-    date: "20 Avril 2025",
-    duration: "42:16",
-    image: "/images/media/message3.jpg.png"
-  },
-  {
-    title: "La grâce qui transforme",
-    author: "Pasteur Marcel N'Guessan",
-    date: "13 Avril 2025",
-    duration: "36:45",
-    image: "/images/media/message4.jpg.png"
-  }
-];
-
-const louanges = [
-  {
-    title: "Tout est possible",
-    author: "CAVA Worship",
-    duration: "03:52",
-    image: "/images/media/song1.jpg.png"
-  },
-  {
-    title: "Jésus tu es bon",
-    author: "CAVA Worship",
-    duration: "06:14",
-    image: "/images/media/song2.jpg.png"
-  },
-  {
-    title: "Ta présence",
-    author: "CAVA Worship",
-    duration: "07:08",
-    image: "/images/media/song3.jpg.png"
-  },
-  {
-    title: "Mon coeur t'appartient",
-    author: "CAVA Worship",
-    duration: "04:45",
-    image: "/images/media/song4.jpg.png"
-  }
-];
-
-
-const temoignages = [
-  {
-    title: "Dieu a changé ma vie",
-    author: "Marie Kouassi",
-    date: "11 Mai 2025",
-    duration: "08:24",
-    image: "/images/media/temoignage1.jpg.png"
-  },
-  {
-    title: "Guéri par la grâce de Dieu",
-    author: "Jean Baptiste",
-    date: "04 Mai 2025",
-    duration: "06:18",
-    image: "/images/media/temoignage2.jpg.png"
-  },
-  {
-    title: "Une restauration familiale",
-    author: "Sarah N'Guessan",
-    date: "27 Avril 2025",
-    duration: "10:12",
-    image: "/images/media/temoignage3.jpg.png"
-  },
-  {
-    title: "De l'échec à la victoire",
-    author: "Koffi Emmanuel",
-    date: "20 Avril 2025",
-    duration: "07:45",
-    image: "/images/media/temoignage4.jpg.png"
-  }
-];
-
-
-
 export default function Media() {
+  usePageMeta({
+    title: "Médias",
+    description:
+      "Réécoutez les messages, les chants et les témoignages du Centre Apostolique Vie et Abondance à Abidjan.",
+  });
+
 
   const [activeFilter, setActiveFilter] =
-  useState("Tous");
+    useState("Tous");
+
+  // Média actuellement ouvert dans le lecteur (null = fermé).
+  const [playing, setPlaying] = useState(null);
 
   
 
   let sections = [];
 
+  // Vue « Tous » : chaque bouton de section applique le filtre correspondant.
+  // Dans une vue déjà filtrée, le bouton n'a plus de destination et n'est
+  // donc pas rendu (MediaSection l'omet si `onButtonClick` est absent).
   if (activeFilter === "Tous") {
     sections = [
       {
         title: "Derniers messages",
         buttonText: "Voir tous les messages",
+        onButtonClick: () => setActiveFilter("Messages"),
         items: messages
       },
       {
         title: "Louanges",
         buttonText: "Voir toutes les louanges",
+        onButtonClick: () => setActiveFilter("Louanges"),
         items: louanges
       },
       {
         title: "Témoignages",
         buttonText: "Voir tous les témoignages",
+        onButtonClick: () => setActiveFilter("Témoignages"),
         items: temoignages
       }
     ];
@@ -135,7 +68,6 @@ export default function Media() {
     sections = [
       {
         title: "Derniers messages",
-        buttonText: "Voir tous les messages",
         items: messages
       }
     ];
@@ -145,7 +77,6 @@ export default function Media() {
     sections = [
       {
         title: "Louanges",
-        buttonText: "Voir toutes les louanges",
         items: louanges
       }
     ];
@@ -155,7 +86,6 @@ export default function Media() {
     sections = [
       {
         title: "Témoignages",
-        buttonText: "Voir tous les témoignages",
         items: temoignages
       }
     ];
@@ -181,6 +111,8 @@ export default function Media() {
             key={index}
             title={section.title}
             buttonText={section.buttonText}
+            onButtonClick={section.onButtonClick}
+            onPlay={setPlaying}
             items={section.items}
           />
         ))}
@@ -190,6 +122,12 @@ export default function Media() {
       </main>
 
       <Footer />
+
+      {/* Lecteur : le visiteur reste sur le site. */}
+      <MediaPlayerModal
+        item={playing}
+        onClose={() => setPlaying(null)}
+      />
     </>
   );
 }

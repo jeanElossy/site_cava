@@ -32,7 +32,7 @@
    HEADER
 ========================= */
 
-.section-header {
+.contribution-types .section-header {
   text-align: center;
 
   max-width: 760px;
@@ -64,7 +64,7 @@
    GRID
 ========================= */
 
-.types-grid {
+.contribution-types .types-grid {
   max-width: 1400px;
 
   margin: auto;
@@ -80,7 +80,7 @@
    CARD
 ========================= */
 
-.type-card {
+.contribution-types .type-card {
   position: relative;
 
   overflow: hidden;
@@ -166,7 +166,7 @@
    ACTIVE
 ========================= */
 
-.type-card.active {
+.contribution-types .type-card.active {
   background:
     linear-gradient(
       135deg,
@@ -182,7 +182,7 @@
     color: white;
   }
 
-  .type-icon {
+  .contribution-types .type-icon {
     background:
       rgba(255,255,255,.12);
 
@@ -197,7 +197,7 @@
    ICON
 ========================= */
 
-.type-icon {
+.contribution-types .type-icon {
   width: 82px;
   height: 82px;
 
@@ -230,7 +230,7 @@
    TITRE
 ========================= */
 
-.type-card h3 {
+.contribution-types .type-card h3 {
   margin-bottom: 12px;
 
   font-size: 1.15rem;
@@ -244,7 +244,7 @@
    TEXTE
 ========================= */
 
-.type-card p {
+.contribution-types .type-card p {
   margin: 0;
 
   color: #737373;
@@ -275,7 +275,7 @@
 ========================= */
 
 @media (max-width: 1200px) {
-  .types-grid {
+  .contribution-types .types-grid {
     grid-template-columns:
       repeat(3, 1fr);
   }
@@ -291,11 +291,11 @@
     padding: 80px 25px;
   }
 
-  .section-header h2 {
+  .contribution-types .section-header h2 {
     font-size: 2.2rem;
   }
 
-  .types-grid {
+  .contribution-types .types-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -1,7 +1,15 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+// `.card`, `.icon` et `.line` sont des noms génériques partagés avec la
+// section Valeurs de la même page : tout est imbriqué sous `.ministries`.
+// Sans cela, `.icon svg { color: #fff !important }` de Values.scss écrasait
+// les icônes de cette section et leur ajoutait une pastille pleine, au lieu
+// des icônes vertes/jaunes sur fond blanc attendues par la maquette.
 .ministries {
-  max-width: 1400px;
+  @include container;
+
   margin: 50px auto;
-  padding: 0 60px;
 
   display: grid;
   grid-template-columns: 320px 1fr;
@@ -9,7 +17,7 @@
 
   &__left {
     .section-tag {
-      color: #0d5b3e;
+      color: $primary;
       font-weight: 700;
       font-size: 13px;
       letter-spacing: 1px;
@@ -20,7 +28,7 @@
       font-size: 2.6rem;
       line-height: 1.1;
       margin: 12px 0 18px;
-      color: #1f2937;
+      color: $text-dark;
       font-weight: 700;
     }
 
@@ -45,110 +53,144 @@
     grid-template-columns: repeat(4, 1fr);
     gap: 14px;
   }
-}
 
-.ministries-btn {
-  background: #0d5b3e;
-  color: white;
-  border: none;
-  border-radius: 12px;
+  .ministries-btn {
+    background: $primary;
+    color: white;
+    border: none;
+    border-radius: 12px;
 
-  padding: 12px 18px;
+    padding: 12px 18px;
 
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
 
-  cursor: pointer;
+    cursor: pointer;
 
-  font-size: 14px;
-  font-weight: 600;
+    text-decoration: none;
 
-  transition: all .3s ease;
-}
+    font-size: 14px;
+    font-weight: 600;
 
-.ministries-btn:hover {
-  background: #083b2a;
-  transform: translateY(-2px);
-}
+    transition: all .3s ease;
 
-.card {
-  background: #fff;
+    &:hover {
+      background: $primary-dark;
+      transform: translateY(-2px);
+    }
 
-  border-radius: 16px;
+    &:focus-visible {
+      outline: 3px solid $secondary;
 
-  padding: 22px 18px;
+      outline-offset: 3px;
+    }
+  }
 
-  min-height: 200px;
+  .card {
+    background: #fff;
 
-  display: flex;
-  flex-direction: column;
+    border-radius: 16px;
 
-  box-shadow: 0 8px 24px rgba(0, 0, 0, .05);
+    padding: 22px 18px;
 
-  transition: all .3s ease;
-}
+    min-height: 200px;
 
-.card:hover {
-  transform: translateY(-5px);
-}
+    display: flex;
+    flex-direction: column;
 
-.icon {
-  margin-bottom: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .05);
 
-  svg {
-    width: 48px;
-    height: 48px;
-    stroke-width: 1.8;
+    transition: all .3s ease;
+
+    &:hover {
+      transform: translateY(-5px);
+    }
+
+    h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: $text-dark;
+
+      line-height: 1.25;
+
+      margin-bottom: 8px;
+    }
+
+    p {
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.5;
+
+      flex: 1;
+    }
+
+    a {
+      margin-top: 12px;
+
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      font-size: 14px;
+      font-weight: 600;
+
+      color: $primary;
+    }
+
+    &:nth-child(2) a,
+    &:nth-child(4) a {
+      color: #f4c41d;
+    }
+  }
+
+  // Icône « au trait », sans pastille de fond (cf. maquette).
+  .icon {
+    margin-bottom: 12px;
+
+    svg {
+      width: 48px;
+      height: 48px;
+      stroke-width: 1.8;
+    }
+
+    &.green svg {
+      color: $primary;
+    }
+
+    &.yellow svg {
+      color: #f4c41d;
+    }
+  }
+
+  .card-link {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    text-decoration: none;
+
+    color: $primary;
+
+    font-weight: 600;
+
+    transition: .3s ease;
+
+    &:hover {
+      gap: 12px;
+    }
+
+    &:focus-visible {
+      outline: 3px solid $primary;
+
+      outline-offset: 3px;
+    }
   }
 }
 
-.icon.green svg {
-  color: #0d5b3e;
-}
-
-.icon.yellow svg {
-  color: #f4c41d;
-}
-
-.card h3 {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1f2937;
-
-  line-height: 1.25;
-
-  margin-bottom: 8px;
-}
-
-.card p {
-  color: #6b7280;
-  font-size: 14px;
-  line-height: 1.5;
-
-  flex: 1;
-}
-
-.card a {
-  margin-top: 12px;
-
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  text-decoration: none;
-
-  font-size: 14px;
-  font-weight: 600;
-
-  color: #0d5b3e;
-}
-
-.card:nth-child(2) a,
-.card:nth-child(4) a {
-  color: #f4c41d;
-}
-
+/* ---- Tablette large : la colonne de texte passe au-dessus, grille 2 col ---- */
 @media (max-width: 1200px) {
   .ministries {
     grid-template-columns: 1fr;
@@ -160,9 +202,9 @@
   }
 }
 
+/* ---- Mobile ---- */
 @media (max-width: 768px) {
   .ministries {
-    padding: 0 20px;
     margin: 40px auto;
   }
 
@@ -174,38 +216,7 @@
     grid-template-columns: 1fr;
   }
 
-  .card {
+  .ministries .card {
     min-height: auto;
-  }
-}
-
-
-.ministries-btn {
-  text-decoration: none;
-
-  display: inline-flex;
-
-  align-items: center;
-
-  gap: 10px;
-}
-
-.card-link {
-  display: inline-flex;
-
-  align-items: center;
-
-  gap: 8px;
-
-  text-decoration: none;
-
-  color: #0d5b3e;
-
-  font-weight: 600;
-
-  transition: .3s ease;
-
-  &:hover {
-    gap: 12px;
   }
 }

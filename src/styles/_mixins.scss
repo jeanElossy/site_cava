@@ -4,9 +4,21 @@
   justify-content: center;
 }
 
+// Conteneur de page. Les gouttières sont responsives afin d'unifier
+// progressivement tout le site : 60px sur grand écran (valeur historiquement
+// codée en dur dans la plupart des sections), 32px sur tablette, 20px sur
+// mobile.
 @mixin container {
   width: 100%;
   max-width: 1400px;
   margin: auto;
-  padding: 0 2rem;
+  padding: 0 60px;
+
+  @media (max-width: 992px) {
+    padding: 0 2rem;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0 20px;
+  }
 }

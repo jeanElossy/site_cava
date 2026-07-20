@@ -23,6 +23,35 @@
     }
   }
 
+  // La carte entière est cliquable : <button> ou <a> selon la source.
+  // On neutralise les styles natifs pour garder l'apparence d'une carte.
+  &__trigger {
+    display: block;
+
+    width: 100%;
+
+    padding: 0;
+
+    border: none;
+
+    background: none;
+
+    color: inherit;
+
+    font: inherit;
+
+    text-align: left;
+    text-decoration: none;
+
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 3px solid #0d5b3e;
+
+      outline-offset: 3px;
+    }
+  }
+
   &__image {
     position: relative;
     overflow: hidden;

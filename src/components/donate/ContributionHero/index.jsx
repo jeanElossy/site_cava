@@ -36,10 +36,14 @@ const ContributionHero = () => {
             des projets de l'église.
           </p>
 
-          <button>
-            <FaHeart />
+          {/*
+            Le formulaire de contribution est plus bas sur la même page :
+            le bouton y renvoie par ancre.
+          */}
+          <a href="#contribution-form">
+            <FaHeart aria-hidden="true" />
             Contribuer maintenant
-          </button>
+          </a>
 
         </div>
 

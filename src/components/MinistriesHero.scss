@@ -16,6 +16,42 @@
 
   animation: heroZoom 10s ease-out forwards;
 
+  &__breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    margin-bottom: 18px;
+
+    font-size: .95rem;
+
+    color: rgba(255, 255, 255, .75);
+
+    a {
+      color: rgba(255, 255, 255, .75);
+
+      text-decoration: none;
+
+      transition: color .3s ease;
+
+      &:hover {
+        color: $secondary;
+      }
+
+      &:focus-visible {
+        outline: 2px solid $secondary;
+
+        outline-offset: 3px;
+      }
+    }
+
+    [aria-current="page"] {
+      color: #fff;
+
+      font-weight: 600;
+    }
+  }
+
   &__overlay {
     position: absolute;
     inset: 0;

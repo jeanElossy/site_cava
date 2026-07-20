@@ -19,9 +19,17 @@ import {
   useContribution,
 } from "../../context/ContributionContext";
 
+import usePageMeta from "../../hooks/usePageMeta";
+
 import "./Donate.scss";
 
 const Donate = () => {
+  usePageMeta({
+    title: "Faire un don",
+    description:
+      "Soutenez les projets et les actions du Centre Apostolique Vie et Abondance à Abidjan par un don ponctuel ou régulier.",
+  });
+
   const [searchParams] =
     useSearchParams();
 
@@ -48,17 +56,23 @@ const Donate = () => {
 
         <ContributionHero />
 
-        <ContributionStats />
-
+        {/*
+          Le don est l'objectif unique de la page : le choix du type et le
+          tunnel de contribution passent en tête, juste après le héros.
+          Les sections de réassurance (impact, projets, transparence,
+          témoignages) viennent ensuite nourrir la décision.
+        */}
         <ContributionTypes />
 
         <ContributionForm />
 
+        <ContributionStats />
+
+        <ImpactSection />
+
         <ProjectsProgress />
 
         <TransparencySection />
-
-        <ImpactSection />
 
         <Testimonials />
 
