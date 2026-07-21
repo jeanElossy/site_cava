@@ -10,6 +10,10 @@ import { request } from "./http";
 // Taille maximale acceptée avant même de tenter l'envoi. Refuser tôt
 // évite de consommer la connexion de l'utilisateur pendant plusieurs
 // minutes pour finir sur un rejet du serveur distant.
+//
+// Ces valeurs ne sont pas choisies au hasard : ce sont les plafonds du
+// plan gratuit de Cloudinary. Les relever ici ne servirait à rien —
+// l'envoi partirait, puis serait refusé à l'arrivée.
 const MAX_IMAGE_MB = 10;
 const MAX_VIDEO_MB = 100;
 
@@ -60,10 +64,18 @@ const validate = (file, accept) => {
   const limitMb = isVideo || isAudio ? MAX_VIDEO_MB : MAX_IMAGE_MB;
 
   if (file.size > limitMb * 1024 * 1024) {
+    // Un message qui se contente de constater le refus laisse
+    // l'utilisateur sans issue. Pour une vidéo, la solution n'est
+    // d'ailleurs pas de compresser : c'est d'utiliser YouTube, que
+    // l'administration gère déjà.
     throw new Error(
-      `Fichier trop volumineux (${readableSize(
-        file.size
-      )}). Maximum : ${limitMb} Mo.`
+      isVideo
+        ? `Vidéo trop volumineuse (${readableSize(
+            file.size
+          )}, maximum ${limitMb} Mo). Pour une prédication complète, publiez-la sur YouTube puis choisissez « YouTube » ci-dessus : c'est gratuit, sans limite de durée, et la lecture se fait sur le site.`
+        : `Fichier trop volumineux (${readableSize(
+            file.size
+          )}). Maximum : ${limitMb} Mo.`
     );
   }
 };

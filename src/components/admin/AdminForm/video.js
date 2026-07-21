@@ -17,11 +17,11 @@ export const VIDEO_KINDS = [
   },
   {
     value: "youtube",
-    label: "YouTube (lecture sur le site)",
+    label: "YouTube (recommandé pour les prédications)",
     field: "id",
     fieldLabel: "Identifiant de la vidéo YouTube",
     placeholder: "dQw4w9WgXcQ",
-    help: "Uniquement l'identifiant, pas l'URL complète. Exemple : pour https://youtu.be/dQw4w9WgXcQ, saisir dQw4w9WgXcQ.",
+    help: "Uniquement l'identifiant, pas l'URL complète : pour https://youtu.be/dQw4w9WgXcQ, saisir dQw4w9WgXcQ. À privilégier pour les vidéos longues — sans limite de durée ni de poids, et la lecture se fait sur le site.",
   },
   {
     value: "file",
@@ -34,7 +34,7 @@ export const VIDEO_KINDS = [
     uploadFolder: "medias",
     uploadAccept: "media",
     placeholder: "/media/message-01.mp4",
-    help: "Envoyez le fichier depuis votre ordinateur (100 Mo maximum), ou saisissez une adresse à la main pour les fichiers déjà présents dans le site.",
+    help: "Envoyez le fichier depuis votre ordinateur (100 Mo maximum). À réserver aux extraits courts : le stockage est limité à 25 Go de trafic par mois, qu'une prédication complète épuiserait vite. Pour une vidéo longue, préférez YouTube.",
   },
   {
     value: "link",
