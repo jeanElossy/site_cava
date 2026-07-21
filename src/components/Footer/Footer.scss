@@ -115,18 +115,47 @@
   }
 }
 
-.contact-item {
+/* Imbriqué sous `.footer` : déclarée à la racine, cette classe était
+   globale et s'appliquait à tout le site (voir CLAUDE.md). */
+.footer .contact-item {
   display: flex;
   align-items: center;
 
   gap: 12px;
 
   margin-bottom: 18px;
-}
 
-.contact-item svg {
-  color: #f4c41d;
-  flex-shrink: 0;
+  svg {
+    color: #f4c41d;
+    flex-shrink: 0;
+  }
+
+  /* Les coordonnées sont devenues des liens cliquables (tel:, mailto:).
+     Sans cette règle, le navigateur leur applique son bleu par défaut,
+     illisible sur le fond vert du pied de page. */
+  a {
+    color: rgba(255, 255, 255, 0.85);
+
+    text-decoration: none;
+
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #f4c41d;
+
+      text-decoration: underline;
+    }
+
+    &:focus-visible {
+      outline: 2px solid #f4c41d;
+      outline-offset: 3px;
+      border-radius: 3px;
+    }
+  }
+
+  span {
+    color: rgba(255, 255, 255, 0.85);
+  }
 }
 
 /* ======================
