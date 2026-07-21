@@ -8,44 +8,29 @@ import {
 
 import { Link } from "react-router-dom";
 
+import allMinistries from "../MinistryDetails/data/ministries";
+
 import "./Ministries.scss";
 
-const ministries = [
-  {
-    icon: <Users />,
-    title: "Enfance & Jeunesse",
-    description:
-      "Accompagner les enfants et les jeunes dans leur marche avec Christ.",
-    color: "green",
-    link: "/ministries/enfance-jeunesse",
-  },
-  {
-    icon: <Heart />,
-    title: "Louange & Adoration",
-    description:
-      "Élever un son qui transforme les cœurs et attire la présence de Dieu.",
-    color: "yellow",
-    link: "/ministries/louange-adoration",
-  },
-  {
-    icon: <BookOpen />,
-    title: "Enseignement",
-    description:
-      "La parole de Dieu enseignée avec clarté pour une vie transformée.",
-    color: "green",
-    link: "/ministries/enseignement",
-  },
-  {
-    icon: <Globe />,
-    title: "Action Sociale",
-    description:
-      "Manifester l'amour de Christ par des actions concrètes.",
-    color: "yellow",
-    link: "/ministries/action-sociale",
-  },
-];
+// Les quatre premiers ministères, lus depuis les données réelles.
+//
+// Cette liste était auparavant recopiée en dur ici, avec ses propres
+// titres, descriptions et liens. C'est exactement la duplication que
+// CLAUDE.md signale : renommer un ministère dans l'administration
+// laissait l'accueil afficher l'ancien libellé, et modifier un slug
+// menait au message « Ministère introuvable ».
+//
+// Les ministères sont déjà triés par `order` côté API.
+const ICONS = [Users, Heart, BookOpen, Globe];
+
+// La couleur alterne pour conserver le rythme visuel d'origine, que le
+// champ `color` du modèle (vert ou doré) ne reproduit pas exactement.
+const cardColor = (index) => (index % 2 === 0 ? "green" : "yellow");
 
 const Ministries = () => {
+  const featured = Object.values(allMinistries).slice(0, 4);
+
+
   return (
     <section className="ministries">
 
@@ -79,30 +64,34 @@ const Ministries = () => {
 
       <div className="ministries__grid">
 
-        {ministries.map((item, index) => (
-          <div
-            className="card"
-            key={index}
-          >
+        {featured.map((item, index) => {
+          const Icon = ICONS[index % ICONS.length];
 
-            <div className={`icon ${item.color}`}>
-              {item.icon}
-            </div>
-
-            <h3>{item.title}</h3>
-
-            <p>{item.description}</p>
-
-            <Link
-              to={item.link}
-              className="card-link"
+          return (
+            <div
+              className="card"
+              key={item.slug}
             >
-              En savoir plus
-              <ArrowRight size={16} />
-            </Link>
 
-          </div>
-        ))}
+              <div className={`icon ${cardColor(index)}`}>
+                <Icon />
+              </div>
+
+              <h3>{item.title}</h3>
+
+              <p>{item.description}</p>
+
+              <Link
+                to={`/ministries/${item.slug}`}
+                className="card-link"
+              >
+                En savoir plus
+                <ArrowRight size={16} />
+              </Link>
+
+            </div>
+          );
+        })}
 
       </div>
 
