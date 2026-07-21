@@ -44,10 +44,15 @@ const ContactForm = () => {
   };
 
   // Le message part vers `inbox.submit()`, la couture unique avec les
-  // données (`services/api.js`). Aujourd'hui il est donc enregistré dans
-  // le navigateur et consultable depuis /admin/messages ; il n'est PAS
-  // envoyé par e-mail tant que le backend n'existe pas. La confirmation
+  // données (`services/api.js`). Il est enregistré en base par l'API et
+  // consultable depuis /admin/messages ; il n'est PAS envoyé par e-mail,
+  // l'expédition automatique n'étant pas branchée. La confirmation
   // affichée ci-dessous le dit explicitement — ne pas l'adoucir.
+  //
+  // Deux conditions doivent être réunies pour que cet appel aboutisse en
+  // production, et l'oubli de l'une des deux le fait échouer sans bruit :
+  //   - `connect-src` de la CSP (vercel.json) doit autoriser l'API ;
+  //   - `CORS_ORIGIN` côté API doit lister l'origine du site.
   const handleSubmit = async (event) => {
     event.preventDefault();
 
