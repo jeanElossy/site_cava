@@ -467,6 +467,36 @@
     }
   }
 
+  &__qr-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
+    padding: 14px 16px;
+
+    border: 1px solid rgba(185, 28, 28, 0.28);
+    border-radius: 11px;
+
+    background: rgba(185, 28, 28, 0.05);
+
+    svg {
+      flex-shrink: 0;
+
+      margin-top: 2px;
+
+      color: #b91c1c;
+    }
+
+    p {
+      margin: 0;
+
+      color: #991b1b;
+
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+  }
+
   &__qr-result {
     display: grid;
     justify-items: center;

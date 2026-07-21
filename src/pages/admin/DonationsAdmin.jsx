@@ -412,6 +412,14 @@ const QrCodeModal = ({ onClose }) => {
 
         {error && <AdminError message={error} onRetry={reload} />}
 
+        {data?.warning && (
+          <div className="admin-donations__qr-warning" role="alert">
+            <AlertTriangle size={18} aria-hidden="true" />
+
+            <p>{data.warning}</p>
+          </div>
+        )}
+
         {data && (
           <div className="admin-donations__qr-result">
             <img src={data.dataUrl} alt="QR code menant à la page de don" />

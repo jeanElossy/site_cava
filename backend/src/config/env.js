@@ -21,6 +21,40 @@ const read = (name) => {
 const NODE_ENV = read("NODE_ENV") ?? "development";
 const isProduction = NODE_ENV === "production";
 
+// Origines autorisées, calculées avant l'objet : `PUBLIC_SITE_URL` en
+// dérive quand elle n'est pas renseignée, et un littéral d'objet ne
+// peut pas référencer ses propres champs.
+const corsOrigins = (read("CORS_ORIGIN") ?? "")
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/+$/, ""))
+  .filter(Boolean);
+
+// Adresse publique du site.
+//
+// ------------------------------------------------------------------
+// POURQUOI ELLE SE DÉDUIT DE CORS_ORIGIN
+// ------------------------------------------------------------------
+// Elle sert à construire l'URL de retour du donateur et le lien encodé
+// dans les QR codes de don. Une valeur erronée ne casse rien
+// visiblement : elle produit un QR code parfaitement lisible, qui mène
+// simplement nulle part.
+//
+// C'est arrivé. Le QR généré depuis l'administration en production
+// pointait vers `http://localhost:5173`, parce que la variable n'était
+// pas renseignée sur le serveur et retombait sur son défaut de
+// développement. Affiché sur l'écran d'un culte, personne ne l'aurait
+// vu avant que la salle entière n'échoue à donner.
+//
+// `CORS_ORIGIN` contient déjà l'adresse réelle du site — c'est sa
+// raison d'être. La déduire de là supprime une variable à oublier, et
+// le défaut localhost ne subsiste qu'en développement, là où il est
+// juste.
+const publicSiteUrl = (
+  read("PUBLIC_SITE_URL") ??
+  corsOrigins[0] ??
+  "http://localhost:5173"
+).replace(/\/+$/, "");
+
 export const env = {
   NODE_ENV,
   isProduction,
@@ -55,10 +89,7 @@ export const env = {
   // (« https://exemple.com/ ») ne correspondrait jamais — et la panne se
   // manifeste par un formulaire qui échoue sans message, très loin de sa
   // cause.
-  CORS_ORIGIN: (read("CORS_ORIGIN") ?? "")
-    .split(",")
-    .map((origin) => origin.trim().replace(/\/+$/, ""))
-    .filter(Boolean),
+  CORS_ORIGIN: corsOrigins,
 
   // Nombre de proxys de confiance devant l'API. À régler à 1 derrière
   // Vercel/Render, sinon le rate limiting compte toutes les requêtes
@@ -88,12 +119,8 @@ export const env = {
   CINETPAY_BASE_URL:
     read("CINETPAY_BASE_URL") ?? "https://api-checkout.cinetpay.com/v2",
 
-  // Adresse publique du site, utilisée pour construire l'URL de retour
-  // du donateur. Doit être l'origine réelle : une valeur erronée
-  // renverrait les donateurs vers une page inexistante après paiement.
-  PUBLIC_SITE_URL: (
-    read("PUBLIC_SITE_URL") ?? "http://localhost:5173"
-  ).replace(/\/+$/, ""),
+  // Voir le calcul et son explication plus haut.
+  PUBLIC_SITE_URL: publicSiteUrl,
 
   // Adresse publique de l'API, pour l'URL de notification serveur à
   // serveur. Distincte de PUBLIC_SITE_URL : le site est sur Vercel,
@@ -144,6 +171,19 @@ export function validateEnv({ requireSeedAdmin = false } = {}) {
   if (env.isProduction && env.CORS_ORIGIN.length === 0) {
     problems.push(
       "CORS_ORIGIN est absente. En production, l'origine du site doit être déclarée explicitement."
+    );
+  }
+
+  // Une adresse locale en production produit des liens qui ne mènent
+  // nulle part — QR code de don et URL de retour du donateur. Rien ne
+  // le signalerait au moment où c'est fait ; autant refuser de démarrer.
+  if (
+    env.isProduction &&
+    /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)/.test(env.PUBLIC_SITE_URL)
+  ) {
+    problems.push(
+      `PUBLIC_SITE_URL vaut « ${env.PUBLIC_SITE_URL} » en production. ` +
+        "Renseignez l'adresse publique du site, ou placez-la en première position de CORS_ORIGIN."
     );
   }
 

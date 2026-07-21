@@ -603,7 +603,27 @@ export const buildRoutes = () => {
         color: { dark: "#0d5b3e", light: "#ffffff" },
       });
 
-      sendSuccess(res, { data: { url, dataUrl } });
+      // Seconde barrière, en plus de la validation au démarrage.
+      //
+      // Un QR code menant à une adresse locale est parfaitement lisible
+      // et parfaitement inutile : le téléphone d'un fidèle n'atteindra
+      // jamais le `localhost` du serveur. Comme il est destiné à être
+      // projeté devant une assemblée, l'erreur doit se voir AVANT, pas
+      // pendant.
+      const unreachable = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)/.test(
+        url
+      );
+
+      sendSuccess(res, {
+        data: {
+          url,
+          dataUrl,
+          warning: unreachable
+            ? "Ce QR code pointe vers une adresse locale, injoignable depuis un téléphone. " +
+              "Renseignez PUBLIC_SITE_URL sur le serveur avant de le projeter."
+            : null,
+        },
+      });
     })
   );
 
