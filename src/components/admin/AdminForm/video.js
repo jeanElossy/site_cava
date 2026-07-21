@@ -25,11 +25,16 @@ export const VIDEO_KINDS = [
   },
   {
     value: "file",
-    label: "Fichier hébergé (lecture sur le site)",
+    label: "Fichier vidéo ou audio (lecture sur le site)",
     field: "src",
-    fieldLabel: "Chemin du fichier",
+    fieldLabel: "Fichier",
+    // `upload: true` : ce type n'attend plus un chemin saisi à la
+    // main, mais un fichier envoyé depuis l'ordinateur.
+    upload: true,
+    uploadFolder: "medias",
+    uploadAccept: "media",
     placeholder: "/media/message-01.mp4",
-    help: "Chemin absolu vers un fichier déposé dans public/media/. Ce chemin n'est pas vérifié au build : une faute de frappe casse la lecture en production.",
+    help: "Envoyez le fichier depuis votre ordinateur (100 Mo maximum), ou saisissez une adresse à la main pour les fichiers déjà présents dans le site.",
   },
   {
     value: "link",

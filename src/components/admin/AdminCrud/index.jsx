@@ -15,11 +15,24 @@ import {
 
 import "./AdminCrud.scss";
 
+// Valeur de départ d'un champ vide, selon son type.
+//
+// Le type compte : une galerie attend un TABLEAU. Lui donner la chaîne
+// vide par défaut l'enverrait telle quelle à l'API au premier
+// enregistrement, et Mongoose refuserait — ou pire, écraserait une
+// galerie existante par une valeur mal typée.
+const emptyValueFor = (field) => {
+  if (field.type === "checkbox") return false;
+
+  if (field.type === "gallery") return [];
+
+  return "";
+};
+
 const defaultToValues = (fields, item) =>
   fields.reduce((accumulator, field) => {
     accumulator[field.name] =
-      item?.[field.name] ??
-      (field.type === "checkbox" ? false : "");
+      item?.[field.name] ?? emptyValueFor(field);
 
     return accumulator;
   }, {});

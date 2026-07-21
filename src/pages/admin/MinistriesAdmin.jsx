@@ -44,6 +44,15 @@ const fields = [
     label: "Horaire principal",
     placeholder: "Dimanche, 09h00",
   },
+  {
+    name: "gallery",
+    label: "Galerie de photos",
+    type: "gallery",
+    folder: "ministries",
+    max: 30,
+    wide: true,
+    help: "Photos affichées sur la page publique du ministère. L'ordre compte : faites-les glisser pour le modifier.",
+  },
 ];
 
 const columns = [
@@ -86,7 +95,7 @@ const MinistriesAdmin = () => {
           "Aucun ministère enregistré. Ajoutez-en un pour qu'il apparaisse sur la page Ministères.",
         loadingSuffix: "des ministères",
         description:
-          "Les ministères présentés sur le site. Le contenu détaillé (mission, vision, galerie) reste pour l'instant dans le code.",
+          "Les ministères présentés sur le site. La galerie de photos est modifiable ici ; le contenu détaillé (mission, vision, témoignages) reste pour l'instant dans le code.",
         titleKey: "title",
       }}
     />

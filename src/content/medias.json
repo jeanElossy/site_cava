@@ -82,7 +82,10 @@
       "author": "Marie Kouassi",
       "duration": "08:24",
       "image": "/images/media/temoignage1.jpg",
-      "video": null,
+      "video": {
+        "kind": "link",
+        "url": "https://www.facebook.com/share/v/1EPgFaNxvv/"
+      },
       "date": "11 mai 2025"
     },
     {

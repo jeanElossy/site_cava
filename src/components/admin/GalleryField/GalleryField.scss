@@ -1,0 +1,342 @@
+@use "../../../styles/admin" as *;
+
+// PIÈGE PROJET : feuille de style unique. Tout est imbriqué sous
+// `.admin-gallery`, aucun nom générique à la racine.
+.admin-gallery {
+  display: grid;
+  gap: 12px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  &__count {
+    color: $admin-ink-faint;
+
+    font-size: 0.79rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__add {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    padding: 9px 15px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius-sm;
+
+    background: $admin-surface;
+
+    color: $admin-ink;
+
+    font-family: inherit;
+    font-size: 0.83rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: border-color $admin-ease, background $admin-ease;
+
+    svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    &:hover:not([disabled]) {
+      border-color: $admin-accent;
+
+      background: $admin-accent-soft;
+
+      color: $admin-accent;
+    }
+
+    &[disabled] {
+      opacity: 0.55;
+
+      cursor: not-allowed;
+    }
+  }
+
+  &__input {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+
+    opacity: 0;
+
+    pointer-events: none;
+  }
+
+  &__empty {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+
+    padding: 26px 20px;
+
+    border: 1.5px dashed $admin-border-strong;
+    border-radius: $admin-radius;
+
+    background: $admin-surface-muted;
+
+    text-align: center;
+
+    svg {
+      width: 24px;
+      height: 24px;
+
+      color: $admin-ink-faint;
+    }
+
+    p {
+      max-width: 40ch;
+      margin: 0;
+
+      color: $admin-ink-soft;
+
+      font-size: 0.84rem;
+      line-height: 1.55;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 10px;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+  }
+
+  &__item {
+    position: relative;
+
+    aspect-ratio: 4 / 3;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius-sm;
+
+    background: $admin-surface-muted;
+
+    overflow: hidden;
+
+    cursor: grab;
+
+    transition: border-color $admin-ease, transform $admin-ease;
+
+    img {
+      width: 100%;
+      height: 100%;
+
+      object-fit: cover;
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    // Cible de dépôt pendant un glisser : sans repère visuel, on ne
+    // sait pas où l'image va atterrir.
+    &--over {
+      border-color: $admin-accent;
+
+      transform: scale(1.03);
+    }
+
+    // Les commandes n'apparaissent qu'au survol ou au focus clavier :
+    // la grille reste lisible, sans masquer les photos.
+    &:hover,
+    &:focus-within {
+      .admin-gallery__remove,
+      .admin-gallery__move,
+      .admin-gallery__handle {
+        opacity: 1;
+      }
+    }
+  }
+
+  &__handle {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+
+    display: grid;
+    place-items: center;
+
+    width: 22px;
+    height: 22px;
+
+    border-radius: 6px;
+
+    background: rgba(4, 23, 15, 0.6);
+
+    color: #fff;
+
+    opacity: 0;
+
+    transition: opacity $admin-ease;
+
+    pointer-events: none;
+
+    svg {
+      width: 13px;
+      height: 13px;
+    }
+  }
+
+  &__remove {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+
+    display: grid;
+    place-items: center;
+
+    width: 22px;
+    height: 22px;
+
+    border: 0;
+    border-radius: 6px;
+
+    background: rgba(4, 23, 15, 0.6);
+
+    color: #fff;
+
+    cursor: pointer;
+
+    opacity: 0;
+
+    transition: opacity $admin-ease, background $admin-ease;
+
+    svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    &:hover:not([disabled]) {
+      background: $admin-danger;
+    }
+
+    &:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: -2px;
+
+      opacity: 1;
+    }
+  }
+
+  &__move {
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+
+    display: flex;
+    gap: 3px;
+
+    opacity: 0;
+
+    transition: opacity $admin-ease;
+
+    button {
+      display: grid;
+      place-items: center;
+
+      width: 22px;
+      height: 22px;
+
+      border: 0;
+      border-radius: 6px;
+
+      background: rgba(4, 23, 15, 0.6);
+
+      color: #fff;
+
+      font-family: inherit;
+      font-size: 0.95rem;
+      line-height: 1;
+
+      cursor: pointer;
+
+      &:hover:not([disabled]) {
+        background: $admin-accent;
+      }
+
+      &:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: -2px;
+      }
+
+      &[disabled] {
+        opacity: 0.35;
+
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  &__spin {
+    animation: admin-gallery-spin 0.9s linear infinite;
+  }
+
+  &__error {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+
+    margin: 0;
+    padding: 10px 13px;
+
+    border: 1px solid rgba(180, 35, 24, 0.28);
+    border-radius: $admin-radius-sm;
+
+    background: $admin-danger-bg;
+
+    color: $admin-danger;
+
+    font-size: 0.83rem;
+    line-height: 1.5;
+
+    svg {
+      flex-shrink: 0;
+
+      width: 15px;
+      height: 15px;
+
+      margin-top: 1px;
+    }
+  }
+
+  // Sur écran tactile, il n'y a pas de survol : les commandes restent
+  // visibles en permanence.
+  @media (hover: none) {
+    &__remove,
+    &__move {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__spin {
+      animation: none;
+    }
+
+    &__item--over {
+      transform: none;
+    }
+  }
+}
+
+@keyframes admin-gallery-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

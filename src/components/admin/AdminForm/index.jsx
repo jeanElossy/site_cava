@@ -3,6 +3,7 @@ import { useId } from "react";
 import { VIDEO_KINDS } from "./video";
 
 import FileField from "../FileField";
+import GalleryField from "../GalleryField";
 
 import "./AdminForm.scss";
 
@@ -44,19 +45,31 @@ const VideoField = ({ value, onChange }) => {
         <div className="admin-form__field">
           <label htmlFor={valueId}>{descriptor.fieldLabel}</label>
 
-          <input
-            id={valueId}
-            type="text"
-            value={value.value}
-            placeholder={descriptor.placeholder}
-            aria-describedby={helpId}
-            onChange={(event) =>
-              onChange({
-                kind: value.kind,
-                value: event.target.value,
-              })
-            }
-          />
+          {descriptor.upload ? (
+            <FileField
+              id={valueId}
+              value={value.value}
+              onChange={(next) =>
+                onChange({ kind: value.kind, value: next })
+              }
+              folder={descriptor.uploadFolder}
+              accept={descriptor.uploadAccept ?? "media"}
+            />
+          ) : (
+            <input
+              id={valueId}
+              type="text"
+              value={value.value}
+              placeholder={descriptor.placeholder}
+              aria-describedby={helpId}
+              onChange={(event) =>
+                onChange({
+                  kind: value.kind,
+                  value: event.target.value,
+                })
+              }
+            />
+          )}
         </div>
       )}
 
@@ -130,6 +143,15 @@ const Field = ({ field, value, onChange }) => {
         )}
       </label>
 
+      {field.type === "gallery" && (
+        <GalleryField
+          value={value ?? []}
+          onChange={(next) => onChange(field.name, next)}
+          folder={field.folder}
+          max={field.max ?? 30}
+        />
+      )}
+
       {field.type === "upload" && (
         <FileField
           id={id}
@@ -167,7 +189,13 @@ const Field = ({ field, value, onChange }) => {
         </select>
       )}
 
-      {!["textarea", "select", "checkbox", "upload"].includes(
+      {![
+        "textarea",
+        "select",
+        "checkbox",
+        "upload",
+        "gallery",
+      ].includes(
         field.type
       ) && (
         <input
