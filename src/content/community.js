@@ -15,21 +15,39 @@ import stored from "./community.json";
 // jour.
 //
 // ------------------------------------------------------------------
-// POURQUOI LES ZÉROS SONT ÉCARTÉS
+// POURQUOI CERTAINS CHIFFRES SONT ÉCARTÉS
 // ------------------------------------------------------------------
-// Ces chiffres reflètent ce qui est RÉELLEMENT saisi dans le registre.
-// Tant qu'une rubrique est vide, afficher « 0 membre » serait pire que
-// de ne rien afficher. Une carte à zéro disparaît donc, et la section
-// entière disparaît s'il n'en reste aucune.
+// Ces chiffres reflètent ce qui est RÉELLEMENT saisi dans le registre,
+// et le registre se remplit progressivement. Or un chiffre trop bas
+// n'est pas seulement modeste : il est FAUX vis-à-vis de la réalité de
+// l'assemblée, et il dessert l'église plus qu'un silence.
+//
+// « 1 membre » sur une page intitulée « notre communauté » donnerait
+// l'image d'une église déserte alors qu'elle ne fait que commencer sa
+// saisie. Chaque rubrique a donc un seuil en dessous duquel elle
+// disparaît, et la section entière disparaît s'il ne reste aucune
+// carte.
+//
+// Ces seuils ne sont pas des minimums arbitraires à contourner : le
+// jour où le registre est à jour, ils ne se voient plus.
 
-const count = (value) =>
-  Number.isFinite(value) && value > 0 ? value : 0;
+const count = (value, floor) =>
+  Number.isFinite(value) && value >= floor ? value : 0;
 
 export const communityStats = {
-  members: count(stored.members),
-  servants: count(stored.servants),
-  districts: count(stored.districts),
-  ministries: count(stored.ministries),
+  // Un effectif crédible pour une assemblée : en dessous, la saisie
+  // est manifestement en cours.
+  members: count(stored.members, 20),
+
+  servants: count(stored.servants, 5),
+
+  // Deux quartiers suffisent à parler de plusieurs communes ; un seul
+  // ne dit rien.
+  districts: count(stored.districts, 2),
+
+  // Les ministères, eux, sont réellement tous saisis : ils viennent du
+  // contenu du site, pas d'un registre en cours de constitution.
+  ministries: count(stored.ministries, 1),
 };
 
 export default communityStats;
