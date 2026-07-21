@@ -97,7 +97,12 @@
   padding-top: 40px;
 }
 
-.breadcrumb {
+/* Préfixées par `.contribution-hero` : déclarés à la racine, ces noms
+   très génériques étaient globaux et s'appliquaient à tout le site
+   (voir CLAUDE.md). `.badge` fuyait effectivement sur les badges de
+   LastMessage. */
+
+.contribution-hero .breadcrumb {
   margin-bottom: 18px;
 
   color: rgba(255,255,255,.85);
@@ -107,7 +112,7 @@
 
 /* BADGE */
 
-.badge {
+.contribution-hero .badge {
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -147,7 +152,7 @@
   letter-spacing: -2px;
 }
 
-.hero-line {
+.contribution-hero .hero-line {
   width: 70px;
   height: 4px;
 
@@ -232,7 +237,7 @@
     
   /* BADGE */
 
-  .badge {
+  .contribution-hero .badge {
     margin-top: -10px;
     font-size: .75rem;
   }
@@ -270,7 +275,7 @@
     line-height: 1.8;
   }
 
-  .badge {
+  .contribution-hero .badge {
     font-size: .60rem;
   }
 
@@ -302,7 +307,7 @@
 
 /* Badge */
 
-.badge {
+.contribution-hero .badge {
   opacity: 0;
 
   animation: fadeUp .8s ease forwards;
@@ -320,7 +325,7 @@
 
 /* Ligne jaune */
 
-.hero-line {
+.contribution-hero .hero-line {
   opacity: 0;
 
   animation: fadeUp .8s ease forwards;

@@ -8,6 +8,8 @@ import { privacyPolicy } from "../../components/legal/data/legalContent";
 
 import usePageMeta from "../../hooks/usePageMeta";
 
+import heroImage from "../../assets/images/family.jpg";
+
 import "./PrivacyPolicy.scss";
 
 const PrivacyPolicy = () => {
@@ -25,6 +27,7 @@ const PrivacyPolicy = () => {
         <LegalHero
           title={privacyPolicy.title}
           intro={privacyPolicy.intro}
+          image={heroImage}
         />
 
         <LegalContent sections={privacyPolicy.sections} />

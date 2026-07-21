@@ -31,7 +31,12 @@ const ICONS = [
 ];
 
 // Alternance verte/dorée, pour conserver le rythme visuel d'origine.
-const cardColor = (index) => (index % 2 === 0 ? "green" : "yellow");
+//
+// « gold » et non « yellow » : c'est le nom du modificateur défini dans
+// MinistriesGrid.scss. Un nom inexistant ne produit aucune erreur — la
+// pastille reste simplement sans fond, et son icône blanche devient
+// invisible.
+const cardColor = (index) => (index % 2 === 0 ? "green" : "gold");
 
 // La liste des ministères était recopiée en dur ici, en double du
 // module de données. C'est la duplication que CLAUDE.md signale

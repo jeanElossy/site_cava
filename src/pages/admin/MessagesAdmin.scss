@@ -173,6 +173,19 @@
       background: rgba(13, 91, 62, 0.12);
       color: $primary;
     }
+
+    // Le modèle définit quatre statuts ; seuls deux étaient habillés.
+    // Les deux autres retombaient sur le gris neutre, impossible à
+    // distinguer d'un statut inconnu.
+    &--lu {
+      background: rgba(29, 78, 216, 0.1);
+      color: $admin-info;
+    }
+
+    &--archive {
+      background: $admin-border;
+      color: $admin-ink-faint;
+    }
   }
 
   &__detail {

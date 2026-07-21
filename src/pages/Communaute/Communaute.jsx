@@ -2,6 +2,7 @@ import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 
 import CommunityHero from "../../components/communaute/CommunityHero";
+import CommunityStats from "../../components/communaute/CommunityStats";
 import CommunityLife from "../../components/communaute/CommunityLife";
 import HomeGroups from "../../components/communaute/HomeGroups";
 import CommunityAnnouncements from "../../components/communaute/CommunityAnnouncements";
@@ -25,6 +26,7 @@ const Communaute = () => {
 
       <main className="communaute-page">
         <CommunityHero />
+        <CommunityStats />
         <CommunityLife />
         <HomeGroups />
         <CommunityAnnouncements />

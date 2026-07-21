@@ -415,6 +415,54 @@ export const buildRoutes = () => {
 
   api.use("/admin/messages", adminMessages);
 
+  // ---- Statistiques publiques de la communauté ----------------
+  //
+  // Renvoie UNIQUEMENT des compteurs. Les fiches de membres restent
+  // inaccessibles publiquement (voir `publicFilter: { _id: null }` sur
+  // le service `members`) : ce sont des données personnelles.
+  //
+  // Un nombre agrégé ne permet d'identifier personne, alors qu'il donne
+  // au visiteur une idée juste de la vie de l'église — bien plus qu'un
+  // chiffre inventé et jamais mis à jour.
+  api.get(
+    "/community/stats",
+    asyncHandler(async (_req, res) => {
+      const [members, servants, areas, ministries] =
+        await Promise.all([
+          Member.countDocuments({ status: "actif" }),
+
+          // Serviteurs et responsables : ceux qui portent une charge
+          // dans l'église, par opposition aux membres simples.
+          Member.countDocuments({
+            status: "actif",
+            role: { $in: ["serviteur", "responsable"] },
+          }),
+
+          // Quartiers distincts réellement renseignés.
+          //
+          // Volontairement « quartiers représentés » et non « groupes
+          // de maison » : la page Communauté affiche par ailleurs une
+          // liste éditoriale de groupes, et deux nombres différents
+          // censés désigner la même chose se contrediraient à l'écran.
+          Member.distinct("area", {
+            status: "actif",
+            area: { $nin: [null, ""] },
+          }),
+
+          Ministry.countDocuments({ status: "published" }),
+        ]);
+
+      sendSuccess(res, {
+        data: {
+          members,
+          servants,
+          districts: areas.length,
+          ministries,
+        },
+      });
+    })
+  );
+
   // ---- Lettre d'information ----------------------------------
   // Deuxième route publique en écriture, avec la même limitation de
   // débit que le formulaire de contact : sans elle, la liste se
