@@ -9,6 +9,7 @@ import MediasAdmin from "../pages/admin/MediasAdmin";
 import EventsAdmin from "../pages/admin/EventsAdmin";
 import MinistriesAdmin from "../pages/admin/MinistriesAdmin";
 import MessagesAdmin from "../pages/admin/MessagesAdmin";
+import DonationsAdmin from "../pages/admin/DonationsAdmin";
 import CommunityAdmin from "../pages/admin/CommunityAdmin";
 import SubscribersAdmin from "../pages/admin/SubscribersAdmin";
 import SettingsAdmin from "../pages/admin/SettingsAdmin";
@@ -62,6 +63,11 @@ const AdminRoutes = () => {
         <Route
           path="messages"
           element={<MessagesAdmin />}
+        />
+
+        <Route
+          path="dons"
+          element={<DonationsAdmin />}
         />
 
         <Route

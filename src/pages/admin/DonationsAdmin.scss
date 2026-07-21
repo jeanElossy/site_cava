@@ -1,0 +1,531 @@
+@use "../../styles/admin" as *;
+
+.admin-donations {
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+
+    margin-bottom: 24px;
+
+    h1 {
+      margin: 0;
+
+      color: $admin-ink;
+
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 8px 0 0;
+
+      max-width: 560px;
+
+      color: $admin-ink-soft;
+
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+  }
+
+  &__header-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 10px;
+  }
+
+  &__qr-open,
+  &__refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+
+    padding: 11px 20px;
+
+    border: 1px solid $admin-border-strong;
+    border-radius: 10px;
+
+    background: #fff;
+
+    color: #3d4a44;
+
+    font-family: inherit;
+    font-size: 0.87rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: $transition;
+
+    &:hover {
+      border-color: $primary;
+
+      color: $primary;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
+    }
+  }
+
+  &__qr-open {
+    border-color: transparent;
+
+    background: $primary;
+
+    color: #fff;
+
+    &:hover {
+      border-color: transparent;
+
+      background: $primary-dark;
+
+      color: #fff;
+    }
+  }
+
+  &__warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
+    margin-bottom: 24px;
+    padding: 15px 18px;
+
+    border: 1px solid rgba(122, 92, 0, 0.3);
+    border-radius: 11px;
+
+    background: rgba(255, 210, 46, 0.12);
+
+    svg {
+      flex-shrink: 0;
+
+      margin-top: 2px;
+
+      color: #7a5c00;
+    }
+
+    p {
+      margin: 0;
+
+      color: #5d4600;
+
+      font-size: 0.86rem;
+      line-height: 1.65;
+    }
+  }
+
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+
+    margin: 0 0 24px;
+    padding: 0;
+
+    list-style: none;
+  }
+
+  &__stat {
+    display: flex;
+    flex-direction: column;
+
+    padding: 20px 22px;
+
+    border: 1px solid $admin-border;
+    border-left: 4px solid $admin-border-strong;
+    border-radius: 13px;
+
+    background: #fff;
+
+    strong {
+      margin: 8px 0 4px;
+
+      color: $admin-ink;
+
+      font-size: 1.55rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    &--paid {
+      border-left-color: $primary;
+    }
+
+    &--suspect {
+      border-left-color: #b8860b;
+    }
+  }
+
+  &__stat-label {
+    color: $admin-ink-faint;
+
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  &__stat-hint {
+    color: $admin-ink-soft;
+
+    font-size: 0.8rem;
+  }
+
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+
+    margin-bottom: 20px;
+  }
+
+  &__filter {
+    padding: 8px 17px;
+
+    border: 1px solid $admin-border-strong;
+    border-radius: 50px;
+
+    background: #fff;
+
+    color: #4c554f;
+
+    font-family: inherit;
+    font-size: 0.83rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: $transition;
+
+    &:hover {
+      border-color: $primary;
+
+      color: $primary;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
+    }
+
+    &--active {
+      border-color: $primary;
+
+      background: $primary;
+
+      color: #fff;
+
+      &:hover {
+        color: #fff;
+      }
+    }
+  }
+
+  // Le tableau défile horizontalement DANS son cadre : sans ce
+  // conteneur, c'est la page entière qui défilerait sur mobile.
+  &__table-wrap {
+    border: 1px solid $admin-border;
+    border-radius: 14px;
+
+    background: #fff;
+
+    overflow-x: auto;
+  }
+
+  &__table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    th {
+      padding: 14px 18px;
+
+      border-bottom: 1px solid $admin-border;
+
+      color: $admin-ink-faint;
+
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-align: left;
+      text-transform: uppercase;
+
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 15px 18px;
+
+      border-bottom: 1px solid #f2f5f4;
+
+      color: $admin-ink;
+
+      font-size: 0.89rem;
+
+      vertical-align: top;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+  }
+
+  &__date {
+    display: block;
+
+    white-space: nowrap;
+  }
+
+  &__reference {
+    display: block;
+
+    margin-top: 3px;
+
+    color: $admin-ink-faint;
+
+    font-size: 0.73rem;
+  }
+
+  &__method {
+    text-transform: capitalize;
+  }
+
+  &__amount {
+    font-weight: 700;
+
+    white-space: nowrap;
+  }
+
+  &__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 4px 11px;
+
+    border-radius: 50px;
+
+    background: $admin-border;
+
+    color: $admin-ink-soft;
+
+    font-size: 0.72rem;
+    font-weight: 700;
+
+    white-space: nowrap;
+
+    &--paid {
+      background: rgba(13, 91, 62, 0.12);
+      color: $primary;
+    }
+
+    &--pending {
+      background: rgba(122, 92, 0, 0.14);
+      color: #6b5200;
+    }
+
+    &--failed {
+      background: rgba(185, 28, 28, 0.1);
+      color: #991b1b;
+    }
+
+    &--suspect {
+      background: rgba(184, 134, 11, 0.16);
+      color: #8a6508;
+    }
+  }
+
+  &__reason {
+    display: block;
+
+    max-width: 260px;
+
+    margin-top: 6px;
+
+    color: $admin-ink-faint;
+
+    font-size: 0.74rem;
+    line-height: 1.5;
+  }
+
+  // ---- Fenêtre du QR code --------------------------------------
+
+  &__qr {
+    display: grid;
+    gap: 18px;
+  }
+
+  &__qr-fields {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+
+    label {
+      display: grid;
+      gap: 7px;
+
+      color: $admin-ink;
+
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    select,
+    input {
+      width: 100%;
+
+      padding: 11px 13px;
+
+      border: 1px solid $admin-border-strong;
+      border-radius: 9px;
+
+      background: #fff;
+
+      color: #1f2a25;
+
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 400;
+
+      &:focus {
+        border-color: $primary;
+
+        outline: none;
+
+        box-shadow: 0 0 0 3px rgba(13, 91, 62, 0.15);
+      }
+    }
+  }
+
+  &__qr-generate {
+    justify-self: flex-start;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+
+    padding: 10px 20px;
+
+    border: 1px solid $admin-border-strong;
+    border-radius: 9px;
+
+    background: #fff;
+
+    color: #3d4a44;
+
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: $transition;
+
+    &:hover:not([disabled]) {
+      border-color: $primary;
+
+      color: $primary;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
+    }
+
+    &[disabled] {
+      opacity: 0.6;
+
+      cursor: not-allowed;
+    }
+  }
+
+  &__qr-result {
+    display: grid;
+    justify-items: center;
+    gap: 14px;
+
+    padding: 26px;
+
+    border: 1px solid $admin-border;
+    border-radius: 14px;
+
+    background: $admin-surface-muted;
+
+    img {
+      width: 100%;
+      max-width: 280px;
+
+      border-radius: 10px;
+
+      background: #fff;
+    }
+  }
+
+  &__qr-url {
+    margin: 0;
+
+    color: $admin-ink-soft;
+
+    font-size: 0.8rem;
+    text-align: center;
+
+    overflow-wrap: anywhere;
+  }
+
+  &__qr-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+
+    padding: 10px 20px;
+
+    border-radius: 9px;
+
+    background: $primary;
+
+    color: #fff;
+
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+
+    transition: $transition;
+
+    &:hover {
+      background: $primary-dark;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary-dark;
+      outline-offset: 2px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    &__header {
+      flex-direction: column;
+
+      h1 {
+        font-size: 1.35rem;
+      }
+    }
+
+    &__header-actions {
+      width: 100%;
+
+      button {
+        flex: 1;
+
+        justify-content: center;
+      }
+    }
+
+    &__qr-fields {
+      grid-template-columns: 1fr;
+    }
+  }
+}

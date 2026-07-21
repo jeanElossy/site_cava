@@ -11,6 +11,7 @@ import {
   Calendar,
   Church,
   ExternalLink,
+  HandCoins,
   Image,
   LayoutDashboard,
   LogOut,
@@ -43,6 +44,7 @@ const NAV_GROUPS = [
         end: true,
       },
       { to: "/admin/messages", label: "Messages", icon: Mail },
+      { to: "/admin/dons", label: "Dons", icon: HandCoins },
       {
         to: "/admin/newsletter",
         label: "Lettre d'information",
