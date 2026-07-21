@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   FaArrowRight,
@@ -11,6 +11,11 @@ import {
 } from "../../../context/ContributionContext";
 
 import { steps, validateStep } from "./data";
+
+import {
+  paymentConfig,
+  startDonation,
+} from "../../../services/donations";
 
 import StepAmount from "./StepAmount";
 import StepDonor from "./StepDonor";
@@ -28,7 +33,31 @@ const ContributionForm = () => {
 
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
-  const [showNotice, setShowNotice] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // `null` tant que la réponse du serveur n'est pas arrivée : on
+  // n'affiche ni le bouton de paiement ni le message « pas encore
+  // actif » avant de savoir lequel des deux est vrai.
+  const [paymentEnabled, setPaymentEnabled] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    paymentConfig()
+      .then((config) => {
+        if (!cancelled) setPaymentEnabled(config?.enabled === true);
+      })
+      .catch(() => {
+        // API injoignable : on retombe sur le message de repli, qui
+        // oriente vers un canal humain. Bien préférable à un bouton
+        // qui ne mènerait nulle part.
+        if (!cancelled) setPaymentEnabled(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const isLastStep = step === steps.length - 1;
 
@@ -62,19 +91,50 @@ const ContributionForm = () => {
 
   const goBack = () => {
     setError("");
-    setShowNotice(false);
     setStep((current) => Math.max(current - 1, 0));
   };
 
-  // Aucun prestataire de paiement n'est branché (site statique, pas de
-  // backend). On ne simule surtout pas une transaction réussie : on
-  // informe honnêtement et on oriente vers un canal réel.
+  // Départ vers le guichet de paiement.
   //
-  // À faire quand un backend existera : brancher ici les API Orange
-  // Money, MTN, Moov, Wave et carte bancaire, puis afficher une vraie
-  // confirmation avec la référence de transaction renvoyée par l'API.
-  const handleSubmit = () => {
-    setShowNotice(true);
+  // Le serveur enregistre l'intention, fige le montant, puis renvoie
+  // l'URL du prestataire. On ne fait que suivre cette URL : le montant
+  // qui sera débité n'est plus modifiable côté navigateur à partir
+  // d'ici.
+  //
+  // `location.href` plutôt qu'une navigation React : la destination est
+  // un autre domaine, hors du routeur.
+  const handleSubmit = async () => {
+    if (submitting) return;
+
+    setError("");
+    setSubmitting(true);
+
+    try {
+      const { paymentUrl } = await startDonation({
+        amount: state.amount,
+        contributionType: state.contributionType,
+        project: state.project,
+        recurring: state.recurring,
+        paymentMethod: state.paymentMethod,
+        donor: state.donor,
+      });
+
+      window.location.href = paymentUrl;
+    } catch (submitError) {
+      // L'erreur peut porter un détail par champ (montant refusé,
+      // carte sans coordonnées…). On affiche le plus précis disponible.
+      const details = submitError.details
+        ? Object.values(submitError.details)[0]
+        : null;
+
+      setError(
+        details ??
+          submitError.message ??
+          "Le paiement n'a pas pu être lancé. Merci de réessayer."
+      );
+
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -182,7 +242,8 @@ const ContributionForm = () => {
           state={state}
           isLastStep={isLastStep}
           onSubmit={handleSubmit}
-          showNotice={showNotice}
+          submitting={submitting}
+          paymentEnabled={paymentEnabled === true}
         />
 
       </div>

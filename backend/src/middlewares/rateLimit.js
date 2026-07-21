@@ -100,6 +100,27 @@ export const twoFactorManageLimiter = rateLimit({
   },
 });
 
+// Initiation d'un don.
+//
+// Plus permissif que le formulaire de contact : un donateur qui se
+// trompe de moyen de paiement, abandonne puis recommence est un cas
+// normal, et le bloquer reviendrait à refuser de l'argent. Assez
+// strict, en revanche, pour qu'on ne puisse pas ouvrir des centaines
+// de guichets de paiement à la chaîne sur notre compte marchand.
+export const donationLimiter = rateLimit({
+  ...base,
+  windowMs: 15 * 60 * 1000,
+  limit: 15,
+  handler: (_req, res) => {
+    res.status(429).json({
+      success: false,
+      message:
+        "Plusieurs tentatives de don viennent d'être lancées. Merci de patienter quelques minutes.",
+      error: { status: 429 },
+    });
+  },
+});
+
 // Formulaire de contact : seule route publique en écriture, donc la
 // plus exposée au spam.
 export const contactLimiter = rateLimit({

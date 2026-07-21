@@ -15,6 +15,7 @@ import * as audit from "../services/audit.service.js";
 import * as publishService from "../services/publish.service.js";
 import * as uploadService from "../services/upload.service.js";
 import * as newsletterService from "../services/newsletter.service.js";
+import * as donationService from "../services/donation.service.js";
 
 import { resourceRouter } from "./resource.routes.js";
 
@@ -33,6 +34,7 @@ import {
   twoFactorLimiter,
   twoFactorManageLimiter,
   contactLimiter,
+  donationLimiter,
 } from "../middlewares/rateLimit.js";
 
 import QRCode from "qrcode";
@@ -414,6 +416,145 @@ export const buildRoutes = () => {
   );
 
   api.use("/admin/messages", adminMessages);
+
+  // ---- Dons -----------------------------------------------------
+  //
+  // Trois routes publiques, aux natures très différentes :
+  //
+  //   POST /donations          le visiteur déclare son intention
+  //   POST /donations/webhook  le prestataire notifie le résultat
+  //   GET  /donations/:ref     la page de retour interroge l'état
+  //
+  // Aucune ne permet de marquer un don payé : c'est toujours un appel
+  // SORTANT vers le prestataire qui tranche (voir donation.service.js).
+
+  api.get(
+    "/donations/config",
+    asyncHandler(async (_req, res) =>
+      sendSuccess(res, {
+        data: { enabled: donationService.paymentEnabled() },
+      })
+    )
+  );
+
+  api.post(
+    "/donations",
+    donationLimiter,
+    asyncHandler(async (req, res) => {
+      const data = await donationService.createDonation(req.body ?? {}, {
+        ip: req.ip,
+      });
+
+      sendCreated(res, {
+        message: "Redirection vers le paiement.",
+        data,
+      });
+    })
+  );
+
+  api.post(
+    "/donations/webhook",
+    asyncHandler(async (req, res) => {
+      await donationService.handleNotification(
+        req.body ?? {},
+        req.get("x-token")
+      );
+
+      // Le prestataire attend un 200 pour cesser de rejouer sa
+      // notification. Le corps n'est pas lu par lui.
+      sendSuccess(res, { message: "Notification traitée." });
+    })
+  );
+
+  api.get(
+    "/donations/:reference",
+    asyncHandler(async (req, res) => {
+      const data = await donationService.publicStatus(
+        String(req.params.reference).slice(0, 40)
+      );
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  // ---- Dons : administration ------------------------------------
+  const adminDonations = Router();
+
+  adminDonations.use(requireAuth);
+
+  adminDonations.get(
+    "/",
+    asyncHandler(async (req, res) => {
+      const data = await donationService.adminList({
+        status: req.query.status,
+        limit: req.query.limit,
+        page: req.query.page,
+      });
+
+      sendSuccess(res, { data: data.items, meta: {
+        total: data.total,
+        page: data.page,
+        perPage: data.perPage,
+      } });
+    })
+  );
+
+  adminDonations.get(
+    "/summary",
+    asyncHandler(async (_req, res) => {
+      const [summary, stale] = await Promise.all([
+        donationService.adminSummary(),
+        donationService.staleCount(),
+      ]);
+
+      sendSuccess(res, {
+        data: {
+          ...summary,
+          stale,
+          enabled: donationService.paymentEnabled(),
+        },
+      });
+    })
+  );
+
+  // QR code à projeter pendant un direct.
+  //
+  // Généré côté serveur plutôt que dans le navigateur : le lien encodé
+  // est ainsi toujours construit à partir de PUBLIC_SITE_URL, sans
+  // qu'un copier-coller approximatif puisse produire un QR code menant
+  // à une adresse morte — affiché sur un écran de culte, l'erreur ne se
+  // verrait qu'une fois trop tard.
+  adminDonations.get(
+    "/qrcode",
+    asyncHandler(async (req, res) => {
+      const params = new URLSearchParams();
+
+      const type = String(req.query.type ?? "").trim();
+      const amount = Number(req.query.amount);
+
+      if (type) params.set("type", type.slice(0, 20));
+      if (Number.isInteger(amount) && amount > 0) {
+        params.set("amount", String(amount));
+      }
+
+      const query = params.toString();
+
+      const url =
+        `${donationService.publicSiteUrl()}/donate` +
+        (query ? `?${query}` : "");
+
+      const dataUrl = await QRCode.toDataURL(url, {
+        width: 900,
+        margin: 2,
+        errorCorrectionLevel: "M",
+        color: { dark: "#0d5b3e", light: "#ffffff" },
+      });
+
+      sendSuccess(res, { data: { url, dataUrl } });
+    })
+  );
+
+  api.use("/admin/donations", adminDonations);
 
   // ---- Statistiques publiques de la communauté ----------------
   //

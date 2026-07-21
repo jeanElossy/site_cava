@@ -905,6 +905,32 @@
   }
 }
 
+/* Rassurance affichée sous le bouton de paiement. */
+.contribution-form .pay-reassurance {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  margin: 16px 0 0;
+
+  color: #5c6a63;
+
+  font-size: .78rem;
+  line-height: 1.6;
+
+  svg {
+    flex-shrink: 0;
+
+    margin-top: 2px;
+
+    color: #0d5b3e;
+  }
+}
+
+@keyframes contribution-pay-spin {
+  to { transform: rotate(360deg); }
+}
+
 .contribution-form .pay-btn {
   position: relative;
 
@@ -949,12 +975,30 @@
     font-size: 1rem;
   }
 
-  &:hover {
+  &:hover:not([disabled]) {
     transform:
       translateY(-4px);
 
     box-shadow:
       0 20px 45px rgba(244,198,29,.30);
+  }
+
+  /* Pendant la redirection : le bouton reste lisible mais inerte. Sans
+     cet état, un double-clic ouvrirait deux guichets de paiement pour
+     un seul don. */
+  &[disabled] {
+    opacity: .72;
+
+    cursor: progress;
+  }
+
+  &:focus-visible {
+    outline: 3px solid #0d5b3e;
+    outline-offset: 3px;
+  }
+
+  &__spinner {
+    animation: contribution-pay-spin 1s linear infinite;
   }
 
   &::before {

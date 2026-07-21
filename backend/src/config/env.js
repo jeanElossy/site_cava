@@ -71,6 +71,35 @@ export const env = {
   // il reste côté serveur, jamais dans le bundle du front.
   VERCEL_DEPLOY_HOOK: read("VERCEL_DEPLOY_HOOK"),
 
+  // ---- Encaissement des dons (CinetPay) ------------------------
+  //
+  // `CINETPAY_SECRET_KEY` est la clé de vérification des notifications :
+  // elle ne quitte jamais le serveur. C'est elle qui distingue une
+  // notification authentique de n'importe quelle requête POST envoyée
+  // à la main sur notre URL de retour — sans elle, il suffirait de
+  // connaître l'adresse du webhook pour se déclarer donateur.
+  //
+  // Aucune de ces valeurs n'est préfixée `VITE_` : elles seraient
+  // sinon compilées dans le bundle et lisibles par tout visiteur.
+  CINETPAY_API_KEY: read("CINETPAY_API_KEY"),
+  CINETPAY_SITE_ID: read("CINETPAY_SITE_ID"),
+  CINETPAY_SECRET_KEY: read("CINETPAY_SECRET_KEY"),
+
+  CINETPAY_BASE_URL:
+    read("CINETPAY_BASE_URL") ?? "https://api-checkout.cinetpay.com/v2",
+
+  // Adresse publique du site, utilisée pour construire l'URL de retour
+  // du donateur. Doit être l'origine réelle : une valeur erronée
+  // renverrait les donateurs vers une page inexistante après paiement.
+  PUBLIC_SITE_URL: (
+    read("PUBLIC_SITE_URL") ?? "http://localhost:5173"
+  ).replace(/\/+$/, ""),
+
+  // Adresse publique de l'API, pour l'URL de notification serveur à
+  // serveur. Distincte de PUBLIC_SITE_URL : le site est sur Vercel,
+  // l'API sur Render.
+  PUBLIC_API_URL: (read("PUBLIC_API_URL") ?? "").replace(/\/+$/, ""),
+
   // Comptes d'amorçage — utilisés uniquement par `npm run seed`.
   SEED_ADMIN_NAME: read("SEED_ADMIN_NAME"),
   SEED_ADMIN_EMAIL: read("SEED_ADMIN_EMAIL"),
@@ -118,6 +147,50 @@ export function validateEnv({ requireSeedAdmin = false } = {}) {
     );
   }
 
+  // Encaissement des dons.
+  //
+  // Volontairement facultatif : le serveur doit démarrer sans, le temps
+  // que le compte marchand soit ouvert. En revanche une configuration
+  // À MOITIÉ renseignée est refusée — c'est le cas qui produirait des
+  // dons initiés mais jamais vérifiables, donc de l'argent encaissé
+  // sans trace exploitable.
+  const paymentKeys = [
+    "CINETPAY_API_KEY",
+    "CINETPAY_SITE_ID",
+    "CINETPAY_SECRET_KEY",
+  ];
+
+  const provided = paymentKeys.filter((key) => env[key]);
+
+  if (provided.length > 0 && provided.length < paymentKeys.length) {
+    const missing = paymentKeys.filter((key) => !env[key]);
+
+    problems.push(
+      "Configuration CinetPay incomplète. Manquant : " +
+        missing.join(", ") +
+        ". Renseignez les trois variables, ou aucune pour désactiver les dons en ligne."
+    );
+  }
+
+  if (provided.length === paymentKeys.length) {
+    if (!env.PUBLIC_API_URL) {
+      problems.push(
+        "PUBLIC_API_URL est absente alors que CinetPay est configuré. " +
+          "Sans elle, le prestataire ne sait pas où notifier le paiement et aucun don ne sera jamais confirmé."
+      );
+    } else if (env.isProduction && !env.PUBLIC_API_URL.startsWith("https://")) {
+      problems.push(
+        "PUBLIC_API_URL doit être en https en production : la notification de paiement y transite."
+      );
+    }
+
+    if (env.isProduction && !env.PUBLIC_SITE_URL.startsWith("https://")) {
+      problems.push(
+        "PUBLIC_SITE_URL doit être en https en production (URL de retour du donateur)."
+      );
+    }
+  }
+
   if (requireSeedAdmin) {
     if (!env.SEED_ADMIN_EMAIL) {
       problems.push("SEED_ADMIN_EMAIL est absente (requise par le script d'amorçage).");
@@ -142,6 +215,19 @@ export function validateEnv({ requireSeedAdmin = false } = {}) {
 
   return env;
 }
+
+// Les dons en ligne sont-ils utilisables ?
+//
+// Interrogé par les routes plutôt que de laisser un appel partir vers
+// CinetPay avec des clés vides : le donateur recevrait une erreur
+// technique du prestataire au lieu d'un message clair de notre part.
+export const isPaymentConfigured = () =>
+  Boolean(
+    env.CINETPAY_API_KEY &&
+      env.CINETPAY_SITE_ID &&
+      env.CINETPAY_SECRET_KEY &&
+      env.PUBLIC_API_URL
+  );
 
 // Origines autorisées en développement quand CORS_ORIGIN n'est pas
 // renseignée. Volontairement limité au serveur de dev Vite : ce repli
