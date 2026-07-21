@@ -16,21 +16,45 @@ const AdminModal = ({ title, description, onClose, children }) => {
   const titleId = useId();
   const descriptionId = useId();
 
+  // Référence toujours à jour vers `onClose`, SANS en faire une
+  // dépendance de l'effet ci-dessous.
+  //
+  // C'est le cœur du correctif. Les pages passent une fonction fléchée
+  // (`onClose={() => setPendingDelete(null)}`), recréée à chaque rendu.
+  // En dépendant de `onClose`, l'effet se relançait à chaque frappe :
+  // il replaçait le focus sur le premier élément de la fenêtre, et la
+  // saisie devenait impossible sans recliquer dans le champ.
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
+  // Dépendances vides : la mise en place du focus et des écouteurs ne
+  // doit avoir lieu qu'à l'ouverture, jamais à chaque rendu.
   useEffect(() => {
     openerRef.current = document.activeElement;
 
     const dialog = dialogRef.current;
 
-    const focusable = dialog?.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    // On vise le premier champ de SAISIE, pas le premier élément
+    // focusable — qui est le bouton de fermeture, placé en tête dans
+    // l'en-tête. Ouvrir un formulaire avec le curseur sur la croix
+    // oblige à un clic supplémentaire avant d'écrire.
+    const firstInput = dialog?.querySelector(
+      "input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled])"
     );
 
-    focusable?.[0]?.focus();
+    const fallback = dialog?.querySelector(
+      'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+    );
+
+    (firstInput ?? fallback)?.focus();
 
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
         event.stopPropagation();
-        onClose();
+        onCloseRef.current();
 
         return;
       }
@@ -69,7 +93,7 @@ const AdminModal = ({ title, description, onClose, children }) => {
         openerRef.current.focus();
       }
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div className="admin-modal">

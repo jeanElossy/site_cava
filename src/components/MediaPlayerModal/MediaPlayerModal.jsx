@@ -19,8 +19,20 @@ const MediaPlayerModal = ({ item, onClose }) => {
   const dialogRef = useRef(null);
   const closeRef = useRef(null);
 
+  // Référence toujours à jour vers `onClose`, sans en faire une
+  // dépendance de l'effet : la fonction passée par la page est
+  // recréée à chaque rendu, et l'effet se relancerait alors sans
+  // raison — en replaçant le focus au passage.
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   // Fermeture au clavier + piège de focus : sans cela, la tabulation
   // continue derrière la fenêtre, qui devient inutilisable au clavier.
+  //
+  // Dépend du seul `item` : la fenêtre s'ouvre et se ferme avec lui.
   useEffect(() => {
     if (!item) return undefined;
 
@@ -30,7 +42,7 @@ const MediaPlayerModal = ({ item, onClose }) => {
 
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
-        onClose();
+        onCloseRef.current();
 
         return;
       }
@@ -72,7 +84,7 @@ const MediaPlayerModal = ({ item, onClose }) => {
 
       previouslyFocused?.focus?.();
     };
-  }, [item, onClose]);
+  }, [item]);
 
   if (!item) return null;
 
