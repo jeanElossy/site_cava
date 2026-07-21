@@ -204,6 +204,20 @@ const SIGNATURE_FIELDS = [
 export const isAuthenticNotification = (body, token) => {
   if (!token || typeof token !== "string") return false;
 
+  // Sans clé, aucune notification ne peut être authentique.
+  //
+  // Ce cas n'est pas théorique : tant que le compte marchand n'est pas
+  // ouvert, la variable est absente en production. `createHmac` lève
+  // alors une TypeError, et le webhook répondait 500 au lieu de 401 —
+  // constaté sur le serveur déployé.
+  //
+  // Deux conséquences, toutes deux fâcheuses : le code de retour
+  // trahissait qu'une signature avait été fournie (une requête sans
+  // jeton recevait 401, une requête avec jeton recevait 500), et le
+  // jour où la clé serait vidée par erreur, chaque notification
+  // échouerait en boucle sans que rien ne dise pourquoi.
+  if (!env.CINETPAY_SECRET_KEY) return false;
+
   const data = SIGNATURE_FIELDS.map((field) => body?.[field] ?? "").join("");
 
   const expected = crypto
