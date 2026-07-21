@@ -7,17 +7,36 @@ import {
   FaGlobe
 } from "react-icons/fa";
 
+import allMinistries from "./MinistryDetails/data/ministries";
+
+const ministries = Object.values(allMinistries);
+
+// Nombre de responsables réellement enregistrés, tous ministères
+// confondus. Sans aucun responsable saisi, on n'affiche pas « 0 » :
+// mieux vaut une formule honnête qu'un chiffre décourageant.
+const leaderCount = ministries.reduce(
+  (total, item) => total + (item.leaders?.length ?? 0),
+  0
+);
+
+// Ces deux chiffres étaient écrits en dur : « + 10 Ministères actifs »
+// alors qu'il y en a six, et « + 300 Serviteurs engagés ». Le premier
+// affichait donc une information fausse, que personne ne pensait à
+// corriger en ajoutant ou retirant un ministère.
 const stats = [
   {
     icon: <FaUsers />,
-    value: "+ 10",
-    label: "Ministères actifs",
+    value: String(ministries.length),
+    label:
+      ministries.length > 1
+        ? "Ministères actifs"
+        : "Ministère actif",
     color: "green",
   },
   {
     icon: <FaHandsHelping />,
-    value: "+ 300",
-    label: "Serviteurs engagés",
+    value: leaderCount > 0 ? String(leaderCount) : "Nombreux",
+    label: "Responsables engagés",
     color: "gold",
   },
   {

@@ -11,38 +11,22 @@ import {
 
 import "./ContactSchedule.scss";
 
-// Horaires repris du contenu déjà publié sur le site
-// (UpcomingEvents, Events et bloc « Nos coordonnées » de ContactForm).
-const schedule = [
-  {
-    icon: <FaChurch />,
-    title: "Culte dominical",
-    day: "Dimanche",
-    time: "09h00",
-    detail: "Louange, enseignement et prière.",
-  },
-  {
-    icon: <FaChild />,
-    title: "École du dimanche",
-    day: "Dimanche",
-    time: "09h00",
-    detail: "Enseignement biblique adapté aux enfants.",
-  },
-  {
-    icon: <FaPrayingHands />,
-    title: "Réunion de prière",
-    day: "Mercredi",
-    time: "18h30",
-    detail: "Intercession pour nos familles et notre nation.",
-  },
-  {
-    icon: <FaHeadset />,
-    title: "Accueil & secrétariat",
-    day: "Lundi - Dimanche",
-    time: "08h00 - 17h00",
-    detail: "Une équipe disponible pour vous orienter.",
-  },
+import { site, dayLabel } from "../../content/settings";
+
+// Icônes par position : le modèle ne stocke pas d'icône, c'est un
+// choix d'habillage et non une donnée.
+const ICONS = [
+  <FaChurch />,
+  <FaChild />,
+  <FaPrayingHands />,
+  <FaHeadset />,
 ];
+
+// Les horaires étaient écrits en dur ici alors qu'ils sont désormais
+// saisissables dans l'administration (Paramètres → Horaires réguliers).
+// Tant que rien n'y est renseigné, le module de paramètres fournit les
+// mêmes valeurs qu'avant : l'affichage ne change pas.
+const schedule = site.serviceTimes;
 
 const ContactSchedule = () => {
   return (
@@ -65,7 +49,7 @@ const ContactSchedule = () => {
         <ul className="contact-schedule__grid">
           {schedule.map((item, index) => (
             <motion.li
-              key={item.title}
+              key={`${item.label}-${item.day}-${index}`}
               className="schedule-card"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -73,16 +57,20 @@ const ContactSchedule = () => {
               transition={{ duration: 0.4, delay: index * 0.07 }}
             >
               <div className="schedule-card__icon" aria-hidden="true">
-                {item.icon}
+                {ICONS[index % ICONS.length]}
               </div>
 
-              <h3>{item.title}</h3>
+              <h3>{item.label}</h3>
 
-              <p className="schedule-card__day">{item.day}</p>
+              <p className="schedule-card__day">
+                {dayLabel(item.day)}
+              </p>
 
               <p className="schedule-card__time">{item.time}</p>
 
-              <p className="schedule-card__detail">{item.detail}</p>
+              <p className="schedule-card__detail">
+                {item.description}
+              </p>
             </motion.li>
           ))}
         </ul>

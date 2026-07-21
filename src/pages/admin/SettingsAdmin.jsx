@@ -215,10 +215,13 @@ const SettingsAdmin = () => {
         <FaInfoCircle aria-hidden="true" />
 
         <p>
-          Ces valeurs sont bien enregistrées en base, mais ne pilotent
-          pas encore l&apos;affichage du site : le pied de page et la
-          page Contact affichent toujours des coordonnées écrites en
-          dur dans le code. Leur branchement reste à faire.
+          Ces valeurs pilotent désormais le pied de page, la page
+          Contact et les horaires affichés sur le site. Un champ laissé
+          vide conserve la valeur actuellement affichée plutôt que de
+          la supprimer. N&apos;oubliez pas de <strong>publier</strong>
+          {" "}
+          depuis le tableau de bord pour que vos modifications
+          apparaissent en ligne.
         </p>
       </div>
 

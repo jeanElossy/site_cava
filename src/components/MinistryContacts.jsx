@@ -10,56 +10,34 @@ import {
   FaArrowRight,
 } from "react-icons/fa";
 
-const ministries = [
-  {
-    icon: <FaUsers />,
-    title: "Enfance & Jeunesse",
-    description:
-      "Pour toutes questions concernant les enfants et les jeunes.",
-    email: "enfance@cava.ci",
-    color: "green",
-  },
-  {
-    icon: <FaHeart />,
-    title: "Louange & Adoration",
-    description:
-      "Pour rejoindre l'équipe ou toute information sur les temps d'adoration.",
-    email: "louange@cava.ci",
-    color: "gold",
-  },
-  {
-    icon: <FaBookOpen />,
-    title: "Enseignement",
-    description:
-      "Pour toute information sur nos formations et études bibliques.",
-    email: "enseignement@cava.ci",
-    color: "green",
-  },
-  {
-    icon: <FaHome />,
-    title: "Groupes de maison",
-    description:
-      "Pour trouver ou créer un groupe de maison près de chez vous.",
-    email: "maisons@cava.ci",
-    color: "gold",
-  },
-  {
-    icon: <FaHandsHelping />,
-    title: "Action Sociale",
-    description:
-      "Pour nos actions humanitaires et projets communautaires.",
-    email: "social@cava.ci",
-    color: "green",
-  },
-  {
-    icon: <FaGlobeAfrica />,
-    title: "Évangélisation",
-    description:
-      "Pour participer ou organiser des actions d'évangélisation.",
-    email: "evangelisation@cava.ci",
-    color: "gold",
-  },
+import allMinistries from "./MinistryDetails/data/ministries";
+import { site } from "../content/settings";
+
+const ICONS = [
+  <FaUsers />,
+  <FaHeart />,
+  <FaBookOpen />,
+  <FaHome />,
+  <FaHandsHelping />,
+  <FaGlobeAfrica />,
 ];
+
+// La liste et les adresses étaient écrites en dur. Un ministère ajouté
+// ou renommé dans l'administration n'apparaissait pas ici, et les
+// adresses affichées n'existaient nulle part ailleurs.
+//
+// L'adresse vient maintenant du champ `contactEmail` du ministère ;
+// à défaut, celle de l'église, qui a le mérite d'aboutir réellement.
+const ministries = Object.values(allMinistries).map(
+  (item, index) => ({
+    slug: item.slug,
+    title: item.title,
+    description: item.description,
+    email: item.contactEmail?.trim() || site.email,
+    icon: ICONS[index % ICONS.length],
+    color: index % 2 === 0 ? "green" : "gold",
+  })
+);
 
 const MinistryContacts = () => {
   return (
@@ -75,10 +53,10 @@ const MinistryContacts = () => {
         </div>
 
         <div className="ministry-contacts__grid">
-          {ministries.map((ministry, index) => (
+          {ministries.map((ministry) => (
             <div
               className="ministry-card"
-              key={index}
+              key={ministry.slug}
             >
               <div
                 className={`ministry-card__icon ministry-card__icon--${ministry.color}`}

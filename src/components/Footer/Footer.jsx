@@ -17,6 +17,8 @@ import logo from "../../assets/logo/logo_cava.gif";
 
 import NewsletterForm from "../NewsletterForm";
 
+import { site, telHref } from "../../content/settings";
+
 import "./Footer.scss";
 
 const Footer = () => {
@@ -38,7 +40,7 @@ const Footer = () => {
 
           <div className="socials">
             <a
-              href="https://facebook.com"
+              href={site.social.facebook}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Facebook"
@@ -47,7 +49,7 @@ const Footer = () => {
             </a>
 
             <a
-              href="https://instagram.com"
+              href={site.social.instagram}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
@@ -56,7 +58,7 @@ const Footer = () => {
             </a>
 
             <a
-              href="https://youtube.com"
+              href={site.social.youtube}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="YouTube"
@@ -65,7 +67,7 @@ const Footer = () => {
             </a>
 
             <a
-              href="https://wa.me/2250712345678"
+              href={site.social.whatsapp}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="WhatsApp"
@@ -126,19 +128,34 @@ const Footer = () => {
         <div className="footer__contact">
           <h4>NOUS CONTACTER</h4>
 
+          {/* Coordonnées issues des Paramètres de l'administration.
+              Voir src/content/settings.js : tant qu'un champ n'y est
+              pas renseigné, la valeur affichée jusqu'ici est conservée,
+              pour ne pas vider le pied de page. */}
           <div className="contact-item">
             <Phone size={18} />
-            <span>+225 07 12 34 56 78</span>
+            <a href={telHref(site.phonePrimary)}>
+              {site.phonePrimary}
+            </a>
           </div>
+
+          {site.phoneSecondary && (
+            <div className="contact-item">
+              <Phone size={18} />
+              <a href={telHref(site.phoneSecondary)}>
+                {site.phoneSecondary}
+              </a>
+            </div>
+          )}
 
           <div className="contact-item">
             <Mail size={18} />
-            <span>info@cava.ci</span>
+            <a href={`mailto:${site.email}`}>{site.email}</a>
           </div>
 
           <div className="contact-item">
             <MapPin size={18} />
-            <span>Abidjan, Côte d’Ivoire</span>
+            <span>{site.address}</span>
           </div>
         </div>
 
@@ -161,7 +178,7 @@ const Footer = () => {
 
       <div className="footer__bottom">
         <span>
-          © 2026 Centre Apostolique Vie et Abondance —
+          © {new Date().getFullYear()} {site.churchName} —
           Tous droits réservés.
         </span>
 
