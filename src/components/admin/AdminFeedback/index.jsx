@@ -1,8 +1,4 @@
-import {
-  FaExclamationTriangle,
-  FaInbox,
-  FaSpinner,
-} from "react-icons/fa";
+import { AlertTriangle, Inbox, Loader2 } from "lucide-react";
 
 import "./AdminFeedback.scss";
 
@@ -17,7 +13,7 @@ export const AdminLoading = ({ label = "Chargement…" }) => (
     role="status"
     aria-live="polite"
   >
-    <FaSpinner
+    <Loader2
       className="admin-feedback__spinner"
       aria-hidden="true"
     />
@@ -31,7 +27,7 @@ export const AdminError = ({ message, onRetry }) => (
     className="admin-feedback admin-feedback--error"
     role="alert"
   >
-    <FaExclamationTriangle aria-hidden="true" />
+    <AlertTriangle aria-hidden="true" />
 
     <p>{message}</p>
 
@@ -48,7 +44,7 @@ export const AdminError = ({ message, onRetry }) => (
 
 export const AdminEmpty = ({ message, action }) => (
   <div className="admin-feedback admin-feedback--empty">
-    <FaInbox aria-hidden="true" />
+    <Inbox aria-hidden="true" />
 
     <p>{message}</p>
 

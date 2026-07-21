@@ -1,4 +1,4 @@
-@use "../../styles/variables" as *;
+@use "../../styles/admin" as *;
 
 .admin-messages {
   &__header {
@@ -10,13 +10,13 @@
       font-size: 1.6rem;
       font-weight: 700;
 
-      color: $primary-dark;
+      color: $admin-ink;
     }
 
     p {
       margin: 8px 0 0;
 
-      color: #6a736e;
+      color: $admin-ink-soft;
 
       font-size: 0.92rem;
     }
@@ -61,7 +61,7 @@
   }
 
   &__list {
-    border: 1px solid #e6eae8;
+    border: 1px solid $admin-border;
     border-radius: 14px;
 
     background: #fff;
@@ -103,7 +103,7 @@
     transition: background 0.2s ease, border-color 0.2s ease;
 
     &:hover {
-      background: #fafcfb;
+      background: $admin-surface-muted;
     }
 
     &:focus-visible {
@@ -125,7 +125,7 @@
     gap: 10px;
 
     strong {
-      color: $primary-dark;
+      color: $admin-ink;
 
       font-size: 0.92rem;
       font-weight: 600;
@@ -133,7 +133,7 @@
   }
 
   &__item-subject {
-    color: #5a635e;
+    color: $admin-ink-soft;
 
     font-size: 0.85rem;
 
@@ -143,7 +143,7 @@
   }
 
   &__item-date {
-    color: #9aa39e;
+    color: $admin-ink-faint;
 
     font-size: 0.76rem;
   }
@@ -155,9 +155,9 @@
 
     border-radius: 50px;
 
-    background: #eef1f0;
+    background: $admin-border;
 
-    color: #6a736e;
+    color: $admin-ink-soft;
 
     font-size: 0.68rem;
     font-weight: 700;
@@ -178,7 +178,7 @@
   &__detail {
     padding: 28px;
 
-    border: 1px solid #e6eae8;
+    border: 1px solid $admin-border;
     border-radius: 14px;
 
     background: #fff;
@@ -195,7 +195,7 @@
       font-size: 1.2rem;
       font-weight: 700;
 
-      color: $primary-dark;
+      color: $admin-ink;
     }
   }
 
@@ -209,7 +209,7 @@
     dt {
       margin-bottom: 3px;
 
-      color: #9aa39e;
+      color: $admin-ink-faint;
 
       font-size: 0.72rem;
       font-weight: 700;
@@ -220,7 +220,7 @@
     dd {
       margin: 0;
 
-      color: #3b453f;
+      color: $admin-ink;
 
       font-size: 0.88rem;
     }
@@ -243,7 +243,7 @@
     margin-top: 18px;
     padding: 9px 18px;
 
-    border: 1px solid #dfe4e1;
+    border: 1px solid $admin-border;
     border-radius: 9px;
 
     background: #fff;
@@ -282,7 +282,7 @@
     p {
       margin: 0;
 
-      color: #3b453f;
+      color: $admin-ink;
 
       font-size: 0.95rem;
       line-height: 1.8;
@@ -295,10 +295,10 @@
     margin-bottom: 24px;
     padding: 18px;
 
-    border: 1px solid #e2e7e4;
+    border: 1px solid $admin-border;
     border-radius: 12px;
 
-    background: #fafbfa;
+    background: $admin-surface-muted;
 
     h3 {
       margin: 0 0 14px;
@@ -333,7 +333,7 @@
     p {
       margin: 0 0 7px;
 
-      color: #3b453f;
+      color: $admin-ink;
 
       font-size: 0.9rem;
       line-height: 1.7;
@@ -342,7 +342,7 @@
     }
 
     time {
-      color: #9aa39e;
+      color: $admin-ink-faint;
 
       font-size: 0.76rem;
     }
@@ -364,7 +364,7 @@
     border-top: 1px solid #f0f3f1;
 
     label {
-      color: #33403a;
+      color: $admin-ink;
 
       font-size: 0.85rem;
       font-weight: 600;
@@ -375,7 +375,7 @@
 
       padding: 12px 14px;
 
-      border: 1px solid #d9dfdc;
+      border: 1px solid $admin-border-strong;
       border-radius: 9px;
 
       background: #fff;
@@ -481,7 +481,7 @@
     p {
       margin: 0;
 
-      color: #8a938e;
+      color: $admin-ink-faint;
 
       font-size: 0.92rem;
     }

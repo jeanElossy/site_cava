@@ -1,5 +1,8 @@
-@use "../../../styles/variables" as *;
+@use "../../../styles/admin" as *;
 
+// PIÈGE PROJET : feuille de style unique. Tout est imbriqué sous
+// `.admin-form`, aucun nom générique (.field, .grid, .button…) à la
+// racine du fichier.
 .admin-form {
   &__grid {
     display: grid;
@@ -12,10 +15,14 @@
     flex-direction: column;
     gap: 7px;
 
-    label {
-      color: #33403a;
+    // `min-width: 0` : sans lui, un champ au contenu long élargit sa
+    // colonne de grille et casse l'alignement sur deux colonnes.
+    min-width: 0;
 
-      font-size: 0.85rem;
+    label {
+      color: $admin-ink;
+
+      font-size: 0.84rem;
       font-weight: 600;
     }
 
@@ -26,40 +33,59 @@
 
       padding: 11px 13px;
 
-      border: 1px solid #d9dfdc;
-      border-radius: 9px;
+      border: 1px solid $admin-border-strong;
+      border-radius: $admin-radius-sm;
 
-      background: #fff;
+      background: $admin-surface;
 
-      color: #1f2a25;
+      color: $admin-ink;
 
       font-family: inherit;
-      font-size: 0.92rem;
+      font-size: 0.91rem;
 
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: border-color $admin-ease, box-shadow $admin-ease;
 
-      &:hover {
-        border-color: #c2cbc6;
+      &::placeholder {
+        color: $admin-ink-faint;
+      }
+
+      &:hover:not(:disabled) {
+        border-color: $admin-ink-faint;
       }
 
       &:focus {
-        border-color: $primary;
+        border-color: $admin-accent;
 
         outline: none;
 
-        box-shadow: 0 0 0 3px rgba(13, 91, 62, 0.15);
+        box-shadow: 0 0 0 3px $admin-accent-soft;
       }
 
-      &:focus-visible {
-        outline: 2px solid $primary;
-        outline-offset: 1px;
+      &:disabled {
+        background: $admin-surface-muted;
+
+        color: $admin-ink-faint;
+
+        cursor: not-allowed;
       }
     }
 
-    textarea {
-      resize: vertical;
+    select {
+      // Flèche personnalisée : la flèche native diffère selon les
+      // navigateurs et jure avec le reste des champs.
+      appearance: none;
 
+      padding-right: 36px;
+
+      background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235a6862' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+
+    textarea {
       min-height: 96px;
+
+      resize: vertical;
     }
 
     &--wide {
@@ -74,13 +100,20 @@
       flex-wrap: wrap;
       gap: 10px;
 
-      input {
-        width: 18px;
-        height: 18px;
+      padding: 12px 14px;
 
+      border: 1px solid $admin-border;
+      border-radius: $admin-radius-sm;
+
+      background: $admin-surface-muted;
+
+      input {
         flex-shrink: 0;
 
-        accent-color: $primary;
+        width: 17px;
+        height: 17px;
+
+        accent-color: $admin-accent;
       }
 
       label {
@@ -90,31 +123,31 @@
   }
 
   &__required {
-    color: #b91c1c;
+    color: $admin-danger;
   }
 
   &__fieldset {
     grid-column: 1 / -1;
 
+    display: grid;
+    gap: 14px;
+
     margin: 0;
     padding: 18px;
 
-    border: 1px solid #e2e7e4;
-    border-radius: 12px;
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius;
 
-    background: #fafbfa;
-
-    display: grid;
-    gap: 14px;
+    background: $admin-surface-muted;
 
     legend {
       padding: 0 8px;
 
-      color: $primary-dark;
+      color: $admin-accent;
 
-      font-size: 0.85rem;
+      font-size: 0.76rem;
       font-weight: 700;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.07em;
       text-transform: uppercase;
     }
   }
@@ -122,81 +155,93 @@
   &__help {
     margin: 0;
 
-    color: #7b847f;
+    color: $admin-ink-faint;
 
-    font-size: 0.79rem;
+    font-size: 0.78rem;
     line-height: 1.55;
   }
 
   &__error {
     margin: 18px 0 0;
-    padding: 12px 15px;
+    padding: 13px 16px;
 
-    border: 1px solid rgba(185, 28, 28, 0.3);
-    border-radius: 9px;
+    border: 1px solid rgba(180, 35, 24, 0.28);
+    border-radius: $admin-radius-sm;
 
-    background: rgba(185, 28, 28, 0.05);
+    background: $admin-danger-bg;
 
-    color: #991b1b;
+    color: $admin-danger;
 
     font-size: 0.87rem;
+    line-height: 1.55;
   }
 
   &__actions {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
+    gap: 11px;
 
     margin-top: 24px;
     padding-top: 20px;
 
-    border-top: 1px solid #eceeed;
+    border-top: 1px solid $admin-border;
   }
 
   &__button {
-    padding: 11px 24px;
+    padding: 11px 22px;
 
     border: 1px solid transparent;
-    border-radius: 9px;
+    border-radius: $admin-radius-sm;
 
-    background: $primary;
+    background: linear-gradient(
+      135deg,
+      $admin-accent-strong,
+      $admin-accent
+    );
 
     color: #fff;
 
     font-family: inherit;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     font-weight: 600;
 
     cursor: pointer;
 
-    transition: $transition;
+    transition: transform $admin-ease, box-shadow $admin-ease,
+      background $admin-ease;
 
     &:hover:not([disabled]) {
-      background: $primary-dark;
+      transform: translateY(-1px);
+
+      box-shadow: 0 8px 20px rgba(13, 91, 62, 0.26);
     }
 
     &:focus-visible {
-      outline: 2px solid $primary-dark;
+      outline: 2px solid $admin-accent;
       outline-offset: 2px;
     }
 
     &[disabled] {
-      opacity: 0.6;
+      opacity: 0.55;
 
       cursor: not-allowed;
     }
 
     &--ghost {
-      border-color: #d9dfdc;
+      border-color: $admin-border;
 
-      background: #fff;
+      background: $admin-surface;
 
-      color: #4c554f;
+      color: $admin-ink-soft;
 
       &:hover:not([disabled]) {
-        border-color: #c2cbc6;
+        transform: none;
 
-        background: #f4f6f5;
+        border-color: $admin-border-strong;
+
+        background: $admin-surface-hover;
+
+        box-shadow: none;
       }
     }
   }
@@ -212,6 +257,12 @@
 
     &__button {
       width: 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__button:hover:not([disabled]) {
+      transform: none;
     }
   }
 }

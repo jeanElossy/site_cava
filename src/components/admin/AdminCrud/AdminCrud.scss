@@ -1,31 +1,40 @@
-@use "../../../styles/variables" as *;
+@use "../../../styles/admin" as *;
 
+// PIÈGE PROJET : feuille de style unique pour tout le site. Tout est
+// imbriqué sous `.admin-crud`, aucun nom générique à la racine.
+//
+// Ce fichier habille les pages Événements, Ministères, Médias et
+// Communauté : elles partagent toutes le composant AdminCrud.
 .admin-crud {
+  max-width: 1240px;
+
   &__header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 24px;
+    flex-wrap: wrap;
 
-    margin-bottom: 26px;
+    margin-bottom: 24px;
 
     h1 {
       margin: 0;
 
-      font-size: 1.6rem;
-      font-weight: 700;
+      color: $admin-ink;
 
-      color: $primary-dark;
+      font-size: 1.62rem;
+      font-weight: 700;
+      letter-spacing: -0.015em;
     }
 
     p {
-      margin: 8px 0 0;
+      margin: 7px 0 0;
 
-      max-width: 620px;
+      max-width: 640px;
 
-      color: #6a736e;
+      color: $admin-ink-soft;
 
-      font-size: 0.92rem;
+      font-size: 0.9rem;
       line-height: 1.65;
     }
   }
@@ -34,32 +43,42 @@
     display: inline-flex;
     align-items: center;
     gap: 9px;
-
     flex-shrink: 0;
 
-    padding: 11px 20px;
+    padding: 11px 19px;
 
     border: 0;
-    border-radius: 9px;
+    border-radius: $admin-radius-sm;
 
-    background: $primary;
+    background: linear-gradient(
+      135deg,
+      $admin-accent-strong,
+      $admin-accent
+    );
 
     color: #fff;
 
     font-family: inherit;
-    font-size: 0.88rem;
+    font-size: 0.87rem;
     font-weight: 600;
 
     cursor: pointer;
 
-    transition: $transition;
+    transition: transform $admin-ease, box-shadow $admin-ease;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
 
     &:hover {
-      background: $primary-dark;
+      transform: translateY(-1px);
+
+      box-shadow: 0 8px 20px rgba(13, 91, 62, 0.28);
     }
 
     &:focus-visible {
-      outline: 2px solid $primary-dark;
+      outline: 2px solid $admin-accent;
       outline-offset: 2px;
     }
 
@@ -69,25 +88,34 @@
   }
 
   &__alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
     margin: 0 0 20px;
-    padding: 12px 15px;
+    padding: 13px 16px;
 
-    border: 1px solid rgba(185, 28, 28, 0.3);
-    border-radius: 9px;
+    border: 1px solid rgba(180, 35, 24, 0.28);
+    border-radius: $admin-radius-sm;
 
-    background: rgba(185, 28, 28, 0.05);
+    background: $admin-danger-bg;
 
-    color: #991b1b;
+    color: $admin-danger;
 
-    font-size: 0.88rem;
+    font-size: 0.87rem;
+    line-height: 1.55;
   }
 
+  // ---------------- Tableau ----------------
+
   &__table-wrapper {
-    border: 1px solid #e6eae8;
-    border-radius: 14px;
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius;
 
-    background: #fff;
+    background: $admin-surface;
 
+    // Le tableau défile DANS son cadre : sans cela, une colonne large
+    // ferait défiler la page entière horizontalement.
     overflow-x: auto;
   }
 
@@ -99,204 +127,214 @@
 
     th,
     td {
-      padding: 14px 18px;
+      padding: 13px 18px;
 
       text-align: left;
-
       vertical-align: middle;
     }
 
     thead th {
-      border-bottom: 1px solid #e6eae8;
+      position: sticky;
+      top: 0;
+      z-index: 1;
 
-      background: #f7f9f8;
+      border-bottom: 1px solid $admin-border;
 
-      color: #56605a;
+      background: $admin-surface-muted;
 
-      font-size: 0.76rem;
+      color: $admin-ink-soft;
+
+      font-size: 0.73rem;
       font-weight: 700;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-
-      &:first-child {
-        border-top-left-radius: 14px;
-      }
-
-      &:last-child {
-        border-top-right-radius: 14px;
-      }
+      white-space: nowrap;
     }
 
     tbody tr {
-      border-bottom: 1px solid #f0f3f1;
+      border-bottom: 1px solid $admin-border;
 
-      transition: background 0.2s ease;
+      transition: background $admin-ease;
 
       &:last-child {
         border-bottom: 0;
       }
 
       &:hover {
-        background: #fafcfb;
+        background: $admin-surface-hover;
       }
     }
 
     tbody td {
-      color: #3b453f;
+      color: $admin-ink;
 
-      font-size: 0.9rem;
-      line-height: 1.5;
+      font-size: 0.88rem;
+      line-height: 1.55;
     }
   }
 
   &__row-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 8px;
+    gap: 7px;
 
     button {
-      width: 34px;
-      height: 34px;
-
       display: flex;
       align-items: center;
       justify-content: center;
 
-      border: 1px solid #e0e5e2;
-      border-radius: 8px;
+      width: 33px;
+      height: 33px;
 
-      background: #fff;
+      border: 1px solid $admin-border;
+      border-radius: $admin-radius-sm;
 
-      color: #5a635e;
+      background: $admin-surface;
 
-      font-size: 0.78rem;
+      color: $admin-ink-soft;
 
       cursor: pointer;
 
-      transition: $transition;
+      transition: border-color $admin-ease, color $admin-ease,
+        background $admin-ease;
+
+      svg {
+        width: 15px;
+        height: 15px;
+      }
 
       &:hover {
-        border-color: $primary;
+        border-color: $admin-accent;
 
-        color: $primary;
+        background: $admin-accent-soft;
+
+        color: $admin-accent;
       }
 
       &:focus-visible {
-        outline: 2px solid $primary;
+        outline: 2px solid $admin-accent;
         outline-offset: 2px;
       }
     }
   }
 
   &__danger:hover {
-    border-color: #b91c1c;
+    border-color: rgba(180, 35, 24, 0.45) !important;
 
-    color: #b91c1c;
+    background: $admin-danger-bg !important;
+
+    color: $admin-danger !important;
   }
+
+  // ---------------- Confirmation de suppression ----------------
 
   &__confirm {
     margin: 0;
 
-    color: #3b453f;
+    color: $admin-ink;
 
-    font-size: 0.95rem;
+    font-size: 0.94rem;
     line-height: 1.7;
   }
 
   &__confirm-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
+    gap: 11px;
 
     margin-top: 24px;
   }
 
   &__ghost {
-    padding: 11px 24px;
+    padding: 11px 22px;
 
-    border: 1px solid #d9dfdc;
-    border-radius: 9px;
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius-sm;
 
-    background: #fff;
+    background: $admin-surface;
 
-    color: #4c554f;
+    color: $admin-ink-soft;
 
     font-family: inherit;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     font-weight: 600;
 
     cursor: pointer;
 
-    transition: $transition;
+    transition: background $admin-ease, border-color $admin-ease;
 
     &:hover:not([disabled]) {
-      background: #f4f6f5;
+      border-color: $admin-border-strong;
+
+      background: $admin-surface-hover;
     }
 
     &:focus-visible {
-      outline: 2px solid $primary;
+      outline: 2px solid $admin-accent;
       outline-offset: 2px;
     }
 
     &[disabled] {
-      opacity: 0.6;
+      opacity: 0.55;
 
       cursor: not-allowed;
     }
   }
 
   &__danger-solid {
-    padding: 11px 24px;
+    padding: 11px 22px;
 
     border: 0;
-    border-radius: 9px;
+    border-radius: $admin-radius-sm;
 
-    background: #b91c1c;
+    background: $admin-danger;
 
     color: #fff;
 
     font-family: inherit;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     font-weight: 600;
 
     cursor: pointer;
 
-    transition: $transition;
+    transition: background $admin-ease;
 
     &:hover:not([disabled]) {
-      background: #991b1b;
+      background: #911d13;
     }
 
     &:focus-visible {
-      outline: 2px solid #7f1d1d;
+      outline: 2px solid $admin-danger;
       outline-offset: 2px;
     }
 
     &[disabled] {
-      opacity: 0.6;
+      opacity: 0.55;
 
       cursor: not-allowed;
     }
   }
 
+  // ---------------- Divers ----------------
+
   &__pill {
     display: inline-block;
 
-    padding: 4px 11px;
+    padding: 4px 10px;
 
-    border-radius: 50px;
+    border-radius: 999px;
 
-    background: rgba(13, 91, 62, 0.1);
+    background: $admin-accent-soft;
 
-    color: $primary;
+    color: $admin-accent;
 
-    font-size: 0.75rem;
+    font-size: 0.73rem;
     font-weight: 600;
     white-space: nowrap;
   }
 
   &__muted {
-    color: #8a938e;
+    color: $admin-ink-faint;
   }
 
   @media (max-width: 768px) {
@@ -304,7 +342,7 @@
       flex-direction: column;
 
       h1 {
-        font-size: 1.35rem;
+        font-size: 1.38rem;
       }
     }
 
@@ -321,6 +359,12 @@
     &__ghost,
     &__danger-solid {
       width: 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__add:hover {
+      transform: none;
     }
   }
 }

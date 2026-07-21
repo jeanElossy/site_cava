@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { FaGlobe, FaCheck } from "react-icons/fa";
+import { Globe, Check } from "lucide-react";
 
 import { publish } from "../../../services/api";
 
@@ -56,9 +56,9 @@ const PublishButton = () => {
           disabled={state === "busy"}
         >
           {state === "done" ? (
-            <FaCheck aria-hidden="true" />
+            <Check aria-hidden="true" />
           ) : (
-            <FaGlobe aria-hidden="true" />
+            <Globe aria-hidden="true" />
           )}
 
           {state === "busy"

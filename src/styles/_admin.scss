@@ -1,0 +1,98 @@
+// Jetons de design de l'espace d'administration.
+//
+// Ce fichier ne déclare AUCUNE règle CSS — uniquement des variables.
+// C'est délibéré : le projet compile tous les SCSS dans une feuille de
+// style unique, donc une règle écrite ici s'appliquerait au site public
+// aussi. Voir la section « Piège majeur » de CLAUDE.md.
+//
+// L'administration a sa propre palette, plus sobre et plus dense que le
+// site public : on y travaille longtemps, sur des tableaux et des
+// formulaires, pas sur des pages de présentation.
+
+// `@forward` en plus de `@use` : `@use` rend les variables visibles
+// ICI, mais ne les transmet pas aux fichiers qui feront
+// `@use "admin"`. Sans le forward, chaque SCSS de l'administration
+// devrait importer les deux fichiers pour accéder à la fois aux
+// couleurs du site ($primary, $secondary) et aux jetons ci-dessous.
+@forward "variables";
+@use "variables" as *;
+
+// ---- Surfaces ----------------------------------------------------
+
+// Fond de la zone de travail. Légèrement teinté vers le vert plutôt
+// qu'un gris neutre : l'ensemble reste rattaché à l'identité de
+// l'église sans jamais devenir décoratif.
+$admin-canvas: #f4f7f5;
+
+$admin-surface: #ffffff;
+$admin-surface-muted: #fafbfa;
+$admin-surface-hover: #f2f6f3;
+
+// Barre latérale sombre, dans la continuité de l'écran de connexion.
+$admin-rail: #08251a;
+$admin-rail-deep: #04170f;
+$admin-rail-hover: rgba(255, 255, 255, 0.07);
+$admin-rail-active: rgba(22, 160, 106, 0.18);
+
+// ---- Bordures ----------------------------------------------------
+
+$admin-border: #e3eae6;
+$admin-border-strong: #cfdad4;
+
+// ---- Texte -------------------------------------------------------
+
+$admin-ink: #16241d;
+$admin-ink-soft: #5a6862;
+$admin-ink-faint: #8c9a94;
+
+$admin-rail-ink: rgba(255, 255, 255, 0.72);
+$admin-rail-ink-faint: rgba(255, 255, 255, 0.42);
+
+// ---- Accents -----------------------------------------------------
+
+$admin-accent: $primary;
+$admin-accent-strong: #16a06a;
+$admin-accent-soft: rgba(13, 91, 62, 0.09);
+
+// ---- États -------------------------------------------------------
+//
+// Chaque état a une teinte de texte lisible sur son propre fond
+// (contraste AA), et non l'inverse : les pastilles de statut sont
+// nombreuses dans les tableaux, elles doivent rester déchiffrables.
+
+$admin-success: #0f7a4f;
+$admin-success-bg: rgba(15, 122, 79, 0.1);
+
+$admin-warning: #a05a00;
+$admin-warning-bg: rgba(251, 191, 36, 0.14);
+
+$admin-danger: #b42318;
+$admin-danger-bg: rgba(180, 35, 24, 0.08);
+
+$admin-info: #1d4ed8;
+$admin-info-bg: rgba(29, 78, 216, 0.08);
+
+// ---- Rayons ------------------------------------------------------
+//
+// Plus resserrés que le site public ($radius vaut 16px) : sur des
+// tableaux et des champs, un rayon large donne une impression molle.
+
+$admin-radius-sm: 8px;
+$admin-radius: 12px;
+$admin-radius-lg: 16px;
+
+// ---- Ombres ------------------------------------------------------
+
+$admin-shadow-sm: 0 1px 2px rgba(8, 37, 26, 0.06);
+$admin-shadow: 0 2px 8px rgba(8, 37, 26, 0.07);
+$admin-shadow-lg: 0 12px 32px rgba(8, 37, 26, 0.12);
+$admin-shadow-xl: 0 24px 60px rgba(8, 37, 26, 0.22);
+
+// ---- Mouvement ---------------------------------------------------
+
+$admin-ease: 0.18s ease;
+
+// ---- Gabarit -----------------------------------------------------
+
+$admin-rail-width: 264px;
+$admin-header-height: 68px;

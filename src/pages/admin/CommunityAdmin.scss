@@ -1,4 +1,4 @@
-@use "../../styles/variables" as *;
+@use "../../styles/admin" as *;
 
 .admin-community {
   &__tabs {
@@ -8,7 +8,7 @@
     margin-bottom: 26px;
     padding: 4px;
 
-    border: 1px solid #e2e7e4;
+    border: 1px solid $admin-border;
     border-radius: 11px;
 
     background: #fff;
@@ -22,7 +22,7 @@
 
     background: transparent;
 
-    color: #5a635e;
+    color: $admin-ink-soft;
 
     font-family: inherit;
     font-size: 0.88rem;
@@ -33,7 +33,7 @@
     transition: $transition;
 
     &:hover {
-      background: #f2f5f3;
+      background: $admin-surface-muted;
     }
 
     &:focus-visible {

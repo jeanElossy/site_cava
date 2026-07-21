@@ -139,10 +139,10 @@ const MessagesAdmin = () => {
           <strong>
             Les réponses ne sont pas envoyées par e-mail.
           </strong>{" "}
-          Elles sont uniquement enregistrées dans ce navigateur, pour
-          préparer l&apos;écran final. Tant que le backend n&apos;existe
-          pas, contactez la personne par téléphone ou depuis votre
-          messagerie habituelle.
+          Elles sont enregistrées et conservées ici, mais
+          l&apos;expédition automatique n&apos;est pas encore branchée :
+          contactez la personne par téléphone ou depuis votre messagerie
+          habituelle.
         </p>
       </div>
 
@@ -274,7 +274,7 @@ const MessagesAdmin = () => {
                       aria-label="Réponses enregistrées"
                     >
                       <h3>
-                        Réponses enregistrées localement
+                        Réponses enregistrées
                         <span className="admin-messages__replies-note">
                           {" "}
                           — non envoyées
@@ -318,8 +318,8 @@ const MessagesAdmin = () => {
                       className="admin-messages__help"
                       id="admin-message-reply-help"
                     >
-                      Cette réponse sera enregistrée dans ce navigateur
-                      et affichée ci-dessus. Elle ne sera pas envoyée à{" "}
+                      Cette réponse sera enregistrée et affichée
+                      ci-dessus. Elle ne sera pas envoyée à{" "}
                       {selected.email || "l'expéditeur"}.
                     </p>
 

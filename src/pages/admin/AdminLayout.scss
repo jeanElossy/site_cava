@@ -1,79 +1,40 @@
-@use "../../styles/variables" as *;
+@use "../../styles/admin" as *;
 
+// PIÈGE PROJET : une seule feuille de style pour tout le site. Chaque
+// règle est imbriquée sous `.admin-shell`, et aucun nom générique
+// (.rail, .brand, .avatar, .link…) n'existe à la racine de ce fichier.
 .admin-shell {
-  min-height: 100vh;
-
   display: flex;
-  flex-direction: column;
 
-  background: #f4f6f5;
+  min-height: 100vh;
+  min-height: 100dvh;
 
-  &__notice {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
+  background: $admin-canvas;
 
-    padding: 12px 24px;
+  color: $admin-ink;
 
-    background: #7a5c00;
+  // ---------------- Barre latérale ----------------
 
-    color: #fff;
-
-    svg {
-      flex-shrink: 0;
-
-      margin-top: 3px;
-
-      color: $secondary;
-
-      font-size: 0.95rem;
-    }
-
-    p {
-      margin: 0;
-
-      font-size: 0.83rem;
-      line-height: 1.6;
-    }
-
-    strong {
-      color: $secondary;
-    }
-  }
-
-  &__frame {
-    position: relative;
-
-    flex: 1;
-
-    display: flex;
-  }
-
-  &__scrim {
-    position: fixed;
-    inset: 0;
-
-    z-index: 1000;
-
-    background: rgba(8, 30, 22, 0.5);
-  }
-
-  &__sidebar {
+  &__rail {
     position: sticky;
     top: 0;
 
-    align-self: flex-start;
-
-    width: 262px;
-    flex-shrink: 0;
-
-    height: 100vh;
-
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
 
-    background: $primary-dark;
+    width: $admin-rail-width;
+    height: 100vh;
+    height: 100dvh;
 
+    background: linear-gradient(
+      180deg,
+      $admin-rail 0%,
+      $admin-rail-deep 100%
+    );
+
+    // Le rail défile indépendamment du contenu si la navigation
+    // s'allonge.
     overflow-y: auto;
   }
 
@@ -82,69 +43,130 @@
     align-items: center;
     gap: 12px;
 
-    padding: 20px 22px;
+    padding: 22px 20px;
 
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 
     img {
-      width: 40px;
-      height: 40px;
+      width: 38px;
+      height: 38px;
+
+      border-radius: 10px;
+
+      background: rgba(255, 255, 255, 0.94);
 
       object-fit: contain;
     }
 
-    span {
+    strong {
+      display: block;
+
       color: #fff;
 
       font-size: 0.95rem;
-      font-weight: 600;
-      letter-spacing: 0.02em;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    span {
+      display: block;
+
+      color: $admin-rail-ink-faint;
+
+      font-size: 0.73rem;
+    }
+  }
+
+  &__rail-close {
+    display: none;
+
+    margin-left: auto;
+    padding: 6px;
+
+    border: 0;
+    border-radius: $admin-radius-sm;
+
+    background: rgba(255, 255, 255, 0.07);
+
+    color: $admin-rail-ink;
+
+    cursor: pointer;
+
+    svg {
+      display: block;
+
+      width: 18px;
+      height: 18px;
     }
   }
 
   &__nav {
     flex: 1;
 
-    padding: 18px 14px;
+    padding: 18px 12px;
 
     ul {
       margin: 0;
       padding: 0;
 
       list-style: none;
-
-      display: grid;
-      gap: 4px;
     }
   }
 
+  &__group + &__group {
+    margin-top: 22px;
+  }
+
+  &__group-title {
+    margin: 0 0 8px;
+    padding: 0 12px;
+
+    color: rgba(255, 255, 255, 0.32);
+
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+  }
+
   &__link {
+    position: relative;
+
     display: flex;
     align-items: center;
-    gap: 13px;
+    gap: 12px;
 
-    padding: 11px 14px;
+    padding: 10px 12px;
 
-    border-radius: 9px;
+    border-radius: $admin-radius-sm;
 
-    color: rgba(255, 255, 255, 0.72);
+    color: $admin-rail-ink;
 
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     font-weight: 500;
     text-decoration: none;
 
-    transition: $transition;
+    transition: background $admin-ease, color $admin-ease;
 
     svg {
       flex-shrink: 0;
 
-      font-size: 0.95rem;
+      width: 18px;
+      height: 18px;
+
+      color: rgba(255, 255, 255, 0.5);
+
+      transition: color $admin-ease;
     }
 
     &:hover {
-      background: rgba(255, 255, 255, 0.08);
+      background: $admin-rail-hover;
 
       color: #fff;
+
+      svg {
+        color: #fff;
+      }
     }
 
     &:focus-visible {
@@ -153,127 +175,209 @@
     }
 
     &--active {
-      background: rgba(255, 210, 46, 0.14);
+      background: $admin-rail-active;
 
-      color: $secondary;
-
+      color: #fff;
       font-weight: 600;
+
+      svg {
+        color: $secondary;
+      }
+
+      // Repère latéral : la couleur seule ne suffit pas à signaler la
+      // page courante pour qui distingue mal les teintes.
+      &::before {
+        content: "";
+
+        position: absolute;
+        top: 50%;
+        left: -12px;
+
+        width: 3px;
+        height: 20px;
+
+        border-radius: 0 3px 3px 0;
+
+        background: $secondary;
+
+        transform: translateY(-50%);
+      }
     }
 
     &--muted {
-      font-size: 0.85rem;
+      color: $admin-rail-ink-faint;
+
+      font-size: 0.83rem;
     }
   }
 
-  &__sidebar-footer {
-    padding: 14px;
+  &__rail-foot {
+    display: grid;
+    gap: 10px;
 
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 14px 12px 18px;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+
+    // L'indicateur d'état s'aligne sur le retrait des liens.
+    .admin-api-status {
+      padding-left: 12px;
+    }
   }
 
-  &__main {
-    flex: 1;
-    min-width: 0;
+  // ---------------- Zone principale ----------------
 
+  &__main {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    // Sans cette contrainte, un tableau large pousse la colonne et
+    // fait défiler la page entière au lieu du tableau.
+    min-width: 0;
   }
 
   &__header {
     position: sticky;
     top: 0;
-    z-index: 500;
+    z-index: 20;
 
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
 
-    padding: 14px 30px;
+    height: $admin-header-height;
+    padding: 0 24px;
 
-    border-bottom: 1px solid #e4e9e6;
+    border-bottom: 1px solid $admin-border;
 
-    background: rgba(255, 255, 255, 0.94);
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(10px);
+  }
 
-    backdrop-filter: blur(8px);
+  &__spacer {
+    flex: 1;
   }
 
   &__burger {
     display: none;
 
-    width: 40px;
-    height: 40px;
+    padding: 8px;
 
-    align-items: center;
-    justify-content: center;
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius-sm;
 
-    border: 1px solid #dfe4e1;
-    border-radius: 9px;
+    background: $admin-surface;
 
-    background: #fff;
-
-    color: $primary-dark;
+    color: $admin-ink;
 
     cursor: pointer;
 
-    &:focus-visible {
-      outline: 2px solid $primary;
-      outline-offset: 2px;
+    svg {
+      display: block;
+
+      width: 20px;
+      height: 20px;
+    }
+
+    &:hover {
+      background: $admin-surface-hover;
     }
   }
 
   &__identity {
-    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 
+    min-width: 0;
+  }
+
+  &__avatar {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+
+    width: 36px;
+    height: 36px;
+
+    border-radius: 50%;
+
+    background: linear-gradient(
+      135deg,
+      $admin-accent-strong,
+      $admin-accent
+    );
+
+    color: #fff;
+
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  &__identity-text {
     display: flex;
     flex-direction: column;
 
-    text-align: right;
-  }
+    min-width: 0;
+    line-height: 1.3;
 
-  &__identity-name {
-    color: $primary-dark;
+    strong {
+      color: $admin-ink;
 
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-transform: capitalize;
-  }
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
 
-  &__identity-mail {
-    color: #8a938e;
+    span {
+      color: $admin-ink-faint;
 
-    font-size: 0.78rem;
+      font-size: 0.76rem;
+
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 
   &__signout {
     display: inline-flex;
     align-items: center;
-    gap: 9px;
+    gap: 8px;
 
-    padding: 10px 18px;
+    padding: 9px 14px;
 
-    border: 1px solid #dfe4e1;
-    border-radius: 9px;
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius-sm;
 
-    background: #fff;
+    background: $admin-surface;
 
-    color: #4c554f;
+    color: $admin-ink-soft;
 
     font-family: inherit;
-    font-size: 0.85rem;
+    font-size: 0.84rem;
     font-weight: 600;
 
     cursor: pointer;
 
-    transition: $transition;
+    transition: border-color $admin-ease, color $admin-ease,
+      background $admin-ease;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
 
     &:hover {
-      border-color: #b91c1c;
+      border-color: rgba(180, 35, 24, 0.4);
 
-      color: #b91c1c;
+      background: $admin-danger-bg;
+
+      color: $admin-danger;
     }
 
     &:focus-visible {
-      outline: 2px solid $primary;
+      outline: 2px solid $admin-accent;
       outline-offset: 2px;
     }
   }
@@ -281,56 +385,64 @@
   &__content {
     flex: 1;
 
-    padding: 32px 30px 60px;
+    padding: 28px 24px 56px;
   }
 
-  @media (max-width: 1200px) {
-    &__sidebar {
-      width: 226px;
-    }
+  &__scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
 
-    &__content {
-      padding: 28px 24px 50px;
-    }
+    display: none;
+
+    border: 0;
+
+    background: rgba(4, 23, 15, 0.55);
+    backdrop-filter: blur(2px);
   }
 
-  @media (max-width: 992px) {
-    &__sidebar {
+  // ---------------- Adaptation ----------------
+
+  @media (max-width: 1024px) {
+    &__rail {
       position: fixed;
       top: 0;
       left: 0;
-      z-index: 1001;
-
-      width: 268px;
+      z-index: 50;
 
       transform: translateX(-100%);
 
-      transition: transform 0.28s ease;
+      transition: transform 0.24s ease;
+
+      box-shadow: $admin-shadow-xl;
 
       &--open {
         transform: translateX(0);
       }
     }
 
+    &__rail-close,
     &__burger {
-      display: flex;
-    }
-  }
-
-  @media (max-width: 768px) {
-    &__notice {
-      padding: 12px 18px;
+      display: block;
     }
 
-    &__header {
-      padding: 12px 18px;
+    &__scrim {
+      display: block;
     }
 
     &__content {
-      padding: 22px 18px 50px;
+      padding: 22px 18px 48px;
     }
 
-    &__identity {
+    &__header {
+      padding: 0 18px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    // L'adresse e-mail et le libellé du bouton passent à la trappe :
+    // l'avatar et l'icône suffisent, et la barre reste sur une ligne.
+    &__identity-text {
       display: none;
     }
 
@@ -339,13 +451,17 @@
     }
 
     &__signout {
-      padding: 10px 13px;
+      padding: 9px 11px;
+    }
+
+    &__content {
+      padding: 18px 14px 40px;
     }
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .admin-shell__sidebar {
-    transition: none;
+  @media (prefers-reduced-motion: reduce) {
+    &__rail {
+      transition: none;
+    }
   }
 }

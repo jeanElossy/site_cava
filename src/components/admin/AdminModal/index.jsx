@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from "react";
 
-import { FaTimes } from "react-icons/fa";
+import { X } from "lucide-react";
 
 import "./AdminModal.scss";
 
@@ -102,7 +102,7 @@ const AdminModal = ({ title, description, onClose, children }) => {
             onClick={onClose}
             aria-label="Fermer la fenêtre"
           >
-            <FaTimes aria-hidden="true" />
+            <X aria-hidden="true" />
           </button>
         </header>
 

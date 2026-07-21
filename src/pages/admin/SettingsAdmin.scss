@@ -1,4 +1,4 @@
-@use "../../styles/variables" as *;
+@use "../../styles/admin" as *;
 
 .admin-settings {
   max-width: 860px;
@@ -12,13 +12,13 @@
       font-size: 1.6rem;
       font-weight: 700;
 
-      color: $primary-dark;
+      color: $admin-ink;
     }
 
     p {
       margin: 8px 0 0;
 
-      color: #6a736e;
+      color: $admin-ink-soft;
 
       font-size: 0.92rem;
     }
@@ -58,7 +58,7 @@
   &__panel {
     padding: 28px;
 
-    border: 1px solid #e6eae8;
+    border: 1px solid $admin-border;
     border-radius: 14px;
 
     background: #fff;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   Link,
@@ -8,209 +8,277 @@ import {
 } from "react-router-dom";
 
 import {
-  FaBars,
-  FaCalendarAlt,
-  FaChurch,
-  FaCog,
-  FaEnvelope,
-  FaExclamationTriangle,
-  FaExternalLinkAlt,
-  FaPhotoVideo,
-  FaSignOutAlt,
-  FaTachometerAlt,
-  FaTimes,
-  FaUsers,
-} from "react-icons/fa";
+  Calendar,
+  Church,
+  ExternalLink,
+  Image,
+  LayoutDashboard,
+  LogOut,
+  Mail,
+  Menu,
+  Settings,
+  Users,
+  X,
+} from "lucide-react";
 
 import { currentUser, signOut } from "../../services/auth";
+
+import ApiStatus from "../../components/admin/ApiStatus";
 
 import logo from "../../assets/logo/logo_cava.gif";
 
 import "./AdminLayout.scss";
 
-const NAV_ITEMS = [
+// Navigation groupée. Sept liens à plat forment un mur indifférencié ;
+// regroupés, ils se parcourent d'un coup d'œil.
+const NAV_GROUPS = [
   {
-    to: "/admin",
-    label: "Tableau de bord",
-    icon: <FaTachometerAlt aria-hidden="true" />,
-    end: true,
+    title: null,
+    items: [
+      {
+        to: "/admin",
+        label: "Tableau de bord",
+        icon: LayoutDashboard,
+        end: true,
+      },
+      { to: "/admin/messages", label: "Messages", icon: Mail },
+    ],
   },
   {
-    to: "/admin/messages",
-    label: "Messages",
-    icon: <FaEnvelope aria-hidden="true" />,
+    title: "Contenu du site",
+    items: [
+      { to: "/admin/medias", label: "Médias", icon: Image },
+      {
+        to: "/admin/evenements",
+        label: "Événements",
+        icon: Calendar,
+      },
+      {
+        to: "/admin/ministeres",
+        label: "Ministères",
+        icon: Church,
+      },
+    ],
   },
   {
-    to: "/admin/medias",
-    label: "Médias",
-    icon: <FaPhotoVideo aria-hidden="true" />,
+    title: "Communauté",
+    items: [
+      { to: "/admin/communaute", label: "Membres et annonces", icon: Users },
+    ],
   },
   {
-    to: "/admin/evenements",
-    label: "Événements",
-    icon: <FaCalendarAlt aria-hidden="true" />,
-  },
-  {
-    to: "/admin/ministeres",
-    label: "Ministères",
-    icon: <FaChurch aria-hidden="true" />,
-  },
-  {
-    to: "/admin/communaute",
-    label: "Communauté",
-    icon: <FaUsers aria-hidden="true" />,
-  },
-  {
-    to: "/admin/parametres",
-    label: "Paramètres",
-    icon: <FaCog aria-hidden="true" />,
+    title: "Configuration",
+    items: [
+      {
+        to: "/admin/parametres",
+        label: "Paramètres",
+        icon: Settings,
+      },
+    ],
   },
 ];
+
+// Initiales pour la pastille d'identité. Deux lettres au maximum :
+// au-delà, la pastille se déforme.
+const initials = (name) =>
+  String(name ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join("") || "?";
 
 const AdminLayout = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navigate = useNavigate();
 
+  const closeButtonRef = useRef(null);
+
   const user = currentUser();
 
-  // Le tiroir latéral se referme dès qu'on suit un lien, sinon il masque
-  // sur mobile l'écran qu'on vient d'ouvrir.
+  // Le tiroir se referme dès qu'on suit un lien : sinon, sur mobile, il
+  // masque l'écran qu'on vient d'ouvrir. Géré dans le gestionnaire de
+  // clic plutôt que dans un effet sur l'URL — un effet qui appelle
+  // `setState` provoque un rendu supplémentaire à chaque navigation,
+  // pour un résultat que l'événement produit directement.
   const closeMenu = () => setMenuOpen(false);
+
+  // Échap referme le tiroir, et le défilement de la page est gelé tant
+  // qu'il est ouvert — sans quoi le fond défile sous les doigts.
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+
+    const previousOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+
+    closeButtonRef.current?.focus();
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [menuOpen]);
 
   const handleSignOut = () => {
     signOut();
+
     navigate("/admin/connexion", { replace: true });
   };
 
   return (
     <div className="admin-shell">
-      {/* Avertissement permanent : cet espace n'a pas de backend. */}
-      <div
-        className="admin-shell__notice"
-        role="note"
+      {menuOpen && (
+        <button
+          type="button"
+          className="admin-shell__scrim"
+          onClick={closeMenu}
+          aria-label="Fermer le menu"
+          tabIndex={-1}
+        />
+      )}
+
+      <aside
+        className={`admin-shell__rail${
+          menuOpen ? " admin-shell__rail--open" : ""
+        }`}
+        id="admin-sidebar"
       >
-        <FaExclamationTriangle aria-hidden="true" />
-
-        <p>
-          <strong>Mode démonstration.</strong> Cet espace n&apos;est
-          relié à aucun serveur : les données sont enregistrées dans ce
-          navigateur uniquement, ne sont partagées avec personne et
-          disparaissent si le cache est vidé. La connexion n&apos;est pas
-          une sécurité.
-        </p>
-      </div>
-
-      <div className="admin-shell__frame">
-        {menuOpen && (
-          <div
-            className="admin-shell__scrim"
-            onClick={closeMenu}
+        <div className="admin-shell__brand">
+          <img
+            src={logo}
+            alt=""
             aria-hidden="true"
-          ></div>
-        )}
+          />
 
-        <aside
-          className={`admin-shell__sidebar${
-            menuOpen ? " admin-shell__sidebar--open" : ""
-          }`}
-          id="admin-sidebar"
-        >
-          <div className="admin-shell__brand">
-            <img
-              src={logo}
-              alt=""
-              aria-hidden="true"
-            />
+          <div>
+            <strong>CAVA</strong>
 
             <span>Administration</span>
           </div>
 
-          <nav
-            className="admin-shell__nav"
-            aria-label="Navigation de l'administration"
+          <button
+            type="button"
+            className="admin-shell__rail-close"
+            onClick={closeMenu}
+            ref={closeButtonRef}
+            aria-label="Fermer le menu"
           >
-            <ul>
-              {NAV_ITEMS.map((item) => (
-                <li key={item.to}>
-                  <NavLink
-                    to={item.to}
-                    end={item.end}
-                    onClick={closeMenu}
-                    className={({ isActive }) =>
-                      isActive
-                        ? "admin-shell__link admin-shell__link--active"
-                        : "admin-shell__link"
-                    }
-                  >
-                    {item.icon}
-
-                    <span>{item.label}</span>
-                  </NavLink>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          <div className="admin-shell__sidebar-footer">
-            <Link
-              to="/"
-              onClick={closeMenu}
-              className="admin-shell__link admin-shell__link--muted"
-            >
-              <FaExternalLinkAlt aria-hidden="true" />
-
-              <span>Voir le site public</span>
-            </Link>
-          </div>
-        </aside>
-
-        <div className="admin-shell__main">
-          <header className="admin-shell__header">
-            <button
-              type="button"
-              className="admin-shell__burger"
-              onClick={() => setMenuOpen((previous) => !previous)}
-              aria-expanded={menuOpen}
-              aria-controls="admin-sidebar"
-              aria-label={
-                menuOpen
-                  ? "Fermer le menu d'administration"
-                  : "Ouvrir le menu d'administration"
-              }
-            >
-              {menuOpen ? (
-                <FaTimes aria-hidden="true" />
-              ) : (
-                <FaBars aria-hidden="true" />
-              )}
-            </button>
-
-            <div className="admin-shell__identity">
-              <span className="admin-shell__identity-name">
-                {user?.name ?? "Administrateur"}
-              </span>
-
-              <span className="admin-shell__identity-mail">
-                {user?.email ?? "session locale"}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              className="admin-shell__signout"
-              onClick={handleSignOut}
-            >
-              <FaSignOutAlt aria-hidden="true" />
-
-              <span>Déconnexion</span>
-            </button>
-          </header>
-
-          <main className="admin-shell__content">
-            <Outlet />
-          </main>
+            <X aria-hidden="true" />
+          </button>
         </div>
+
+        <nav
+          className="admin-shell__nav"
+          aria-label="Navigation de l'administration"
+        >
+          {NAV_GROUPS.map((group, index) => (
+            <div
+              key={group.title ?? `group-${index}`}
+              className="admin-shell__group"
+            >
+              {group.title && (
+                <p className="admin-shell__group-title">
+                  {group.title}
+                </p>
+              )}
+
+              <ul>
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+
+                  return (
+                    <li key={item.to}>
+                      <NavLink
+                        to={item.to}
+                        end={item.end}
+                        onClick={closeMenu}
+                        className={({ isActive }) =>
+                          isActive
+                            ? "admin-shell__link admin-shell__link--active"
+                            : "admin-shell__link"
+                        }
+                      >
+                        <Icon aria-hidden="true" />
+
+                        <span>{item.label}</span>
+                      </NavLink>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </nav>
+
+        <div className="admin-shell__rail-foot">
+          <Link
+            to="/"
+            onClick={closeMenu}
+            className="admin-shell__link admin-shell__link--muted"
+          >
+            <ExternalLink aria-hidden="true" />
+
+            <span>Voir le site public</span>
+          </Link>
+
+          <ApiStatus />
+        </div>
+      </aside>
+
+      <div className="admin-shell__main">
+        <header className="admin-shell__header">
+          <button
+            type="button"
+            className="admin-shell__burger"
+            onClick={() => setMenuOpen(true)}
+            aria-expanded={menuOpen}
+            aria-controls="admin-sidebar"
+            aria-label="Ouvrir le menu d'administration"
+          >
+            <Menu aria-hidden="true" />
+          </button>
+
+          <div className="admin-shell__spacer" />
+
+          <div className="admin-shell__identity">
+            <span
+              className="admin-shell__avatar"
+              aria-hidden="true"
+            >
+              {initials(user?.name)}
+            </span>
+
+            <span className="admin-shell__identity-text">
+              <strong>{user?.name ?? "Administrateur"}</strong>
+
+              <span>{user?.email ?? ""}</span>
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="admin-shell__signout"
+            onClick={handleSignOut}
+          >
+            <LogOut aria-hidden="true" />
+
+            <span>Déconnexion</span>
+          </button>
+        </header>
+
+        <main className="admin-shell__content">
+          <Outlet />
+        </main>
       </div>
     </div>
   );

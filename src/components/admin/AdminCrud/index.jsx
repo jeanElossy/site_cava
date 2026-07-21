@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { FaPen, FaPlus, FaTrash } from "react-icons/fa";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import useCrud from "../../../hooks/useCrud";
 
@@ -118,7 +118,7 @@ const AdminCrud = ({
           className="admin-crud__add"
           onClick={openCreate}
         >
-          <FaPlus aria-hidden="true" />
+          <Plus aria-hidden="true" />
 
           {labels.add ?? `Ajouter ${labels.singular}`}
         </button>
@@ -159,7 +159,7 @@ const AdminCrud = ({
                 className="admin-crud__add admin-crud__add--inline"
                 onClick={openCreate}
               >
-                <FaPlus aria-hidden="true" />
+                <Plus aria-hidden="true" />
 
                 {labels.add ?? `Ajouter ${labels.singular}`}
               </button>
@@ -211,7 +211,7 @@ const AdminCrud = ({
                           item[labels.titleKey ?? "title"] ?? "élément"
                         }`}
                       >
-                        <FaPen aria-hidden="true" />
+                        <Pencil aria-hidden="true" />
                       </button>
 
                       <button
@@ -222,7 +222,7 @@ const AdminCrud = ({
                           item[labels.titleKey ?? "title"] ?? "élément"
                         }`}
                       >
-                        <FaTrash aria-hidden="true" />
+                        <Trash2 aria-hidden="true" />
                       </button>
                     </td>
                   </tr>

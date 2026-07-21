@@ -1,9 +1,10 @@
-@use "../../../styles/variables" as *;
+@use "../../../styles/admin" as *;
 
+// PIÈGE PROJET : feuille de style unique. Tout est imbriqué sous
+// `.admin-modal`, aucun nom générique à la racine.
 .admin-modal {
   position: fixed;
   inset: 0;
-
   z-index: 1200;
 
   display: flex;
@@ -18,9 +19,10 @@
     position: fixed;
     inset: 0;
 
-    background: rgba(8, 30, 22, 0.55);
+    background: rgba(4, 23, 15, 0.6);
+    backdrop-filter: blur(3px);
 
-    backdrop-filter: blur(2px);
+    animation: adminModalFade 0.2s ease-out;
   }
 
   &__dialog {
@@ -28,13 +30,14 @@
     z-index: 1;
 
     width: 100%;
-    max-width: 640px;
+    max-width: 660px;
 
-    border-radius: 16px;
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius-lg;
 
-    background: #fff;
+    background: $admin-surface;
 
-    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.28);
+    box-shadow: $admin-shadow-xl;
 
     animation: adminModalIn 0.22s ease-out;
   }
@@ -45,84 +48,98 @@
     justify-content: space-between;
     gap: 20px;
 
-    padding: 24px 26px;
+    padding: 22px 24px;
 
-    border-bottom: 1px solid #e8ebe9;
+    border-bottom: 1px solid $admin-border;
 
     h2 {
       margin: 0;
 
-      font-size: 1.2rem;
-      font-weight: 700;
+      color: $admin-ink;
 
-      color: $primary-dark;
+      font-size: 1.14rem;
+      font-weight: 700;
     }
 
     p {
       margin: 6px 0 0;
 
-      color: #7b847f;
+      color: $admin-ink-soft;
 
-      font-size: 0.87rem;
+      font-size: 0.86rem;
       line-height: 1.55;
     }
   }
 
   &__close {
-    flex-shrink: 0;
-
-    width: 36px;
-    height: 36px;
-
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 
-    border: 1px solid #e0e5e2;
-    border-radius: 9px;
+    width: 34px;
+    height: 34px;
 
-    background: #fff;
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius-sm;
 
-    color: #6a736e;
+    background: $admin-surface;
+
+    color: $admin-ink-soft;
 
     cursor: pointer;
 
-    transition: $transition;
+    transition: border-color $admin-ease, background $admin-ease,
+      color $admin-ease;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
 
     &:hover {
-      border-color: #c9d0cc;
+      border-color: $admin-border-strong;
 
-      background: #f4f6f5;
+      background: $admin-surface-hover;
 
-      color: $primary-dark;
+      color: $admin-ink;
     }
 
     &:focus-visible {
-      outline: 2px solid $primary;
+      outline: 2px solid $admin-accent;
       outline-offset: 2px;
     }
   }
 
   &__body {
-    padding: 26px;
+    padding: 24px;
   }
 
   @media (max-width: 768px) {
     padding: 0;
 
     &__dialog {
-      max-width: none;
       min-height: 100%;
+      max-width: none;
 
+      border: 0;
       border-radius: 0;
     }
 
-    &__body {
-      padding: 20px;
+    &__header {
+      // L'en-tête reste visible pendant qu'on fait défiler un long
+      // formulaire : le bouton de fermeture doit rester atteignable.
+      position: sticky;
+      top: 0;
+      z-index: 1;
+
+      padding: 18px 18px;
+
+      background: $admin-surface;
     }
 
-    &__header {
-      padding: 20px;
+    &__body {
+      padding: 18px;
     }
   }
 }
@@ -139,8 +156,19 @@
   }
 }
 
+@keyframes adminModalFade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .admin-modal__dialog {
+  .admin-modal__dialog,
+  .admin-modal__backdrop {
     animation: none;
   }
 }

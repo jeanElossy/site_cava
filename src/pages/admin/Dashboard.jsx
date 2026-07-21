@@ -1,15 +1,21 @@
 import { Link } from "react-router-dom";
 
 import {
-  FaCalendarAlt,
-  FaChurch,
-  FaEnvelope,
-  FaEnvelopeOpenText,
-  FaPhotoVideo,
-  FaUsers,
-} from "react-icons/fa";
+  ArrowRight,
+  Calendar,
+  CalendarPlus,
+  Church,
+  Image,
+  ImagePlus,
+  Mail,
+  MailOpen,
+  Megaphone,
+  Users,
+} from "lucide-react";
 
 import { inbox, stats } from "../../services/api";
+
+import { currentUser } from "../../services/auth";
 
 import useAsyncData from "../../hooks/useAsyncData";
 import PublishButton from "../../components/admin/PublishButton";
@@ -27,22 +33,26 @@ const SHORTCUTS = [
   {
     to: "/admin/medias",
     label: "Publier un média",
-    icon: <FaPhotoVideo aria-hidden="true" />,
+    hint: "Message, louange ou témoignage",
+    icon: ImagePlus,
   },
   {
     to: "/admin/evenements",
     label: "Créer un événement",
-    icon: <FaCalendarAlt aria-hidden="true" />,
+    hint: "Culte, formation, camp",
+    icon: CalendarPlus,
   },
   {
     to: "/admin/communaute",
     label: "Publier une annonce",
-    icon: <FaUsers aria-hidden="true" />,
+    hint: "Visible sur la page Communauté",
+    icon: Megaphone,
   },
   {
     to: "/admin/messages",
     label: "Relever les messages",
-    icon: <FaEnvelopeOpenText aria-hidden="true" />,
+    hint: "Demandes reçues via le site",
+    icon: MailOpen,
   },
 ];
 
@@ -60,6 +70,27 @@ const formatDate = (value) => {
   });
 };
 
+// Salutation selon l'heure : un détail, mais c'est ce qui distingue un
+// outil qu'on ouvre tous les jours d'un panneau générique.
+const greeting = () => {
+  const hour = new Date().getHours();
+
+  if (hour < 12) return "Bonjour";
+
+  if (hour < 18) return "Bon après-midi";
+
+  return "Bonsoir";
+};
+
+const initials = (name) =>
+  String(name ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join("") || "?";
+
 const Dashboard = () => {
   usePageMeta({
     title: "Tableau de bord",
@@ -70,6 +101,8 @@ const Dashboard = () => {
   // Références stables de `services/api.js` : pas de `useCallback` requis.
   const statsQuery = useAsyncData(stats);
   const inboxQuery = useAsyncData(inbox.list);
+
+  const user = currentUser();
 
   const counters = statsQuery.data;
 
@@ -84,52 +117,64 @@ const Dashboard = () => {
       key: "inboxUnread",
       label: "Messages non lus",
       value: counters?.inboxUnread,
-      icon: <FaEnvelope aria-hidden="true" />,
+      icon: Mail,
       to: "/admin/messages",
-      highlight: true,
+      tone: "alert",
     },
     {
       key: "medias",
       label: "Médias publiés",
       value: counters?.medias,
-      icon: <FaPhotoVideo aria-hidden="true" />,
+      icon: Image,
       to: "/admin/medias",
     },
     {
       key: "events",
       label: "Événements",
       value: counters?.events,
-      icon: <FaCalendarAlt aria-hidden="true" />,
+      icon: Calendar,
       to: "/admin/evenements",
     },
     {
       key: "ministries",
       label: "Ministères",
       value: counters?.ministries,
-      icon: <FaChurch aria-hidden="true" />,
+      icon: Church,
       to: "/admin/ministeres",
     },
     {
       key: "members",
-      label: "Membres enregistrés",
+      label: "Membres",
       value: counters?.members,
-      icon: <FaUsers aria-hidden="true" />,
+      icon: Users,
       to: "/admin/communaute",
     },
   ];
 
+  const firstName = String(user?.name ?? "")
+    .trim()
+    .split(/\s+/)[0];
+
   return (
     <div className="admin-dashboard">
-
-      <PublishButton />
       <header className="admin-dashboard__header">
-        <h1>Tableau de bord</h1>
+        <div>
+          <h1>
+            {greeting()}
+            {firstName ? `, ${firstName}` : ""}
+          </h1>
 
-        <p>
-          Vue d&apos;ensemble du contenu du site et des derniers messages
-          reçus.
-        </p>
+          <p>
+            Voici l&apos;état du contenu du site et les derniers
+            messages reçus.
+          </p>
+        </div>
       </header>
+
+      {/* Bannière pleine largeur : c'est l'action la plus engageante de
+          l'espace (elle reconstruit le site public), elle ne doit pas
+          se confondre avec un bouton d'en-tête. */}
+      <PublishButton />
 
       <section
         aria-labelledby="admin-dashboard-stats"
@@ -156,30 +201,42 @@ const Dashboard = () => {
 
           {!statsQuery.loading && !statsQuery.error && (
             <ul className="admin-dashboard__stats">
-              {cards.map((card) => (
-                <li key={card.key}>
-                  <Link
-                    to={card.to}
-                    className={`admin-dashboard__stat${
-                      card.highlight && card.value > 0
-                        ? " admin-dashboard__stat--alert"
-                        : ""
-                    }`}
-                  >
-                    <span className="admin-dashboard__stat-icon">
-                      {card.icon}
-                    </span>
+              {cards.map((card) => {
+                const Icon = card.icon;
 
-                    <span className="admin-dashboard__stat-value">
-                      {card.value ?? 0}
-                    </span>
+                const alerting =
+                  card.tone === "alert" && card.value > 0;
 
-                    <span className="admin-dashboard__stat-label">
-                      {card.label}
-                    </span>
-                  </Link>
-                </li>
-              ))}
+                return (
+                  <li key={card.key}>
+                    <Link
+                      to={card.to}
+                      className={`admin-dashboard__stat${
+                        alerting
+                          ? " admin-dashboard__stat--alert"
+                          : ""
+                      }`}
+                    >
+                      <span className="admin-dashboard__stat-icon">
+                        <Icon aria-hidden="true" />
+                      </span>
+
+                      <span className="admin-dashboard__stat-value">
+                        {card.value ?? 0}
+                      </span>
+
+                      <span className="admin-dashboard__stat-label">
+                        {card.label}
+                      </span>
+
+                      <ArrowRight
+                        className="admin-dashboard__stat-arrow"
+                        aria-hidden="true"
+                      />
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -188,17 +245,23 @@ const Dashboard = () => {
       <div className="admin-dashboard__columns">
         <section
           aria-labelledby="admin-dashboard-inbox"
-          className="admin-dashboard__section"
+          className="admin-dashboard__section admin-dashboard__panel"
         >
           <div className="admin-dashboard__section-head">
             <h2
               id="admin-dashboard-inbox"
               className="admin-dashboard__section-title"
             >
-              Derniers messages reçus
+              Derniers messages
             </h2>
 
-            <Link to="/admin/messages">Tout voir</Link>
+            <Link
+              to="/admin/messages"
+              className="admin-dashboard__see-all"
+            >
+              Tout voir
+              <ArrowRight aria-hidden="true" />
+            </Link>
           </div>
 
           <div aria-busy={inboxQuery.loading}>
@@ -226,26 +289,35 @@ const Dashboard = () => {
                   {messages.map((message) => (
                     <li key={message.id}>
                       <Link to="/admin/messages">
-                        <span className="admin-dashboard__message-top">
-                          <strong>
-                            {message.name || "Visiteur anonyme"}
-                          </strong>
+                        <span
+                          className="admin-dashboard__message-avatar"
+                          aria-hidden="true"
+                        >
+                          {initials(message.name)}
+                        </span>
 
-                          <span
-                            className={`admin-dashboard__badge admin-dashboard__badge--${
-                              message.status ?? "nouveau"
-                            }`}
-                          >
-                            {message.status ?? "nouveau"}
+                        <span className="admin-dashboard__message-body">
+                          <span className="admin-dashboard__message-top">
+                            <strong>
+                              {message.name || "Visiteur anonyme"}
+                            </strong>
+
+                            <span
+                              className={`admin-dashboard__badge admin-dashboard__badge--${
+                                message.status ?? "nouveau"
+                              }`}
+                            >
+                              {message.status ?? "nouveau"}
+                            </span>
                           </span>
-                        </span>
 
-                        <span className="admin-dashboard__message-subject">
-                          {message.subject || "(sans sujet)"}
-                        </span>
+                          <span className="admin-dashboard__message-subject">
+                            {message.subject || "(sans sujet)"}
+                          </span>
 
-                        <span className="admin-dashboard__message-date">
-                          {formatDate(message.createdAt)}
+                          <span className="admin-dashboard__message-date">
+                            {formatDate(message.createdAt)}
+                          </span>
                         </span>
                       </Link>
                     </li>
@@ -257,25 +329,39 @@ const Dashboard = () => {
 
         <section
           aria-labelledby="admin-dashboard-shortcuts"
-          className="admin-dashboard__section"
+          className="admin-dashboard__section admin-dashboard__panel"
         >
-          <h2
-            id="admin-dashboard-shortcuts"
-            className="admin-dashboard__section-title"
-          >
-            Raccourcis
-          </h2>
+          <div className="admin-dashboard__section-head">
+            <h2
+              id="admin-dashboard-shortcuts"
+              className="admin-dashboard__section-title"
+            >
+              Actions rapides
+            </h2>
+          </div>
 
           <ul className="admin-dashboard__shortcuts">
-            {SHORTCUTS.map((shortcut) => (
-              <li key={shortcut.to}>
-                <Link to={shortcut.to}>
-                  {shortcut.icon}
+            {SHORTCUTS.map((shortcut) => {
+              const Icon = shortcut.icon;
 
-                  <span>{shortcut.label}</span>
-                </Link>
-              </li>
-            ))}
+              return (
+                <li key={shortcut.to}>
+                  <Link to={shortcut.to}>
+                    <span className="admin-dashboard__shortcut-icon">
+                      <Icon aria-hidden="true" />
+                    </span>
+
+                    <span className="admin-dashboard__shortcut-text">
+                      <strong>{shortcut.label}</strong>
+
+                      <span>{shortcut.hint}</span>
+                    </span>
+
+                    <ArrowRight aria-hidden="true" />
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </section>
       </div>
