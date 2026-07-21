@@ -1,99 +1,66 @@
+import { FaQuoteLeft } from "react-icons/fa";
+
+import { testimonials } from "./data";
+
 import "./Testimonials.scss";
 
-import {
-  FaQuoteLeft,
-  FaStar,
-} from "react-icons/fa";
-
-const testimonials = [
-  {
-    name: "Marie Kouassi",
-    role: "Membre de l'église",
-    text:
-      "Grâce aux actions soutenues par les contributions, ma famille a reçu un accompagnement précieux dans une période difficile.",
-  },
-  {
-    name: "Jean-Baptiste Yao",
-    role: "Responsable jeunesse",
-    text:
-      "Les dons permettent d'organiser des activités qui transforment réellement la vie des jeunes de notre communauté.",
-  },
-  {
-    name: "Esther N'Dri",
-    role: "Participante",
-    text:
-      "J'ai vu l'impact concret des projets financés par l'église. Chaque contribution fait une différence.",
-  },
-];
-
+// Témoignages de donateurs.
+//
+// La liste vit dans `data.js`, et la section disparaît quand elle est
+// vide — voir le commentaire de ce fichier pour la raison.
+//
+// Les étoiles ont été retirées : noter une église sur cinq étoiles,
+// comme un restaurant, n'a pas de sens, et elles étaient de toute
+// façon codées à cinq sur cinq quel que soit le témoignage.
 const Testimonials = () => {
+  if (testimonials.length === 0) return null;
+
   return (
-    <section className="testimonials">
+    <section className="donate-testimonials">
+      <div className="donate-testimonials__container">
 
-      <div className="testimonials__container">
+        <header className="donate-testimonials__header">
+          <span className="donate-eyebrow">Témoignages</span>
 
-        <div className="section-header">
-
-          <span className="section-badge">
-            ❤️ Témoignages
-          </span>
-
-          <h2>
-            Ils témoignent de l'impact
-          </h2>
+          <h2>Ils témoignent de l&apos;impact</h2>
 
           <p>
-            Découvrez comment les contributions
-            permettent de transformer des vies et
-            de soutenir la mission de l'église.
+            Comment les contributions transforment des vies et
+            soutiennent la mission de l&apos;église.
           </p>
+        </header>
 
-        </div>
+        <div className="donate-testimonials__grid">
+          {testimonials.map((testimonial) => (
+            <article
+              key={testimonial.name}
+              className="donate-testimonials__card"
+            >
+              <FaQuoteLeft
+                className="donate-testimonials__quote"
+                aria-hidden="true"
+              />
 
-        <div className="testimonials__grid">
+              <blockquote>{testimonial.text}</blockquote>
 
-          {testimonials.map(
-            (testimonial, index) => (
-              <article
-                key={index}
-                className="testimonial-card"
-              >
-                <FaQuoteLeft className="quote-icon" />
+              <footer className="donate-testimonials__author">
+                <span
+                  className="donate-testimonials__avatar"
+                  aria-hidden="true"
+                >
+                  {testimonial.name.charAt(0)}
+                </span>
 
-                <p>
-                  {testimonial.text}
-                </p>
+                <span>
+                  <strong>{testimonial.name}</strong>
 
-                <div className="testimonial-rating">
-                  {[...Array(5)].map(
-                    (_, i) => (
-                      <FaStar key={i} />
-                    )
-                  )}
-                </div>
-
-                <div className="testimonial-author">
-
-                  <div className="avatar">
-                    {testimonial.name.charAt(0)}
-                  </div>
-
-                  <div>
-                    <h4>
-                      {testimonial.name}
-                    </h4>
-
-                    <span>
-                      {testimonial.role}
-                    </span>
-                  </div>
-
-                </div>
-
-              </article>
-            )
-          )}
-
+                  <span className="donate-testimonials__role">
+                    {testimonial.role}
+                  </span>
+                </span>
+              </footer>
+            </article>
+          ))}
         </div>
 
       </div>

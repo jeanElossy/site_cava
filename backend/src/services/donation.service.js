@@ -238,6 +238,32 @@ export const publicStatus = async (reference) => {
 };
 
 // ------------------------------------------------------------------
+// CHIFFRES PUBLICS DE LA COLLECTE
+// ------------------------------------------------------------------
+// Uniquement des agrégats sur les dons ENCAISSÉS. Ni identité, ni
+// montant individuel : un total ne dit rien de personne, alors qu'une
+// liste de dons trahirait qui donne et combien.
+//
+// Les dons en attente et échoués sont exclus : annoncer publiquement de
+// l'argent qui n'est pas arrivé serait faux.
+export const publicStats = async () => {
+  const [totals, projects] = await Promise.all([
+    Donation.aggregate([
+      { $match: { status: "paid" } },
+      { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } },
+    ]),
+
+    Donation.distinct("project", { status: "paid" }),
+  ]);
+
+  return {
+    collected: totals[0]?.total ?? 0,
+    contributions: totals[0]?.count ?? 0,
+    projects: projects.length,
+  };
+};
+
+// ------------------------------------------------------------------
 // STATISTIQUES POUR L'ADMINISTRATION
 // ------------------------------------------------------------------
 

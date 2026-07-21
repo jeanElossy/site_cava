@@ -314,31 +314,34 @@ const run = async () => {
   await writeJson("announcements.json", announcements ?? []);
   await writeJson("settings.json", settings ?? {});
 
-  // Statistiques de la communauté.
+  // Chiffres agrégés (communauté, collecte).
   //
-  // Récupérées à part, et non dans le `Promise.all` ci-dessus : cette
-  // route est plus récente que le reste de l'API. Si le serveur n'a pas
-  // encore été redéployé, un 404 ici ferait échouer TOUT le build et
-  // publierait l'ancien contenu du site entier — pour une simple ligne
-  // de chiffres. On conserve alors les derniers connus.
-  try {
-    const stats = await get("/api/community/stats");
-
-    await writeJson("community.json", stats ?? {});
-  } catch (error) {
-    console.warn(
-      `[contenu] statistiques communauté indisponibles (${error.message}) — ` +
-        "les dernières connues sont conservées."
-    );
-
-    // Premier build : le fichier doit exister, les composants
-    // l'importent statiquement.
+  // Récupérés à part, et non dans le `Promise.all` ci-dessus : ces
+  // routes sont plus récentes que le reste de l'API. Si le serveur n'a
+  // pas encore été redéployé, un 404 ici ferait échouer TOUT le build
+  // et publierait l'ancien contenu du site entier — pour une simple
+  // ligne de chiffres. On conserve alors les derniers connus.
+  const optional = async (path, file) => {
     try {
-      await access(resolve(OUT_DIR, "community.json"));
-    } catch {
-      await writeJson("community.json", {});
+      await writeJson(file, (await get(path)) ?? {});
+    } catch (error) {
+      console.warn(
+        `[contenu] ${file} indisponible (${error.message}) — ` +
+          "les dernières valeurs connues sont conservées."
+      );
+
+      // Premier build : le fichier doit exister, les composants
+      // l'importent statiquement.
+      try {
+        await access(resolve(OUT_DIR, file));
+      } catch {
+        await writeJson(file, {});
+      }
     }
-  }
+  };
+
+  await optional("/api/community/stats", "community.json");
+  await optional("/api/donations/stats", "donations.json");
 
   console.log(
     `[contenu] ${shapedEvents.length} événement(s), ` +

@@ -1,189 +1,161 @@
-.faq-section {
-  padding: 40px 40px;
+@use "../../../styles/donate" as *;
 
-  background:
-    linear-gradient(
-      180deg,
-      #f8faf9,
-      #ffffff
-    );
+// Tout est imbriqué sous `.faq-section`. Les anciennes `.faq-list`,
+// `.faq-item`, `.faq-question` et `.faq-answer` étaient déclarées à la
+// racine, donc globales (voir CLAUDE.md).
+.faq-section {
+  padding: $donate-section-padding 0;
+
+  background: $donate-bg;
 
   &__container {
-    max-width: 1100px;
+    @include donate-container;
 
-    margin: 0 auto;
-  }
-}
-
-.faq-section .section-header {
-  text-align: center;
-
-  margin-bottom: 60px;
-
-  h2 {
-    margin: 16px 0;
-
-    font-size: clamp(
-      2rem,
-      4vw,
-      3rem
-    );
-
-    color: #083b2a;
-
-    font-weight: 800;
+    max-width: 860px;
   }
 
-  p {
-    max-width: 700px;
-
-    margin: 0 auto;
-
-    color: #64748b;
-
-    line-height: 1.8;
-  }
-}
-
-.faq-section .section-badge {
-  display: inline-flex;
-
-  align-items: center;
-
-  padding: 10px 18px;
-
-  border-radius: 999px;
-
-  background:
-    rgba(244,198,29,.12);
-
-  color: #c69200;
-
-  font-size: .85rem;
-
-  font-weight: 700;
-}
-
-.faq-section .faq-list {
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 18px;
-}
-
-.faq-section .faq-item {
-  border-radius: 18px;
-
-  overflow: hidden;
-
-  background: white;
-
-  border:
-    1px solid rgba(
-      8,
-      59,
-      42,
-      .08
-    );
-
-  box-shadow:
-    0 10px 30px
-      rgba(0,0,0,.04);
-
-  transition: .3s ease;
-
-  &:hover {
-    box-shadow:
-      0 15px 40px
-        rgba(0,0,0,.07);
+  &__header {
+    @include donate-section-header;
   }
 
-  &.active {
-    border-color:
-      rgba(
-        12,
-        107,
-        67,
-        .15
-      );
+  &__list {
+    display: grid;
+    gap: 12px;
   }
-}
 
-.faq-section .faq-question {
-  width: 100%;
+  &__item {
+    border: 1px solid $donate-border;
+    border-radius: $donate-radius-sm;
 
-  display: flex;
+    background: $donate-surface;
 
-  align-items: center;
+    overflow: hidden;
 
-  justify-content: space-between;
+    transition: border-color $donate-transition,
+      box-shadow $donate-transition;
 
-  gap: 20px;
+    &:hover {
+      border-color: $donate-border-strong;
+    }
 
-  padding: 24px 28px;
+    &--open {
+      border-color: rgba(13, 91, 62, 0.3);
 
-  border: none;
+      box-shadow: 0 12px 30px rgba(6, 48, 31, 0.07);
 
-  background: transparent;
+      .faq-section__chevron {
+        transform: rotate(180deg);
+      }
 
-  cursor: pointer;
-
-  text-align: left;
-
-  font-size: 1rem;
-
-  font-weight: 700;
-
-  color: #083b2a;
-
-  transition: .25s ease;
-
-  svg {
-    color: #0c6b43;
-
-    flex-shrink: 0;
+      // Valeur volontairement large : une réponse plus longue que
+      // prévu serait sinon tronquée, sans que rien ne le signale.
+      .faq-section__answer {
+        grid-template-rows: 1fr;
+      }
+    }
   }
-}
 
-.faq-section .faq-answer {
-  max-height: 0;
-
-  overflow: hidden;
-
-  transition:
-    max-height .35s ease,
-    padding .35s ease;
-
-  p {
+  // `h3` porte le bouton pour que la FAQ apparaisse dans le plan du
+  // document, mais sans en reprendre les styles de titre.
+  &__heading {
     margin: 0;
 
-    color: #475569;
-
-    line-height: 1.8;
-  }
-}
-
-.faq-section .faq-item.active .faq-answer {
-  max-height: 300px;
-
-  padding:
-    0 28px 24px;
-}
-
-@media (max-width: 768px) {
-  .faq-section {
-    padding: 70px 20px;
+    font-size: inherit;
+    font-weight: inherit;
   }
 
-  .faq-section .faq-question {
-    padding: 20px;
+  &__question {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
 
-    font-size: .95rem;
+    width: 100%;
+
+    padding: 22px 26px;
+
+    border: 0;
+
+    background: transparent;
+
+    color: $donate-ink;
+
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.5;
+    text-align: left;
+
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: -2px;
+    }
   }
 
-  .faq-section .faq-item.active .faq-answer {
-    padding:
-      0 20px 20px;
+  &__chevron {
+    flex-shrink: 0;
+
+    color: $primary;
+
+    font-size: 0.85rem;
+
+    transition: transform $donate-transition;
+  }
+
+  // Repli par une grille de hauteur nulle plutôt que par `max-height`.
+  //
+  // `max-height` impose de deviner une hauteur maximale : trop basse,
+  // elle coupe le texte ; trop haute, l'ouverture paraît lente. La
+  // grille s'anime vers la hauteur RÉELLE du contenu, quelle qu'elle
+  // soit.
+  &__answer {
+    display: grid;
+    grid-template-rows: 0fr;
+
+    transition: grid-template-rows $donate-transition;
+
+    p {
+      // L'enfant doit pouvoir être écrasé à zéro : sans
+      // `min-height: 0`, la grille refuse de le réduire.
+      min-height: 0;
+
+      margin: 0;
+      padding: 0 26px;
+
+      color: $donate-ink-soft;
+
+      font-size: 0.93rem;
+      line-height: 1.8;
+
+      overflow: hidden;
+
+      transition: padding $donate-transition;
+    }
+  }
+
+  &__item--open &__answer p {
+    padding: 0 26px 24px;
+  }
+
+  @media (max-width: 640px) {
+    padding: $donate-section-padding-mobile 0;
+
+    &__question {
+      padding: 18px 20px;
+
+      font-size: 0.94rem;
+    }
+
+    &__answer p {
+      padding: 0 20px;
+
+      font-size: 0.88rem;
+    }
+
+    &__item--open &__answer p {
+      padding: 0 20px 20px;
+    }
   }
 }

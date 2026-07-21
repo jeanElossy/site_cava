@@ -1,301 +1,196 @@
+@use "../../../styles/donate" as *;
+
+// Tout est imbriqué sous `.contribution-types`. Les SCSS du projet sont
+// fusionnés en une feuille unique : une classe déclarée à la racine
+// deviendrait globale (voir CLAUDE.md).
 .contribution-types {
-  position: relative;
+  padding: $donate-section-padding 0;
 
-  padding: 70px 60px;
+  background: $donate-bg;
 
-  overflow: hidden;
+  &__container {
+    @include donate-container;
+  }
 
-  &::before {
-    content: "";
+  &__header {
+    @include donate-section-header;
+  }
 
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 18px;
+  }
+
+  &__card {
+    position: relative;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    padding: 34px 18px 28px;
+
+    border: 1.5px solid $donate-border;
+    border-radius: $donate-radius;
+
+    background: $donate-surface;
+
+    font-family: inherit;
+    text-align: center;
+
+    cursor: pointer;
+
+    transition: transform $donate-transition,
+      box-shadow $donate-transition, border-color $donate-transition,
+      background $donate-transition;
+
+    &:hover {
+      transform: translateY(-6px);
+
+      border-color: rgba(13, 91, 62, 0.3);
+
+      box-shadow: $donate-shadow-hover;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 3px;
+    }
+
+    // État sélectionné : le fond vert et la pastille cochée disent la
+    // même chose de deux façons. La couleur seule ne suffit pas — elle
+    // n'est pas perçue par tout le monde.
+    &--active {
+      border-color: $primary;
+
+      background: linear-gradient(
+        160deg,
+        rgba(13, 91, 62, 0.06),
+        rgba(13, 91, 62, 0.02)
+      );
+
+      box-shadow: 0 14px 34px rgba(13, 91, 62, 0.12);
+
+      .contribution-types__icon {
+        background: $primary;
+
+        color: #fff;
+      }
+
+      .contribution-types__check {
+        transform: scale(1);
+
+        opacity: 1;
+      }
+
+      .contribution-types__title {
+        color: $primary;
+      }
+    }
+  }
+
+  &__check {
     position: absolute;
+    top: 12px;
+    right: 12px;
 
-    top: -300px;
-    left: -300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-    width: 700px;
-    height: 700px;
+    width: 22px;
+    height: 22px;
 
     border-radius: 50%;
 
-    background:
-      radial-gradient(
-        rgba(12, 77, 47, .05),
-        transparent 70%
-      );
+    background: $primary;
 
-    pointer-events: none;
+    color: #fff;
+
+    font-size: 0.6rem;
+
+    // Présente mais escamotée : l'apparition se fait par une échelle,
+    // sans décaler la mise en page de la carte.
+    transform: scale(0.4);
+
+    opacity: 0;
+
+    transition: transform $donate-transition, opacity $donate-transition;
   }
-}
 
-/* =========================
-   HEADER
-========================= */
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-.contribution-types .section-header {
-  text-align: center;
+    width: 58px;
+    height: 58px;
 
-  max-width: 760px;
-
-  margin: 0 auto 70px;
-
-  h2 {
     margin-bottom: 18px;
 
-    font-size: 3rem;
+    border-radius: 18px;
 
-    font-weight: 800;
+    background: rgba(13, 91, 62, 0.08);
 
-    color: #083b2a;
+    color: $primary;
 
-    line-height: 1.1;
+    font-size: 1.35rem;
+
+    transition: background $donate-transition, color $donate-transition;
   }
 
-  p {
-    color: #6f6f6f;
+  &__title {
+    margin-bottom: 6px;
 
-    font-size: 1.08rem;
+    color: $donate-ink;
 
-    line-height: 1.9;
-  }
-}
+    font-size: 1.02rem;
+    font-weight: 700;
 
-/* =========================
-   GRID
-========================= */
-
-.contribution-types .types-grid {
-  max-width: 1400px;
-
-  margin: auto;
-
-  display: grid;
-
-  grid-template-columns: repeat(5, 1fr);
-
-  gap: 24px;
-}
-
-/* =========================
-   CARD
-========================= */
-
-.contribution-types .type-card {
-  position: relative;
-
-  overflow: hidden;
-
-  border: none;
-
-  border-radius: 28px;
-
-  padding: 35px 22px;
-
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255,255,255,.96),
-      rgba(255,255,255,.92)
-    );
-
-  backdrop-filter: blur(18px);
-
-  box-shadow:
-    0 12px 35px rgba(0,0,0,.06);
-
-  cursor: pointer;
-
-  text-align: center;
-
-  transition: .45s ease;
-
-  opacity: 0;
-
-  transform: translateY(40px);
-
-  animation: cardReveal .8s ease forwards;
-
-  &:nth-child(1){animation-delay:.1s;}
-  &:nth-child(2){animation-delay:.2s;}
-  &:nth-child(3){animation-delay:.3s;}
-  &:nth-child(4){animation-delay:.4s;}
-  &:nth-child(5){animation-delay:.5s;}
-
-  &::before {
-    content: "";
-
-    position: absolute;
-
-    top: -120px;
-    right: -120px;
-
-    width: 240px;
-    height: 240px;
-
-    border-radius: 50%;
-
-    background:
-      radial-gradient(
-        rgba(244,198,29,.12),
-        transparent 70%
-      );
-
-    transition: .5s ease;
+    transition: color $donate-transition;
   }
 
-  &:hover {
-    transform:
-      translateY(-12px);
+  &__desc {
+    color: $donate-ink-faint;
 
-    box-shadow:
-      0 25px 60px rgba(0,0,0,.12);
+    font-size: 0.83rem;
+    line-height: 1.5;
+  }
 
-    &::before {
-      transform: scale(1.2);
-    }
-
-    .type-icon {
-      transform:
-        rotate(-8deg)
-        scale(1.08);
+  @media (max-width: 1100px) {
+    &__grid {
+      grid-template-columns: repeat(3, 1fr);
     }
   }
-}
 
-/* =========================
-   ACTIVE
-========================= */
+  @media (max-width: 700px) {
+    padding: $donate-section-padding-mobile 0;
 
-.contribution-types .type-card.active {
-  background:
-    linear-gradient(
-      135deg,
-      #014321,
-      #0c6d3c
-    );
+    &__grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 13px;
+    }
 
-  box-shadow:
-    0 25px 60px rgba(1,67,33,.25);
+    &__card {
+      padding: 26px 12px 22px;
+    }
 
-  h3,
-  p {
-    color: white;
-  }
+    &__icon {
+      width: 50px;
+      height: 50px;
 
-  .contribution-types .type-icon {
-    background:
-      rgba(255,255,255,.12);
+      margin-bottom: 14px;
 
-    color: #f4c61d;
+      font-size: 1.15rem;
+    }
 
-    box-shadow:
-      0 10px 30px rgba(0,0,0,.15);
-  }
-}
+    &__title {
+      font-size: 0.94rem;
+    }
 
-/* =========================
-   ICON
-========================= */
-
-.contribution-types .type-icon {
-  width: 82px;
-  height: 82px;
-
-  margin: 0 auto 22px;
-
-  border-radius: 24px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  font-size: 2rem;
-
-  color: #0c4d2f;
-
-  background:
-    linear-gradient(
-      135deg,
-      #f7faf8,
-      #eef6f1
-    );
-
-  box-shadow:
-    0 12px 25px rgba(12,77,47,.08);
-
-  transition: .45s ease;
-}
-
-/* =========================
-   TITRE
-========================= */
-
-.contribution-types .type-card h3 {
-  margin-bottom: 12px;
-
-  font-size: 1.15rem;
-
-  font-weight: 700;
-
-  color: #083b2a;
-}
-
-/* =========================
-   TEXTE
-========================= */
-
-.contribution-types .type-card p {
-  margin: 0;
-
-  color: #737373;
-
-  font-size: .95rem;
-
-  line-height: 1.7;
-}
-
-/* =========================
-   ANIMATION
-========================= */
-
-@keyframes cardReveal {
-  from {
-    opacity: 0;
-    transform: translateY(45px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* =========================
-   TABLETTE
-========================= */
-
-@media (max-width: 1200px) {
-  .contribution-types .types-grid {
-    grid-template-columns:
-      repeat(3, 1fr);
-  }
-}
-
-/* =========================
-   MOBILE
-========================= */
-
-@media (max-width: 768px) {
-
-  .contribution-types {
-    padding: 80px 25px;
-  }
-
-  .contribution-types .section-header h2 {
-    font-size: 2.2rem;
-  }
-
-  .contribution-types .types-grid {
-    grid-template-columns: 1fr;
+    &__desc {
+      font-size: 0.77rem;
+    }
   }
 }

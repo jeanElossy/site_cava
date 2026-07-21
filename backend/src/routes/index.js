@@ -429,6 +429,20 @@ export const buildRoutes = () => {
   // Aucune ne permet de marquer un don payé : c'est toujours un appel
   // SORTANT vers le prestataire qui tranche (voir donation.service.js).
 
+  // Chiffres publics de la collecte.
+  //
+  // Agrégats uniquement : jamais un donateur, jamais un montant
+  // individuel. La page Don affichait jusqu'ici des chiffres inventés
+  // (« 18,5 M collectés », « 1 284 contributeurs ») qui se
+  // contredisaient d'une section à l'autre. Mieux vaut le vrai total,
+  // même modeste, ou rien.
+  api.get(
+    "/donations/stats",
+    asyncHandler(async (_req, res) =>
+      sendSuccess(res, { data: await donationService.publicStats() })
+    )
+  );
+
   api.get(
     "/donations/config",
     asyncHandler(async (_req, res) =>

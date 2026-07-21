@@ -1,6 +1,5 @@
-import "./ContributionTypes.scss";
-
 import {
+  FaCheck,
   FaChurch,
   FaHandHoldingHeart,
   FaHeart,
@@ -8,9 +7,9 @@ import {
   FaTools,
 } from "react-icons/fa";
 
-import {
-  useContribution,
-} from "../../../context/ContributionContext";
+import { useContribution } from "../../../context/ContributionContext";
+
+import "./ContributionTypes.scss";
 
 const contributionTypes = [
   {
@@ -46,53 +45,75 @@ const contributionTypes = [
 ];
 
 const ContributionTypes = () => {
-  const { state, dispatch } =
-    useContribution();
-
-  const handleSelectType = (typeId) => {
-    dispatch({
-      type: "SET_TYPE",
-      payload: typeId,
-    });
-  };
+  const { state, dispatch } = useContribution();
 
   return (
-    <section className="contribution-types">
-      <div className="section-header">
-        <h2>
-          Choisissez votre contribution
-        </h2>
+    <section className="contribution-types" id="types">
+      <div className="contribution-types__container">
 
-        <p>
-          Sélectionnez le type de contribution
-          que vous souhaitez effectuer.
-        </p>
-      </div>
+        <header className="contribution-types__header">
+          <span className="donate-eyebrow">Première étape</span>
 
-      <div className="types-grid">
+          <h2>Choisissez votre contribution</h2>
 
-        {contributionTypes.map((type) => (
-          <button
-            key={type.id}
-            type="button"
-            className={`type-card ${
-              state.contributionType === type.id
-                ? "active"
-                : ""
-            }`}
-            onClick={() =>
-              handleSelectType(type.id)
-            }
-          >
-            <div className="type-icon">
-              {type.icon}
-            </div>
+          <p>
+            Chaque forme de contribution a son sens. Sélectionnez celle
+            qui correspond à votre démarche.
+          </p>
+        </header>
 
-            <h3>{type.title}</h3>
+        {/* `radiogroup` plutôt qu'une simple rangée de boutons : ces
+            cartes forment un choix unique, et un lecteur d'écran doit
+            l'annoncer comme tel — « 2 sur 5 », et non cinq boutons
+            indépendants dont on ne saurait lequel est actif. */}
+        <div
+          className="contribution-types__grid"
+          role="radiogroup"
+          aria-label="Type de contribution"
+        >
+          {contributionTypes.map((type) => {
+            const active = state.contributionType === type.id;
 
-            <p>{type.description}</p>
-          </button>
-        ))}
+            return (
+              <button
+                key={type.id}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                className={
+                  active
+                    ? "contribution-types__card contribution-types__card--active"
+                    : "contribution-types__card"
+                }
+                onClick={() =>
+                  dispatch({ type: "SET_TYPE", payload: type.id })
+                }
+              >
+                <span
+                  className="contribution-types__check"
+                  aria-hidden="true"
+                >
+                  <FaCheck />
+                </span>
+
+                <span
+                  className="contribution-types__icon"
+                  aria-hidden="true"
+                >
+                  {type.icon}
+                </span>
+
+                <span className="contribution-types__title">
+                  {type.title}
+                </span>
+
+                <span className="contribution-types__desc">
+                  {type.description}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
       </div>
     </section>

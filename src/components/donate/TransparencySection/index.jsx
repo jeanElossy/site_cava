@@ -1,11 +1,15 @@
-import "./TransparencySection.scss";
-
 import {
   FaShieldAlt,
   FaChartPie,
   FaChurch,
   FaFileInvoiceDollar,
+  FaLock,
+  FaReceipt,
+  FaBullseye,
+  FaUserSecret,
 } from "react-icons/fa";
+
+import "./TransparencySection.scss";
 
 const items = [
   {
@@ -24,74 +28,109 @@ const items = [
     icon: <FaChurch />,
     title: "Impact réel",
     description:
-      "Les dons permettent de soutenir l'évangélisation, les œuvres sociales et les projets de l'église.",
+      "Les dons soutiennent l'évangélisation, les œuvres sociales et les projets de l'église.",
   },
   {
     icon: <FaShieldAlt />,
     title: "Paiement sécurisé",
     description:
-      "Toutes les transactions sont protégées par des systèmes de sécurité avancés.",
+      "Les paiements sont traités par un prestataire agréé, sur sa propre plateforme.",
+  },
+];
+
+// Bandeau de garanties.
+//
+// ------------------------------------------------------------------
+// POURQUOI CE NE SONT PLUS DES CHIFFRES
+// ------------------------------------------------------------------
+// Ce bandeau affichait « +15 projets soutenus » et « +2 000
+// contributeurs ». Deux valeurs inventées — et qui contredisaient
+// celles de la section chiffrée de la même page, laquelle annonçait
+// 12 projets et 1 284 contributeurs. Deux nombres différents pour la
+// même réalité, à deux écrans d'intervalle.
+//
+// Ils sont remplacés par quatre garanties VÉRIFIABLES, qui décrivent
+// exactement ce que fait le système de don : chacune est vraie, et
+// chacune se constate en donnant.
+const guarantees = [
+  {
+    icon: <FaLock />,
+    title: "Paiement hébergé",
+    text: "Vos coordonnées bancaires ne transitent jamais par notre site.",
+  },
+  {
+    icon: <FaReceipt />,
+    title: "Reçu immédiat",
+    text: "Un reçu vérifiable est disponible dès la confirmation du paiement.",
+  },
+  {
+    icon: <FaBullseye />,
+    title: "Affectation au choix",
+    text: "Vous décidez du projet auquel votre contribution est destinée.",
+  },
+  {
+    icon: <FaUserSecret />,
+    title: "Anonymat possible",
+    text: "Vous pouvez donner sans laisser aucune donnée personnelle.",
   },
 ];
 
 const TransparencySection = () => {
   return (
     <section className="transparency-section">
+      <div className="transparency-section__container">
 
-      <div className="section-header">
+        <header className="transparency-section__header">
+          <span className="donate-eyebrow">Notre engagement</span>
 
-        <h2>Transparence & Confiance</h2>
+          <h2>Transparence et confiance</h2>
 
-        <p>
-          Nous nous engageons à utiliser chaque contribution
-          avec intégrité et responsabilité.
-        </p>
+          <p>
+            Nous nous engageons à utiliser chaque contribution avec
+            intégrité et responsabilité.
+          </p>
+        </header>
+
+        <div className="transparency-section__grid">
+          {items.map((item) => (
+            <article
+              key={item.title}
+              className="transparency-section__card"
+            >
+              <span
+                className="transparency-section__icon"
+                aria-hidden="true"
+              >
+                {item.icon}
+              </span>
+
+              <h3>{item.title}</h3>
+
+              <p>{item.description}</p>
+            </article>
+          ))}
+        </div>
+
+        <ul className="transparency-section__banner">
+          {guarantees.map((item) => (
+            <li key={item.title}>
+              <span
+                className="transparency-section__banner-icon"
+                aria-hidden="true"
+              >
+                {item.icon}
+              </span>
+
+              <strong>{item.title}</strong>
+
+              <span className="transparency-section__banner-text">
+                {item.text}
+              </span>
+            </li>
+          ))}
+        </ul>
 
       </div>
-
-      <div className="transparency-grid">
-
-        {items.map((item, index) => (
-          <article
-            key={index}
-            className="transparency-card"
-          >
-            <div className="transparency-icon">
-              {item.icon}
-            </div>
-
-            <h3>{item.title}</h3>
-
-            <p>{item.description}</p>
-          </article>
-        ))}
-
-      </div>
-
-      <div className="trust-banner">
-
-        <div>
-          <strong>100%</strong>
-          <span>Traçabilité</span>
-        </div>
-
-        <div>
-          <strong>24/7</strong>
-          <span>Paiements sécurisés</span>
-        </div>
-
-        <div>
-          <strong>+15</strong>
-          <span>Projets soutenus</span>
-        </div>
-
-        <div>
-          <strong>+2 000</strong>
-          <span>Contributeurs</span>
-        </div>
-
-      </div>
-
     </section>
   );
 };

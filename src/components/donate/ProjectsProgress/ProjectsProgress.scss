@@ -1,245 +1,173 @@
+@use "../../../styles/donate" as *;
+
+// Tout est imbriqué sous `.projects-progress`.
+//
+// Ce fichier déclarait dix classes à la racine — `.project-card`,
+// `.progress-bar`, `.progress-fill`, `.progress-info`, `.project-image`,
+// `.project-badge`… — toutes globales, et toutes portant des noms que
+// n'importe quel autre composant aurait pu réutiliser sans le savoir
+// (voir CLAUDE.md).
 .projects-progress {
-  padding: 50px 50px;
+  padding: $donate-section-padding 0;
 
-  background:
-    linear-gradient(
-      180deg,
-      #fff,
-      #f8faf8
-    );
-}
+  background: $donate-bg-alt;
 
-.projects-grid {
-  max-width: 1400px;
-
-  margin: 50px auto 0;
-
-  display: grid;
-
-  grid-template-columns:
-    repeat(
-      auto-fit,
-      minmax(280px, 1fr)
-    );
-
-  gap: 20px;
-}
-
-/* =========================
-   CARD
-========================= */
-
-.project-card {
-  overflow: hidden;
-
-  border-radius: 22px;
-
-  background: white;
-
-  border: 1px solid #edf1ed;
-
-  box-shadow:
-    0 10px 30px rgba(0,0,0,.05);
-
-  transition: .35s ease;
-
-  &:hover {
-    transform: translateY(-6px);
-
-    box-shadow:
-      0 18px 40px rgba(0,0,0,.08);
+  &__container {
+    @include donate-container;
   }
-}
 
-/* =========================
-   IMAGE
-========================= */
+  &__header {
+    @include donate-section-header;
+  }
 
-.project-image {
-  position: relative;
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 26px;
+  }
 
-  height: 170px;
+  &__card {
+    display: flex;
+    flex-direction: column;
 
-  img {
+    border: 1px solid $donate-border;
+    border-radius: $donate-radius;
+
+    background: $donate-surface;
+
+    overflow: hidden;
+
+    transition: transform $donate-transition,
+      box-shadow $donate-transition, border-color $donate-transition;
+
+    &:hover {
+      transform: translateY(-7px);
+
+      border-color: rgba(13, 91, 62, 0.26);
+
+      box-shadow: $donate-shadow-hover;
+    }
+
+    &:hover img {
+      transform: scale(1.06);
+    }
+  }
+
+  &__image {
+    position: relative;
+
+    height: 200px;
+
+    overflow: hidden;
+
+    // Fond posé sous l'image : ces fichiers vivent dans `public/`, dont
+    // les chemins ne sont pas vérifiés au build. Une faute de frappe
+    // laisserait un trou blanc plutôt qu'un bloc vert discret.
+    background: linear-gradient(135deg, #0d5b3e, #083b2a);
+
+    img {
+      width: 100%;
+      height: 100%;
+
+      object-fit: cover;
+
+      transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+
+    padding: 26px 24px 24px;
+
+    h3 {
+      margin: 0 0 12px;
+
+      color: $donate-ink;
+
+      font-size: 1.12rem;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    p {
+      margin: 0 0 22px;
+
+      color: $donate-ink-soft;
+
+      font-size: 0.92rem;
+      line-height: 1.7;
+    }
+  }
+
+  &__button {
+    // `margin-top: auto` colle le bouton en bas : sans lui, des
+    // descriptions de longueurs différentes désalignent les boutons
+    // d'une carte à l'autre.
+    margin-top: auto;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
     width: 100%;
-    height: 100%;
 
-    object-fit: cover;
-  }
-}
+    padding: 13px 22px;
 
-/* =========================
-   BADGE
-========================= */
+    border: 1px solid $primary;
+    border-radius: 50px;
 
-.project-badge {
-  position: absolute;
+    background: transparent;
 
-  top: 12px;
-  right: 12px;
+    color: $primary;
 
-  padding: 6px 12px;
+    font-family: inherit;
+    font-size: 0.89rem;
+    font-weight: 600;
 
-  border-radius: 999px;
+    cursor: pointer;
 
-  background:
-    rgba(12,107,60,.95);
+    transition: $donate-transition;
 
-  color: white;
+    svg {
+      transition: transform $donate-transition;
+    }
 
-  font-size: .7rem;
+    &:hover {
+      background: $primary;
 
-  font-weight: 700;
-}
+      color: #fff;
 
-/* =========================
-   CONTENT
-========================= */
+      svg {
+        transform: translateX(4px);
+      }
+    }
 
-.project-content {
-  padding: 18px;
-
-  h3 {
-    margin: 0 0 14px;
-
-    color: #083b2a;
-
-    font-size: 1rem;
-
-    font-weight: 700;
-
-    line-height: 1.4;
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 3px;
+    }
   }
 
-  strong {
-    display: block;
-
-    margin-top: 12px;
-
-    color: #0c6b3c;
-
-    font-size: .9rem;
-
-    font-weight: 700;
-  }
-}
-
-/* =========================
-   INFOS
-========================= */
-
-.progress-info {
-  display: flex;
-
-  justify-content: space-between;
-
-  gap: 10px;
-
-  margin-bottom: 10px;
-
-  font-size: .8rem;
-
-  color: #666;
-}
-
-/* =========================
-   BAR
-========================= */
-
-.progress-bar {
-  height: 8px;
-
-  border-radius: 999px;
-
-  overflow: hidden;
-
-  background: #edf2ee;
-}
-
-.progress-fill {
-  height: 100%;
-
-  border-radius: 999px;
-
-  background:
-    linear-gradient(
-      90deg,
-      #0c6b3c,
-      #f4c61d
-    );
-
-  animation:
-    progressReveal 1.5s ease;
-}
-
-@keyframes progressReveal {
-  from {
-    width: 0;
-  }
-}
-
-/* =========================
-   EMPTY
-========================= */
-
-.empty-projects {
-  grid-column: 1 / -1;
-
-  padding: 60px;
-
-  border-radius: 24px;
-
-  text-align: center;
-
-  background: #f8faf8;
-
-  border: 1px dashed #d8e4db;
-
-  h3 {
-    margin-bottom: 10px;
-
-    color: #083b2a;
+  @media (max-width: 980px) {
+    &__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 
-  p {
-    color: #666;
-  }
-}
+  @media (max-width: 660px) {
+    padding: $donate-section-padding-mobile 0;
 
-/* =========================
-   TABLETTE
-========================= */
+    &__grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
 
-@media (max-width: 992px) {
-
-  .projects-progress {
-    padding: 50px 25px;
-  }
-
-  .projects-grid {
-    gap: 18px;
-  }
-}
-
-/* =========================
-   MOBILE
-========================= */
-
-@media (max-width: 768px) {
-
-  .projects-progress {
-    padding: 40px 20px;
-  }
-
-  .project-image {
-    height: 150px;
-  }
-
-  .project-content {
-    padding: 15px;
-  }
-
-  .progress-info {
-    font-size: .75rem;
+    &__image {
+      height: 180px;
+    }
   }
 }

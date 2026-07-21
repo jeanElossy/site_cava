@@ -1,148 +1,160 @@
+@use "../../../styles/donate" as *;
+
+// Tout est imbriqué sous `.transparency-section`. Les anciennes
+// `.transparency-card`, `.transparency-icon`, `.transparency-grid` et
+// `.trust-banner` étaient déclarées à la racine, donc globales
+// (voir CLAUDE.md).
 .transparency-section {
-  padding: 30px 50px;
+  padding: $donate-section-padding 0;
 
-  background:
-    linear-gradient(
-      180deg,
-      #f8faf8,
-      #ffffff
-    );
-}
+  background: $donate-bg;
 
-.transparency-grid {
-  max-width: 1400px;
-
-  margin: 60px auto;
-
-  display: grid;
-
-  grid-template-columns:
-    repeat(
-      auto-fit,
-      minmax(260px, 1fr)
-    );
-
-  gap: 24px;
-}
-
-.transparency-card {
-  background: white;
-
-  border-radius: 24px;
-
-  padding: 30px;
-
-  text-align: center;
-
-  border: 1px solid #edf1ed;
-
-  box-shadow:
-    0 10px 30px rgba(0,0,0,.05);
-
-  transition: .35s ease;
-
-  &:hover {
-    transform: translateY(-6px);
-
-    box-shadow:
-      0 20px 45px rgba(0,0,0,.08);
+  &__container {
+    @include donate-container;
   }
 
-  h3 {
-    margin: 18px 0 12px;
-
-    color: #083b2a;
+  &__header {
+    @include donate-section-header;
   }
 
-  p {
-    color: #666;
-
-    line-height: 1.7;
-  }
-}
-
-.transparency-icon {
-  width: 72px;
-  height: 72px;
-
-  margin: auto;
-
-  border-radius: 50%;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  background:
-    linear-gradient(
-      135deg,
-      #014321,
-      #0a6b38
-    );
-
-  color: #f4c61d;
-
-  font-size: 1.6rem;
-}
-
-.trust-banner {
-  max-width: 1400px;
-
-  margin: auto;
-
-  padding: 35px;
-
-  border-radius: 28px;
-
-  background:
-    linear-gradient(
-      135deg,
-      #014321,
-      #0a6b38
-    );
-
-  display: grid;
-
-  grid-template-columns:
-    repeat(4, 1fr);
-
-  gap: 20px;
-
-  color: white;
-
-  text-align: center;
-
-  strong {
-    display: block;
-
-    font-size: 2rem;
-
-    color: #f4c61d;
-
-    margin-bottom: 6px;
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
   }
 
-  span {
-    color:
-      rgba(255,255,255,.85);
+  &__card {
+    @include donate-card;
+
+    text-align: center;
+
+    h3 {
+      margin: 0 0 11px;
+
+      color: $donate-ink;
+
+      font-size: 1.03rem;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 0;
+
+      color: $donate-ink-soft;
+
+      font-size: 0.88rem;
+      line-height: 1.7;
+    }
   }
-}
 
-@media (max-width: 992px) {
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
-  .transparency-section {
-    padding: 70px 25px;
+    width: 56px;
+    height: 56px;
+
+    margin-bottom: 18px;
+
+    border-radius: 17px;
+
+    background: rgba(13, 91, 62, 0.08);
+
+    color: $primary;
+
+    font-size: 1.28rem;
   }
 
-  .trust-banner {
-    grid-template-columns:
-      repeat(2, 1fr);
+  // ---- Bandeau de garanties --------------------------------------
+
+  &__banner {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+
+    margin: 28px 0 0;
+    padding: 0;
+
+    border-radius: $donate-radius;
+
+    background: linear-gradient(135deg, #06301f 0%, #0d5b3e 55%, #06301f 100%);
+
+    list-style: none;
+
+    overflow: hidden;
+
+    li {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      padding: 32px 22px;
+
+      text-align: center;
+    }
+
+    strong {
+      margin-bottom: 7px;
+
+      color: #fff;
+
+      font-size: 1rem;
+      font-weight: 700;
+    }
   }
-}
 
-@media (max-width: 768px) {
+  &__banner-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-  .trust-banner {
-    grid-template-columns: 1fr;
+    width: 44px;
+    height: 44px;
+
+    margin-bottom: 15px;
+
+    border-radius: 50%;
+
+    background: rgba(255, 210, 46, 0.14);
+
+    color: $secondary;
+
+    font-size: 1.05rem;
+  }
+
+  &__banner-text {
+    color: rgba(255, 255, 255, 0.72);
+
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 1000px) {
+    &__grid,
+    &__banner {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 620px) {
+    padding: $donate-section-padding-mobile 0;
+
+    &__grid {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    &__card {
+      padding: 26px 22px;
+    }
+
+    &__banner {
+      grid-template-columns: 1fr;
+
+      li {
+        padding: 26px 22px;
+      }
+    }
   }
 }

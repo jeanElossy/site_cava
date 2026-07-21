@@ -1,130 +1,123 @@
+import { FaArrowRight } from "react-icons/fa";
+
+import { useContribution } from "../../../context/ContributionContext";
+
 import "./ProjectsProgress.scss";
 
+// Projets soutenus par les contributions.
+//
+// ------------------------------------------------------------------
+// POURQUOI IL N'Y A PLUS DE JAUGE DE COLLECTE
+// ------------------------------------------------------------------
+// Chaque carte portait une barre de progression et deux montants
+// précis : « 18 500 000 / 25 000 000 FCFA — 74 % atteint ». Ces
+// valeurs étaient écrites en dur dans le composant, sans aucune source
+// derrière, et n'avaient jamais bougé.
+//
+// Un thermomètre de collecte n'est pas un ornement : c'est l'argument
+// de vente d'une page de don. Quelqu'un qui donne parce qu'un projet
+// est « à 74 % » décide sur la foi d'un chiffre inventé — et l'église
+// se retrouverait bien en peine de justifier ces montants si on les
+// lui demandait.
+//
+// Les jauges reviendront le jour où objectifs et montants collectés
+// seront saisis dans l'administration et calculés à partir des dons
+// réels. En attendant, la carte fait ce qu'elle sait faire
+// honnêtement : présenter le projet et proposer de le soutenir.
+//
+// `project` correspond aux identifiants d'affectation du formulaire
+// (voir ContributionForm/data.js) : cliquer préremplit le tunnel.
 const projects = [
   {
-    id: 1,
+    id: "temple",
+    project: "construction",
     title: "Construction du nouveau temple",
     image: "/images/project-church.jpg",
-    current: 18500000,
-    target: 25000000,
+    description:
+      "Un lieu de culte plus vaste, pour accueillir une assemblée qui ne cesse de grandir.",
   },
   {
-    id: 2,
-    title: "Équipement Média & Streaming",
+    id: "media",
+    project: "media",
+    title: "Équipement média & streaming",
     image: "/images/project-media.jpg",
-    current: 200000,
-    target: 2500000,
+    description:
+      "Caméras, son et diffusion en direct, pour porter la Parole au-delà des murs de l'église.",
   },
   {
-    id: 3,
-    title: "Action Sociale",
+    id: "social",
+    project: "social",
+    title: "Action sociale",
     image: "/images/project-social.jpg",
-    current: 4200000,
-    target: 7000000,
+    description:
+      "Aide aux familles en difficulté, soutien scolaire et accompagnement des plus fragiles.",
   },
 ];
 
 const ProjectsProgress = () => {
+  const { dispatch } = useContribution();
+
+  // Prérempli le tunnel puis y ramène le visiteur.
+  //
+  // Le formulaire est sur la même page : une navigation ferait perdre
+  // le contexte, un simple ancrage n'aurait rien sélectionné.
+  const support = (project) => {
+    dispatch({ type: "SET_TYPE", payload: "projet" });
+    dispatch({ type: "SET_PROJECT", payload: project });
+
+    document
+      .getElementById("contribution-form")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <section className="projects-progress">
+      <div className="projects-progress__container">
 
-      <div className="section-header">
+        <header className="projects-progress__header">
+          <span className="donate-eyebrow">Nos chantiers</span>
 
-        <h2>Projets en cours</h2>
+          <h2>Projets en cours</h2>
 
-        <p>
-          Découvrez les projets actuellement soutenus
-          par les contributions de l'église.
-        </p>
+          <p>
+            Voici ce que les contributions de l'église rendent possible
+            aujourd'hui. Vous pouvez affecter votre don à l'un d'eux.
+          </p>
+        </header>
 
-      </div>
+        <div className="projects-progress__grid">
+          {projects.map((project) => (
+            <article
+              key={project.id}
+              className="projects-progress__card"
+            >
+              <div className="projects-progress__image">
+                <img
+                  src={project.image}
+                  alt={project.title}
+                  loading="lazy"
+                />
+              </div>
 
-      <div className="projects-grid">
+              <div className="projects-progress__content">
+                <h3>{project.title}</h3>
 
-        {projects.length === 0 ? (
+                <p>{project.description}</p>
 
-          <div className="empty-projects">
-
-            <h3>Aucun projet actif</h3>
-
-            <p>
-              Aucun projet n'est actuellement
-              en cours de financement.
-            </p>
-
-          </div>
-
-        ) : (
-
-          projects.map((project) => {
-
-            const percent = Math.min(
-              100,
-              Math.round(
-                (project.current / project.target) * 100
-              )
-            );
-
-            return (
-              <article
-                key={project.id}
-                className="project-card"
-              >
-
-                <div className="project-image">
-
-                  <img
-                    src={project.image}
-                    alt={project.title}
-                  />
-
-                  <span className="project-badge">
-                    En cours
-                  </span>
-
-                </div>
-
-                <div className="project-content">
-
-                  <h3>{project.title}</h3>
-
-                  <div className="progress-info">
-
-                    <span>
-                      {project.current.toLocaleString()} FCFA
-                    </span>
-
-                    <span>
-                      {project.target.toLocaleString()} FCFA
-                    </span>
-
-                  </div>
-
-                  <div className="progress-bar">
-
-                    <div
-                      className="progress-fill"
-                      style={{
-                        width: `${percent}%`,
-                      }}
-                    />
-
-                  </div>
-
-                  <strong>
-                    {percent}% atteint
-                  </strong>
-
-                </div>
-
-              </article>
-            );
-          })
-
-        )}
+                <button
+                  type="button"
+                  className="projects-progress__button"
+                  onClick={() => support(project.project)}
+                >
+                  Soutenir ce projet
+                  <FaArrowRight aria-hidden="true" />
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
 
       </div>
-
     </section>
   );
 };

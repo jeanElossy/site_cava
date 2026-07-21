@@ -10,7 +10,6 @@ import ContributionTypes from "../../components/donate/ContributionTypes";
 import ContributionForm from "../../components/donate/ContributionForm";
 import ProjectsProgress from "../../components/donate/ProjectsProgress";
 import TransparencySection from "../../components/donate/TransparencySection";
-import ImpactSection from "../../components/donate/ImpactSection";
 import Testimonials from "../../components/donate/Testimonials";
 import FaqSection from "../../components/donate/FaqSection";
 import VerseSection from "../../components/donate/VerseSection";
@@ -36,15 +35,30 @@ const Donate = () => {
   const { dispatch } =
     useContribution();
 
+  // Préremplissage depuis l'URL — c'est ce qui donne son intérêt au QR
+  // code projeté pendant un culte : le visiteur arrive avec le type et
+  // le montant déjà choisis.
   useEffect(() => {
-    const type =
-      searchParams.get("type");
+    const type = searchParams.get("type");
 
     if (type) {
-      dispatch({
-        type: "SET_TYPE",
-        payload: type,
-      });
+      dispatch({ type: "SET_TYPE", payload: type });
+    }
+
+    const amount = Number(searchParams.get("amount"));
+
+    // Validé avant d'être appliqué : la valeur vient de l'URL, donc de
+    // n'importe qui. Un montant négatif ou fantaisiste n'a pas à
+    // atterrir dans le formulaire — le serveur le refuserait de toute
+    // façon, mais le visiteur verrait d'abord une somme absurde.
+    if (Number.isInteger(amount) && amount >= 200 && amount <= 10000000) {
+      dispatch({ type: "SET_AMOUNT", payload: amount });
+    }
+
+    const project = searchParams.get("project");
+
+    if (project) {
+      dispatch({ type: "SET_PROJECT", payload: project });
     }
   }, [searchParams, dispatch]);
 
@@ -68,8 +82,17 @@ const Donate = () => {
 
         <ContributionStats />
 
-        <ImpactSection />
+        {/*
+          `ImpactSection` a été retiré d'ici.
 
+          C'est le MÊME composant que la carte d'impact du récapitulatif
+          du tunnel, juste au-dessus : le visiteur voyait donc deux fois
+          la même carte sur un seul écran de défilement, et les deux
+          réagissaient ensemble au montant saisi.
+
+          Sa place est dans le récapitulatif, où elle répond aux choix
+          en cours. Isolée, elle ne commentait rien.
+        */}
         <ProjectsProgress />
 
         <TransparencySection />
