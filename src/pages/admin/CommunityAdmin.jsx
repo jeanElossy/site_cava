@@ -168,9 +168,18 @@ const announcementFields = [
     required: true,
   },
   {
+    // Le modele nomme ce champ `publishedAt`. Envoye sous le nom
+    // « date », il etait ignore en silence et l'annonce prenait la date
+    // du jour.
     name: "date",
-    label: "Date de l'annonce",
+    label: "Date de publication",
     type: "date",
+  },
+  {
+    name: "expiresAt",
+    label: "Date d'expiration",
+    type: "date",
+    help: "Facultatif. Passé cette date, l'annonce disparaît du site sans intervention.",
   },
   {
     name: "body",
@@ -198,7 +207,19 @@ const announcementColumns = [
       </span>
     ),
   },
-  { key: "date", label: "Date" },
+  {
+    key: "publishedAt",
+    label: "Publiée le",
+    render: (item) =>
+      item.publishedAt
+        ? new Date(item.publishedAt).toLocaleDateString("fr-FR", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            timeZone: "UTC",
+          })
+        : "—",
+  },
   {
     key: "pinned",
     label: "Épinglée",
@@ -274,6 +295,25 @@ const CommunityAdmin = () => {
                 "Ces annonces sont publiées sur la page Communauté du site public.",
               titleKey: "title",
             }}
+            toValues={(item) => ({
+              title: item?.title ?? "",
+              category: item?.category ?? "info",
+              date: toDateInput(item?.publishedAt),
+              expiresAt: toDateInput(item?.expiresAt),
+              body: item?.body ?? "",
+              pinned: Boolean(item?.pinned),
+            })}
+            toPayload={(values) => ({
+              title: values.title.trim(),
+              category: values.category || "info",
+              publishedAt: values.date || undefined,
+              // `null` et non `undefined` : `undefined` laisserait une
+              // date d'expiration précédente en place au lieu de la
+              // retirer.
+              expiresAt: values.expiresAt || null,
+              body: values.body.trim(),
+              pinned: Boolean(values.pinned),
+            })}
           />
         )}
       </div>

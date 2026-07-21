@@ -17,6 +17,20 @@ const announcementSchema = new mongoose.Schema(
       maxlength: 3000,
     },
 
+    // Catégorie affichée en pastille sur la page Communauté.
+    //
+    // Ce champ manquait au modèle alors que le composant public
+    // l'affiche déjà (`CATEGORY_LABELS[item.category]`) et que le
+    // formulaire d'administration le proposait : la valeur saisie était
+    // donc rejetée en silence par Mongoose, et la pastille retombait
+    // systématiquement sur « Information ».
+    category: {
+      type: String,
+      enum: ["info", "priere", "evenement", "service"],
+      default: "info",
+      index: true,
+    },
+
     // Mise en avant en tête de page.
     pinned: { type: Boolean, default: false },
 

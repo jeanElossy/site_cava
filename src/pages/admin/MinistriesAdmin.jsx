@@ -36,13 +36,20 @@ const fields = [
     help: "Affichée sur la carte du ministère dans la grille.",
   },
   {
-    name: "responsible",
-    label: "Responsable",
+    // `contactEmail` existe dans le modele ; « responsable » et
+    // « horaire », eux, n'y figuraient pas : ils etaient ignores a
+    // l'enregistrement et n'etaient affiches nulle part sur le site.
+    // Les responsables se saisissent dans la liste dediee ci-dessous.
+    name: "contactEmail",
+    label: "E-mail de contact",
+    type: "email",
+    placeholder: "ministere@cava.ci",
   },
   {
-    name: "schedule",
-    label: "Horaire principal",
-    placeholder: "Dimanche, 09h00",
+    name: "order",
+    label: "Ordre d'affichage",
+    type: "number",
+    help: "Les ministères sont classés par ordre croissant sur la page Ministères.",
   },
   {
     name: "stats",
@@ -174,8 +181,15 @@ const columns = [
     ),
   },
   {
-    key: "responsible",
-    label: "Responsable",
+    key: "leaders",
+    label: "Responsables",
+    render: (item) =>
+      (item.leaders ?? []).map((l) => l.name).join(", ") || "—",
+  },
+  {
+    key: "stats",
+    label: "Statistiques",
+    render: (item) => `${(item.stats ?? []).length}`,
   },
 ];
 
@@ -199,7 +213,7 @@ const MinistriesAdmin = () => {
           "Aucun ministère enregistré. Ajoutez-en un pour qu'il apparaisse sur la page Ministères.",
         loadingSuffix: "des ministères",
         description:
-          "Les ministères présentés sur le site. La galerie de photos est modifiable ici ; le contenu détaillé (mission, vision, témoignages) reste pour l'instant dans le code.",
+          "Les ministères présentés sur le site, avec leurs statistiques, responsables, témoignages et galerie. Seuls la mission et la vision restent pour l'instant dans le code.",
         titleKey: "title",
       }}
     />

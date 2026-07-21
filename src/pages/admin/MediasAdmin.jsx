@@ -4,6 +4,16 @@ import usePageMeta from "../../hooks/usePageMeta";
 
 import AdminCrud from "../../components/admin/AdminCrud";
 
+// Le modele stocke une vraie date (`publishedAt`) : c'est elle qui trie
+// les medias. Le formulaire envoyait un champ `date` en texte libre
+// ("04 Mai 2025"), que Mongoose ignorait — la date saisie etait perdue
+// et remplacee par celle du jour.
+//
+// Un `<input type="date">` n'accepte que AAAA-MM-JJ, alors que la base
+// renvoie une date ISO complete.
+const toDateInput = (value) =>
+  typeof value === "string" ? value.slice(0, 10) : "";
+
 import {
   formToVideo,
   videoToForm,
@@ -50,9 +60,10 @@ const fields = [
   },
   {
     name: "date",
-    label: "Date affichée",
-    placeholder: "04 Mai 2025",
-    help: "Texte libre, affiché tel quel sur la carte du média.",
+    label: "Date de publication",
+    type: "date",
+    required: true,
+    help: "La date affichée sur la carte est mise en forme automatiquement à partir de celle-ci.",
   },
   {
     name: "duration",
@@ -137,7 +148,7 @@ const MediasAdmin = () => {
         title: item?.title ?? "",
         author: item?.author ?? "",
         category: item?.category ?? "",
-        date: item?.date ?? "",
+        date: toDateInput(item?.publishedAt),
         duration: item?.duration ?? "",
         image: item?.image ?? "",
         video: videoToForm(item?.video ?? null),
@@ -146,7 +157,7 @@ const MediasAdmin = () => {
         title: values.title.trim(),
         author: values.author.trim(),
         category: values.category,
-        date: values.date.trim(),
+        publishedAt: values.date || undefined,
         duration: values.duration.trim(),
         image: values.image.trim(),
         video: formToVideo(values.video),
