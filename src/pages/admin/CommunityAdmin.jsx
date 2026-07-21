@@ -24,12 +24,34 @@ const CATEGORY_LABELS = ANNOUNCEMENT_CATEGORIES.reduce(
   {}
 );
 
+// Ces valeurs ne sont pas décoratives : elles reprennent exactement les
+// énumérations du modèle Member. Un rôle saisi librement était refusé à
+// l'enregistrement, sans que le formulaire l'explique.
+const MEMBER_ROLES = [
+  { value: "membre", label: "Membre" },
+  { value: "serviteur", label: "Serviteur" },
+  { value: "responsable", label: "Responsable" },
+];
+
+const MEMBER_STATUSES = [
+  { value: "actif", label: "Actif" },
+  { value: "inactif", label: "Inactif" },
+];
+
+// Le formulaire demandait un « Nom complet » alors que le modèle exige
+// un prénom ET un nom, tous deux obligatoires. L'enregistrement
+// echouait donc systématiquement sur « Les données envoyées sont
+// invalides ».
 const memberFields = [
   {
-    name: "fullName",
-    label: "Nom complet",
+    name: "firstName",
+    label: "Prénom",
     required: true,
-    wide: true,
+  },
+  {
+    name: "lastName",
+    label: "Nom",
+    required: true,
   },
   {
     name: "email",
@@ -43,14 +65,22 @@ const memberFields = [
     placeholder: "+225 07 00 00 00 00",
   },
   {
-    name: "group",
-    label: "Groupe de maison",
+    // Le modèle nomme ce champ `area`.
+    name: "area",
+    label: "Quartier / groupe de maison",
     placeholder: "Angré Château",
   },
   {
     name: "role",
-    label: "Rôle / service",
-    placeholder: "Accueil, louange…",
+    label: "Rôle",
+    type: "select",
+    options: MEMBER_ROLES,
+  },
+  {
+    name: "status",
+    label: "Statut",
+    type: "select",
+    options: MEMBER_STATUSES,
   },
   {
     name: "joinedAt",
@@ -67,11 +97,60 @@ const memberFields = [
   },
 ];
 
+const ROLE_LABELS = Object.fromEntries(
+  MEMBER_ROLES.map((item) => [item.value, item.label])
+);
+
+// Un `<input type="date">` n'accepte QUE le format AAAA-MM-JJ. La base
+// renvoie une date ISO complète ("2026-07-21T00:00:00.000Z") : sans
+// cette coupe, le champ s'affichait vide à la modification et la date
+// d'arrivée se perdait au premier enregistrement.
+const toDateInput = (value) =>
+  typeof value === "string" ? value.slice(0, 10) : "";
+
+const memberToValues = (item) => ({
+  firstName: item?.firstName ?? "",
+  lastName: item?.lastName ?? "",
+  email: item?.email ?? "",
+  phone: item?.phone ?? "",
+  area: item?.area ?? "",
+  // Valeurs par défaut alignées sur celles du modèle, pour qu'une
+  // création sans choix explicite reste valide.
+  role: item?.role ?? "membre",
+  status: item?.status ?? "actif",
+  joinedAt: toDateInput(item?.joinedAt),
+  notes: item?.notes ?? "",
+});
+
 const memberColumns = [
-  { key: "fullName", label: "Membre" },
-  { key: "group", label: "Groupe de maison" },
-  { key: "role", label: "Rôle" },
+  {
+    key: "name",
+    label: "Membre",
+    render: (item) =>
+      [item.firstName, item.lastName].filter(Boolean).join(" ") ||
+      "—",
+  },
+  { key: "area", label: "Quartier / groupe" },
+  {
+    key: "role",
+    label: "Rôle",
+    render: (item) => (
+      <span className="admin-crud__pill">
+        {ROLE_LABELS[item.role] ?? "—"}
+      </span>
+    ),
+  },
   { key: "phone", label: "Téléphone" },
+  {
+    key: "status",
+    label: "Statut",
+    render: (item) =>
+      item.status === "inactif" ? (
+        <span className="admin-crud__muted">Inactif</span>
+      ) : (
+        "Actif"
+      ),
+  },
 ];
 
 const announcementFields = [
@@ -219,8 +298,9 @@ const CommunityAdmin = () => {
               loadingSuffix: "des membres",
               description:
                 "Annuaire interne des membres. Ces informations ne sont jamais affichées sur le site public.",
-              titleKey: "fullName",
+              titleKey: "lastName",
             }}
+            toValues={memberToValues}
           />
         )}
       </div>
