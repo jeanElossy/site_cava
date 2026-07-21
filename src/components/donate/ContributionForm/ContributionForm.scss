@@ -869,6 +869,20 @@
   }
 }
 
+/* Attente de la réponse du serveur sur la disponibilité du paiement. */
+.contribution-form .pay-checking {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  margin: 30px 0 0;
+
+  color: rgba(255,255,255,.75);
+
+  font-size: .86rem;
+}
+
 /* Rassurance affichée sous le bouton de paiement. */
 .contribution-form .pay-reassurance {
   display: flex;

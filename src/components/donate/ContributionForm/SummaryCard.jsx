@@ -66,7 +66,19 @@ const SummaryCard = ({
 
       <ImpactCard />
 
-      {isLastStep && paymentEnabled && (
+      {/* `paymentEnabled` a TROIS états : `null` tant que le serveur
+          n'a pas répondu, puis `true` ou `false`. Pendant l'attente on
+          n'affiche ni le bouton ni le message de repli — annoncer que
+          le paiement est indisponible avant de le savoir ferait
+          renoncer des donateurs pour rien. */}
+      {isLastStep && paymentEnabled === null && (
+        <p className="pay-checking" role="status">
+          <FaSpinner className="pay-btn__spinner" aria-hidden="true" />
+          Vérification du service de paiement…
+        </p>
+      )}
+
+      {isLastStep && paymentEnabled === true && (
         <>
           <button
             type="button"
@@ -108,7 +120,7 @@ const SummaryCard = ({
 
       {/* Tant que le compte marchand n'est pas ouvert, on l'annonce
           honnêtement au lieu de simuler une transaction. */}
-      {isLastStep && !paymentEnabled && (
+      {isLastStep && paymentEnabled === false && (
         <div
           className="pay-notice"
           role="status"

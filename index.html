@@ -11,6 +11,25 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <!--
+      Désactive la détection automatique des numéros de téléphone.
+
+      Sur mobile, Safari et Chrome transforment d'eux-mêmes toute suite
+      de chiffres ressemblant à un numéro en lien « tel: » — affiché en
+      bleu et souligné, avec le style par défaut du navigateur.
+
+      Sur la page de don, cela touchait précisément les montants :
+      « 10 000 », « 50 000 » et le total du récapitulatif passaient en
+      bleu, comme s'ils étaient cliquables. Un visiteur qui appuie
+      dessus déclenche un appel téléphonique au lieu de choisir sa
+      contribution.
+
+      Les vrais numéros du site restent cliquables : ils sont écrits
+      comme des liens « tel: » explicites, ce que ce réglage ne touche
+      pas.
+    -->
+    <meta name="format-detection" content="telephone=no" />
+
     <title>Centre Apostolique Vie et Abondance</title>
   </head>
   <body>

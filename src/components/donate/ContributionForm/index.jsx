@@ -243,7 +243,12 @@ const ContributionForm = () => {
           isLastStep={isLastStep}
           onSubmit={handleSubmit}
           submitting={submitting}
-          paymentEnabled={paymentEnabled === true}
+          /* Trois états transmis tels quels : `null` tant que la
+             réponse du serveur n'est pas arrivée. Le convertir en
+             booléen ici — ce qui était le cas — faisait afficher le
+             message « paiement pas encore actif » pendant le
+             chargement, à des visiteurs pour qui il était faux. */
+          paymentEnabled={paymentEnabled}
         />
 
       </div>
