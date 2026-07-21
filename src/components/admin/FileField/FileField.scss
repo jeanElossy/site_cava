@@ -1,0 +1,353 @@
+@use "../../../styles/admin" as *;
+
+// PIÈGE PROJET : feuille de style unique pour tout le site. Tout est
+// imbriqué sous `.admin-file`, aucun nom générique à la racine.
+.admin-file {
+  display: grid;
+  gap: 10px;
+
+  // ---------------- Zone de dépôt ----------------
+
+  &__drop {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+
+    padding: 26px 20px;
+
+    border: 1.5px dashed $admin-border-strong;
+    border-radius: $admin-radius;
+
+    background: $admin-surface-muted;
+
+    text-align: center;
+
+    transition: border-color $admin-ease, background $admin-ease;
+
+    > svg {
+      width: 26px;
+      height: 26px;
+
+      color: $admin-ink-faint;
+    }
+
+    p {
+      margin: 0;
+
+      color: $admin-ink-soft;
+
+      font-size: 0.87rem;
+    }
+
+    &--over {
+      border-color: $admin-accent;
+      border-style: solid;
+
+      background: $admin-accent-soft;
+
+      > svg {
+        color: $admin-accent;
+      }
+    }
+
+    &--busy {
+      border-style: solid;
+    }
+  }
+
+  &__hint {
+    color: $admin-ink-faint;
+
+    font-size: 0.77rem;
+  }
+
+  &__pick {
+    padding: 0;
+
+    border: 0;
+
+    background: none;
+
+    color: $admin-accent;
+
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    text-decoration: underline;
+    text-underline-offset: 3px;
+
+    &:hover:not([disabled]) {
+      color: $primary-dark;
+    }
+
+    &[disabled] {
+      opacity: 0.55;
+
+      cursor: not-allowed;
+    }
+  }
+
+  // Le champ natif est masqué mais reste dans le flux pour rester
+  // atteignable au clavier via le bouton qui le déclenche.
+  &__input {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+
+    opacity: 0;
+
+    pointer-events: none;
+  }
+
+  // ---------------- Progression ----------------
+
+  &__bar {
+    width: 100%;
+    max-width: 260px;
+    height: 6px;
+
+    border-radius: 999px;
+
+    background: $admin-border;
+
+    overflow: hidden;
+
+    span {
+      display: block;
+
+      height: 100%;
+
+      border-radius: 999px;
+
+      background: linear-gradient(
+        90deg,
+        $admin-accent-strong,
+        $admin-accent
+      );
+
+      transition: width 0.2s ease;
+    }
+  }
+
+  &__cancel {
+    padding: 0;
+
+    border: 0;
+
+    background: none;
+
+    color: $admin-ink-faint;
+
+    font-family: inherit;
+    font-size: 0.8rem;
+
+    cursor: pointer;
+
+    text-decoration: underline;
+    text-underline-offset: 3px;
+
+    &:hover {
+      color: $admin-danger;
+    }
+  }
+
+  &__spin {
+    width: 24px;
+    height: 24px;
+
+    color: $admin-accent;
+
+    animation: admin-file-spin 0.9s linear infinite;
+  }
+
+  // ---------------- Aperçu ----------------
+
+  &__preview {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    padding: 12px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius;
+
+    background: $admin-surface-muted;
+
+    img,
+    video {
+      flex-shrink: 0;
+
+      width: 96px;
+      height: 68px;
+
+      border: 1px solid $admin-border;
+      border-radius: $admin-radius-sm;
+
+      background: $admin-surface;
+
+      object-fit: cover;
+    }
+  }
+
+  &__preview-info {
+    display: grid;
+    gap: 7px;
+    // Sans cette contrainte, une URL longue élargit le conteneur au
+    // lieu d'être tronquée.
+    min-width: 0;
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      justify-self: start;
+
+      padding: 6px 11px;
+
+      border: 1px solid $admin-border;
+      border-radius: $admin-radius-sm;
+
+      background: $admin-surface;
+
+      color: $admin-ink-soft;
+
+      font-family: inherit;
+      font-size: 0.79rem;
+      font-weight: 600;
+
+      cursor: pointer;
+
+      transition: border-color $admin-ease, color $admin-ease,
+        background $admin-ease;
+
+      svg {
+        width: 13px;
+        height: 13px;
+      }
+
+      &:hover:not([disabled]) {
+        border-color: rgba(180, 35, 24, 0.4);
+
+        background: $admin-danger-bg;
+
+        color: $admin-danger;
+      }
+    }
+  }
+
+  &__preview-url {
+    color: $admin-ink-soft;
+
+    font-size: 0.78rem;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // ---------------- Saisie manuelle ----------------
+
+  &__manual {
+    width: 100%;
+
+    padding: 11px 13px;
+
+    border: 1px solid $admin-border-strong;
+    border-radius: $admin-radius-sm;
+
+    background: $admin-surface;
+
+    color: $admin-ink;
+
+    font-family: inherit;
+    font-size: 0.91rem;
+
+    &:focus {
+      border-color: $admin-accent;
+
+      outline: none;
+
+      box-shadow: 0 0 0 3px $admin-accent-soft;
+    }
+  }
+
+  &__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-self: start;
+
+    padding: 0;
+
+    border: 0;
+
+    background: none;
+
+    color: $admin-ink-faint;
+
+    font-family: inherit;
+    font-size: 0.79rem;
+
+    cursor: pointer;
+
+    svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    &:hover:not([disabled]) {
+      color: $admin-accent;
+    }
+
+    &[disabled] {
+      opacity: 0.55;
+
+      cursor: not-allowed;
+    }
+  }
+
+  &__error {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+
+    margin: 0;
+    padding: 10px 13px;
+
+    border: 1px solid rgba(180, 35, 24, 0.28);
+    border-radius: $admin-radius-sm;
+
+    background: $admin-danger-bg;
+
+    color: $admin-danger;
+
+    font-size: 0.83rem;
+    line-height: 1.5;
+
+    svg {
+      flex-shrink: 0;
+
+      width: 15px;
+      height: 15px;
+
+      margin-top: 1px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__spin {
+      animation: none;
+    }
+  }
+}
+
+@keyframes admin-file-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

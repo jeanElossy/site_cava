@@ -34,6 +34,17 @@ export const env = {
   JWT_EXPIRES_IN: read("JWT_EXPIRES_IN") ?? "7d",
   JWT_ISSUER: "cava-api",
 
+  // Stockage des fichiers envoyés depuis l'administration.
+  //
+  // `CLOUDINARY_API_SECRET` ne quitte JAMAIS le serveur : il sert à
+  // signer les envois. Le navigateur reçoit une signature à usage
+  // unique, valable pour un dossier et un instant donnés, mais jamais
+  // la clé qui l'a produite — sinon n'importe quel visiteur du bundle
+  // pourrait téléverser sur votre compte.
+  CLOUDINARY_CLOUD_NAME: read("CLOUDINARY_CLOUD_NAME"),
+  CLOUDINARY_API_KEY: read("CLOUDINARY_API_KEY"),
+  CLOUDINARY_API_SECRET: read("CLOUDINARY_API_SECRET"),
+
   // Origines autorisées à appeler l'API. Plusieurs valeurs possibles,
   // séparées par des virgules (site public + interface d'administration).
   //

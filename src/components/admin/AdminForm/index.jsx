@@ -2,6 +2,8 @@ import { useId } from "react";
 
 import { VIDEO_KINDS } from "./video";
 
+import FileField from "../FileField";
+
 import "./AdminForm.scss";
 
 const VideoField = ({ value, onChange }) => {
@@ -128,6 +130,16 @@ const Field = ({ field, value, onChange }) => {
         )}
       </label>
 
+      {field.type === "upload" && (
+        <FileField
+          id={id}
+          value={value ?? ""}
+          onChange={(next) => onChange(field.name, next)}
+          folder={field.folder}
+          accept={field.accept ?? "image"}
+        />
+      )}
+
       {field.type === "textarea" && (
         <textarea
           {...common}
@@ -155,7 +167,9 @@ const Field = ({ field, value, onChange }) => {
         </select>
       )}
 
-      {!["textarea", "select", "checkbox"].includes(field.type) && (
+      {!["textarea", "select", "checkbox", "upload"].includes(
+        field.type
+      ) && (
         <input
           {...common}
           type={field.type ?? "text"}

@@ -13,6 +13,7 @@ import * as authService from "../services/auth.service.js";
 import * as messageService from "../services/message.service.js";
 import * as audit from "../services/audit.service.js";
 import * as publishService from "../services/publish.service.js";
+import * as uploadService from "../services/upload.service.js";
 
 import { resourceRouter } from "./resource.routes.js";
 
@@ -480,6 +481,34 @@ export const buildRoutes = () => {
         data,
       });
     })
+  );
+
+  // ---- Envoi de fichiers -------------------------------------
+  // Délivre une signature à usage unique. Le fichier lui-même ne
+  // transite jamais par cette API : le navigateur l'envoie
+  // directement à Cloudinary. Voir upload.service.js.
+  api.post(
+    "/admin/uploads/signature",
+    requireAuth,
+    asyncHandler(async (req, res) =>
+      sendSuccess(res, {
+        data: uploadService.createSignature({
+          folder: req.body?.folder,
+        }),
+      })
+    )
+  );
+
+  // Permet à l'interface de savoir si l'envoi est disponible, et
+  // d'afficher une explication utile plutôt qu'un bouton qui échoue.
+  api.get(
+    "/admin/uploads/status",
+    requireAuth,
+    asyncHandler(async (_req, res) =>
+      sendSuccess(res, {
+        data: { configured: uploadService.isConfigured() },
+      })
+    )
   );
 
   // ---- Tableau de bord ---------------------------------------

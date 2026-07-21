@@ -45,8 +45,11 @@ const fields = [
   {
     name: "image",
     label: "Image de couverture",
-    placeholder: "/images/events/culte.jpg",
-    help: "Chemin vers un fichier de public/images/. Non vérifié au build.",
+    type: "upload",
+    folder: "events",
+    accept: "image",
+    wide: true,
+    help: "Envoyez un fichier depuis votre ordinateur, ou saisissez une adresse à la main pour les images déjà présentes dans le site.",
   },
   {
     name: "description",

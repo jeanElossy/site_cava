@@ -62,9 +62,11 @@ const fields = [
   {
     name: "image",
     label: "Image de couverture",
-    placeholder: "/images/media/message1.jpg",
+    type: "upload",
+    folder: "medias",
+    accept: "image",
     wide: true,
-    help: "Chemin vers un fichier de public/images/. Ces chemins ne sont pas vérifiés au build : une faute de frappe casse l'image en production.",
+    help: "Envoyez un fichier depuis votre ordinateur, ou saisissez une adresse à la main pour les images déjà présentes dans le site.",
   },
   {
     name: "video",
