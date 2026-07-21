@@ -32,8 +32,8 @@
     ],
     "day": "17",
     "month": "JUIN",
-    "dateLong": "Mardi 17 Juin 2025 - 18h30",
-    "time": "18h30",
+    "dateLong": "Mardi 17 Juin 2025 - 19h30",
+    "time": "19h30",
     "endTime": "20h30",
     "location": "CAVA, Abidjan",
     "address": "Angré château, non loin de l'institut des jésuites",
@@ -46,7 +46,7 @@
   "camp-de-formation-spirituelle": {
     "id": "6a5e4da15532ad9570cfd511",
     "slug": "camp-de-formation-spirituelle",
-    "title": "Camp de Formation Spirituelle",
+    "title": "Camp de Formation",
     "description": "Deux journées de formation, de prière et de communion fraternelle.",
     "content": [
       "Deux journées pour se former, prier ensemble et approfondir sa marche avec Christ, loin des sollicitations du quotidien.",
