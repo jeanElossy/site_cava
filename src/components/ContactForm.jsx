@@ -76,7 +76,14 @@ const ContactForm = () => {
         name: values.name.trim(),
         email: values.email.trim(),
         subject: values.subject.trim(),
-        message: values.message.trim(),
+        // L'API nomme ce champ `body`, pas `message` : le renommage se
+        // fait ici, au point de contact, plutôt que d'aligner l'état du
+        // formulaire sur le vocabulaire du serveur.
+        body: values.message.trim(),
+        // Le consentement est exigé par l'API et vérifié à deux niveaux
+        // (service et modèle) : c'est une obligation liée à la politique
+        // de confidentialité, il doit être transmis explicitement.
+        consent: values.consent === true,
       });
 
       setSentName(values.name.trim());
