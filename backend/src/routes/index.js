@@ -5,6 +5,7 @@ import Ministry from "../models/Ministry.js";
 import Media from "../models/Media.js";
 import Member from "../models/Member.js";
 import Announcement from "../models/Announcement.js";
+import Testimonial from "../models/Testimonial.js";
 import Settings from "../models/Settings.js";
 import Message from "../models/Message.js";
 
@@ -79,6 +80,13 @@ const announcements = createCrudService(Announcement, {
   label: "Annonce",
   defaultSort: { createdAt: -1 },
   searchableFields: ["title", "body"],
+});
+
+const testimonials = createCrudService(Testimonial, {
+  label: "Témoignage",
+  defaultSort: { placement: 1, order: 1, createdAt: -1 },
+  publicSort: { order: 1, createdAt: -1 },
+  searchableFields: ["name", "quote", "role"],
 });
 
 // ---------------------------------------------------------------
@@ -319,6 +327,14 @@ export const buildRoutes = () => {
   mount("announcements", announcements, {
     publicBySlug: false,
     auditResource: "announcement",
+  });
+
+  // `publicFilters: ["placement"]` autorise /api/testimonials?placement=don :
+  // chaque page ne récupère que les siens.
+  mount("testimonials", testimonials, {
+    publicBySlug: false,
+    publicFilters: ["placement"],
+    auditResource: "testimonial",
   });
 
   // Les membres portent des données personnelles : leur écriture est

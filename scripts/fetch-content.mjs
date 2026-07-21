@@ -343,6 +343,40 @@ const run = async () => {
   await optional("/api/community/stats", "community.json");
   await optional("/api/donations/stats", "donations.json");
 
+  // Témoignages, regroupés par emplacement.
+  //
+  // Même traitement tolérant : la route est récente, et un 404 ne doit
+  // pas emporter la construction du site entier.
+  try {
+    const all = (await get("/api/testimonials")) ?? [];
+
+    const byPlacement = (placement) =>
+      all
+        .filter((item) => item.placement === placement)
+        .map((item) => ({
+          id: item._id,
+          name: item.name,
+          role: item.role ?? "",
+          quote: item.quote,
+        }));
+
+    await writeJson("testimonials.json", {
+      don: byPlacement("don"),
+      communaute: byPlacement("communaute"),
+    });
+  } catch (error) {
+    console.warn(
+      `[contenu] témoignages indisponibles (${error.message}) — ` +
+        "les derniers connus sont conservés."
+    );
+
+    try {
+      await access(resolve(OUT_DIR, "testimonials.json"));
+    } catch {
+      await writeJson("testimonials.json", { don: [], communaute: [] });
+    }
+  }
+
   console.log(
     `[contenu] ${shapedEvents.length} événement(s), ` +
       `${ministries.length} ministère(s), ` +

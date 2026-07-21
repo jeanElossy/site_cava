@@ -17,6 +17,7 @@ import {
   LogOut,
   Mail,
   Menu,
+  MessageSquareQuote,
   Send,
   Settings,
   Users,
@@ -72,6 +73,11 @@ const NAV_GROUPS = [
     title: "Communauté",
     items: [
       { to: "/admin/communaute", label: "Membres et annonces", icon: Users },
+      {
+        to: "/admin/temoignages",
+        label: "Témoignages",
+        icon: MessageSquareQuote,
+      },
     ],
   },
   {

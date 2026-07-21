@@ -1,13 +1,15 @@
 import { FaQuoteLeft } from "react-icons/fa";
 
-import { testimonials } from "./data";
+import { donTestimonials as testimonials } from "../../../content/testimonials";
 
 import "./Testimonials.scss";
 
 // Témoignages de donateurs.
 //
-// La liste vit dans `data.js`, et la section disparaît quand elle est
-// vide — voir le commentaire de ce fichier pour la raison.
+// Saisis depuis l'administration (rubrique Témoignages, emplacement
+// « Page Don ») et récupérés au moment du build. La section disparaît
+// tant qu'aucun n'est publié : une page de don sans témoignage vaut
+// mieux qu'une page de don avec des témoignages inventés.
 //
 // Les étoiles ont été retirées : noter une église sur cinq étoiles,
 // comme un restaurant, n'a pas de sens, et elles étaient de toute
@@ -33,7 +35,7 @@ const Testimonials = () => {
         <div className="donate-testimonials__grid">
           {testimonials.map((testimonial) => (
             <article
-              key={testimonial.name}
+              key={testimonial.id}
               className="donate-testimonials__card"
             >
               <FaQuoteLeft
@@ -41,7 +43,7 @@ const Testimonials = () => {
                 aria-hidden="true"
               />
 
-              <blockquote>{testimonial.text}</blockquote>
+              <blockquote>{testimonial.quote}</blockquote>
 
               <footer className="donate-testimonials__author">
                 <span

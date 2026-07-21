@@ -4,31 +4,21 @@ import { FaQuoteLeft } from "react-icons/fa";
 
 import "./CommunityTestimonials.scss";
 
-const testimonials = [
-  {
-    id: "aminata",
-    quote:
-      "Je suis arrivée un dimanche sans connaître personne. Trois semaines plus tard, j'étais accueillie chaque mardi dans un groupe de maison. Aujourd'hui, ces personnes sont ma famille.",
-    name: "Aminata K.",
-    role: "Membre depuis 2022",
-  },
-  {
-    id: "serge",
-    quote:
-      "Quand j'ai perdu mon emploi, la communauté ne s'est pas contentée de prier. On m'a aidé à refaire mon CV, on m'a ouvert des portes. La foi s'est traduite en actes.",
-    name: "Serge A.",
-    role: "Groupe de maison Yopougon",
-  },
-  {
-    id: "grace",
-    quote:
-      "Mes enfants ont grandi ici. Ce qui me touche le plus, c'est de les voir servir à leur tour, avec la même joie que celle qu'on nous a transmise.",
-    name: "Grâce B.",
-    role: "Responsable d'accueil",
-  },
-];
+import { communityTestimonials as testimonials } from "../../../content/testimonials";
 
+// Témoignages de la vie communautaire.
+//
+// Ils étaient écrits en dur ici, signés « Aminata K. », « Serge A. » et
+// « Grâce B. » — des personnes qui n'existent pas, racontant une perte
+// d'emploi ou l'accueil reçu à leur arrivée. Des propos intimes prêtés
+// à des inconnus.
+//
+// Ils sont désormais saisis depuis l'administration (rubrique
+// Témoignages, emplacement « Page Communauté »), avec l'accord de la
+// personne enregistré. La section se masque tant qu'aucun n'est publié.
 const CommunityTestimonials = () => {
+  if (testimonials.length === 0) return null;
+
   return (
     <section className="community-voices">
       <div className="community-voices__container">

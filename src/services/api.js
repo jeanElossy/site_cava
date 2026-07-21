@@ -88,6 +88,7 @@ export const ministries = collection("ministries");
 export const medias = collection("medias");
 export const members = collection("members");
 export const announcements = collection("announcements");
+export const testimonials = collection("testimonials");
 
 // ---------------------------------------------------------------
 // Boîte de réception
