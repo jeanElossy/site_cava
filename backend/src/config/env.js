@@ -36,9 +36,17 @@ export const env = {
 
   // Origines autorisées à appeler l'API. Plusieurs valeurs possibles,
   // séparées par des virgules (site public + interface d'administration).
+  //
+  // La barre oblique finale est retirée, et ce n'est pas cosmétique :
+  // un navigateur envoie toujours `Origin: https://exemple.com`, jamais
+  // avec un `/` final. La comparaison du module `cors` étant une égalité
+  // stricte de chaînes, une valeur copiée depuis la barre d'adresse
+  // (« https://exemple.com/ ») ne correspondrait jamais — et la panne se
+  // manifeste par un formulaire qui échoue sans message, très loin de sa
+  // cause.
   CORS_ORIGIN: (read("CORS_ORIGIN") ?? "")
     .split(",")
-    .map((origin) => origin.trim())
+    .map((origin) => origin.trim().replace(/\/+$/, ""))
     .filter(Boolean),
 
   // Nombre de proxys de confiance devant l'API. À régler à 1 derrière
