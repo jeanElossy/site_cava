@@ -10,6 +10,7 @@ import EventsAdmin from "../pages/admin/EventsAdmin";
 import MinistriesAdmin from "../pages/admin/MinistriesAdmin";
 import MessagesAdmin from "../pages/admin/MessagesAdmin";
 import CommunityAdmin from "../pages/admin/CommunityAdmin";
+import SubscribersAdmin from "../pages/admin/SubscribersAdmin";
 import SettingsAdmin from "../pages/admin/SettingsAdmin";
 
 /**
@@ -66,6 +67,11 @@ const AdminRoutes = () => {
         <Route
           path="communaute"
           element={<CommunityAdmin />}
+        />
+
+        <Route
+          path="newsletter"
+          element={<SubscribersAdmin />}
         />
 
         <Route

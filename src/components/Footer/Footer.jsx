@@ -1,12 +1,9 @@
-import { useState } from "react";
-
 import { Link } from "react-router-dom";
 
 import {
   Phone,
   Mail,
   MapPin,
-  Send,
 } from "lucide-react";
 
 import {
@@ -18,25 +15,11 @@ import {
 
 import logo from "../../assets/logo/logo_cava.gif";
 
+import NewsletterForm from "../NewsletterForm";
+
 import "./Footer.scss";
 
 const Footer = () => {
-  const [email, setEmail] = useState("");
-  const [isSubscribed, setIsSubscribed] = useState(false);
-
-  // Le site est statique : aucun service d'envoi n'est branché. On confirme
-  // la saisie localement plutôt que de simuler un appel réseau.
-  const handleSubscribe = (event) => {
-    event.preventDefault();
-
-    if (!email.trim()) {
-      return;
-    }
-
-    setIsSubscribed(true);
-    setEmail("");
-  };
-
   return (
     <footer className="footer">
       <div className="footer__container">
@@ -168,44 +151,11 @@ const Footer = () => {
             pour recevoir nos actualités.
           </p>
 
-          {isSubscribed ? (
-            <p
-              className="newsletter__success"
-              role="status"
-              aria-live="polite"
-            >
-              Merci ! Votre adresse a bien été enregistrée.
-            </p>
-          ) : (
-            <form
-              className="newsletter"
-              onSubmit={handleSubscribe}
-            >
-              <label
-                className="sr-only"
-                htmlFor="footer-newsletter-email"
-              >
-                Votre adresse e-mail
-              </label>
+          <NewsletterForm
+            variant="dark"
+            compact
+          />
 
-              <input
-                id="footer-newsletter-email"
-                type="email"
-                placeholder="Votre e-mail"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                autoComplete="email"
-                required
-              />
-
-              <button
-                type="submit"
-                aria-label="S'inscrire à la newsletter"
-              >
-                <Send size={18} aria-hidden="true" />
-              </button>
-            </form>
-          )}
         </div>
       </div>
 

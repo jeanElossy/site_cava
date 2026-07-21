@@ -14,6 +14,7 @@ import Contact from "../pages/Contact/Contact";
 import Donate from "../pages/Donate/Donate";
 import LegalNotice from "../pages/LegalNotice/LegalNotice";
 import PrivacyPolicy from "../pages/PrivacyPolicy/PrivacyPolicy";
+import Unsubscribe from "../pages/Unsubscribe/Unsubscribe";
 import NotFound from "../pages/NotFound/NotFound";
 
 // INTERRUPTEUR DE DÉPLOIEMENT
@@ -132,6 +133,11 @@ const AppRoutes = () => {
           }
         />
       )}
+
+      <Route
+        path="/desinscription"
+        element={<Unsubscribe />}
+      />
 
       <Route
         path="*"

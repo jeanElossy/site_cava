@@ -9,6 +9,8 @@ import phoneNewsletter from "../../assets/images/phone-newsletter.png";
 
 import CalendarWidget from "../CalendarWidget";
 
+import NewsletterForm from "../NewsletterForm";
+
 import "./EventsSidebar.scss";
 
 /**
@@ -43,10 +45,12 @@ const EventsSidebar = () => {
             actualités et invitations.
           </p>
 
-          <Link to="/contact">
-            S'abonner
-            <FaArrowRight aria-hidden="true" />
-          </Link>
+          {/* Le bouton renvoyait vers /contact : l'encart promettait
+              un abonnement et menait à un formulaire de message. */}
+          <NewsletterForm
+            variant="dark"
+            compact
+          />
         </div>
 
         <img

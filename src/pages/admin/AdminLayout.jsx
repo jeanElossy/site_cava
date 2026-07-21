@@ -16,6 +16,7 @@ import {
   LogOut,
   Mail,
   Menu,
+  Send,
   Settings,
   Users,
   X,
@@ -42,6 +43,11 @@ const NAV_GROUPS = [
         end: true,
       },
       { to: "/admin/messages", label: "Messages", icon: Mail },
+      {
+        to: "/admin/newsletter",
+        label: "Lettre d'information",
+        icon: Send,
+      },
     ],
   },
   {

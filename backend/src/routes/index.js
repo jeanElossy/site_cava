@@ -14,6 +14,7 @@ import * as messageService from "../services/message.service.js";
 import * as audit from "../services/audit.service.js";
 import * as publishService from "../services/publish.service.js";
 import * as uploadService from "../services/upload.service.js";
+import * as newsletterService from "../services/newsletter.service.js";
 
 import { resourceRouter } from "./resource.routes.js";
 
@@ -413,6 +414,93 @@ export const buildRoutes = () => {
   );
 
   api.use("/admin/messages", adminMessages);
+
+  // ---- Lettre d'information ----------------------------------
+  // Deuxième route publique en écriture, avec la même limitation de
+  // débit que le formulaire de contact : sans elle, la liste se
+  // remplirait d'adresses inventées en quelques minutes.
+  api.post(
+    "/newsletter",
+    contactLimiter,
+    asyncHandler(async (req, res) => {
+      await newsletterService.subscribe({
+        email: req.body?.email,
+        name: req.body?.name,
+        source: "footer",
+        ip: req.ip,
+      });
+
+      // Réponse identique que l'adresse soit nouvelle ou déjà
+      // inscrite : la différencier permettrait de tester si une
+      // adresse donnée figure dans la liste.
+      sendCreated(res, {
+        message:
+          "Votre adresse est enregistrée. Vous recevrez nos prochaines actualités.",
+      });
+    })
+  );
+
+  // Désinscription : publique par nécessité. Un lien qui exigerait
+  // une connexion serait inutilisable, et l'envoi deviendrait fautif.
+  api.post(
+    "/newsletter/desinscription",
+    asyncHandler(async (req, res) => {
+      await newsletterService.unsubscribe(req.body?.token);
+
+      sendSuccess(res, {
+        message:
+          "Vous êtes désinscrit. Vous ne recevrez plus nos actualités.",
+      });
+    })
+  );
+
+  const adminNewsletter = Router();
+
+  adminNewsletter.use(requireAuth);
+
+  adminNewsletter.get(
+    "/",
+    asyncHandler(async (req, res) => {
+      const { items, meta } = await newsletterService.listAdmin(
+        req.query
+      );
+
+      sendSuccess(res, { data: items, meta });
+    })
+  );
+
+  adminNewsletter.get(
+    "/export",
+    asyncHandler(async (_req, res) => {
+      const csv = await newsletterService.exportCsv();
+
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="abonnes-cava.csv"'
+      );
+
+      res.send(csv);
+    })
+  );
+
+  adminNewsletter.delete(
+    "/:id",
+    requireRole("admin"),
+    asyncHandler(async (req, res) => {
+      await newsletterService.remove(req.params.id);
+
+      await audit.record(req, {
+        action: "delete",
+        resource: "subscriber",
+        resourceId: req.params.id,
+      });
+
+      sendNoContent(res);
+    })
+  );
+
+  api.use("/admin/newsletter", adminNewsletter);
 
   // ---- Paramètres du site ------------------------------------
   api.get(

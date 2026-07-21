@@ -1,0 +1,132 @@
+@use "../../styles/variables" as *;
+
+// PIÈGE PROJET : feuille de style unique pour tout le site. Tout est
+// imbriqué sous `.unsubscribe`, aucun nom générique à la racine.
+.unsubscribe {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 60vh;
+
+  padding: 80px 20px;
+
+  background: $bg-light;
+
+  &__card {
+    width: 100%;
+    max-width: 520px;
+
+    padding: 44px 38px;
+
+    border: 1px solid $border-color;
+    border-radius: $radius;
+
+    background: #fff;
+
+    box-shadow: $shadow;
+
+    text-align: center;
+
+    h1 {
+      margin: 0 0 12px;
+
+      color: $primary-dark;
+
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 0 0 24px;
+
+      color: #5a6862;
+
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    button {
+      padding: 14px 26px;
+
+      border: 0;
+      border-radius: 9px;
+
+      background: $primary;
+
+      color: #fff;
+
+      font-family: inherit;
+      font-size: 0.93rem;
+      font-weight: 600;
+
+      cursor: pointer;
+
+      transition: $transition;
+
+      &:hover:not([disabled]) {
+        background: $primary-dark;
+      }
+
+      &:focus-visible {
+        outline: 3px solid $secondary;
+        outline-offset: 2px;
+      }
+
+      &[disabled] {
+        opacity: 0.6;
+
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  &__icon {
+    width: 46px;
+    height: 46px;
+
+    margin-bottom: 16px;
+
+    color: $primary;
+
+    &--error {
+      color: #b42318;
+    }
+  }
+
+  &__error {
+    margin: 0 0 18px !important;
+    padding: 12px 15px;
+
+    border: 1px solid rgba(180, 35, 24, 0.28);
+    border-radius: 9px;
+
+    background: rgba(180, 35, 24, 0.06);
+
+    color: #991b1b !important;
+
+    font-size: 0.87rem !important;
+  }
+
+  &__link {
+    display: inline-block;
+
+    color: $primary;
+
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  @media (max-width: 560px) {
+    padding: 48px 16px;
+
+    &__card {
+      padding: 32px 22px;
+    }
+  }
+}

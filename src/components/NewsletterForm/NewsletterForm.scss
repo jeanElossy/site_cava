@@ -1,0 +1,214 @@
+@use "../../styles/variables" as *;
+
+// PIÈGE PROJET : une seule feuille de style pour tout le site. Tout est
+// imbriqué sous `.newsletter-form`, et aucun nom générique (.label,
+// .error, .done…) n'est déclaré à la racine de ce fichier.
+.newsletter-form {
+  &__label {
+    // Étiquette réservée aux lecteurs d'écran : le champ porte déjà un
+    // texte indicatif, mais un placeholder n'est pas une étiquette.
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+
+    margin: -1px;
+    padding: 0;
+
+    overflow: hidden;
+
+    clip-path: inset(50%);
+
+    white-space: nowrap;
+  }
+
+  form {
+    display: flex;
+    gap: 8px;
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+
+    padding: 12px 14px;
+
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 8px;
+
+    background: rgba(255, 255, 255, 0.1);
+
+    color: #fff;
+
+    font-family: inherit;
+    font-size: 0.9rem;
+
+    transition: border-color 0.2s ease, background 0.2s ease;
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    &:focus {
+      border-color: $secondary;
+
+      outline: none;
+
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+
+      cursor: not-allowed;
+    }
+  }
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-shrink: 0;
+
+    padding: 12px 18px;
+
+    border: 0;
+    border-radius: 8px;
+
+    background: $secondary;
+
+    color: $primary-dark;
+
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: background 0.2s ease, transform 0.2s ease;
+
+    &:hover:not([disabled]) {
+      transform: translateY(-1px);
+
+      background: #ffdd5c;
+    }
+
+    &:focus-visible {
+      outline: 3px solid #fff;
+      outline-offset: 2px;
+    }
+
+    &[disabled] {
+      opacity: 0.6;
+
+      cursor: not-allowed;
+    }
+  }
+
+  &--compact button {
+    width: 46px;
+    padding: 12px;
+  }
+
+  // Variante pour un fond clair.
+  &--light {
+    input {
+      border-color: #d9dfdc;
+
+      background: #fff;
+
+      color: $text-dark;
+
+      &::placeholder {
+        color: #9aa39e;
+      }
+
+      &:focus {
+        border-color: $primary;
+
+        background: #fff;
+      }
+    }
+
+    button {
+      background: $primary;
+
+      color: #fff;
+
+      &:hover:not([disabled]) {
+        background: $primary-dark;
+      }
+
+      &:focus-visible {
+        outline-color: $primary-dark;
+      }
+    }
+  }
+
+  &__error {
+    margin: 9px 0 0;
+
+    color: #fca5a5;
+
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  &--light &__error {
+    color: #991b1b;
+  }
+
+  &__done {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+
+    margin: 0;
+
+    color: rgba(255, 255, 255, 0.9);
+
+    font-size: 0.87rem;
+    line-height: 1.55;
+
+    svg {
+      flex-shrink: 0;
+
+      margin-top: 2px;
+
+      color: $secondary;
+    }
+
+    &--light {
+      color: $primary-dark;
+
+      svg {
+        color: $primary;
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    form {
+      flex-direction: column;
+    }
+
+    &--compact form {
+      flex-direction: row;
+    }
+
+    button {
+      width: 100%;
+    }
+
+    &--compact button {
+      width: 46px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    button:hover:not([disabled]) {
+      transform: none;
+    }
+  }
+}

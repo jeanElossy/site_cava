@@ -162,6 +162,44 @@ export const inbox = {
 // Paramètres du site (document unique)
 // ---------------------------------------------------------------
 
+// Lettre d'information.
+//
+// `subscribe` est PUBLIC : c'est, avec le formulaire de contact, la
+// seule écriture accessible sans authentification. Le reste est
+// réservé à l'administration.
+export const newsletter = {
+  subscribe: async (email, name) =>
+    request("/api/newsletter", {
+      method: "POST",
+      body: { email, name },
+    }),
+
+  unsubscribe: async (token) =>
+    request("/api/newsletter/desinscription", {
+      method: "POST",
+      body: { token },
+    }),
+
+  // Renvoie un TABLEAU, comme les autres listes d'administration.
+  list: async (params = {}) => {
+    const { items } = await requestWithMeta(
+      `/api/admin/newsletter?${new URLSearchParams({
+        limit: 200,
+        ...params,
+      })}`,
+      { auth: true }
+    );
+
+    return items;
+  },
+
+  remove: async (id) =>
+    request(`/api/admin/newsletter/${id}`, {
+      method: "DELETE",
+      auth: true,
+    }),
+};
+
 export const settings = {
   get: async () => request("/api/settings"),
 
