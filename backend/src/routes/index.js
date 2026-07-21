@@ -28,8 +28,12 @@ import {
 } from "../middlewares/auth.js";
 import {
   loginLimiter,
+  twoFactorLimiter,
+  twoFactorManageLimiter,
   contactLimiter,
 } from "../middlewares/rateLimit.js";
+
+import QRCode from "qrcode";
 
 // ---------------------------------------------------------------
 // Services de contenu
@@ -107,6 +111,17 @@ export const buildRoutes = () => {
         throw error;
       }
 
+      // Mot de passe correct mais second facteur en attente : ce
+      // n'est pas encore une connexion. La tracer comme telle
+      // fausserait le journal de sécurité, qui doit dire ce qui s'est
+      // réellement passé.
+      if (data.twoFactorRequired) {
+        return sendSuccess(res, {
+          message: "Saisissez le code de votre application.",
+          data,
+        });
+      }
+
       await audit.recordLoginAttempt(req, {
         email,
         success: true,
@@ -114,6 +129,136 @@ export const buildRoutes = () => {
       });
 
       sendSuccess(res, { message: "Connexion réussie.", data });
+    })
+  );
+
+  // Seconde étape : vérification du code TOTP ou d'un code de secours.
+  auth.post(
+    "/login/2fa",
+    twoFactorLimiter,
+    asyncHandler(async (req, res) => {
+      let data;
+
+      try {
+        data = await authService.verifyLoginTwoFactor(
+          req.body ?? {}
+        );
+      } catch (error) {
+        // Le compte visé n'est pas connu à ce stade — l'échec est
+        // survenu avant. C'est l'adresse IP, enregistrée par `record`,
+        // qui rend cette trace utile face à une attaque répétée.
+        await audit.record(req, {
+          action: "2fa_failed",
+          actor: { email: "inconnu" },
+        });
+
+        throw error;
+      }
+
+      await audit.recordLoginAttempt(req, {
+        email: data.user.email,
+        success: true,
+        actorId: data.user.id,
+      });
+
+      if (data.recoveryCodeUsed) {
+        await audit.record(req, {
+          action: "2fa_recovery_used",
+          actor: data.user,
+        });
+      }
+
+      sendSuccess(res, { message: "Connexion réussie.", data });
+    })
+  );
+
+  // ---- Gestion du second facteur (compte connecté) ------------
+  auth.get(
+    "/2fa",
+    requireAuth,
+    asyncHandler(async (req, res) =>
+      sendSuccess(res, {
+        data: await authService.twoFactorStatus(req.user.id),
+      })
+    )
+  );
+
+  auth.post(
+    "/2fa/setup",
+    requireAuth,
+    asyncHandler(async (req, res) => {
+      const data = await authService.startTwoFactorSetup(
+        req.user.id
+      );
+
+      // QR encodé en data: URI. La CSP du site autorise `img-src
+      // 'self' data:` — l'image s'affiche sans requête réseau et sans
+      // que le secret transite par un service tiers.
+      const qrDataUrl = await QRCode.toDataURL(data.otpauthUrl, {
+        width: 260,
+        margin: 1,
+        errorCorrectionLevel: "M",
+      });
+
+      sendSuccess(res, { data: { ...data, qrDataUrl } });
+    })
+  );
+
+  auth.post(
+    "/2fa/enable",
+    requireAuth,
+    twoFactorManageLimiter,
+    asyncHandler(async (req, res) => {
+      const data = await authService.enableTwoFactor(
+        req.user.id,
+        req.body ?? {}
+      );
+
+      await audit.record(req, { action: "2fa_enabled" });
+
+      sendSuccess(res, {
+        message:
+          "Double authentification activée. Conservez vos codes de secours.",
+        data,
+      });
+    })
+  );
+
+  auth.post(
+    "/2fa/disable",
+    requireAuth,
+    twoFactorManageLimiter,
+    asyncHandler(async (req, res) => {
+      await authService.disableTwoFactor(
+        req.user.id,
+        req.body ?? {}
+      );
+
+      await audit.record(req, { action: "2fa_disabled" });
+
+      sendSuccess(res, {
+        message: "Double authentification désactivée.",
+      });
+    })
+  );
+
+  auth.post(
+    "/2fa/recovery-codes",
+    requireAuth,
+    twoFactorManageLimiter,
+    asyncHandler(async (req, res) => {
+      const data = await authService.regenerateRecoveryCodes(
+        req.user.id,
+        req.body ?? {}
+      );
+
+      await audit.record(req, { action: "2fa_enabled" });
+
+      sendSuccess(res, {
+        message:
+          "Nouveaux codes de secours générés. Les anciens ne fonctionnent plus.",
+        data,
+      });
     })
   );
 

@@ -16,15 +16,71 @@ const extractToken = (req) => {
   return token || null;
 };
 
+// PORTÉE DES JETONS — à ne pas retirer.
+//
+// Deux jetons circulent désormais, signés avec le même secret :
+//
+//   session   plein accès à l'administration
+//   2fa       preuve que le mot de passe est bon, RIEN DE PLUS,
+//             valable le temps de saisir le code
+//
+// Sans la portée, les deux seraient interchangeables et la double
+// authentification serait contournable : il suffirait de présenter le
+// jeton intermédiaire à une route d'administration. C'est l'erreur
+// classique des implémentations 2FA maison, et elle annule tout le
+// bénéfice de la fonctionnalité.
+export const TOKEN_SCOPE = {
+  SESSION: "session",
+  TWO_FACTOR: "2fa",
+};
+
 export const signToken = (user) =>
   jwt.sign(
-    { sub: String(user._id), role: user.role },
+    {
+      sub: String(user._id),
+      role: user.role,
+      scope: TOKEN_SCOPE.SESSION,
+    },
     env.JWT_SECRET,
     {
       expiresIn: env.JWT_EXPIRES_IN,
       issuer: env.JWT_ISSUER,
     }
   );
+
+// Jeton intermédiaire, délibérément très court : il n'ouvre rien et ne
+// sert qu'à relier la saisie du code à la vérification du mot de passe
+// qui vient d'aboutir.
+export const signChallengeToken = (user) =>
+  jwt.sign(
+    {
+      sub: String(user._id),
+      scope: TOKEN_SCOPE.TWO_FACTOR,
+    },
+    env.JWT_SECRET,
+    {
+      expiresIn: "5m",
+      issuer: env.JWT_ISSUER,
+    }
+  );
+
+export const verifyChallengeToken = (token) => {
+  let payload;
+
+  try {
+    payload = jwt.verify(token, env.JWT_SECRET, {
+      issuer: env.JWT_ISSUER,
+    });
+  } catch {
+    return null;
+  }
+
+  // Symétrique de `requireAuth` : un jeton de session ne doit pas non
+  // plus pouvoir se faire passer pour un jeton de vérification.
+  if (payload.scope !== TOKEN_SCOPE.TWO_FACTOR) return null;
+
+  return payload;
+};
 
 // Vérifie le jeton PUIS recharge l'utilisateur en base.
 //
@@ -53,6 +109,13 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
     throw ApiError.unauthorized("Session invalide ou expirée.");
   }
 
+  // Le verrou de la double authentification. Un jeton de portée « 2fa »
+  // prouve seulement que le mot de passe était correct : il ne doit
+  // ouvrir aucune route d'administration.
+  if (payload.scope !== TOKEN_SCOPE.SESSION) {
+    throw ApiError.unauthorized("Session invalide ou expirée.");
+  }
+
   const user = await User.findById(payload.sub).lean();
 
   if (!user || !user.isActive) {
@@ -64,6 +127,7 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
     name: user.name,
     email: user.email,
     role: user.role,
+    twoFactorEnabled: Boolean(user.twoFactor?.enabled),
   };
 
   next();

@@ -8,6 +8,7 @@ import useAsyncData from "../../hooks/useAsyncData";
 import usePageMeta from "../../hooks/usePageMeta";
 
 import AdminForm from "../../components/admin/AdminForm";
+import TwoFactorPanel from "../../components/admin/TwoFactorPanel";
 
 import {
   AdminError,
@@ -140,10 +141,10 @@ const SettingsAdmin = () => {
         <FaInfoCircle aria-hidden="true" />
 
         <p>
-          Ces valeurs sont enregistrées mais ne pilotent pas encore
-          l&apos;affichage du site : le pied de page et la page Contact
-          affichent toujours des coordonnées écrites en dur dans le code.
-          Le branchement se fera en même temps que le backend.
+          Ces valeurs sont bien enregistrées en base, mais ne pilotent
+          pas encore l&apos;affichage du site : le pied de page et la
+          page Contact affichent toujours des coordonnées écrites en
+          dur dans le code. Leur branchement reste à faire.
         </p>
       </div>
 
@@ -167,7 +168,7 @@ const SettingsAdmin = () => {
                 role="status"
                 aria-live="polite"
               >
-                Paramètres enregistrés dans ce navigateur.
+                Paramètres enregistrés.
               </p>
             )}
 
@@ -183,6 +184,11 @@ const SettingsAdmin = () => {
           </div>
         )}
       </div>
+
+      {/* Indépendant des paramètres du site : le panneau gère son
+          propre chargement et n'est pas concerné par l'échec éventuel
+          de `settings.get`. */}
+      <TwoFactorPanel />
     </div>
   );
 };

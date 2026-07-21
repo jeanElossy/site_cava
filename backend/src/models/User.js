@@ -68,6 +68,49 @@ const userSchema = new mongoose.Schema(
       type: Date,
       select: false,
     },
+
+    // DOUBLE AUTHENTIFICATION (TOTP)
+    //
+    // Le mot de passe seul ne protège plus grand-chose : il fuite par
+    // hameçonnage, réutilisation d'un mot de passe d'un autre site, ou
+    // logiciel espion. Un second facteur rend ces trois scénarios
+    // insuffisants pour entrer.
+    twoFactor: {
+      enabled: { type: Boolean, default: false },
+
+      // `select: false` sur les deux secrets : ils ne doivent jamais
+      // partir dans une réponse, même en cas d'oubli dans un
+      // controller. Quiconque lit `secret` peut générer les codes.
+      secret: { type: String, select: false },
+
+      // Secret en cours d'installation, tant que l'utilisateur n'a pas
+      // prouvé qu'il l'a bien enregistré dans son application. Le
+      // séparer du secret actif évite de casser une 2FA qui fonctionne
+      // parce qu'une nouvelle configuration a été commencée puis
+      // abandonnée.
+      pendingSecret: { type: String, select: false },
+
+      activatedAt: Date,
+
+      // Dernier pas de temps accepté, pour interdire de rejouer un
+      // code encore valide. Voir `verifyTotp` dans utils/totp.js.
+      lastUsedStep: { type: Number, select: false },
+
+      // Codes de secours à usage unique, stockés hachés. `usedAt`
+      // plutôt qu'une suppression : l'utilisateur voit combien il lui
+      // en reste, et la trace d'un usage subsiste.
+      recoveryCodes: {
+        type: [
+          {
+            _id: false,
+            codeHash: String,
+            usedAt: Date,
+          },
+        ],
+        select: false,
+        default: [],
+      },
+    },
   },
   { timestamps: true }
 );
@@ -125,10 +168,19 @@ userSchema.statics.findByEmail = function (email) {
 };
 
 // Ceinture et bretelles : même si un appel fait `.select('+password')`
-// puis renvoie le document, la sérialisation JSON retire le hash.
+// puis renvoie le document, la sérialisation JSON retire le hash et
+// tout ce qui touche au second facteur. Seul l'état d'activation
+// survit — c'est la seule information dont l'interface a besoin.
 userSchema.set("toJSON", {
   transform: (_doc, ret) => {
     delete ret.password;
+
+    if (ret.twoFactor) {
+      ret.twoFactor = {
+        enabled: Boolean(ret.twoFactor.enabled),
+        activatedAt: ret.twoFactor.activatedAt,
+      };
+    }
 
     return ret;
   },

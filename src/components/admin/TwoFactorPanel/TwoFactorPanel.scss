@@ -1,0 +1,546 @@
+@use "../../../styles/variables" as *;
+
+// RAPPEL : feuille de style unique pour tout le site. Tout est
+// imbriqué sous `.admin-2fa`, aucun nom générique à la racine.
+.admin-2fa {
+  margin-top: 30px;
+  padding: 26px;
+
+  border: 1px solid #dde4e0;
+  border-radius: 14px;
+
+  background: #fff;
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+
+    padding-bottom: 20px;
+
+    border-bottom: 1px solid #eef2f0;
+  }
+
+  &__title {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+
+    > svg {
+      flex-shrink: 0;
+
+      width: 26px;
+      height: 26px;
+
+      margin-top: 2px;
+
+      color: $primary;
+    }
+
+    h2 {
+      margin: 0;
+
+      color: $primary-dark;
+
+      font-size: 1.12rem;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 5px 0 0;
+
+      color: #6a736e;
+
+      font-size: 0.86rem;
+      line-height: 1.55;
+    }
+  }
+
+  &__badge {
+    flex-shrink: 0;
+
+    padding: 5px 12px;
+
+    border-radius: 999px;
+
+    background: #f0f2f1;
+
+    color: #6a736e;
+
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+
+    &--on {
+      background: rgba(13, 91, 62, 0.1);
+
+      color: $primary;
+    }
+  }
+
+  &__body {
+    padding-top: 22px;
+  }
+
+  &__pitch {
+    margin: 0 0 20px;
+
+    color: #4a5450;
+
+    font-size: 0.89rem;
+    line-height: 1.7;
+  }
+
+  &__facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 16px;
+
+    margin: 0 0 20px;
+
+    div {
+      padding: 14px 16px;
+
+      border: 1px solid #eef2f0;
+      border-radius: 10px;
+
+      background: #fafbfb;
+    }
+
+    dt {
+      color: #8a938e;
+
+      font-size: 0.76rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    dd {
+      margin: 6px 0 0;
+
+      color: $primary-dark;
+
+      font-size: 1.02rem;
+      font-weight: 600;
+    }
+  }
+
+  &__low {
+    color: #b45309 !important;
+  }
+
+  &__steps {
+    margin: 0 0 22px;
+    padding-left: 20px;
+
+    color: #4a5450;
+
+    font-size: 0.88rem;
+    line-height: 1.75;
+
+    li + li {
+      margin-top: 6px;
+    }
+  }
+
+  &__setup {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+
+    margin-bottom: 24px;
+    padding: 20px;
+
+    border: 1px solid #eef2f0;
+    border-radius: 12px;
+
+    background: #fafbfb;
+  }
+
+  &__qr {
+    flex-shrink: 0;
+
+    width: 168px;
+    height: 168px;
+
+    border: 1px solid #e4e9e7;
+    border-radius: 10px;
+
+    // Le QR est généré en PNG : `pixelated` évite le lissage qui
+    // brouille les modules et gêne la lecture par le téléphone.
+    image-rendering: pixelated;
+
+    background: #fff;
+  }
+
+  &__manual {
+    min-width: 0;
+
+    span {
+      display: block;
+
+      color: $primary-dark;
+
+      font-size: 0.84rem;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 5px 0 9px;
+
+      color: #6a736e;
+
+      font-size: 0.82rem;
+    }
+
+    code {
+      display: block;
+
+      padding: 10px 12px;
+
+      border: 1px solid #e4e9e7;
+      border-radius: 8px;
+
+      background: #fff;
+
+      color: $primary-dark;
+
+      font-family: "Courier New", monospace;
+      font-size: 0.82rem;
+      // La clé fait 32 caractères : elle doit pouvoir revenir à la
+      // ligne au lieu de déborder du panneau.
+      word-break: break-all;
+
+      // Facilite la sélection à la souris pour un copier-coller.
+      user-select: all;
+    }
+  }
+
+  &__verify {
+    margin-bottom: 22px;
+  }
+
+  &__label {
+    display: block;
+
+    margin-bottom: 9px;
+
+    color: #33403a;
+
+    font-size: 0.84rem;
+    font-weight: 600;
+  }
+
+  // Le composant CodeInput est habillé pour le fond sombre de l'écran
+  // de connexion. Ici le fond est clair : on ne duplique pas le
+  // composant, on repeint ses cases dans ce contexte précis.
+  .admin-code-input {
+    max-width: 320px;
+
+    input {
+      border-color: #d9dfdc;
+
+      background: #fff;
+
+      color: $primary-dark;
+
+      &:hover:not(:disabled) {
+        border-color: #b9c4bf;
+      }
+
+      &:focus {
+        border-color: $primary;
+
+        background: #fff;
+
+        box-shadow: 0 0 0 3px rgba(13, 91, 62, 0.14);
+      }
+    }
+
+    &--invalid input {
+      border-color: rgba(185, 28, 28, 0.5);
+
+      background: rgba(185, 28, 28, 0.04);
+    }
+  }
+
+  &__codes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+
+    margin: 0 0 22px;
+    padding: 0;
+
+    list-style: none;
+
+    li {
+      padding: 11px 14px;
+
+      border: 1px dashed #cfd8d4;
+      border-radius: 8px;
+
+      background: #fafbfb;
+
+      color: $primary-dark;
+
+      font-family: "Courier New", monospace;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-align: center;
+
+      user-select: all;
+    }
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+
+    margin-bottom: 16px;
+
+    label {
+      color: #33403a;
+
+      font-size: 0.84rem;
+      font-weight: 600;
+    }
+
+    input {
+      max-width: 340px;
+
+      padding: 11px 13px;
+
+      border: 1px solid #d9dfdc;
+      border-radius: 9px;
+
+      background: #fff;
+
+      color: #1f2a25;
+
+      font-family: inherit;
+      font-size: 0.93rem;
+
+      &:focus {
+        border-color: $primary;
+
+        outline: none;
+
+        box-shadow: 0 0 0 3px rgba(13, 91, 62, 0.13);
+      }
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 11px;
+  }
+
+  &__button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 11px 17px;
+
+    border: 1px solid #d9dfdc;
+    border-radius: 9px;
+
+    background: #fff;
+
+    color: #33403a;
+
+    font-family: inherit;
+    font-size: 0.87rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: $transition;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover:not([disabled]) {
+      border-color: #b9c4bf;
+
+      background: #fafbfb;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
+    }
+
+    &[disabled] {
+      opacity: 0.55;
+
+      cursor: not-allowed;
+    }
+
+    &--primary {
+      border-color: $primary;
+
+      background: $primary;
+
+      color: #fff;
+
+      &:hover:not([disabled]) {
+        border-color: $primary-dark;
+
+        background: $primary-dark;
+      }
+    }
+
+    &--danger {
+      border-color: rgba(185, 28, 28, 0.35);
+
+      color: #991b1b;
+
+      &:hover:not([disabled]) {
+        border-color: #991b1b;
+
+        background: rgba(185, 28, 28, 0.05);
+      }
+    }
+  }
+
+  &__warn {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    margin: 0 0 20px;
+    padding: 13px 16px;
+
+    border: 1px solid rgba(180, 83, 9, 0.28);
+    border-radius: 10px;
+
+    background: rgba(251, 191, 36, 0.09);
+
+    color: #92400e;
+
+    font-size: 0.85rem;
+    line-height: 1.6;
+
+    svg {
+      flex-shrink: 0;
+
+      width: 16px;
+      height: 16px;
+
+      margin-top: 2px;
+    }
+  }
+
+  &__error {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    margin: 20px 0 0;
+    padding: 13px 16px;
+
+    border: 1px solid rgba(185, 28, 28, 0.3);
+    border-radius: 10px;
+
+    background: rgba(185, 28, 28, 0.05);
+
+    color: #991b1b;
+
+    font-size: 0.86rem;
+    line-height: 1.55;
+
+    svg {
+      flex-shrink: 0;
+
+      width: 16px;
+      height: 16px;
+
+      margin-top: 2px;
+    }
+  }
+
+  &__foot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    margin: 20px 0 0;
+    padding-top: 18px;
+
+    border-top: 1px solid #eef2f0;
+
+    color: #8a938e;
+
+    font-size: 0.82rem;
+
+    svg {
+      width: 15px;
+      height: 15px;
+    }
+  }
+
+  &__loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    margin: 0;
+
+    color: #6a736e;
+
+    font-size: 0.88rem;
+
+    svg {
+      width: 17px;
+      height: 17px;
+    }
+  }
+
+  &__spin {
+    animation: admin-2fa-spin 0.9s linear infinite;
+  }
+
+  @media (max-width: 700px) {
+    padding: 20px;
+
+    &__header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    &__setup {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 18px;
+    }
+
+    &__actions button {
+      flex: 1 1 100%;
+
+      justify-content: center;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__spin {
+      animation: none;
+    }
+  }
+}
+
+@keyframes admin-2fa-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
