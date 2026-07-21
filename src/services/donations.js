@@ -33,6 +33,39 @@ export const startDonation = (payload) =>
 export const donationStatus = (reference) =>
   request(`/api/donations/${encodeURIComponent(reference)}`);
 
+// ---- Reçu ----------------------------------------------------------
+//
+// Le PDF est récupéré en binaire plutôt que lié directement.
+//
+// L'API et le site sont sur deux domaines distincts (Render et Vercel),
+// et l'attribut `download` d'un lien est IGNORÉ pour une URL d'une
+// autre origine : le navigateur ouvrirait le fichier au lieu de
+// l'enregistrer. Passer par un objet local rend le téléchargement
+// réellement possible — et permet en prime de partager le fichier
+// lui-même, pas seulement un lien.
+export const fetchReceipt = async (reference) => {
+  const base = (
+    import.meta.env.VITE_API_URL ?? "http://localhost:4000"
+  ).replace(/\/+$/, "");
+
+  const response = await fetch(
+    `${base}/api/donations/${encodeURIComponent(reference)}/recu`
+  );
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+
+    throw new Error(
+      payload?.message ?? "Le reçu n'a pas pu être généré."
+    );
+  }
+
+  return {
+    blob: await response.blob(),
+    filename: `recu-cava-${reference}.pdf`,
+  };
+};
+
 // ---- Administration ----------------------------------------------
 
 export const adminDonations = (params = {}) =>

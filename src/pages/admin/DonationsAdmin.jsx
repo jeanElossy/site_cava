@@ -5,6 +5,7 @@ import {
   Check,
   Clock,
   Download,
+  FileText,
   QrCode,
   RefreshCw,
   X,
@@ -15,6 +16,8 @@ import {
   adminDonationQrCode,
   adminDonationSummary,
 } from "../../services/donations";
+
+import { apiBaseUrl } from "../../services/http";
 
 import useAsyncData from "../../hooks/useAsyncData";
 import usePageMeta from "../../hooks/usePageMeta";
@@ -285,6 +288,20 @@ const DonationsAdmin = () => {
                         <span className="admin-donations__reason">
                           {donation.failureReason}
                         </span>
+                      )}
+
+                      {/* Permet de retrouver et renvoyer le reçu d'un
+                          donateur qui l'aurait perdu. */}
+                      {donation.status === "paid" && (
+                        <a
+                          className="admin-donations__receipt"
+                          href={`${apiBaseUrl}/api/donations/${donation.reference}/recu`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <FileText size={12} aria-hidden="true" />
+                          Reçu
+                        </a>
                       )}
                     </td>
                   </tr>

@@ -16,6 +16,7 @@ import * as publishService from "../services/publish.service.js";
 import * as uploadService from "../services/upload.service.js";
 import * as newsletterService from "../services/newsletter.service.js";
 import * as donationService from "../services/donation.service.js";
+import * as receiptService from "../services/receipt.service.js";
 
 import { resourceRouter } from "./resource.routes.js";
 
@@ -463,6 +464,44 @@ export const buildRoutes = () => {
       // Le prestataire attend un 200 pour cesser de rejouer sa
       // notification. Le corps n'est pas lu par lui.
       sendSuccess(res, { message: "Notification traitée." });
+    })
+  );
+
+  // Reçu au format PDF.
+  //
+  // Déclarée AVANT `/donations/:reference` : Express retient la
+  // première route qui correspond, et `:reference` n'avalerait pas
+  // « /recu » ici, mais l'ordre reste la garantie la plus lisible.
+  //
+  // Pas d'authentification : la référence tient lieu de clé. Elle fait
+  // 64 bits d'aléa, elle n'est pas devinable, et c'est le seul moyen
+  // qu'un donateur non identifié récupère son propre reçu.
+  api.get(
+    "/donations/:reference/recu",
+    asyncHandler(async (req, res) => {
+      const donation = await donationService.receiptFor(
+        String(req.params.reference).slice(0, 40)
+      );
+
+      const pdf = await receiptService.buildReceipt(donation);
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Length", pdf.length);
+
+      // `inline` : le navigateur affiche le reçu au lieu de le
+      // télécharger à l'aveugle. Le bouton de téléchargement du site
+      // force l'enregistrement de son côté.
+      res.setHeader(
+        "Content-Disposition",
+        `inline; filename="${receiptService.receiptFilename(donation)}"`
+      );
+
+      // Un reçu ne change jamais : inutile de le régénérer à chaque
+      // consultation. Privé, car il porte le nom du donateur et ne
+      // doit pas être mis en cache par un intermédiaire partagé.
+      res.setHeader("Cache-Control", "private, max-age=3600");
+
+      res.end(pdf);
     })
   );
 

@@ -310,6 +310,30 @@ export const staleCount = async (hours = 24) => {
   });
 };
 
+// ------------------------------------------------------------------
+// REÇU
+// ------------------------------------------------------------------
+// Le don est d'abord résolu : le donateur clique souvent sur
+// « télécharger le reçu » à la seconde où sa page passe au vert, et
+// parfois avant que le statut n'ait été confirmé.
+//
+// Seul un don ENCAISSÉ donne lieu à un reçu. Un don « suspect » en est
+// explicitement exclu : son montant est contesté, un reçu porterait
+// une somme que personne ne peut garantir.
+export const receiptFor = async (reference) => {
+  const donation = await resolveDonation(reference);
+
+  if (donation.status !== "paid") {
+    throw ApiError.badRequest(
+      donation.status === "pending"
+        ? "Ce paiement n'est pas encore confirmé. Le reçu sera disponible dès sa validation."
+        : "Aucun reçu ne peut être émis pour cette contribution."
+    );
+  }
+
+  return donation;
+};
+
 export const paymentEnabled = () => isPaymentConfigured();
 
 export const publicSiteUrl = () => env.PUBLIC_SITE_URL;

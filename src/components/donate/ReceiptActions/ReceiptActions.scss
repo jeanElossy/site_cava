@@ -1,0 +1,103 @@
+@use "../../../styles/variables" as *;
+
+// Tout est imbriqué sous `.receipt-actions` : les SCSS du projet sont
+// fusionnés en une feuille unique, une classe déclarée à la racine
+// deviendrait globale (voir CLAUDE.md).
+.receipt-actions {
+  margin-top: 30px;
+
+  &__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  &__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    padding: 14px 26px;
+
+    border: 1px solid transparent;
+    border-radius: 50px;
+
+    background: $primary;
+
+    color: #fff;
+
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: $transition;
+
+    &:hover:not([disabled]) {
+      background: $primary-dark;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary-dark;
+      outline-offset: 3px;
+    }
+
+    &[disabled] {
+      opacity: 0.7;
+
+      cursor: progress;
+    }
+
+    &--ghost {
+      border-color: #d3ddd8;
+
+      background: #fff;
+
+      color: #3d4a44;
+
+      &:hover:not([disabled]) {
+        border-color: $primary;
+
+        background: #fff;
+
+        color: $primary;
+      }
+    }
+  }
+
+  &__spin {
+    animation: receipt-actions-spin 1s linear infinite;
+  }
+
+  &__error {
+    margin: 14px 0 0;
+
+    color: #991b1b;
+
+    font-size: 0.86rem;
+  }
+
+  &__hint {
+    margin: 14px 0 0;
+
+    color: #7b857f;
+
+    font-size: 0.79rem;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 600px) {
+    &__button {
+      width: 100%;
+    }
+  }
+}
+
+@keyframes receipt-actions-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

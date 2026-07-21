@@ -16,6 +16,8 @@ import Footer from "../../components/Footer/Footer";
 
 import { donationStatus } from "../../services/donations";
 
+import ReceiptActions from "../../components/donate/ReceiptActions";
+
 import usePageMeta from "../../hooks/usePageMeta";
 
 import "./DonationReturn.scss";
@@ -213,6 +215,16 @@ const DonationReturn = () => {
                   <dd>{amount} FCFA</dd>
                 </div>
               </dl>
+            )}
+
+            {/* Le reçu n'existe que pour un don réellement encaissé :
+                l'émettre pour un paiement en attente ou contesté
+                attesterait d'une somme que personne ne peut garantir. */}
+            {donation?.status === "paid" && (
+              <ReceiptActions
+                reference={donation.reference}
+                amount={donation.amount}
+              />
             )}
 
             <div className="donation-return__actions">

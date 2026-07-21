@@ -136,9 +136,14 @@ const CommunityStats = () => {
     },
   ].filter((card) => card.value > 0);
 
-  // Rien de fiable à montrer tant que le registre est vide : mieux vaut
-  // aucune section qu'une rangée de zéros.
-  if (cards.length === 0) return null;
+  // Il faut au moins deux chiffres pour parler de « chiffres ».
+  //
+  // Le registre se remplit progressivement : tant qu'une seule rubrique
+  // dépasse son seuil, un grand bandeau titré « notre communauté en
+  // chiffres » autour d'une carte unique fait plus pauvre que pas de
+  // bandeau du tout. La section réapparaîtra d'elle-même à mesure que
+  // les membres seront saisis.
+  if (cards.length < 2) return null;
 
   return (
     <section className="community-stats" ref={ref}>

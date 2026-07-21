@@ -352,6 +352,30 @@
     line-height: 1.5;
   }
 
+  &__receipt {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    margin-top: 8px;
+
+    color: $primary;
+
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
+      border-radius: 3px;
+    }
+  }
+
   // ---- Fenêtre du QR code --------------------------------------
 
   &__qr {
