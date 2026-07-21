@@ -45,6 +45,110 @@ const fields = [
     placeholder: "Dimanche, 09h00",
   },
   {
+    name: "stats",
+    label: "Statistiques",
+    type: "repeater",
+    max: 8,
+    itemLabel: "Statistique",
+    addLabel: "Ajouter une statistique",
+    emptyText:
+      "Aucune statistique. La page du ministère affichera « Aucune statistique » tant que cette liste reste vide.",
+    wide: true,
+    // Les icônes correspondent à l'énumération du modèle : toute autre
+    // valeur serait refusée à l'enregistrement.
+    fields: [
+      {
+        name: "icon",
+        label: "Icône",
+        type: "select",
+        options: [
+          { value: "users", label: "Personnes" },
+          { value: "calendar", label: "Calendrier" },
+          { value: "leaders", label: "Responsables" },
+          { value: "star", label: "Étoile" },
+        ],
+      },
+      {
+        name: "value",
+        label: "Valeur",
+        placeholder: "180+",
+      },
+      {
+        name: "label",
+        label: "Libellé",
+        placeholder: "Enfants et jeunes",
+      },
+    ],
+  },
+  {
+    name: "leaders",
+    label: "Responsables",
+    type: "repeater",
+    max: 20,
+    itemLabel: "Responsable",
+    addLabel: "Ajouter un responsable",
+    folder: "ministries",
+    wide: true,
+    fields: [
+      {
+        name: "name",
+        label: "Nom",
+        placeholder: "Fr. Aristide Yao",
+      },
+      {
+        name: "role",
+        label: "Fonction",
+        placeholder: "Responsable principal",
+      },
+      {
+        name: "bio",
+        label: "Présentation",
+        type: "textarea",
+        wide: true,
+        placeholder:
+          "Quelques lignes sur son parcours et son rôle.",
+      },
+      {
+        name: "image",
+        label: "Photo",
+        type: "upload",
+        wide: true,
+      },
+    ],
+  },
+  {
+    name: "testimonials",
+    label: "Témoignages",
+    type: "repeater",
+    max: 20,
+    itemLabel: "Témoignage",
+    addLabel: "Ajouter un témoignage",
+    wide: true,
+    fields: [
+      {
+        name: "author",
+        label: "Auteur",
+        placeholder: "Mme Adjoua T.",
+      },
+      {
+        name: "rating",
+        label: "Note (1 à 5)",
+        type: "number",
+        min: 1,
+        max: 5,
+        default: 5,
+      },
+      {
+        name: "quote",
+        label: "Témoignage",
+        type: "textarea",
+        wide: true,
+        rows: 3,
+        placeholder: "Ce que cette personne a vécu…",
+      },
+    ],
+  },
+  {
     name: "gallery",
     label: "Galerie de photos",
     type: "gallery",

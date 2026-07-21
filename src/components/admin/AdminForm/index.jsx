@@ -4,6 +4,7 @@ import { VIDEO_KINDS } from "./video";
 
 import FileField from "../FileField";
 import GalleryField from "../GalleryField";
+import RepeaterField from "../RepeaterField";
 
 import "./AdminForm.scss";
 
@@ -143,6 +144,19 @@ const Field = ({ field, value, onChange }) => {
         )}
       </label>
 
+      {field.type === "repeater" && (
+        <RepeaterField
+          value={value ?? []}
+          onChange={(next) => onChange(field.name, next)}
+          fields={field.fields}
+          max={field.max}
+          itemLabel={field.itemLabel}
+          addLabel={field.addLabel}
+          emptyText={field.emptyText}
+          folder={field.folder}
+        />
+      )}
+
       {field.type === "gallery" && (
         <GalleryField
           value={value ?? []}
@@ -195,6 +209,7 @@ const Field = ({ field, value, onChange }) => {
         "checkbox",
         "upload",
         "gallery",
+        "repeater",
       ].includes(
         field.type
       ) && (

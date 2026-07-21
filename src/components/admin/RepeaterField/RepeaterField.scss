@@ -1,0 +1,261 @@
+@use "../../../styles/admin" as *;
+
+// PIÈGE PROJET : feuille de style unique. Tout est imbriqué sous
+// `.admin-repeater`, aucun nom générique à la racine.
+.admin-repeater {
+  display: grid;
+  gap: 12px;
+
+  &__empty {
+    margin: 0;
+    padding: 20px;
+
+    border: 1.5px dashed $admin-border-strong;
+    border-radius: $admin-radius;
+
+    background: $admin-surface-muted;
+
+    color: $admin-ink-soft;
+
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  &__item {
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius;
+
+    background: $admin-surface-muted;
+
+    overflow: hidden;
+  }
+
+  &__item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 9px 12px;
+
+    border-bottom: 1px solid $admin-border;
+
+    background: $admin-surface;
+  }
+
+  &__item-title {
+    color: $admin-ink-soft;
+
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  &__item-tools {
+    display: flex;
+    gap: 5px;
+
+    button {
+      display: grid;
+      place-items: center;
+
+      width: 28px;
+      height: 28px;
+
+      border: 1px solid $admin-border;
+      border-radius: 7px;
+
+      background: $admin-surface;
+
+      color: $admin-ink-soft;
+
+      cursor: pointer;
+
+      transition: border-color $admin-ease, color $admin-ease,
+        background $admin-ease;
+
+      svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      &:hover:not([disabled]) {
+        border-color: $admin-accent;
+
+        background: $admin-accent-soft;
+
+        color: $admin-accent;
+      }
+
+      &:focus-visible {
+        outline: 2px solid $admin-accent;
+        outline-offset: 2px;
+      }
+
+      &[disabled] {
+        opacity: 0.35;
+
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  &__remove:hover:not([disabled]) {
+    border-color: rgba(180, 35, 24, 0.45) !important;
+
+    background: $admin-danger-bg !important;
+
+    color: $admin-danger !important;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+
+    padding: 14px;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    // Sans cette contrainte, un champ au contenu long élargit sa
+    // colonne et casse l'alignement de la grille.
+    min-width: 0;
+
+    &--wide {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      color: $admin-ink-soft;
+
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+
+      padding: 9px 11px;
+
+      border: 1px solid $admin-border-strong;
+      border-radius: $admin-radius-sm;
+
+      background: $admin-surface;
+
+      color: $admin-ink;
+
+      font-family: inherit;
+      font-size: 0.88rem;
+
+      transition: border-color $admin-ease, box-shadow $admin-ease;
+
+      &:focus {
+        border-color: $admin-accent;
+
+        outline: none;
+
+        box-shadow: 0 0 0 3px $admin-accent-soft;
+      }
+    }
+
+    textarea {
+      min-height: 70px;
+
+      resize: vertical;
+    }
+
+    select {
+      appearance: none;
+
+      padding-right: 32px;
+
+      background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235a6862' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+  }
+
+  &__help {
+    margin: 0;
+
+    color: $admin-ink-faint;
+
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+
+  &__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  &__add {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    padding: 9px 15px;
+
+    border: 1px dashed $admin-border-strong;
+    border-radius: $admin-radius-sm;
+
+    background: $admin-surface;
+
+    color: $admin-ink;
+
+    font-family: inherit;
+    font-size: 0.83rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: border-color $admin-ease, background $admin-ease,
+      color $admin-ease;
+
+    svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    &:hover:not([disabled]) {
+      border-color: $admin-accent;
+      border-style: solid;
+
+      background: $admin-accent-soft;
+
+      color: $admin-accent;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $admin-accent;
+      outline-offset: 2px;
+    }
+
+    &[disabled] {
+      opacity: 0.5;
+
+      cursor: not-allowed;
+    }
+  }
+
+  &__count {
+    color: $admin-ink-faint;
+
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 620px) {
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}

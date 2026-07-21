@@ -24,7 +24,7 @@ import "./AdminCrud.scss";
 const emptyValueFor = (field) => {
   if (field.type === "checkbox") return false;
 
-  if (field.type === "gallery") return [];
+  if (field.type === "gallery" || field.type === "repeater") return [];
 
   return "";
 };
