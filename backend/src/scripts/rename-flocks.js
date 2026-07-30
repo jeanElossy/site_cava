@@ -6,20 +6,17 @@ import Flock from "../models/Flock.js";
 // Renomme les bergeries de l'église 1 avec leur vrai nom (« Bergerie
 // / Attribut de Dieu »), fourni par l'utilisateur.
 //
-// Ne couvre que les correspondances non ambiguës entre les codes déjà
-// en base (déduits du registre papier des 44 premiers membres) et les
-// noms officiels : le code reprend les deux premières lettres du mot
-// distinctif du nom, exactement comme "OL" pour "El Olam" (confirmé
-// par l'utilisateur dès la conception).
+// Couvre les correspondances entre les codes déjà en base (déduits du
+// registre papier des 44 premiers membres) et les noms officiels : le
+// code reprend en général les deux premières lettres du mot distinctif
+// du nom, comme "OL" pour "El Olam" (confirmé par l'utilisateur dès la
+// conception). SH et CH étaient ambigus (plusieurs noms commencent par
+// "Sh", aucun ne correspondait clairement à "CH") et ont été tranchés
+// directement par l'utilisateur plutôt que devinés.
 //
 // PS et MP restent inchangés : ce sont des marqueurs de fonction
 // (Pasteur, Maman Pasteur) dans le registre d'origine, pas des
 // bergeries au sens de cette liste.
-//
-// SH et CH ne sont PAS traités ici : plusieurs noms de la liste
-// commencent par "Sh" (El Shaddaï, Yahvé Shalom), et aucun ne
-// correspond clairement à "CH" — les deviner risquerait d'attribuer
-// le mauvais nom à de vraies personnes déjà inscrites.
 //
 // Usage : node src/scripts/rename-flocks.js
 
@@ -34,6 +31,8 @@ const RENAMES = [
   { code: "NI", name: "Yahvé Nissi" },
   { code: "RO", name: "Yahvé Rohi" },
   { code: "EL", name: "El Elyon" },
+  { code: "SH", name: "El Shaddaï" },
+  { code: "CH", name: "Chama" },
 ];
 
 const run = async () => {
