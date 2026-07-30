@@ -39,6 +39,10 @@ const StepLookup = ({ state, dispatch, updateData }) => {
   const [internalStatus, setInternalStatus] = useState("idle");
   const lookupStatus = canLookup ? internalStatus : "idle";
 
+  // Prénom de la fiche retrouvée, pour personnaliser le message de
+  // confirmation ("Bonjour Jean !") plutôt qu'une phrase générique.
+  const [foundFirstName, setFoundFirstName] = useState("");
+
   const timerRef = useRef(null);
   const lastAttemptRef = useRef("");
 
@@ -54,12 +58,14 @@ const StepLookup = ({ state, dispatch, updateData }) => {
     timerRef.current = setTimeout(async () => {
       lastAttemptRef.current = attemptKey;
       setInternalStatus("searching");
+      setFoundFirstName("");
 
       try {
         const result = await memberSubmissions.lookup(normalized, lastName);
 
         if (result) {
           updateData(memberToFormData(result));
+          setFoundFirstName(result.firstName ?? "");
           setInternalStatus("found");
         } else {
           setInternalStatus("not-found");
@@ -126,7 +132,9 @@ const StepLookup = ({ state, dispatch, updateData }) => {
 
             {normalized && !showWarning && (
               <p className="registration-preview">
-                Format reconnu : {formatRegistrationNumber(normalized)}
+                <CheckCircle2 aria-hidden="true" />
+                Votre matricule :{" "}
+                <strong>{formatRegistrationNumber(normalized)}</strong>
               </p>
             )}
 
@@ -169,9 +177,9 @@ const StepLookup = ({ state, dispatch, updateData }) => {
           {lookupStatus === "found" && (
             <p className="lookup-status lookup-status--found">
               <CheckCircle2 aria-hidden="true" />
-              Nous avons retrouvé votre fiche : les champs déjà connus
-              ont été pré-remplis ci-après. Vérifiez-les et complétez
-              le reste.
+              {foundFirstName
+                ? `Bonjour ${foundFirstName} ! Nous avons retrouvé votre fiche et pré-rempli tout ce que nous savions déjà de vous dans les étapes suivantes. Vérifiez ces informations, complétez ce qui manque, puis envoyez votre demande — une équipe la validera avant tout enregistrement définitif.`
+                : "Nous avons retrouvé votre fiche : les champs déjà connus ont été pré-remplis ci-après. Vérifiez-les et complétez le reste."}
             </p>
           )}
 

@@ -500,9 +500,19 @@
   }
 
   .registration-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
     margin-top: 8px;
     color: $primary;
     font-weight: 600;
+
+    svg {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+    }
   }
 
   .registration-warning {
