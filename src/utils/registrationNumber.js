@@ -36,3 +36,38 @@ export const hasValidControlLetter = (canonical) => {
 
   return letter === letterForNumber(Number(number));
 };
+
+export const parseRegistrationNumber = (canonical) => {
+  const match = SHAPE.exec(canonical ?? "");
+
+  if (!match) return null;
+
+  const [, church, flockCode, year, number, letter] = match;
+
+  return {
+    church: Number(church),
+    flockCode,
+    year: Number(year),
+    number: Number(number),
+    letter,
+  };
+};
+
+// Ordre chronologique réel d'inscription : PAS l'ordre alphabétique du
+// matricule complet, qui trierait par code de bergerie (positions 2-3)
+// avant le numéro de séquence (positions 5-7) et mélangerait donc les
+// rangs. Les membres sans matricule sont placés à la fin.
+export const compareByRegistrationOrder = (a, b) => {
+  const parsedA = parseRegistrationNumber(a?.registrationNumber);
+  const parsedB = parseRegistrationNumber(b?.registrationNumber);
+
+  if (!parsedA && !parsedB) return 0;
+  if (!parsedA) return 1;
+  if (!parsedB) return -1;
+
+  if (parsedA.church !== parsedB.church) {
+    return parsedA.church - parsedB.church;
+  }
+
+  return parsedA.number - parsedB.number;
+};
