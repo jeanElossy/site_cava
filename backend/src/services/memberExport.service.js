@@ -24,6 +24,23 @@ const LOGO_PATH = path.join(
   "../assets/logo-cava.png"
 );
 
+// Même normalisation d'affichage que la table Membres de l'admin
+// (`src/pages/admin/CommunityAdmin.jsx`, `toTitleCase`) : un membre
+// saisit son nom dans la casse qui lui vient, les exports ne doivent
+// pas reproduire un mélange majuscules/minuscules incohérent d'une
+// ligne à l'autre. Dupliqué faute de code partagé entre le site et
+// l'API dans ce dépôt.
+const toTitleCase = (value = "") =>
+  value
+    .toLowerCase()
+    .replace(/(^|[\s-])\p{L}/gu, (match) => match.toUpperCase());
+
+const displayFirstName = (member) =>
+  member.firstName ? toTitleCase(member.firstName) : "";
+
+const displayLastName = (member) =>
+  member.lastName ? member.lastName.toUpperCase() : "";
+
 const fetchMembers = async (filter = {}) => {
   const criteria = {};
 
@@ -90,8 +107,8 @@ export const buildMembersXlsx = async (filter = {}) => {
       registrationNumber: member.registrationNumber
         ? formatRegistrationNumber(member.registrationNumber)
         : "—",
-      lastName: member.lastName,
-      firstName: member.firstName,
+      lastName: displayLastName(member),
+      firstName: displayFirstName(member),
       church: member.church ?? "—",
       flock: member.flock?.name ?? "—",
       phone: member.phone ?? "—",
@@ -167,7 +184,7 @@ export const buildMembersPdf = async (filter = {}) => {
         member.registrationNumber
           ? formatRegistrationNumber(member.registrationNumber)
           : "—",
-        `${member.lastName} ${member.firstName}`.trim(),
+        `${displayLastName(member)} ${displayFirstName(member)}`.trim(),
         member.flock?.name ?? "—",
       ];
 

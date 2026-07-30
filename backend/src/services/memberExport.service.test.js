@@ -87,19 +87,50 @@ describe("memberExport.service (intégration MongoDB)", () => {
     sheet.eachRow((row, rowNumber) => {
       if (rowNumber === 1) return; // en-tête
 
-      const value = row.getCell(3).value; // colonne "Prénom"
-
-      if (String(value).startsWith("Numero") || value === "AAAA_SansMatricule") {
-        firstNames.push(value);
+      if (row.getCell(2).value === TEST_LAST_NAME.toUpperCase()) {
+        firstNames.push(row.getCell(3).value); // colonne "Prénom"
       }
     });
 
+    // Casse normalisée à l'affichage (voir le test dédié plus bas) :
+    // seul l'ORDRE relatif est vérifié ici.
     assert.deepEqual(firstNames, [
-      "NumeroA",
-      "NumeroM",
-      "NumeroZ",
-      "AAAA_SansMatricule",
+      "Numeroa",
+      "Numerom",
+      "Numeroz",
+      "Aaaa_sansmatricule",
     ]);
+  });
+
+  it("buildMembersXlsx normalise la casse des noms comme la table Membres (prénom en casse de titre, NOM en majuscules)", async () => {
+    await Member.create({
+      firstName: "jean-baptiste",
+      lastName: TEST_LAST_NAME,
+      church: 1,
+      flock: testFlock._id,
+      registrationNumber: "1XM26007G",
+    });
+
+    const buffer = await buildMembersXlsx({ church: 1, flock: testFlock.id });
+
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+
+    const sheet = workbook.getWorksheet("Membres");
+    let firstName;
+    let lastName;
+
+    sheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return;
+
+      if (row.getCell(2).value === TEST_LAST_NAME.toUpperCase()) {
+        lastName = row.getCell(2).value;
+        firstName = row.getCell(3).value;
+      }
+    });
+
+    assert.equal(firstName, "Jean-Baptiste");
+    assert.equal(lastName, TEST_LAST_NAME.toUpperCase());
   });
 
   it("buildMembersPdf renvoie un PDF valide avec le logo intégré, sans erreur", async () => {
