@@ -14,9 +14,11 @@ const GREEN = "#0d5b3e";
 const GREEN_DEEP = "#083b2a";
 const GREEN_TINT = "#e7f1ec";
 const GOLD = "#f4c41d";
+const GOLD_DEEP = "#c99a12";
+const CREAM = "#faf8f3";
 const INK = "#1f2a25";
 const INK_SOFT = "#5a6862";
-const BORDER = "#e3eae6";
+const BORDER = "#e5e0d2";
 
 // Même logo PNG que le registre imprimable (memberExport.service.js) :
 // pdfkit et @napi-rs/canvas lisent tous les deux PNG/JPEG, pas le
@@ -74,12 +76,19 @@ if (!fontsRegistered) {
   );
 }
 
-// Format carte de crédit standard (85,60 × 53,98 mm), en points
-// (1 mm ≈ 2,83465 pt) — reconnaissable, imprimable tel quel.
-const CARD_WIDTH = 243;
-const CARD_HEIGHT = 153;
-const BAND_HEIGHT = 50;
-const CORNER_RADIUS = 12;
+// Format badge/certificat (proportions 3:2), plus grand qu'une carte
+// de crédit ISO : nécessaire pour un contenu aussi riche (bandeau
+// diagonal, photo/pastille, cinq lignes d'information, QR, pied de
+// page) tout en restant lisible imprimé.
+const CARD_WIDTH = 390;
+const CARD_HEIGHT = 260;
+const CORNER_RADIUS = 16;
+
+// Colonne verte diagonale de gauche.
+const PANEL_WIDTH = 108;
+const PANEL_SLANT = 24;
+
+const FOOTER_HEIGHT = 50;
 
 // Résolution de rendu : la carte est dessinée UNE SEULE FOIS dans un
 // canvas raster (à cette échelle, ~300 dpi pour ce format), utilisé
@@ -116,6 +125,151 @@ const roundedRectPath = (ctx, x, y, width, height, radius) => {
   ctx.lineTo(x, y + radius);
   ctx.arcTo(x, y, x + radius, y, radius);
   ctx.closePath();
+};
+
+// Petits pictogrammes dessinés à la main (arcs/traits), plutôt qu'une
+// dépendance supplémentaire pour importer une véritable bibliothèque
+// d'icônes dans un contexte canvas côté serveur — largement suffisant
+// à la taille où ils apparaissent sur la carte.
+const drawPersonGlyph = (ctx, cx, cy, r, color) => {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(cx, cy - r * 0.32, r * 0.34, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx - r * 0.55, cy + r * 0.55);
+  ctx.quadraticCurveTo(cx, cy - r * 0.05, cx + r * 0.55, cy + r * 0.55);
+  ctx.lineTo(cx + r * 0.55, cy + r * 0.68);
+  ctx.lineTo(cx - r * 0.55, cy + r * 0.68);
+  ctx.closePath();
+  ctx.fill();
+};
+
+const drawIdCardGlyph = (ctx, cx, cy, r, color) => {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = r * 0.16;
+  roundedRectPath(ctx, cx - r * 0.6, cy - r * 0.42, r * 1.2, r * 0.84, r * 0.14);
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(cx - r * 0.28, cy - r * 0.03, r * 0.16, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = r * 0.1;
+  ctx.beginPath();
+  ctx.moveTo(cx + r * 0.02, cy - r * 0.03);
+  ctx.lineTo(cx + r * 0.42, cy - r * 0.03);
+  ctx.moveTo(cx - r * 0.42, cy + r * 0.24);
+  ctx.lineTo(cx + r * 0.42, cy + r * 0.24);
+  ctx.stroke();
+};
+
+const drawCalendarGlyph = (ctx, cx, cy, r, color) => {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = r * 0.14;
+  roundedRectPath(ctx, cx - r * 0.55, cy - r * 0.4, r * 1.1, r * 0.9, r * 0.12);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx - r * 0.55, cy - r * 0.1);
+  ctx.lineTo(cx + r * 0.55, cy - r * 0.1);
+  ctx.stroke();
+  ctx.lineWidth = r * 0.14;
+  ctx.beginPath();
+  ctx.moveTo(cx - r * 0.26, cy - r * 0.55);
+  ctx.lineTo(cx - r * 0.26, cy - r * 0.25);
+  ctx.moveTo(cx + r * 0.26, cy - r * 0.55);
+  ctx.lineTo(cx + r * 0.26, cy - r * 0.25);
+  ctx.stroke();
+};
+
+// Groupe/bergerie : trois barres horizontales (icône « liste de
+// membres »), plus lisible à cette taille qu'un amas de cercles.
+const drawGroupGlyph = (ctx, cx, cy, r, color) => {
+  ctx.fillStyle = color;
+
+  const widths = [0.9, 0.7, 0.5];
+
+  widths.forEach((w, index) => {
+    const y = cy - r * 0.42 + index * r * 0.42;
+
+    roundedRectPath(ctx, cx - (r * w) / 2, y, r * w, r * 0.24, r * 0.12);
+    ctx.fill();
+  });
+};
+
+const drawPinGlyph = (ctx, cx, cy, r, color) => {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(cx, cy - r * 0.15, r * 0.42, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx - r * 0.3, cy + r * 0.05);
+  ctx.lineTo(cx, cy + r * 0.65);
+  ctx.lineTo(cx + r * 0.3, cy + r * 0.05);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy - r * 0.15, r * 0.16, 0, Math.PI * 2);
+  ctx.fillStyle = CREAM;
+  ctx.fill();
+};
+
+const drawShieldCheckGlyph = (ctx, cx, cy, r, color) => {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - r * 0.6);
+  ctx.lineTo(cx + r * 0.45, cy - r * 0.35);
+  ctx.lineTo(cx + r * 0.45, cy + r * 0.1);
+  ctx.quadraticCurveTo(cx + r * 0.45, cy + r * 0.5, cx, cy + r * 0.65);
+  ctx.quadraticCurveTo(cx - r * 0.45, cy + r * 0.5, cx - r * 0.45, cy + r * 0.1);
+  ctx.lineTo(cx - r * 0.45, cy - r * 0.35);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = r * 0.16;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(cx - r * 0.2, cy);
+  ctx.lineTo(cx - r * 0.02, cy + r * 0.22);
+  ctx.lineTo(cx + r * 0.28, cy - r * 0.18);
+  ctx.stroke();
+};
+
+// Réduit progressivement la taille de police jusqu'à ce que le texte
+// tienne dans `maxWidth`, plutôt que de le laisser se comprimer
+// horizontalement (l'effet par défaut de `fillText` avec un
+// `maxWidth`, illisible dès qu'un nom ou celui de l'église dépasse ce
+// qu'un champ aussi étroit peut accueillir).
+const fillTextFit = (
+  ctx,
+  text,
+  x,
+  y,
+  maxWidth,
+  maxFontPx,
+  fontFamily,
+  minFontPx = 6.5
+) => {
+  let size = maxFontPx;
+
+  ctx.font = `bold ${size}px ${fontFamily}`;
+
+  while (size > minFontPx && ctx.measureText(text).width > maxWidth) {
+    size -= 0.5;
+    ctx.font = `bold ${size}px ${fontFamily}`;
+  }
+
+  ctx.fillText(text, x, y);
+};
+
+// Cercle vert + pictogramme blanc, comme les repères de chaque ligne
+// d'information sur le modèle de référence.
+const drawIconBadge = (ctx, cx, cy, radius, glyph) => {
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fillStyle = GREEN;
+  ctx.fill();
+  glyph(ctx, cx, cy, radius * 0.82, "#ffffff");
 };
 
 const loadMemberForCard = async (memberId) => {
@@ -162,6 +316,8 @@ const renderMemberCardCanvas = async (member, church) => {
   const churchName = church?.name ?? `Église ${member.church}`;
   const flockName = member.flock?.name ?? "Bergerie non renseignée";
   const matricule = formatRegistrationNumber(member.registrationNumber);
+  const isActive = member.status !== "inactif";
+  const statusLabel = isActive ? "MEMBRE ACTIF" : "MEMBRE INACTIF";
 
   // Silhouette à coins arrondis : tout ce qui suit (hors bordure
   // finale) est peint à l'intérieur de cette forme.
@@ -169,74 +325,161 @@ const renderMemberCardCanvas = async (member, church) => {
   roundedRectPath(ctx, 0, 0, CARD_WIDTH, CARD_HEIGHT, CORNER_RADIUS);
   ctx.clip();
 
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = CREAM;
   ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
-  // Bandeau d'en-tête en dégradé, plus riche qu'un aplat uni.
-  const headerGradient = ctx.createLinearGradient(0, 0, CARD_WIDTH, 0);
-  headerGradient.addColorStop(0, GREEN);
-  headerGradient.addColorStop(1, GREEN_DEEP);
-  ctx.fillStyle = headerGradient;
-  ctx.fillRect(0, 0, CARD_WIDTH, BAND_HEIGHT);
+  // Filigrane discret (une croix) dans la zone claire : présence
+  // décorative très légère, jamais assez marquée pour gêner la
+  // lecture du texte posé par-dessus.
+  ctx.save();
+  ctx.globalAlpha = 0.05;
+  ctx.fillStyle = GREEN;
+  ctx.fillRect(CARD_WIDTH - 108, 26, 64, 16);
+  ctx.fillRect(CARD_WIDTH - 84, 4, 16, 60);
+  ctx.restore();
 
-  // Liseré or : signature de la marque CAVA sur tout support imprimé.
+  // ---- Colonne verte diagonale (gauche) ----------------------------
+
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(PANEL_WIDTH + PANEL_SLANT, 0);
+  ctx.lineTo(PANEL_WIDTH, 50);
+  ctx.lineTo(PANEL_WIDTH, CARD_HEIGHT);
+  ctx.lineTo(0, CARD_HEIGHT);
+  ctx.closePath();
+
+  const panelGradient = ctx.createLinearGradient(0, 0, PANEL_WIDTH, CARD_HEIGHT);
+  panelGradient.addColorStop(0, GREEN);
+  panelGradient.addColorStop(1, GREEN_DEEP);
+  ctx.fillStyle = panelGradient;
+  ctx.fill();
+
+  // ---- Pied de page vert, pleine largeur ---------------------------
+
+  ctx.fillStyle = GREEN_DEEP;
+  ctx.fillRect(0, CARD_HEIGHT - FOOTER_HEIGHT, CARD_WIDTH, FOOTER_HEIGHT);
+
   ctx.fillStyle = GOLD;
-  ctx.fillRect(0, BAND_HEIGHT, CARD_WIDTH, 3);
+  ctx.fillRect(0, CARD_HEIGHT - FOOTER_HEIGHT - 2.5, CARD_WIDTH, 2.5);
+
+  // ---- Logo + nom de l'église, en haut du bandeau vert -------------
 
   const logoImage = await loadImage(LOGO_PATH);
-  const logoHeight = 22;
+  const logoHeight = 26;
   const logoWidth = (logoImage.width / logoImage.height) * logoHeight;
 
-  ctx.drawImage(logoImage, 12, 9, logoWidth, logoHeight);
+  ctx.drawImage(logoImage, 14, 14, logoWidth, logoHeight);
 
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
-
   ctx.fillStyle = "#ffffff";
-  ctx.font = `bold 8.5px ${CARD_FONT_BOLD}`;
-  ctx.fillText("CENTRE APOSTOLIQUE", 42, 17, CARD_WIDTH - 52);
-  ctx.fillText("VIE ET ABONDANCE", 42, 27, CARD_WIDTH - 52);
+  ctx.font = `bold 15px ${CARD_FONT_BOLD}`;
+  ctx.fillText("CAVA", 14, 54);
 
-  ctx.fillStyle = GOLD;
-  ctx.font = `bold 6.5px ${CARD_FONT_BOLD}`;
-  ctx.fillText("CARTE DE MEMBRE", 42, 38, CARD_WIDTH - 52);
+  ctx.font = `bold 6px ${CARD_FONT_BOLD}`;
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  ctx.fillText("CENTRE APOSTOLIQUE", 14, 62, PANEL_WIDTH - 18);
+  ctx.fillText("VIE ET ABONDANCE", 14, 69, PANEL_WIDTH - 18);
 
-  // Pastille à initiales, à cheval sur la couture entre l'en-tête et
-  // le corps — codes visuels d'un badge d'identité plutôt qu'un
-  // simple bloc de texte.
-  const avatarCx = 34;
-  const avatarCy = BAND_HEIGHT + 3;
-  const avatarR = 21;
+  // ---- Pastille à initiales (aucune fiche n'a de photo) ------------
 
-  ctx.beginPath();
-  ctx.arc(avatarCx, avatarCy, avatarR + 2, 0, Math.PI * 2);
-  ctx.fillStyle = "#ffffff";
+  const avatarCx = PANEL_WIDTH / 2;
+  const avatarCy = 122;
+  const avatarSize = 76;
+
+  roundedRectPath(
+    ctx,
+    avatarCx - avatarSize / 2,
+    avatarCy - avatarSize / 2,
+    avatarSize,
+    avatarSize,
+    14
+  );
+  ctx.fillStyle = CREAM;
   ctx.fill();
-
-  ctx.beginPath();
-  ctx.arc(avatarCx, avatarCy, avatarR, 0, Math.PI * 2);
-  ctx.fillStyle = GREEN_TINT;
-  ctx.fill();
-  ctx.lineWidth = 1.4;
+  ctx.lineWidth = 3;
   ctx.strokeStyle = GOLD;
   ctx.stroke();
 
   ctx.fillStyle = GREEN_DEEP;
-  ctx.font = `bold 15px ${CARD_FONT_BOLD}`;
+  ctx.font = `bold 26px ${CARD_FONT_BOLD}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(
     initialsOf(member.firstName, member.lastName),
     avatarCx,
-    avatarCy + 1
+    avatarCy + 2
   );
 
-  // Code QR en bas à droite, contenant les mêmes informations que
-  // celles déjà imprimées en clair sur la carte (rien de plus
-  // sensible) : nom, matricule, église, bergerie, année d'arrivée.
-  const qrSize = 42;
-  const qrX = CARD_WIDTH - qrSize - 10;
-  const qrY = BAND_HEIGHT + 12;
+  // ---- Devise de l'église, sous la pastille -------------------------
+
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = GOLD;
+  ctx.font = `italic 7px ${CARD_FONT}`;
+  ctx.fillText("Nous sommes bâtis pour", avatarCx, 172, PANEL_WIDTH - 12);
+
+  ctx.font = `bold 10px ${CARD_FONT_BOLD}`;
+  ctx.fillText("Vivre et Abonder", avatarCx, 184, PANEL_WIDTH - 12);
+
+  ctx.font = `7px ${CARD_FONT}`;
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.fillText("Jean 10:10", avatarCx, 196, PANEL_WIDTH - 12);
+
+  ctx.textAlign = "left";
+
+  // ---- Ruban de statut, coin supérieur droit ------------------------
+
+  const ribbonWidth = 74;
+  const ribbonX = CARD_WIDTH - ribbonWidth;
+
+  ctx.beginPath();
+  ctx.moveTo(ribbonX, 0);
+  ctx.lineTo(CARD_WIDTH, 0);
+  ctx.lineTo(CARD_WIDTH, 46);
+  ctx.lineTo(ribbonX + ribbonWidth / 2, 38);
+  ctx.lineTo(ribbonX, 46);
+  ctx.closePath();
+
+  const ribbonGradient = ctx.createLinearGradient(ribbonX, 0, CARD_WIDTH, 46);
+  ribbonGradient.addColorStop(0, GOLD_DEEP);
+  ribbonGradient.addColorStop(1, GOLD);
+  ctx.fillStyle = ribbonGradient;
+  ctx.fill();
+
+  drawPersonGlyph(ctx, ribbonX + ribbonWidth / 2, 16, 15, GREEN_DEEP);
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = GREEN_DEEP;
+  ctx.font = `bold 6px ${CARD_FONT_BOLD}`;
+  ctx.fillText(statusLabel, ribbonX + ribbonWidth / 2, 32, ribbonWidth - 8);
+  ctx.textAlign = "left";
+
+  // ---- Colonne de contenu (à droite du bandeau vert) ----------------
+
+  const contentX = PANEL_WIDTH + PANEL_SLANT + 14;
+  const contentRight = CARD_WIDTH - 16;
+  // Le titre ne doit jamais empiéter sous le ruban de statut, posé
+  // par-dessus dans le coin supérieur droit.
+  const headingWidth = ribbonX - contentX - 10;
+
+  ctx.fillStyle = GREEN;
+  fillTextFit(ctx, "CARTE DE MEMBRE", contentX, 42, headingWidth, 19, CARD_FONT_BOLD, 13);
+
+  ctx.fillStyle = isActive ? GOLD_DEEP : INK_SOFT;
+  fillTextFit(ctx, statusLabel, contentX, 56, headingWidth, 10, CARD_FONT_BOLD, 8);
+
+  ctx.strokeStyle = BORDER;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(contentX, 66);
+  ctx.lineTo(contentRight, 66);
+  ctx.stroke();
+
+  // ---- Code QR : mêmes informations que celles déjà imprimées en
+  // clair sur la carte, rien de plus sensible.
+  const qrSize = 66;
+  const qrX = contentRight - qrSize;
+  const qrY = 84;
 
   const qrContent = [
     "CAVA - Carte de membre",
@@ -257,66 +500,106 @@ const renderMemberCardCanvas = async (member, church) => {
   });
   const qrImage = await loadImage(qrBuffer);
 
+  roundedRectPath(ctx, qrX - 5, qrY - 5, qrSize + 10, qrSize + 10, 8);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  ctx.lineWidth = 1.2;
+  ctx.strokeStyle = GREEN;
+  ctx.stroke();
+
   ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
 
+  const qrCenterX = qrX + qrSize / 2;
+
+  drawShieldCheckGlyph(ctx, qrCenterX, qrY + qrSize + 12, 7, GREEN);
+
   ctx.textAlign = "center";
-  ctx.textBaseline = "alphabetic";
   ctx.fillStyle = INK_SOFT;
-  ctx.font = `bold 5.5px ${CARD_FONT_BOLD}`;
-  ctx.fillText("VÉRIFICATION", qrX + qrSize / 2, qrY + qrSize + 8);
-
-  // Colonne de contenu : entre la pastille et le code QR.
-  const contentX = 64;
-  const contentWidth = qrX - contentX - 8;
-
-  ctx.textAlign = "left";
-  ctx.textBaseline = "alphabetic";
-
-  ctx.fillStyle = INK;
-  ctx.font = `bold 12px ${CARD_FONT_BOLD}`;
-  ctx.fillText(fullName, contentX, BAND_HEIGHT + 21, contentWidth);
-
-  // Matricule sous forme de « puce » plutôt qu'un simple texte : le
-  // repère le plus important de la carte doit se voir en premier.
-  ctx.font = `bold 11px ${CARD_FONT_BOLD}`;
-
-  const chipTextWidth = ctx.measureText(matricule).width;
-  const chipWidth = Math.min(chipTextWidth + 16, contentWidth);
-  const chipY = BAND_HEIGHT + 27;
-
-  roundedRectPath(ctx, contentX, chipY, chipWidth, 16, 8);
-  ctx.fillStyle = GREEN_TINT;
-  ctx.fill();
-
-  ctx.fillStyle = GREEN_DEEP;
-  ctx.textAlign = "center";
-  ctx.fillText(matricule, contentX + chipWidth / 2, chipY + 11.5, chipWidth);
+  ctx.font = `bold 6px ${CARD_FONT_BOLD}`;
+  ctx.fillText("Scannez pour vérifier", qrCenterX, qrY + qrSize + 26, qrSize + 10);
+  ctx.fillText("l'authenticité", qrCenterX, qrY + qrSize + 34, qrSize + 10);
   ctx.textAlign = "left";
 
-  // Lignes d'information, chacune repérée par une puce or plutôt
-  // qu'un simple retour à la ligne — plus lisible en un coup d'œil
-  // sur un aussi petit format.
+  // ---- Lignes d'information, chacune avec son pictogramme -----------
+
   const rows = [
-    churchName,
-    flockName,
-    joinedYear ? `Membre depuis ${joinedYear}` : "Membre",
+    { icon: drawPersonGlyph, label: "NOM & PRÉNOMS", value: fullName },
+    { icon: drawIdCardGlyph, label: "MATRICULE", value: matricule },
+    {
+      icon: drawCalendarGlyph,
+      label: "MEMBRE DEPUIS",
+      value: joinedYear ? String(joinedYear) : "—",
+    },
+    { icon: drawGroupGlyph, label: "BERGERIE", value: flockName },
+    { icon: drawPinGlyph, label: "ÉGLISE", value: churchName },
   ];
 
-  let rowY = BAND_HEIGHT + 58;
-
-  ctx.font = `7.8px ${CARD_FONT}`;
+  const rowIconX = contentX + 11;
+  const rowTextX = contentX + 28;
+  const rowTextWidth = qrX - 14 - rowTextX;
+  let rowY = 92;
 
   for (const row of rows) {
-    ctx.beginPath();
-    ctx.arc(contentX + 2, rowY - 2.8, 1.6, 0, Math.PI * 2);
-    ctx.fillStyle = GOLD;
-    ctx.fill();
+    drawIconBadge(ctx, rowIconX, rowY, 11, row.icon);
 
-    ctx.fillStyle = INK_SOFT;
-    ctx.fillText(row, contentX + 9, rowY, contentWidth - 9);
+    ctx.fillStyle = GREEN;
+    ctx.font = `bold 6px ${CARD_FONT_BOLD}`;
+    ctx.fillText(row.label, rowTextX, rowY - 3, rowTextWidth);
 
-    rowY += 12;
+    ctx.fillStyle = INK;
+    fillTextFit(ctx, row.value, rowTextX, rowY + 7, rowTextWidth, 10, CARD_FONT_BOLD);
+
+    if (row !== rows[rows.length - 1]) {
+      ctx.strokeStyle = BORDER;
+      ctx.lineWidth = 0.75;
+      ctx.beginPath();
+      ctx.moveTo(rowTextX, rowY + 13);
+      ctx.lineTo(qrX - 14, rowY + 13);
+      ctx.stroke();
+    }
+
+    rowY += 23;
   }
+
+  // ---- Pied de page : verset, signature, localisation ----------------
+
+  const footerTop = CARD_HEIGHT - FOOTER_HEIGHT;
+
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  ctx.font = `italic 7px ${CARD_FONT}`;
+  ctx.fillText(
+    "« Je suis venu afin qu'ils aient la vie,",
+    16,
+    footerTop + 19,
+    216
+  );
+  ctx.fillText("et qu'ils l'aient en abondance. »", 16, footerTop + 28, 216);
+
+  ctx.fillStyle = GOLD;
+  ctx.font = `bold 7px ${CARD_FONT_BOLD}`;
+  ctx.fillText("Jean 10:10", 16, footerTop + 39, 216);
+
+  const signatureX = CARD_WIDTH / 2 - 8;
+
+  ctx.strokeStyle = "rgba(255,255,255,0.5)";
+  ctx.lineWidth = 0.75;
+  ctx.beginPath();
+  ctx.moveTo(signatureX - 34, footerTop + 24);
+  ctx.lineTo(signatureX + 34, footerTop + 24);
+  ctx.stroke();
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.font = `bold 6px ${CARD_FONT_BOLD}`;
+  ctx.fillText("CACHET & SIGNATURE", signatureX, footerTop + 34, 90);
+
+  ctx.font = `bold 6px ${CARD_FONT_BOLD}`;
+  ctx.fillStyle = GOLD;
+  ctx.fillText("ABIDJAN, CÔTE D'IVOIRE", CARD_WIDTH - 74, footerTop + 22, 130);
+  ctx.font = `7px ${CARD_FONT}`;
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.fillText("Carte officielle CAVA", CARD_WIDTH - 74, footerTop + 32, 130);
+  ctx.textAlign = "left";
 
   ctx.restore();
 

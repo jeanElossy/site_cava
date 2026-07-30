@@ -13,23 +13,34 @@ import * as submissionService from "./submission.service.js";
 //
 // - Member/MemberSubmission : un nom de famille improbable en
 //   production ("TestSuiteSubmission"), jamais une purge large.
-// - Flock : des codes improbables ("ZZ", "YY"), sur des églises
-//   réelles (1 et 2) — le champ `church` de Flock et de Member est
-//   contraint à 1-5 par le schéma, impossible d'utiliser une église
-//   fictive ici comme pour RegistrationCounter seul.
-// - RegistrationCounter de l'église 1 : RÉEL et déjà peuplé (44,
-//   après l'import du registre papier). Le test qui approuve une
-//   nouvelle inscription l'incrémente forcément (c'est le
-//   comportement testé) ; sa valeur exacte est lue avant et restaurée
-//   au centime près après, pour ne jamais laisser le compteur réel
-//   dans un état différent de celui trouvé au départ.
+// - Flock : des codes improbables ("ZZ", "YY"), sur des ÉGLISES
+//   FICTIVES (2 et 3) — jamais utilisées en production aujourd'hui
+//   (seule l'église 1 existe réellement, voir CLAUDE.md). Le champ
+//   `church` de Flock et de Member est contraint à 1-5 par le schéma,
+//   donc 2/3 restent des valeurs valides sans jamais toucher à des
+//   données réelles.
+// - RegistrationCounter : PAR CONSÉQUENT jamais le compteur réel de
+//   l'église 1 — seulement ceux, fictifs, des églises 2 et 3, purgés
+//   sans condition en fin de suite. Ancienne version de ce fichier :
+//   les tests d'approbation touchaient le compteur RÉEL de l'église 1,
+//   avec une logique de sauvegarde/restauration de sa valeur avant/
+//   après coup. Fragile en pratique — un lancement concurrent de la
+//   suite (ex. cette suite lancée deux fois à la fois, ou en parallèle
+//   d'un script manuel) pouvait interrompre cette restauration et
+//   laisser le compteur réel dans un état incohérent avec les
+//   matricules réellement attribués. C'est très exactement ce qui
+//   s'est produit une fois en production. Utiliser des églises
+//   fictives élimine complètement cette classe de bug : plus aucune
+//   opération de test ne touche quoi que ce soit de réel, donc plus
+//   besoin de sauvegarder/restaurer un état "avant test".
 const TEST_LAST_NAME = "TestSuiteSubmission";
 const FLOCK_CODE = "ZZ";
 const OTHER_FLOCK_CODE = "YY";
+const TEST_CHURCH = 2;
+const OTHER_TEST_CHURCH = 3;
 
 let testFlockChurch1;
 let testFlockChurch2;
-let originalCounterChurch1;
 
 const cleanupPeople = async () => {
   await Member.deleteMany({ lastName: TEST_LAST_NAME });
@@ -49,17 +60,14 @@ describe("submission.service (intégration MongoDB)", () => {
     testFlockChurch1 = await Flock.create({
       code: FLOCK_CODE,
       name: "Bergerie Test Suite",
-      church: 1,
+      church: TEST_CHURCH,
     });
 
     testFlockChurch2 = await Flock.create({
       code: OTHER_FLOCK_CODE,
       name: "Bergerie Test Suite (autre église)",
-      church: 2,
+      church: OTHER_TEST_CHURCH,
     });
-
-    const counter = await RegistrationCounter.findOne({ church: 1 }).lean();
-    originalCounterChurch1 = counter?.lastNumber ?? null;
   });
 
   beforeEach(cleanupPeople);
@@ -69,17 +77,11 @@ describe("submission.service (intégration MongoDB)", () => {
     await cleanupPeople();
     await Flock.deleteMany({ code: { $in: [FLOCK_CODE, OTHER_FLOCK_CODE] } });
 
-    // Restaure EXACTEMENT la valeur réelle du compteur de l'église 1
-    // trouvée au démarrage de la suite, quel que soit le nombre de
-    // matricules générés entretemps par les tests.
-    if (originalCounterChurch1 === null) {
-      await RegistrationCounter.deleteOne({ church: 1 });
-    } else {
-      await RegistrationCounter.updateOne(
-        { church: 1 },
-        { $set: { lastNumber: originalCounterChurch1 } }
-      );
-    }
+    // Églises fictives, jamais réelles : purge sans condition, aucune
+    // valeur "d'avant le test" à préserver.
+    await RegistrationCounter.deleteMany({
+      church: { $in: [TEST_CHURCH, OTHER_TEST_CHURCH] },
+    });
 
     await disconnectTestDb();
   });
@@ -123,7 +125,7 @@ describe("submission.service (intégration MongoDB)", () => {
       data: {
         firstName: "Jean",
         lastName: TEST_LAST_NAME,
-        church: 1,
+        church: TEST_CHURCH,
         flock: String(testFlockChurch1._id),
         phone: "0700000000",
         status: "admin", // doit être filtré
@@ -146,14 +148,14 @@ describe("submission.service (intégration MongoDB)", () => {
     const existingMember = await Member.create({
       firstName: "Existant",
       lastName: TEST_LAST_NAME,
-      registrationNumber: "1ZZ99001A",
-      church: 1,
+      registrationNumber: "2ZZ99001A",
+      church: TEST_CHURCH,
       flock: testFlockChurch1._id,
     });
 
     await submissionService.submit({
       type: "update",
-      registrationNumber: "1zz99-001 a",
+      registrationNumber: "2zz99-001 a",
       data: { firstName: "Existant", lastName: TEST_LAST_NAME, phone: "0711111111" },
     });
 
@@ -162,7 +164,7 @@ describe("submission.service (intégration MongoDB)", () => {
     }).lean();
 
     assert.equal(String(stored.existingMember), String(existingMember._id));
-    assert.equal(stored.submittedRegistrationNumber, "1ZZ99001A");
+    assert.equal(stored.submittedRegistrationNumber, "2ZZ99001A");
   });
 
   // ---- lookup() -------------------------------------------------------
@@ -179,8 +181,8 @@ describe("submission.service (intégration MongoDB)", () => {
     const accented = await Member.create({
       firstName: "Édouard",
       lastName: "Gnézélé",
-      registrationNumber: "1ZZ99003C",
-      church: 1,
+      registrationNumber: "2ZZ99003C",
+      church: TEST_CHURCH,
       flock: testFlockChurch1._id,
       phone: "0700000000",
       emergencyContact: { name: "Un Proche", phone: "0788888888" },
@@ -188,7 +190,7 @@ describe("submission.service (intégration MongoDB)", () => {
 
     try {
       const result = await submissionService.lookup({
-        registrationNumber: "1zz 99-003 c",
+        registrationNumber: "2zz 99-003 c",
         lastName: "gnezele",
       });
 
@@ -203,14 +205,14 @@ describe("submission.service (intégration MongoDB)", () => {
     await Member.create({
       firstName: "Édouard",
       lastName: TEST_LAST_NAME,
-      registrationNumber: "1ZZ99004D",
-      church: 1,
+      registrationNumber: "2ZZ99004D",
+      church: TEST_CHURCH,
       flock: testFlockChurch1._id,
       emergencyContact: { name: "Un Proche", phone: "0788888888" },
     });
 
     const result = await submissionService.lookup({
-      registrationNumber: "1ZZ99004D",
+      registrationNumber: "2ZZ99004D",
       lastName: TEST_LAST_NAME,
     });
 
@@ -221,13 +223,13 @@ describe("submission.service (intégration MongoDB)", () => {
     await Member.create({
       firstName: "Jean",
       lastName: TEST_LAST_NAME,
-      registrationNumber: "1ZZ99005E",
-      church: 1,
+      registrationNumber: "2ZZ99005E",
+      church: TEST_CHURCH,
       flock: testFlockChurch1._id,
     });
 
     const result = await submissionService.lookup({
-      registrationNumber: "1ZZ99005E",
+      registrationNumber: "2ZZ99005E",
       lastName: "Nom Incorrect",
     });
 
@@ -236,7 +238,7 @@ describe("submission.service (intégration MongoDB)", () => {
 
   it("lookup() ne renvoie rien pour un matricule inexistant", async () => {
     const result = await submissionService.lookup({
-      registrationNumber: "1ZZ99998Y",
+      registrationNumber: "2ZZ99998Y",
       lastName: TEST_LAST_NAME,
     });
 
@@ -247,16 +249,16 @@ describe("submission.service (intégration MongoDB)", () => {
     const locked = await Member.create({
       firstName: "Jean",
       lastName: TEST_LAST_NAME,
-      registrationNumber: "1ZZ99006F",
-      church: 1,
+      registrationNumber: "2ZZ99006F",
+      church: TEST_CHURCH,
       flock: testFlockChurch1._id,
     });
 
     const other = await Member.create({
       firstName: "Paul",
       lastName: TEST_LAST_NAME,
-      registrationNumber: "1ZZ99007G",
-      church: 1,
+      registrationNumber: "2ZZ99007G",
+      church: TEST_CHURCH,
       flock: testFlockChurch1._id,
     });
 
@@ -344,7 +346,7 @@ describe("submission.service (intégration MongoDB)", () => {
       data: {
         firstName: "Nouveau",
         lastName: TEST_LAST_NAME,
-        church: 1,
+        church: TEST_CHURCH,
         flock: String(testFlockChurch1._id),
         phone: "0700000002",
       },
@@ -359,7 +361,7 @@ describe("submission.service (intégration MongoDB)", () => {
       { user: { id: new mongoose.Types.ObjectId() } }
     );
 
-    assert.match(member.registrationNumber, /^1ZZ\d{2}\d{3}[A-Z]$/);
+    assert.match(member.registrationNumber, /^2ZZ\d{2}\d{3}[A-Z]$/);
     assert.equal(submission.status, "approved");
     assert.ok(submission.processedAt);
   });
@@ -371,7 +373,7 @@ describe("submission.service (intégration MongoDB)", () => {
       data: {
         firstName: "Fraichement",
         lastName: TEST_LAST_NAME,
-        church: 1,
+        church: TEST_CHURCH,
         flock: String(testFlockChurch1._id),
         phone: "0700000099",
       },
@@ -408,7 +410,7 @@ describe("submission.service (intégration MongoDB)", () => {
         // même en mise à jour (l'étape Identité n'est pas conditionnée
         // au type de soumission) : `approve()` les exige quel que soit
         // le parcours.
-        church: 1,
+        church: TEST_CHURCH,
         flock: String(testFlockChurch1._id),
         phone: "0711111199",
       },
@@ -447,7 +449,7 @@ describe("submission.service (intégration MongoDB)", () => {
     await Member.create({
       firstName: "Doublon",
       lastName: TEST_LAST_NAME,
-      church: 1,
+      church: TEST_CHURCH,
       flock: testFlockChurch1._id,
     });
 
@@ -458,7 +460,7 @@ describe("submission.service (intégration MongoDB)", () => {
         // comparaison doit malgré tout les traiter comme identiques.
         firstName: "dôublon",
         lastName: TEST_LAST_NAME,
-        church: 1,
+        church: TEST_CHURCH,
         flock: String(testFlockChurch1._id),
       },
     });
@@ -468,7 +470,7 @@ describe("submission.service (intégration MongoDB)", () => {
     }).lean();
 
     const counterBefore = await RegistrationCounter.findOne({
-      church: 1,
+      church: TEST_CHURCH,
     }).lean();
 
     await assert.rejects(
@@ -479,7 +481,7 @@ describe("submission.service (intégration MongoDB)", () => {
     );
 
     const counterAfter = await RegistrationCounter.findOne({
-      church: 1,
+      church: TEST_CHURCH,
     }).lean();
 
     assert.equal(
@@ -509,7 +511,7 @@ describe("submission.service (intégration MongoDB)", () => {
     await Member.create({
       firstName: "MemeNom",
       lastName: TEST_LAST_NAME,
-      church: 1,
+      church: TEST_CHURCH,
       flock: testFlockChurch1._id,
     });
 
@@ -518,25 +520,21 @@ describe("submission.service (intégration MongoDB)", () => {
       data: {
         firstName: "MemeNom",
         lastName: TEST_LAST_NAME,
-        church: 2,
+        church: OTHER_TEST_CHURCH,
         flock: String(testFlockChurch2._id),
       },
     });
 
     const pending = await MemberSubmission.findOne({
-      "data.church": 2,
+      "data.church": OTHER_TEST_CHURCH,
       "data.lastName": TEST_LAST_NAME,
     }).lean();
 
-    try {
-      const { member } = await submissionService.approve(pending._id, {
-        user: { id: new mongoose.Types.ObjectId() },
-      });
+    const { member } = await submissionService.approve(pending._id, {
+      user: { id: new mongoose.Types.ObjectId() },
+    });
 
-      assert.equal(member.church, 2);
-    } finally {
-      await RegistrationCounter.deleteOne({ church: 2 });
-    }
+    assert.equal(member.church, OTHER_TEST_CHURCH);
   });
 
   it("approve() dérive `joinedAt` de `arrivalYear` plutôt que d'utiliser la date du jour, et conserve `area`", async () => {
@@ -545,7 +543,7 @@ describe("submission.service (intégration MongoDB)", () => {
       data: {
         firstName: "AnneeArrivee",
         lastName: TEST_LAST_NAME,
-        church: 1,
+        church: TEST_CHURCH,
         flock: String(testFlockChurch1._id),
         area: "Angré 7e tranche",
         arrivalYear: 2021,
@@ -568,7 +566,7 @@ describe("submission.service (intégration MongoDB)", () => {
     );
     assert.match(
       member.registrationNumber,
-      /^1ZZ21\d{3}[A-Z]$/,
+      /^2ZZ21\d{3}[A-Z]$/,
       "le millésime du matricule doit lui aussi refléter `arrivalYear`, pas l'année du jour"
     );
   });
@@ -581,7 +579,7 @@ describe("submission.service (intégration MongoDB)", () => {
       data: {
         firstName: "SansAnnee",
         lastName: TEST_LAST_NAME,
-        church: 1,
+        church: TEST_CHURCH,
         flock: String(testFlockChurch1._id),
       },
     });
@@ -601,15 +599,15 @@ describe("submission.service (intégration MongoDB)", () => {
     const existingMember = await Member.create({
       firstName: "Existant",
       lastName: TEST_LAST_NAME,
-      registrationNumber: "1ZZ99002B",
-      church: 1,
+      registrationNumber: "2ZZ99002B",
+      church: TEST_CHURCH,
       flock: testFlockChurch1._id,
       phone: "0700000000",
     });
 
     await submissionService.submit({
       type: "update",
-      registrationNumber: "1ZZ99002B",
+      registrationNumber: "2ZZ99002B",
       data: { firstName: "Existant", lastName: TEST_LAST_NAME, phone: "0722222222" },
     });
 
@@ -618,7 +616,7 @@ describe("submission.service (intégration MongoDB)", () => {
     }).lean();
 
     const { member } = await submissionService.approve(pending._id, {
-      overrides: { church: 1, flock: String(testFlockChurch1._id) },
+      overrides: { church: TEST_CHURCH, flock: String(testFlockChurch1._id) },
       user: { id: new mongoose.Types.ObjectId() },
     });
 
@@ -626,7 +624,7 @@ describe("submission.service (intégration MongoDB)", () => {
     assert.equal(member.phone, "0722222222");
     // Le matricule d'origine n'est jamais réattribué lors d'une mise à
     // jour.
-    assert.equal(member.registrationNumber, "1ZZ99002B");
+    assert.equal(member.registrationNumber, "2ZZ99002B");
 
     const countAfter = await Member.countDocuments({
       lastName: TEST_LAST_NAME,
@@ -658,8 +656,9 @@ describe("submission.service (intégration MongoDB)", () => {
       data: {
         firstName: "Incoherent",
         lastName: TEST_LAST_NAME,
-        church: 1,
-        // Bergerie de l'église 2, pour une soumission déclarée église 1.
+        church: TEST_CHURCH,
+        // Bergerie de l'autre église fictive, pour une soumission
+        // déclarée sur TEST_CHURCH.
         flock: String(testFlockChurch2._id),
       },
     });
@@ -682,7 +681,7 @@ describe("submission.service (intégration MongoDB)", () => {
       data: {
         firstName: "DejaTraite",
         lastName: TEST_LAST_NAME,
-        church: 1,
+        church: TEST_CHURCH,
         flock: String(testFlockChurch1._id),
       },
     });
