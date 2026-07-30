@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   Menu,
@@ -27,6 +27,25 @@ const Navbar = () => {
   const [open, setOpen] = useState(false);
 
   const closeMenu = () => setOpen(false);
+
+  // Le bouton de fermeture appartient à l'en-tête (position: absolute),
+  // pas au panneau du menu lui-même (position: fixed) : si la page
+  // sous-jacente continue de défiler pendant que le menu est ouvert,
+  // l'en-tête — et donc ce bouton — défile avec elle, pendant que le
+  // panneau reste fixé à l'écran. Bloquer le défilement tant que le
+  // menu est ouvert règle les deux à la fois (même mécanisme que
+  // AdminModal, ailleurs dans ce projet).
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
 
   return (
     <header className="navbar">

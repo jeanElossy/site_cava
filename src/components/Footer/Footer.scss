@@ -275,32 +275,46 @@
   .footer__container {
     grid-template-columns: 1fr;
 
-    padding: 60px 30px;
+    padding: 50px 20px;
 
-    gap: 40px;
-
-    // En une seule colonne, un pied de page collé à gauche paraît
-    // bancal : chaque bloc est centré, comme le logo, les titres et
-    // les listes qu'il contient.
-    text-align: center;
+    gap: 20px;
   }
 
-  .footer img {
-    margin-left: auto;
-    margin-right: auto;
+  // En une seule colonne, un pied de page où tout flotte à gauche
+  // paraît bancal. Chaque bloc devient une carte propre — fond
+  // légèrement plus clair que le dégradé du pied de page, contour
+  // discret — plutôt qu'un simple centrage de texte.
+  .footer__about,
+  .footer__links,
+  .footer__contact,
+  .footer__newsletter {
+    padding: 26px 24px;
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .footer h4 {
+    margin-bottom: 18px;
+  }
+
+  // Carte d'introduction : seule celle-ci reste centrée, comme un
+  // bloc de marque (logo, texte, réseaux sociaux) plutôt qu'une
+  // liste à lire — les autres cartes gardent leur contenu aligné à
+  // gauche, plus lisible pour une liste de liens ou des coordonnées.
+  .footer__about {
+    text-align: center;
+
+    img {
+      margin-left: auto;
+      margin-right: auto;
+    }
   }
 
   .footer .socials {
     justify-content: center;
-  }
-
-  .footer .contact-item {
-    justify-content: center;
-  }
-
-  .footer .newsletter {
-    max-width: 420px;
-    margin: 0 auto;
   }
 
   .footer__bottom {
@@ -310,7 +324,7 @@
 
     text-align: center;
 
-    padding: 25px 30px;
+    padding: 25px 20px;
   }
 
   .footer__bottom div {
