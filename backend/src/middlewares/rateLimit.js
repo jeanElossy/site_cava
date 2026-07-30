@@ -136,3 +136,21 @@ export const contactLimiter = rateLimit({
     });
   },
 });
+
+// Inscriptions et mises à jour de fiche membre.
+//
+// Même fenêtre que le formulaire de contact : c'est l'autre seule
+// écriture publique de l'API, avec le même risque de spam.
+export const submissionLimiter = rateLimit({
+  ...base,
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  handler: (_req, res) => {
+    res.status(429).json({
+      success: false,
+      message:
+        "Vous avez envoyé plusieurs demandes récemment. Merci de patienter avant d'en envoyer une nouvelle.",
+      error: { status: 429 },
+    });
+  },
+});

@@ -8,6 +8,7 @@ import Announcement from "../models/Announcement.js";
 import Testimonial from "../models/Testimonial.js";
 import Settings from "../models/Settings.js";
 import Message from "../models/Message.js";
+import Flock from "../models/Flock.js";
 
 import { createCrudService } from "../services/crud.service.js";
 import * as authService from "../services/auth.service.js";
@@ -18,6 +19,7 @@ import * as uploadService from "../services/upload.service.js";
 import * as newsletterService from "../services/newsletter.service.js";
 import * as donationService from "../services/donation.service.js";
 import * as receiptService from "../services/receipt.service.js";
+import * as submissionService from "../services/submission.service.js";
 
 import { resourceRouter } from "./resource.routes.js";
 
@@ -37,6 +39,7 @@ import {
   twoFactorManageLimiter,
   contactLimiter,
   donationLimiter,
+  submissionLimiter,
 } from "../middlewares/rateLimit.js";
 
 import QRCode from "qrcode";
@@ -73,7 +76,14 @@ const members = createCrudService(Member, {
   label: "Membre",
   defaultSort: { lastName: 1, firstName: 1 },
   publicFilter: { _id: null },
-  searchableFields: ["firstName", "lastName"],
+  searchableFields: ["firstName", "lastName", "registrationNumber"],
+});
+
+const flocks = createCrudService(Flock, {
+  label: "Bergerie",
+  defaultSort: { church: 1, name: 1 },
+  publicSort: { church: 1, name: 1 },
+  searchableFields: ["name", "code"],
 });
 
 const announcements = createCrudService(Announcement, {
@@ -319,6 +329,11 @@ export const buildRoutes = () => {
   mount("ministries", ministries, {
     auditResource: "ministry",
   });
+  mount("flocks", flocks, {
+    publicBySlug: false,
+    publicFilters: ["church"],
+    auditResource: "flock",
+  });
   mount("medias", medias, {
     publicBySlug: false,
     publicFilters: ["category"],
@@ -336,6 +351,105 @@ export const buildRoutes = () => {
     publicFilters: ["placement"],
     auditResource: "testimonial",
   });
+
+  // ---- Inscriptions et mises à jour de fiche membre -------------
+  //
+  // Seule écriture publique de cette fonctionnalité. N'écrit JAMAIS
+  // dans `Member` : uniquement dans `MemberSubmission`, en attente de
+  // revue par un administrateur (voir submission.service.js).
+  api.post(
+    "/submissions",
+    submissionLimiter,
+    asyncHandler(async (req, res) => {
+      const result = await submissionService.submit({
+        type: req.body?.type,
+        registrationNumber: req.body?.registrationNumber,
+        data: req.body?.data,
+      });
+
+      sendCreated(res, {
+        message: "Votre demande a été transmise à l'équipe.",
+        data: result,
+      });
+    })
+  );
+
+  const adminSubmissions = Router();
+
+  // Une soumission en attente porte les mêmes données personnelles
+  // qu'une fiche membre (nom, téléphone, e-mail, date de naissance,
+  // adresse...) — même exigence que `members` (`writeRoles: ["admin"]`) :
+  // réservé à un administrateur, y compris en LECTURE, pas seulement
+  // à l'écriture.
+  adminSubmissions.use(requireAuth);
+  adminSubmissions.use(requireRole("admin"));
+
+  adminSubmissions.get(
+    "/",
+    asyncHandler(async (req, res) => {
+      const { items, meta } = await submissionService.listPending({
+        page: req.query.page,
+        limit: req.query.limit,
+      });
+
+      sendSuccess(res, { data: items, meta });
+    })
+  );
+
+  adminSubmissions.get(
+    "/:id",
+    asyncHandler(async (req, res) => {
+      const data = await submissionService.getById(req.params.id);
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  adminSubmissions.post(
+    "/:id/approve",
+    requireRole("admin"),
+    asyncHandler(async (req, res) => {
+      const data = await submissionService.approve(req.params.id, {
+        overrides: req.body?.overrides,
+        user: req.user,
+      });
+
+      await audit.record(req, {
+        action: "create",
+        resource: "member",
+        resourceId: data.member?._id,
+      });
+
+      sendSuccess(res, {
+        message: "Inscription validée. Le matricule a été attribué.",
+        data,
+      });
+    })
+  );
+
+  adminSubmissions.post(
+    "/:id/reject",
+    requireRole("admin"),
+    asyncHandler(async (req, res) => {
+      const data = await submissionService.reject(req.params.id, {
+        reason: req.body?.reason,
+        user: req.user,
+      });
+
+      await audit.record(req, {
+        action: "update",
+        resource: "submission",
+        resourceId: req.params.id,
+      });
+
+      sendSuccess(res, {
+        message: "Demande rejetée.",
+        data,
+      });
+    })
+  );
+
+  api.use("/admin/submissions", adminSubmissions);
 
   // Les membres portent des données personnelles : leur écriture est
   // réservée aux administrateurs, un éditeur n'y touche pas.
