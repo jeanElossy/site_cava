@@ -154,6 +154,15 @@ $admin-rail-collapsed-width: 84px;
     }
   }
 
+  // Vers la droite (repos) = agrandir ; pivotée à 180° = réduire.
+  &__collapse-icon {
+    transition: transform 0.24s ease;
+  }
+
+  &__collapse-icon--expanded {
+    transform: rotate(180deg);
+  }
+
   &__nav {
     flex: 1;
 

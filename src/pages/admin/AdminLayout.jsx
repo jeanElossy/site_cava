@@ -9,6 +9,7 @@ import {
 
 import {
   Calendar,
+  ChevronRight,
   Church,
   ExternalLink,
   HandCoins,
@@ -18,8 +19,6 @@ import {
   Mail,
   Menu,
   MessageSquareQuote,
-  PanelLeftClose,
-  PanelLeftOpen,
   Send,
   Settings,
   Users,
@@ -223,11 +222,17 @@ const AdminLayout = () => {
             }
             title={collapsed ? "Agrandir le menu" : "Réduire le menu"}
           >
-            {collapsed ? (
-              <PanelLeftOpen aria-hidden="true" />
-            ) : (
-              <PanelLeftClose aria-hidden="true" />
-            )}
+            {/* Une seule flèche, qui s'inverse selon le sens de
+                l'action : vers la droite pour agrandir, vers la
+                gauche (pivotée) pour réduire. */}
+            <ChevronRight
+              aria-hidden="true"
+              className={
+                collapsed
+                  ? "admin-shell__collapse-icon"
+                  : "admin-shell__collapse-icon admin-shell__collapse-icon--expanded"
+              }
+            />
           </button>
 
           <button
