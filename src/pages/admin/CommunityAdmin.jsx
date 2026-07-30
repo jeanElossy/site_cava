@@ -12,6 +12,8 @@ import { apiBaseUrl, getToken } from "../../services/http";
 
 import usePageMeta from "../../hooks/usePageMeta";
 import useAsyncData from "../../hooks/useAsyncData";
+import usePendingSubmissionsCount from "../../hooks/usePendingSubmissionsCount";
+import useMembersCount from "../../hooks/useMembersCount";
 
 import AdminCrud from "../../components/admin/AdminCrud";
 import SubmissionsPanel from "../../components/admin/SubmissionsPanel";
@@ -334,21 +336,39 @@ const memberToPayload = (values) => ({
   notes: values.notes,
 });
 
+// Un membre saisit son nom dans la casse qui lui vient — la liste le
+// normalise à l'affichage plutôt que de reproduire un mélange
+// majuscules/minuscules incohérent d'une ligne à l'autre : prénom en
+// casse de titre (chaque mot, y compris après un trait d'union),
+// nom de famille intégralement en majuscules, convention courante
+// des documents administratifs.
+const toTitleCase = (value = "") =>
+  value
+    .toLowerCase()
+    .replace(/(^|[\s-])\p{L}/gu, (match) => match.toUpperCase());
+
 const memberColumns = [
   {
     key: "registrationNumber",
     label: "Matricule",
     render: (item) =>
-      item.registrationNumber
-        ? formatRegistrationNumber(item.registrationNumber)
-        : "—",
+      item.registrationNumber ? (
+        <strong>{formatRegistrationNumber(item.registrationNumber)}</strong>
+      ) : (
+        "—"
+      ),
   },
   {
     key: "name",
     label: "Membre",
-    render: (item) =>
-      [item.firstName, item.lastName].filter(Boolean).join(" ") ||
-      "—",
+    render: (item) => {
+      const parts = [
+        item.firstName ? toTitleCase(item.firstName) : "",
+        item.lastName ? item.lastName.toUpperCase() : "",
+      ].filter(Boolean);
+
+      return parts.join(" ") || "—";
+    },
   },
   { key: "area", label: "Quartier / groupe" },
   {
@@ -562,10 +582,24 @@ const MemberExportButtons = ({ flockOptions, churchOptions }) => {
 
 const TABS = [
   { id: "announcements", label: "Annonces" },
-  { id: "members", label: "Membres" },
+  {
+    id: "members",
+    label: "Membres",
+    badgeKey: "membersTotal",
+    // Compteur informatif : reste affiché en permanence (y compris à
+    // 0), contrairement au badge « Inscriptions » qui signale une
+    // action à traiter et disparaît une fois la file vidée.
+    badgeAlwaysVisible: true,
+    badgeAriaLabel: (n) => `${n} membre${n > 1 ? "s" : ""} enregistré${n > 1 ? "s" : ""}`,
+  },
   { id: "flocks", label: "Bergeries" },
   { id: "churches", label: "Églises" },
-  { id: "submissions", label: "Inscriptions" },
+  {
+    id: "submissions",
+    label: "Inscriptions",
+    badgeKey: "pendingSubmissions",
+    badgeAriaLabel: (n) => `${n} demande${n > 1 ? "s" : ""} en attente`,
+  },
 ];
 
 const CHURCH_STATUSES = [
@@ -626,6 +660,13 @@ const CommunityAdmin = () => {
 
   const [tab, setTab] = useState("announcements");
 
+  const pendingSubmissionsCount = usePendingSubmissionsCount();
+  const membersCount = useMembersCount();
+  const tabBadgeValues = {
+    pendingSubmissions: pendingSubmissionsCount,
+    membersTotal: membersCount,
+  };
+
   const { data: flockList } = useAsyncData(flocksApi.listAdmin);
   const { data: churchList } = useAsyncData(churchesApi.listAdmin);
 
@@ -658,24 +699,47 @@ const CommunityAdmin = () => {
         role="tablist"
         aria-label="Sections de la communauté"
       >
-        {TABS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            id={`admin-community-tab-${item.id}`}
-            aria-selected={tab === item.id}
-            aria-controls={`admin-community-panel-${item.id}`}
-            className={
-              tab === item.id
-                ? "admin-community__tab admin-community__tab--active"
-                : "admin-community__tab"
-            }
-            onClick={() => setTab(item.id)}
-          >
-            {item.label}
-          </button>
-        ))}
+        {TABS.map((item) => {
+          const badgeValue = item.badgeKey
+            ? tabBadgeValues[item.badgeKey]
+            : undefined;
+
+          const showBadge = item.badgeAlwaysVisible
+            ? badgeValue !== null && badgeValue !== undefined
+            : Number(badgeValue) > 0;
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              id={`admin-community-tab-${item.id}`}
+              aria-selected={tab === item.id}
+              aria-controls={`admin-community-panel-${item.id}`}
+              className={
+                tab === item.id
+                  ? "admin-community__tab admin-community__tab--active"
+                  : "admin-community__tab"
+              }
+              onClick={() => setTab(item.id)}
+            >
+              {item.label}
+
+              {showBadge && (
+                <span
+                  className={
+                    item.badgeAlwaysVisible
+                      ? "admin-community__tab-badge admin-community__tab-badge--info"
+                      : "admin-community__tab-badge"
+                  }
+                  aria-label={item.badgeAriaLabel?.(badgeValue)}
+                >
+                  {badgeValue > 99 ? "99+" : badgeValue}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <div

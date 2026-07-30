@@ -52,6 +52,42 @@
     }
   }
 
+  &__tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 19px;
+    height: 19px;
+
+    margin-left: 8px;
+    padding: 0 5px;
+
+    border-radius: 999px;
+
+    background: $admin-danger;
+
+    color: #fff;
+
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  &__tab--active &__tab-badge {
+    background: rgba(255, 255, 255, 0.28);
+  }
+
+  // Compteur informatif (nombre de membres) plutôt qu'une alerte
+  // (demandes en attente) : ton neutre, pas le rouge d'alerte.
+  &__tab-badge--info {
+    background: $admin-accent-strong;
+  }
+
+  &__tab--active &__tab-badge--info {
+    background: rgba(255, 255, 255, 0.28);
+  }
+
   @media (max-width: 768px) {
     &__tabs {
       display: flex;

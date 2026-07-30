@@ -18,6 +18,8 @@ import {
   Mail,
   Menu,
   MessageSquareQuote,
+  PanelLeftClose,
+  PanelLeftOpen,
   Send,
   Settings,
   Users,
@@ -25,6 +27,8 @@ import {
 } from "lucide-react";
 
 import { currentUser, signOut } from "../../services/auth";
+
+import usePendingSubmissionsCount from "../../hooks/usePendingSubmissionsCount";
 
 import ApiStatus from "../../components/admin/ApiStatus";
 
@@ -72,7 +76,12 @@ const NAV_GROUPS = [
   {
     title: "Communauté",
     items: [
-      { to: "/admin/communaute", label: "Membres et annonces", icon: Users },
+      {
+        to: "/admin/communaute",
+        label: "Membres et annonces",
+        icon: Users,
+        badgeKey: "pendingSubmissions",
+      },
       {
         to: "/admin/temoignages",
         label: "Témoignages",
@@ -94,6 +103,11 @@ const NAV_GROUPS = [
 
 // Initiales pour la pastille d'identité. Deux lettres au maximum :
 // au-delà, la pastille se déforme.
+// Repliée/dépliée, la préférence traverse les sessions : sans elle,
+// l'administrateur qui replie la barre pour gagner de la place la
+// retrouverait dépliée à chaque connexion.
+const SIDEBAR_COLLAPSED_KEY = "admin-sidebar-collapsed";
+
 const initials = (name) =>
   String(name ?? "")
     .trim()
@@ -106,11 +120,19 @@ const initials = (name) =>
 const AdminLayout = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const [collapsed, setCollapsed] = useState(
+    () => window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1"
+  );
+
   const navigate = useNavigate();
 
   const closeButtonRef = useRef(null);
 
   const user = currentUser();
+
+  const pendingSubmissionsCount = usePendingSubmissionsCount();
+
+  const badgeValues = { pendingSubmissions: pendingSubmissionsCount };
 
   // Le tiroir se referme dès qu'on suit un lien : sinon, sur mobile, il
   // masque l'écran qu'on vient d'ouvrir. Géré dans le gestionnaire de
@@ -118,6 +140,16 @@ const AdminLayout = () => {
   // `setState` provoque un rendu supplémentaire à chaque navigation,
   // pour un résultat que l'événement produit directement.
   const closeMenu = () => setMenuOpen(false);
+
+  const toggleCollapsed = () => {
+    setCollapsed((previous) => {
+      const next = !previous;
+
+      window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
+
+      return next;
+    });
+  };
 
   // Échap referme le tiroir, et le défilement de la page est gelé tant
   // qu'il est ouvert — sans quoi le fond défile sous les doigts.
@@ -164,7 +196,7 @@ const AdminLayout = () => {
       <aside
         className={`admin-shell__rail${
           menuOpen ? " admin-shell__rail--open" : ""
-        }`}
+        }${collapsed ? " admin-shell__rail--collapsed" : ""}`}
         id="admin-sidebar"
       >
         <div className="admin-shell__brand">
@@ -179,6 +211,24 @@ const AdminLayout = () => {
 
             <span>Administration</span>
           </div>
+
+          <button
+            type="button"
+            className="admin-shell__collapse-toggle"
+            onClick={toggleCollapsed}
+            aria-expanded={!collapsed}
+            aria-controls="admin-sidebar"
+            aria-label={
+              collapsed ? "Agrandir le menu" : "Réduire le menu"
+            }
+            title={collapsed ? "Agrandir le menu" : "Réduire le menu"}
+          >
+            {collapsed ? (
+              <PanelLeftOpen aria-hidden="true" />
+            ) : (
+              <PanelLeftClose aria-hidden="true" />
+            )}
+          </button>
 
           <button
             type="button"
@@ -210,12 +260,21 @@ const AdminLayout = () => {
                 {group.items.map((item) => {
                   const Icon = item.icon;
 
+                  const badgeCount = item.badgeKey
+                    ? badgeValues[item.badgeKey]
+                    : 0;
+
                   return (
                     <li key={item.to}>
                       <NavLink
                         to={item.to}
                         end={item.end}
                         onClick={closeMenu}
+                        // Repliée, la barre ne montre plus que
+                        // l'icône : ce titre fournit l'équivalent du
+                        // libellé au survol, plutôt que de le faire
+                        // disparaître purement et simplement.
+                        title={collapsed ? item.label : undefined}
                         className={({ isActive }) =>
                           isActive
                             ? "admin-shell__link admin-shell__link--active"
@@ -225,6 +284,17 @@ const AdminLayout = () => {
                         <Icon aria-hidden="true" />
 
                         <span>{item.label}</span>
+
+                        {badgeCount > 0 && (
+                          <span
+                            className="admin-shell__link-badge"
+                            aria-label={`${badgeCount} demande${
+                              badgeCount > 1 ? "s" : ""
+                            } en attente`}
+                          >
+                            {badgeCount > 99 ? "99+" : badgeCount}
+                          </span>
+                        )}
                       </NavLink>
                     </li>
                   );
