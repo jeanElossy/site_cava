@@ -47,9 +47,9 @@
     border: 1px solid $admin-border-strong;
     border-radius: 10px;
 
-    background: #fff;
+    background: $admin-surface;
 
-    color: #3d4a44;
+    color: $admin-ink-soft;
 
     font-family: inherit;
     font-size: 0.87rem;
@@ -95,23 +95,23 @@
     margin-bottom: 24px;
     padding: 15px 18px;
 
-    border: 1px solid rgba(122, 92, 0, 0.3);
+    border: 1px solid $admin-border-strong;
     border-radius: 11px;
 
-    background: rgba(255, 210, 46, 0.12);
+    background: $admin-warning-bg;
 
     svg {
       flex-shrink: 0;
 
       margin-top: 2px;
 
-      color: #7a5c00;
+      color: $admin-warning;
     }
 
     p {
       margin: 0;
 
-      color: #5d4600;
+      color: $admin-warning;
 
       font-size: 0.86rem;
       line-height: 1.65;
@@ -139,7 +139,7 @@
     border-left: 4px solid $admin-border-strong;
     border-radius: 13px;
 
-    background: #fff;
+    background: $admin-surface;
 
     strong {
       margin: 8px 0 4px;
@@ -156,7 +156,7 @@
     }
 
     &--suspect {
-      border-left-color: #b8860b;
+      border-left-color: $admin-warning;
     }
   }
 
@@ -189,9 +189,9 @@
     border: 1px solid $admin-border-strong;
     border-radius: 50px;
 
-    background: #fff;
+    background: $admin-surface;
 
-    color: #4c554f;
+    color: $admin-ink-soft;
 
     font-family: inherit;
     font-size: 0.83rem;
@@ -231,7 +231,7 @@
     border: 1px solid $admin-border;
     border-radius: 14px;
 
-    background: #fff;
+    background: $admin-surface;
 
     overflow-x: auto;
   }
@@ -260,7 +260,7 @@
     td {
       padding: 15px 18px;
 
-      border-bottom: 1px solid #f2f5f4;
+      border-bottom: 1px solid $admin-border;
 
       color: $admin-ink;
 
@@ -319,23 +319,23 @@
     white-space: nowrap;
 
     &--paid {
-      background: rgba(13, 91, 62, 0.12);
-      color: $primary;
+      background: $admin-success-bg;
+      color: $admin-success;
     }
 
     &--pending {
-      background: rgba(122, 92, 0, 0.14);
-      color: #6b5200;
+      background: $admin-warning-bg;
+      color: $admin-warning;
     }
 
     &--failed {
-      background: rgba(185, 28, 28, 0.1);
-      color: #991b1b;
+      background: $admin-danger-bg;
+      color: $admin-danger;
     }
 
     &--suspect {
-      background: rgba(184, 134, 11, 0.16);
-      color: #8a6508;
+      background: $admin-warning-bg;
+      color: $admin-warning;
     }
   }
 
@@ -407,9 +407,9 @@
       border: 1px solid $admin-border-strong;
       border-radius: 9px;
 
-      background: #fff;
+      background: $admin-surface;
 
-      color: #1f2a25;
+      color: $admin-ink;
 
       font-family: inherit;
       font-size: 0.9rem;
@@ -420,7 +420,7 @@
 
         outline: none;
 
-        box-shadow: 0 0 0 3px rgba(13, 91, 62, 0.15);
+        box-shadow: 0 0 0 3px $admin-accent-soft;
       }
     }
   }
@@ -437,9 +437,9 @@
     border: 1px solid $admin-border-strong;
     border-radius: 9px;
 
-    background: #fff;
+    background: $admin-surface;
 
-    color: #3d4a44;
+    color: $admin-ink-soft;
 
     font-family: inherit;
     font-size: 0.85rem;
@@ -474,23 +474,23 @@
 
     padding: 14px 16px;
 
-    border: 1px solid rgba(185, 28, 28, 0.28);
+    border: 1px solid $admin-border-strong;
     border-radius: 11px;
 
-    background: rgba(185, 28, 28, 0.05);
+    background: $admin-danger-bg;
 
     svg {
       flex-shrink: 0;
 
       margin-top: 2px;
 
-      color: #b91c1c;
+      color: $admin-danger;
     }
 
     p {
       margin: 0;
 
-      color: #991b1b;
+      color: $admin-danger;
 
       font-size: 0.85rem;
       line-height: 1.6;
@@ -515,6 +515,9 @@
 
       border-radius: 10px;
 
+      // Toujours blanc, volontairement : un QR code a besoin d'un
+      // contraste clair/foncé pour rester scannable, indépendamment
+      // du thème de l'interface qui l'affiche.
       background: #fff;
     }
   }

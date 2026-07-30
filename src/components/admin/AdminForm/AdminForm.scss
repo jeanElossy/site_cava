@@ -165,7 +165,7 @@
     margin: 18px 0 0;
     padding: 13px 16px;
 
-    border: 1px solid rgba(180, 35, 24, 0.28);
+    border: 1px solid $admin-border-strong;
     border-radius: $admin-radius-sm;
 
     background: $admin-danger-bg;
@@ -265,4 +265,15 @@
       transform: none;
     }
   }
+}
+
+// La flèche du `<select>` est une image SVG encodée en donnée : sa
+// couleur de trait est figée au moment où la règle est écrite, elle
+// ne peut pas résoudre une custom property comme le reste du fichier.
+// Sans cette surcharge, elle resterait `#5a6862` (gris pensé pour un
+// fond clair) en thème sombre — quasi invisible sur les nouvelles
+// surfaces sombres. `#a7bcb2` est la valeur exacte de
+// `--admin-ink-soft` en thème sombre (voir AdminLayout.scss).
+.admin-shell[data-theme="dark"] .admin-form__field select {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a7bcb2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }

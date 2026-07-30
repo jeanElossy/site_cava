@@ -8,6 +8,97 @@ $admin-rail-collapsed-width: 84px;
 // règle est imbriquée sous `.admin-shell`, et aucun nom générique
 // (.rail, .brand, .avatar, .link…) n'existe à la racine de ce fichier.
 .admin-shell {
+  // ---------------- Thème ----------------
+  //
+  // `_admin.scss` ne déclare aucune règle CSS (voir son en-tête) : les
+  // jetons de couleur y résolvent des `var(--admin-xxx, <clair>)`.
+  // Les vraies valeurs, claires et sombres, vivent ici, sous l'unique
+  // sélecteur racine de ce fichier — pas de fuite possible vers le
+  // site public.
+  //
+  // Le thème clair est la valeur par défaut (pas de bloc dédié : ce
+  // sont directement les valeurs historiques du projet, reprises en
+  // fallback dans `_admin.scss`). L'attribut `data-theme`, posé par
+  // React sur `.admin-shell` selon l'état résolu au montage (préférence
+  // explicite en `localStorage`, sinon `prefers-color-scheme`), bascule
+  // vers la palette sombre ci-dessous.
+  --admin-canvas: #f4f7f5;
+  --admin-surface: #ffffff;
+  --admin-surface-muted: #fafbfa;
+  --admin-surface-hover: #f2f6f3;
+  --admin-rail: #08251a;
+  --admin-rail-deep: #04170f;
+  --admin-rail-hover: rgba(255, 255, 255, 0.07);
+  --admin-rail-active: rgba(22, 160, 106, 0.18);
+  --admin-border: #e3eae6;
+  --admin-border-strong: #cfdad4;
+  --admin-ink: #16241d;
+  --admin-ink-soft: #5a6862;
+  --admin-ink-faint: #8c9a94;
+  --admin-rail-ink: rgba(255, 255, 255, 0.72);
+  --admin-rail-ink-faint: rgba(255, 255, 255, 0.42);
+  --admin-accent: #{$primary};
+  --admin-accent-strong: #16a06a;
+  --admin-accent-soft: rgba(13, 91, 62, 0.09);
+  --admin-success: #0f7a4f;
+  --admin-success-bg: rgba(15, 122, 79, 0.1);
+  --admin-warning: #a05a00;
+  --admin-warning-bg: rgba(251, 191, 36, 0.14);
+  --admin-danger: #b42318;
+  --admin-danger-bg: rgba(180, 35, 24, 0.08);
+  --admin-info: #1d4ed8;
+  --admin-info-bg: rgba(29, 78, 216, 0.08);
+  --admin-header-bg: rgba(255, 255, 255, 0.88);
+
+  color-scheme: light;
+
+  &[data-theme="dark"] {
+    // Fond et surfaces : un vert-charbon très sombre plutôt qu'un
+    // gris neutre, pour rester dans la continuité du rail et de
+    // l'écran de connexion, déjà sombres tous les deux.
+    --admin-canvas: #0d1a15;
+    --admin-surface: #14251f;
+    --admin-surface-muted: #101e19;
+    --admin-surface-hover: #1c332b;
+
+    --admin-border: #263c32;
+    --admin-border-strong: #37544a;
+
+    --admin-ink: #eaf2ee;
+    --admin-ink-soft: #a7bcb2;
+    --admin-ink-faint: #74897d;
+
+    // Le rail reste sombre dans les deux thèmes (`$admin-rail` /
+    // `$admin-rail-deep` ne sont pas réécrits ici) : c'est la zone de
+    // contenu qui change réellement.
+
+    // L'accent et les états sont éclaircis : les teintes du thème
+    // clair (pensées pour du texte sur fond blanc) manquent de
+    // contraste sur les nouvelles surfaces sombres. L'accent et le
+    // danger restent volontairement modérés plutôt que fluorescents :
+    // tous deux servent aussi de fond plein sous du texte blanc
+    // (boutons, badges) — trop clairs, ce texte blanc y perdrait la
+    // lisibilité qu'il a en thème clair.
+    --admin-accent: #16a06a;
+    --admin-accent-strong: #22b783;
+    --admin-accent-soft: rgba(22, 160, 106, 0.22);
+
+    --admin-success: #34d399;
+    --admin-success-bg: rgba(52, 211, 153, 0.16);
+
+    --admin-warning: #fbbf24;
+    --admin-warning-bg: rgba(251, 191, 36, 0.18);
+
+    --admin-danger: #e5484d;
+    --admin-danger-bg: rgba(229, 72, 77, 0.18);
+
+    --admin-info: #60a5fa;
+    --admin-info-bg: rgba(96, 165, 250, 0.16);
+    --admin-header-bg: rgba(20, 37, 31, 0.88);
+
+    color-scheme: dark;
+  }
+
   display: flex;
 
   min-height: 100vh;
@@ -16,6 +107,8 @@ $admin-rail-collapsed-width: 84px;
   background: $admin-canvas;
 
   color: $admin-ink;
+
+  transition: background $admin-ease, color $admin-ease;
 
   // ---------------- Barre latérale ----------------
 
@@ -43,6 +136,39 @@ $admin-rail-collapsed-width: 84px;
 
     // Repli/dépli : seule la largeur change, en douceur.
     transition: width 0.28s ease;
+
+    // `_reset.scss` impose une scrollbar GLOBALE pensée pour le fond
+    // clair du site public (piste `#f8f8f8`, curseur vert). Le rail
+    // est sombre dans les deux thèmes de l'admin : sans cette
+    // surcharge, il hériterait quand même de la scrollbar claire du
+    // site public. Un seul jeu de couleurs suffit ici (pas de variante
+    // `[data-theme="dark"]`) puisque le rail ne change pas avec le
+    // thème.
+    scrollbar-width: thin;
+    scrollbar-color: $admin-rail-hover $admin-rail-deep;
+
+    &::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: $admin-rail-deep;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: $admin-rail-hover;
+
+      border: 2px solid $admin-rail-deep;
+      border-radius: 999px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: $admin-accent;
+    }
+
+    &::-webkit-scrollbar-corner {
+      background: transparent;
+    }
   }
 
   &__rail--collapsed {
@@ -319,6 +445,37 @@ $admin-rail-collapsed-width: 84px;
     // Sans cette contrainte, un tableau large pousse la colonne et
     // fait défiler la page entière au lieu du tableau.
     min-width: 0;
+
+    // Même piège que sur `&__rail` : `_reset.scss` impose une
+    // scrollbar globale claire, pensée pour le site public. Posée ici
+    // (plutôt que dans chaque page), elle couvre en une fois tous les
+    // conteneurs scrollables de la zone de contenu — listes de
+    // messages, tableaux larges, modales — et suit le thème puisqu'
+    // elle consomme les jetons `$admin-xxx`. `&__main` n'englobe pas
+    // le rail : sa propre scrollbar (toujours sombre) n'est pas
+    // affectée.
+    scrollbar-width: thin;
+    scrollbar-color: $admin-border-strong $admin-surface-muted;
+
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: $admin-surface-muted;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: $admin-border-strong;
+
+      border: 2px solid $admin-surface-muted;
+      border-radius: 999px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: $admin-accent;
+    }
   }
 
   &__header {
@@ -335,7 +492,7 @@ $admin-rail-collapsed-width: 84px;
 
     border-bottom: 1px solid $admin-border;
 
-    background: rgba(255, 255, 255, 0.88);
+    background: $admin-header-bg;
     backdrop-filter: blur(10px);
   }
 
@@ -367,6 +524,56 @@ $admin-rail-collapsed-width: 84px;
     &:hover {
       background: $admin-surface-hover;
     }
+  }
+
+  // Bascule de thème et actualisation : même gabarit que `&__burger`
+  // (icône seule, carré, bordure fine) pour rester cohérents entre
+  // les boutons de l'en-tête.
+  &__theme-toggle,
+  &__refresh {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 8px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius-sm;
+
+    background: $admin-surface;
+
+    color: $admin-ink-soft;
+
+    cursor: pointer;
+
+    transition: border-color $admin-ease, color $admin-ease,
+      background $admin-ease;
+
+    svg {
+      display: block;
+
+      width: 18px;
+      height: 18px;
+    }
+
+    &:hover {
+      border-color: $admin-border-strong;
+
+      background: $admin-surface-hover;
+
+      color: $admin-ink;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $admin-accent;
+      outline-offset: 2px;
+    }
+  }
+
+  // Petite rotation au clic : un aller simple plutôt qu'une boucle,
+  // le rechargement de page coupe l'animation de toute façon.
+  &__refresh-icon--spinning {
+    animation: admin-shell-refresh-spin 0.32s ease;
   }
 
   &__identity {
@@ -454,7 +661,7 @@ $admin-rail-collapsed-width: 84px;
     }
 
     &:hover {
-      border-color: rgba(180, 35, 24, 0.4);
+      border-color: $admin-danger;
 
       background: $admin-danger-bg;
 
@@ -606,5 +813,21 @@ $admin-rail-collapsed-width: 84px;
     &__rail {
       transition: none;
     }
+
+    &,
+    &__theme-toggle,
+    &__refresh {
+      transition: none;
+    }
+
+    &__refresh-icon--spinning {
+      animation: none;
+    }
+  }
+}
+
+@keyframes admin-shell-refresh-spin {
+  to {
+    transform: rotate(180deg);
   }
 }

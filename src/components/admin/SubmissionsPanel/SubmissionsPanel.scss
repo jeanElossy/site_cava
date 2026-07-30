@@ -1,4 +1,4 @@
-@use "../../../styles/variables" as *;
+@use "../../../styles/admin" as *;
 
 .submissions-panel {
   &__header {
@@ -6,12 +6,12 @@
 
     h1 {
       margin: 0 0 6px;
-      color: $primary-dark;
+      color: $admin-ink;
     }
 
     p {
       margin: 0;
-      color: #6b7280;
+      color: $admin-ink-soft;
     }
   }
 
@@ -30,15 +30,17 @@
       gap: 16px;
 
       padding: 14px 18px;
-      border: 1px solid #eef1ef;
+      border: 1px solid $admin-border;
       border-radius: 12px;
+
+      background: $admin-surface;
 
       button {
         margin-left: auto;
         padding: 8px 16px;
         border: none;
         border-radius: 10px;
-        background: $primary;
+        background: $admin-accent;
         color: #fff;
         font-weight: 700;
         cursor: pointer;
@@ -49,13 +51,15 @@
   &__kind {
     padding: 4px 10px;
     border-radius: 999px;
-    background: #eef1ef;
+    background: $admin-surface-hover;
+    color: $admin-ink;
     font-size: 0.8rem;
     font-weight: 700;
   }
 
   &__name {
     font-weight: 600;
+    color: $admin-ink;
   }
 
   &__diff {
@@ -66,13 +70,14 @@
     th,
     td {
       padding: 8px 10px;
-      border-bottom: 1px solid #eef1ef;
+      border-bottom: 1px solid $admin-border;
       text-align: left;
       font-size: 0.9rem;
+      color: $admin-ink;
     }
 
     th {
-      color: #6b7280;
+      color: $admin-ink-soft;
       font-weight: 700;
     }
   }
@@ -83,13 +88,14 @@
     p {
       margin: 0 0 10px;
       font-weight: 700;
+      color: $admin-ink;
     }
 
     label {
       display: block;
       margin-bottom: 10px;
       font-size: 0.85rem;
-      color: #4b5563;
+      color: $admin-ink-soft;
     }
 
     input {
@@ -97,8 +103,11 @@
       min-height: 44px;
       margin-top: 4px;
       padding: 0 12px;
-      border: 1px solid #d1d5db;
+      border: 1px solid $admin-border-strong;
       border-radius: 10px;
+
+      background: $admin-surface;
+      color: $admin-ink;
     }
   }
 
@@ -107,14 +116,18 @@
       display: block;
       margin-bottom: 8px;
       font-weight: 700;
+      color: $admin-ink;
     }
 
     textarea {
       width: 100%;
       padding: 10px 12px;
-      border: 1px solid #d1d5db;
+      border: 1px solid $admin-border-strong;
       border-radius: 10px;
       margin-bottom: 14px;
+
+      background: $admin-surface;
+      color: $admin-ink;
     }
   }
 
@@ -139,27 +152,27 @@
   }
 
   &__approve {
-    background: $primary;
+    background: $admin-accent;
     color: #fff;
   }
 
   &__danger {
-    background: #fdecea;
-    color: #c0392b;
+    background: $admin-danger-bg;
+    color: $admin-danger;
   }
 
   &__ghost {
     background: transparent;
-    border: 1px solid #d1d5db !important;
-    color: #4b5563;
+    border: 1px solid $admin-border-strong !important;
+    color: $admin-ink-soft;
   }
 
   &__alert {
     margin: 0 0 16px;
     padding: 10px 14px;
-    border-left: 4px solid #c0392b;
+    border-left: 4px solid $admin-danger;
     border-radius: 8px;
-    background: rgba(192, 57, 43, 0.08);
-    color: #c0392b;
+    background: $admin-danger-bg;
+    color: $admin-danger;
   }
 }

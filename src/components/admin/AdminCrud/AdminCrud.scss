@@ -95,7 +95,7 @@
     margin: 0 0 20px;
     padding: 13px 16px;
 
-    border: 1px solid rgba(180, 35, 24, 0.28);
+    border: 1px solid $admin-border-strong;
     border-radius: $admin-radius-sm;
 
     background: $admin-danger-bg;
@@ -219,7 +219,7 @@
   }
 
   &__danger:hover {
-    border-color: rgba(180, 35, 24, 0.45) !important;
+    border-color: $admin-danger !important;
 
     background: $admin-danger-bg !important;
 

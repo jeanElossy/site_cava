@@ -80,7 +80,7 @@
     text-underline-offset: 3px;
 
     &:hover:not([disabled]) {
-      color: $primary-dark;
+      color: $admin-accent-strong;
     }
 
     &[disabled] {
@@ -231,7 +231,7 @@
       }
 
       &:hover:not([disabled]) {
-        border-color: rgba(180, 35, 24, 0.4);
+        border-color: $admin-danger;
 
         background: $admin-danger-bg;
 
@@ -319,7 +319,7 @@
     margin: 0;
     padding: 10px 13px;
 
-    border: 1px solid rgba(180, 35, 24, 0.28);
+    border: 1px solid $admin-border-strong;
     border-radius: $admin-radius-sm;
 
     background: $admin-danger-bg;

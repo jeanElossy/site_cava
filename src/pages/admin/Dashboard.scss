@@ -132,7 +132,7 @@
     // Une pastille non lue mérite d'attirer l'œil, mais seulement
     // lorsqu'il y a réellement quelque chose à lire.
     &--alert {
-      border-color: rgba(180, 35, 24, 0.28);
+      border-color: $admin-border-strong;
 
       background: linear-gradient(
         180deg,
@@ -141,7 +141,7 @@
       );
 
       .admin-dashboard__stat-icon {
-        background: rgba(180, 35, 24, 0.12);
+        background: $admin-danger-bg;
 
         color: $admin-danger;
       }

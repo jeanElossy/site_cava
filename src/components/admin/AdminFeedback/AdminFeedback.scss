@@ -68,7 +68,7 @@
 
   &--error {
     border-style: solid;
-    border-color: rgba(180, 35, 24, 0.28);
+    border-color: $admin-danger;
 
     background: $admin-danger-bg;
 

@@ -19,8 +19,11 @@ import {
   Mail,
   Menu,
   MessageSquareQuote,
+  Moon,
+  RefreshCw,
   Send,
   Settings,
+  Sun,
   Users,
   X,
 } from "lucide-react";
@@ -107,6 +110,22 @@ const NAV_GROUPS = [
 // retrouverait dépliée à chaque connexion.
 const SIDEBAR_COLLAPSED_KEY = "admin-sidebar-collapsed";
 
+// Même logique de persistance pour le thème : une préférence
+// explicite (posée via le bouton de bascule) traverse les sessions et
+// l'emporte toujours sur `prefers-color-scheme`. Tant qu'aucun choix
+// n'a été fait, c'est la préférence système qui décide.
+const THEME_KEY = "admin-theme";
+
+const getInitialTheme = () => {
+  const stored = window.localStorage.getItem(THEME_KEY);
+
+  if (stored === "dark" || stored === "light") return stored;
+
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+};
+
 const initials = (name) =>
   String(name ?? "")
     .trim()
@@ -122,6 +141,10 @@ const AdminLayout = () => {
   const [collapsed, setCollapsed] = useState(
     () => window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1"
   );
+
+  const [theme, setTheme] = useState(getInitialTheme);
+
+  const [refreshing, setRefreshing] = useState(false);
 
   const navigate = useNavigate();
 
@@ -148,6 +171,26 @@ const AdminLayout = () => {
 
       return next;
     });
+  };
+
+  const toggleTheme = () => {
+    setTheme((previous) => {
+      const next = previous === "dark" ? "light" : "dark";
+
+      window.localStorage.setItem(THEME_KEY, next);
+
+      return next;
+    });
+  };
+
+  // Rechargement complet et volontairement simple : pas de système
+  // d'événements pour rafraîchir chaque page sélectivement. La courte
+  // rotation de l'icône n'est qu'un accusé de réception visuel avant
+  // que la page ne parte.
+  const handleRefresh = () => {
+    setRefreshing(true);
+
+    window.setTimeout(() => window.location.reload(), 320);
   };
 
   // Échap referme le tiroir, et le défilement de la page est gelé tant
@@ -181,7 +224,7 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="admin-shell">
+    <div className="admin-shell" data-theme={theme}>
       {menuOpen && (
         <button
           type="button"
@@ -353,6 +396,45 @@ const AdminLayout = () => {
               <span>{user?.email ?? ""}</span>
             </span>
           </div>
+
+          <button
+            type="button"
+            className="admin-shell__theme-toggle"
+            onClick={toggleTheme}
+            aria-label={
+              theme === "dark"
+                ? "Passer au thème clair"
+                : "Passer au thème sombre"
+            }
+            title={
+              theme === "dark"
+                ? "Passer au thème clair"
+                : "Passer au thème sombre"
+            }
+          >
+            {theme === "dark" ? (
+              <Sun aria-hidden="true" />
+            ) : (
+              <Moon aria-hidden="true" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            className="admin-shell__refresh"
+            onClick={handleRefresh}
+            aria-label="Actualiser la page"
+            title="Actualiser la page"
+          >
+            <RefreshCw
+              aria-hidden="true"
+              className={
+                refreshing
+                  ? "admin-shell__refresh-icon admin-shell__refresh-icon--spinning"
+                  : "admin-shell__refresh-icon"
+              }
+            />
+          </button>
 
           <button
             type="button"

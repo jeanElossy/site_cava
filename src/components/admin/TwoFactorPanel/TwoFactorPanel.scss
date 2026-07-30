@@ -1,4 +1,4 @@
-@use "../../../styles/variables" as *;
+@use "../../../styles/admin" as *;
 
 // RAPPEL : feuille de style unique pour tout le site. Tout est
 // imbriqué sous `.admin-2fa`, aucun nom générique à la racine.
@@ -6,10 +6,10 @@
   margin-top: 30px;
   padding: 26px;
 
-  border: 1px solid #dde4e0;
+  border: 1px solid $admin-border;
   border-radius: 14px;
 
-  background: #fff;
+  background: $admin-surface;
 
   &__header {
     display: flex;
@@ -19,7 +19,7 @@
 
     padding-bottom: 20px;
 
-    border-bottom: 1px solid #eef2f0;
+    border-bottom: 1px solid $admin-border;
   }
 
   &__title {
@@ -35,13 +35,13 @@
 
       margin-top: 2px;
 
-      color: $primary;
+      color: $admin-accent;
     }
 
     h2 {
       margin: 0;
 
-      color: $primary-dark;
+      color: $admin-ink;
 
       font-size: 1.12rem;
       font-weight: 700;
@@ -50,7 +50,7 @@
     p {
       margin: 5px 0 0;
 
-      color: #6a736e;
+      color: $admin-ink-soft;
 
       font-size: 0.86rem;
       line-height: 1.55;
@@ -64,9 +64,9 @@
 
     border-radius: 999px;
 
-    background: #f0f2f1;
+    background: $admin-surface-hover;
 
-    color: #6a736e;
+    color: $admin-ink-soft;
 
     font-size: 0.74rem;
     font-weight: 600;
@@ -74,9 +74,9 @@
     text-transform: uppercase;
 
     &--on {
-      background: rgba(13, 91, 62, 0.1);
+      background: $admin-accent-soft;
 
-      color: $primary;
+      color: $admin-accent;
     }
   }
 
@@ -87,7 +87,7 @@
   &__pitch {
     margin: 0 0 20px;
 
-    color: #4a5450;
+    color: $admin-ink-soft;
 
     font-size: 0.89rem;
     line-height: 1.7;
@@ -103,14 +103,14 @@
     div {
       padding: 14px 16px;
 
-      border: 1px solid #eef2f0;
+      border: 1px solid $admin-border;
       border-radius: 10px;
 
-      background: #fafbfb;
+      background: $admin-surface-muted;
     }
 
     dt {
-      color: #8a938e;
+      color: $admin-ink-faint;
 
       font-size: 0.76rem;
       font-weight: 600;
@@ -121,7 +121,7 @@
     dd {
       margin: 6px 0 0;
 
-      color: $primary-dark;
+      color: $admin-ink;
 
       font-size: 1.02rem;
       font-weight: 600;
@@ -129,14 +129,14 @@
   }
 
   &__low {
-    color: #b45309 !important;
+    color: $admin-warning !important;
   }
 
   &__steps {
     margin: 0 0 22px;
     padding-left: 20px;
 
-    color: #4a5450;
+    color: $admin-ink-soft;
 
     font-size: 0.88rem;
     line-height: 1.75;
@@ -154,10 +154,10 @@
     margin-bottom: 24px;
     padding: 20px;
 
-    border: 1px solid #eef2f0;
+    border: 1px solid $admin-border;
     border-radius: 12px;
 
-    background: #fafbfb;
+    background: $admin-surface-muted;
   }
 
   &__qr {
@@ -166,13 +166,16 @@
     width: 168px;
     height: 168px;
 
-    border: 1px solid #e4e9e7;
+    border: 1px solid $admin-border;
     border-radius: 10px;
 
     // Le QR est généré en PNG : `pixelated` évite le lissage qui
     // brouille les modules et gêne la lecture par le téléphone.
     image-rendering: pixelated;
 
+    // Toujours blanc, volontairement : un QR code a besoin d'un
+    // contraste clair/foncé pour rester scannable, indépendamment du
+    // thème de l'interface qui l'affiche.
     background: #fff;
   }
 
@@ -182,7 +185,7 @@
     span {
       display: block;
 
-      color: $primary-dark;
+      color: $admin-ink;
 
       font-size: 0.84rem;
       font-weight: 600;
@@ -191,7 +194,7 @@
     p {
       margin: 5px 0 9px;
 
-      color: #6a736e;
+      color: $admin-ink-soft;
 
       font-size: 0.82rem;
     }
@@ -201,12 +204,12 @@
 
       padding: 10px 12px;
 
-      border: 1px solid #e4e9e7;
+      border: 1px solid $admin-border;
       border-radius: 8px;
 
-      background: #fff;
+      background: $admin-surface-muted;
 
-      color: $primary-dark;
+      color: $admin-ink;
 
       font-family: "Courier New", monospace;
       font-size: 0.82rem;
@@ -228,42 +231,44 @@
 
     margin-bottom: 9px;
 
-    color: #33403a;
+    color: $admin-ink;
 
     font-size: 0.84rem;
     font-weight: 600;
   }
 
   // Le composant CodeInput est habillé pour le fond sombre de l'écran
-  // de connexion. Ici le fond est clair : on ne duplique pas le
-  // composant, on repeint ses cases dans ce contexte précis.
+  // de connexion (toujours sombre, quel que soit le thème choisi
+  // ailleurs — voir Login.scss). Ici le fond suit le thème de
+  // l'admin : on ne duplique pas le composant, on repeint ses cases
+  // dans ce contexte précis.
   .admin-code-input {
     max-width: 320px;
 
     input {
-      border-color: #d9dfdc;
+      border-color: $admin-border-strong;
 
-      background: #fff;
+      background: $admin-surface;
 
-      color: $primary-dark;
+      color: $admin-ink;
 
       &:hover:not(:disabled) {
-        border-color: #b9c4bf;
+        border-color: $admin-ink-faint;
       }
 
       &:focus {
-        border-color: $primary;
+        border-color: $admin-accent;
 
-        background: #fff;
+        background: $admin-surface;
 
-        box-shadow: 0 0 0 3px rgba(13, 91, 62, 0.14);
+        box-shadow: 0 0 0 3px $admin-accent-soft;
       }
     }
 
     &--invalid input {
-      border-color: rgba(185, 28, 28, 0.5);
+      border-color: $admin-danger;
 
-      background: rgba(185, 28, 28, 0.04);
+      background: $admin-danger-bg;
     }
   }
 
@@ -280,12 +285,12 @@
     li {
       padding: 11px 14px;
 
-      border: 1px dashed #cfd8d4;
+      border: 1px dashed $admin-border-strong;
       border-radius: 8px;
 
-      background: #fafbfb;
+      background: $admin-surface-muted;
 
-      color: $primary-dark;
+      color: $admin-ink;
 
       font-family: "Courier New", monospace;
       font-size: 0.92rem;
@@ -305,7 +310,7 @@
     margin-bottom: 16px;
 
     label {
-      color: #33403a;
+      color: $admin-ink;
 
       font-size: 0.84rem;
       font-weight: 600;
@@ -316,22 +321,22 @@
 
       padding: 11px 13px;
 
-      border: 1px solid #d9dfdc;
+      border: 1px solid $admin-border-strong;
       border-radius: 9px;
 
-      background: #fff;
+      background: $admin-surface;
 
-      color: #1f2a25;
+      color: $admin-ink;
 
       font-family: inherit;
       font-size: 0.93rem;
 
       &:focus {
-        border-color: $primary;
+        border-color: $admin-accent;
 
         outline: none;
 
-        box-shadow: 0 0 0 3px rgba(13, 91, 62, 0.13);
+        box-shadow: 0 0 0 3px $admin-accent-soft;
       }
     }
   }
@@ -349,12 +354,12 @@
 
     padding: 11px 17px;
 
-    border: 1px solid #d9dfdc;
+    border: 1px solid $admin-border-strong;
     border-radius: 9px;
 
-    background: #fff;
+    background: $admin-surface;
 
-    color: #33403a;
+    color: $admin-ink;
 
     font-family: inherit;
     font-size: 0.87rem;
@@ -370,13 +375,13 @@
     }
 
     &:hover:not([disabled]) {
-      border-color: #b9c4bf;
+      border-color: $admin-ink-faint;
 
-      background: #fafbfb;
+      background: $admin-surface-muted;
     }
 
     &:focus-visible {
-      outline: 2px solid $primary;
+      outline: 2px solid $admin-accent;
       outline-offset: 2px;
     }
 
@@ -401,14 +406,14 @@
     }
 
     &--danger {
-      border-color: rgba(185, 28, 28, 0.35);
+      border-color: $admin-danger;
 
-      color: #991b1b;
+      color: $admin-danger;
 
       &:hover:not([disabled]) {
-        border-color: #991b1b;
+        border-color: $admin-danger;
 
-        background: rgba(185, 28, 28, 0.05);
+        background: $admin-danger-bg;
       }
     }
   }
@@ -421,12 +426,12 @@
     margin: 0 0 20px;
     padding: 13px 16px;
 
-    border: 1px solid rgba(180, 83, 9, 0.28);
+    border: 1px solid $admin-border-strong;
     border-radius: 10px;
 
-    background: rgba(251, 191, 36, 0.09);
+    background: $admin-warning-bg;
 
-    color: #92400e;
+    color: $admin-warning;
 
     font-size: 0.85rem;
     line-height: 1.6;
@@ -449,12 +454,12 @@
     margin: 20px 0 0;
     padding: 13px 16px;
 
-    border: 1px solid rgba(185, 28, 28, 0.3);
+    border: 1px solid $admin-border-strong;
     border-radius: 10px;
 
-    background: rgba(185, 28, 28, 0.05);
+    background: $admin-danger-bg;
 
-    color: #991b1b;
+    color: $admin-danger;
 
     font-size: 0.86rem;
     line-height: 1.55;
@@ -477,9 +482,9 @@
     margin: 20px 0 0;
     padding-top: 18px;
 
-    border-top: 1px solid #eef2f0;
+    border-top: 1px solid $admin-border;
 
-    color: #8a938e;
+    color: $admin-ink-faint;
 
     font-size: 0.82rem;
 
@@ -496,7 +501,7 @@
 
     margin: 0;
 
-    color: #6a736e;
+    color: $admin-ink-soft;
 
     font-size: 0.88rem;
 

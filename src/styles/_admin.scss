@@ -18,41 +18,61 @@
 @use "variables" as *;
 
 // ---- Surfaces ----------------------------------------------------
+//
+// Chaque jeton de COULEUR résout une CSS custom property (fallback =
+// valeur claire actuelle). Les vraies valeurs — claires et sombres —
+// sont déclarées sous `.admin-shell` dans AdminLayout.scss, seul
+// endroit du projet où ce fichier a le droit de porter des règles
+// CSS (voir l'en-tête de fichier). Ça permet à tous les SCSS qui
+// consomment ces variables de devenir themables à l'exécution sans
+// être modifiés un par un.
+//
+// Les jetons non liés à la couleur (rayons, ombres, mouvement,
+// gabarit) restent des variables SCSS classiques : ils ne dépendent
+// pas du thème.
 
 // Fond de la zone de travail. Légèrement teinté vers le vert plutôt
 // qu'un gris neutre : l'ensemble reste rattaché à l'identité de
 // l'église sans jamais devenir décoratif.
-$admin-canvas: #f4f7f5;
+$admin-canvas: var(--admin-canvas, #f4f7f5);
 
-$admin-surface: #ffffff;
-$admin-surface-muted: #fafbfa;
-$admin-surface-hover: #f2f6f3;
+$admin-surface: var(--admin-surface, #ffffff);
+$admin-surface-muted: var(--admin-surface-muted, #fafbfa);
+$admin-surface-hover: var(--admin-surface-hover, #f2f6f3);
+
+// En-tête sticky flouté : une teinte translucide dédiée plutôt que
+// `$admin-surface` avec une opacité calculée en SCSS — impossible ici
+// puisque `$admin-surface` résout une custom property, pas une
+// couleur Sass manipulable.
+$admin-header-bg: var(--admin-header-bg, rgba(255, 255, 255, 0.88));
 
 // Barre latérale sombre, dans la continuité de l'écran de connexion.
-$admin-rail: #08251a;
-$admin-rail-deep: #04170f;
-$admin-rail-hover: rgba(255, 255, 255, 0.07);
-$admin-rail-active: rgba(22, 160, 106, 0.18);
+// Elle reste quasi identique dans les deux thèmes : déjà très sombre,
+// elle n'a pas besoin d'inverser.
+$admin-rail: var(--admin-rail, #08251a);
+$admin-rail-deep: var(--admin-rail-deep, #04170f);
+$admin-rail-hover: var(--admin-rail-hover, rgba(255, 255, 255, 0.07));
+$admin-rail-active: var(--admin-rail-active, rgba(22, 160, 106, 0.18));
 
 // ---- Bordures ----------------------------------------------------
 
-$admin-border: #e3eae6;
-$admin-border-strong: #cfdad4;
+$admin-border: var(--admin-border, #e3eae6);
+$admin-border-strong: var(--admin-border-strong, #cfdad4);
 
 // ---- Texte -------------------------------------------------------
 
-$admin-ink: #16241d;
-$admin-ink-soft: #5a6862;
-$admin-ink-faint: #8c9a94;
+$admin-ink: var(--admin-ink, #16241d);
+$admin-ink-soft: var(--admin-ink-soft, #5a6862);
+$admin-ink-faint: var(--admin-ink-faint, #8c9a94);
 
-$admin-rail-ink: rgba(255, 255, 255, 0.72);
-$admin-rail-ink-faint: rgba(255, 255, 255, 0.42);
+$admin-rail-ink: var(--admin-rail-ink, rgba(255, 255, 255, 0.72));
+$admin-rail-ink-faint: var(--admin-rail-ink-faint, rgba(255, 255, 255, 0.42));
 
 // ---- Accents -----------------------------------------------------
 
-$admin-accent: $primary;
-$admin-accent-strong: #16a06a;
-$admin-accent-soft: rgba(13, 91, 62, 0.09);
+$admin-accent: var(--admin-accent, #{$primary});
+$admin-accent-strong: var(--admin-accent-strong, #16a06a);
+$admin-accent-soft: var(--admin-accent-soft, rgba(13, 91, 62, 0.09));
 
 // ---- États -------------------------------------------------------
 //
@@ -60,17 +80,17 @@ $admin-accent-soft: rgba(13, 91, 62, 0.09);
 // (contraste AA), et non l'inverse : les pastilles de statut sont
 // nombreuses dans les tableaux, elles doivent rester déchiffrables.
 
-$admin-success: #0f7a4f;
-$admin-success-bg: rgba(15, 122, 79, 0.1);
+$admin-success: var(--admin-success, #0f7a4f);
+$admin-success-bg: var(--admin-success-bg, rgba(15, 122, 79, 0.1));
 
-$admin-warning: #a05a00;
-$admin-warning-bg: rgba(251, 191, 36, 0.14);
+$admin-warning: var(--admin-warning, #a05a00);
+$admin-warning-bg: var(--admin-warning-bg, rgba(251, 191, 36, 0.14));
 
-$admin-danger: #b42318;
-$admin-danger-bg: rgba(180, 35, 24, 0.08);
+$admin-danger: var(--admin-danger, #b42318);
+$admin-danger-bg: var(--admin-danger-bg, rgba(180, 35, 24, 0.08));
 
-$admin-info: #1d4ed8;
-$admin-info-bg: rgba(29, 78, 216, 0.08);
+$admin-info: var(--admin-info, #1d4ed8);
+$admin-info-bg: var(--admin-info-bg, rgba(29, 78, 216, 0.08));
 
 // ---- Rayons ------------------------------------------------------
 //
