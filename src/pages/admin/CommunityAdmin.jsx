@@ -1,10 +1,25 @@
 import { useState } from "react";
 
-import { announcements, members } from "../../services/api";
+import { Download } from "lucide-react";
+
+import {
+  announcements,
+  members,
+  flocks as flocksApi,
+} from "../../services/api";
+import { apiBaseUrl, getToken } from "../../services/http";
 
 import usePageMeta from "../../hooks/usePageMeta";
+import useAsyncData from "../../hooks/useAsyncData";
 
 import AdminCrud from "../../components/admin/AdminCrud";
+import SubmissionsPanel from "../../components/admin/SubmissionsPanel";
+
+import { CHURCHES, churchLabel, GENDERS, MARITAL_STATUSES } from "../../components/registration/RegistrationForm/data";
+import {
+  formatRegistrationNumber,
+  compareByRegistrationOrder,
+} from "../../utils/registrationNumber";
 
 import "./CommunityAdmin.scss";
 
@@ -38,11 +53,76 @@ const MEMBER_STATUSES = [
   { value: "inactif", label: "Inactif" },
 ];
 
+const FLOCK_STATUSES = [
+  { value: "published", label: "Active" },
+  { value: "draft", label: "Brouillon" },
+  { value: "archived", label: "Archivée" },
+];
+
+const FLOCK_STATUS_LABELS = Object.fromEntries(
+  FLOCK_STATUSES.map((item) => [item.value, item.label])
+);
+
+const flockFields = [
+  {
+    name: "code",
+    label: "Code (2 lettres)",
+    required: true,
+    placeholder: "OL",
+  },
+  { name: "name", label: "Nom de la bergerie", required: true },
+  {
+    name: "church",
+    label: "Église",
+    type: "select",
+    required: true,
+    options: CHURCHES.map((church) => ({
+      value: String(church.value),
+      label: church.label,
+    })),
+  },
+  {
+    name: "status",
+    label: "Statut",
+    type: "select",
+    options: FLOCK_STATUSES,
+  },
+];
+
+const flockColumns = [
+  { key: "code", label: "Code" },
+  { key: "name", label: "Nom" },
+  {
+    key: "church",
+    label: "Église",
+    render: (item) => churchLabel(item.church),
+  },
+  {
+    key: "status",
+    label: "Statut",
+    render: (item) => FLOCK_STATUS_LABELS[item.status] ?? item.status,
+  },
+];
+
+const flockToValues = (item) => ({
+  code: item?.code ?? "",
+  name: item?.name ?? "",
+  church: item?.church ? String(item.church) : "",
+  status: item?.status ?? "published",
+});
+
+const flockToPayload = (values) => ({
+  code: values.code.trim().toUpperCase(),
+  name: values.name.trim(),
+  church: Number(values.church),
+  status: values.status || "published",
+});
+
 // Le formulaire demandait un « Nom complet » alors que le modèle exige
 // un prénom ET un nom, tous deux obligatoires. L'enregistrement
 // echouait donc systématiquement sur « Les données envoyées sont
 // invalides ».
-const memberFields = [
+const buildMemberFields = (flockOptions) => [
   {
     name: "firstName",
     label: "Prénom",
@@ -88,6 +168,58 @@ const memberFields = [
     type: "date",
   },
   {
+    name: "registrationNumber",
+    label: "Matricule",
+    placeholder: "1OL16005E (facultatif)",
+    help: "Laissez vide pour les membres inscrits depuis le site : le matricule est alors attribué automatiquement à la validation de leur inscription.",
+  },
+  {
+    name: "church",
+    label: "Église",
+    type: "select",
+    options: CHURCHES.map((church) => ({
+      value: String(church.value),
+      label: church.label,
+    })),
+  },
+  {
+    name: "flock",
+    label: "Bergerie",
+    type: "select",
+    options: flockOptions,
+  },
+  { name: "whatsapp", label: "WhatsApp", type: "tel" },
+  { name: "address", label: "Adresse", wide: true },
+  { name: "dateOfBirth", label: "Date de naissance", type: "date" },
+  {
+    name: "gender",
+    label: "Genre",
+    type: "select",
+    options: GENDERS,
+  },
+  {
+    name: "maritalStatus",
+    label: "Situation matrimoniale",
+    type: "select",
+    options: MARITAL_STATUSES,
+  },
+  { name: "childrenCount", label: "Nombre d'enfants", type: "number" },
+  { name: "conversionYear", label: "Année de conversion", type: "number" },
+  { name: "previousChurch", label: "Église précédente" },
+  { name: "profession", label: "Profession" },
+  { name: "skills", label: "Compétences (séparées par des virgules)" },
+  { name: "desiredDepartment", label: "Département souhaité" },
+  { name: "availability", label: "Disponibilités", wide: true },
+  {
+    name: "emergencyContactName",
+    label: "Contact d'urgence — nom",
+  },
+  {
+    name: "emergencyContactPhone",
+    label: "Contact d'urgence — téléphone",
+    type: "tel",
+  },
+  {
     name: "notes",
     label: "Notes internes",
     type: "textarea",
@@ -119,10 +251,84 @@ const memberToValues = (item) => ({
   role: item?.role ?? "membre",
   status: item?.status ?? "actif",
   joinedAt: toDateInput(item?.joinedAt),
+  registrationNumber: item?.registrationNumber ?? "",
+  church: item?.church ? String(item.church) : "",
+  flock: item?.flock?.id ?? item?.flock ?? "",
+  whatsapp: item?.whatsapp ?? "",
+  address: item?.address ?? "",
+  dateOfBirth: toDateInput(item?.dateOfBirth),
+  gender: item?.gender ?? "",
+  maritalStatus: item?.maritalStatus ?? "",
+  childrenCount: item?.childrenCount ?? "",
+  conversionYear: item?.conversionYear ?? "",
+  baptismWater: Boolean(item?.baptism?.water),
+  baptismWaterYear: item?.baptism?.waterYear ?? "",
+  baptismHolySpirit: Boolean(item?.baptism?.holySpirit),
+  previousChurch: item?.previousChurch ?? "",
+  profession: item?.profession ?? "",
+  skills: Array.isArray(item?.skills) ? item.skills.join(", ") : "",
+  desiredDepartment: item?.desiredDepartment ?? "",
+  availability: item?.availability ?? "",
+  emergencyContactName: item?.emergencyContact?.name ?? "",
+  emergencyContactPhone: item?.emergencyContact?.phone ?? "",
   notes: item?.notes ?? "",
 });
 
+const memberToPayload = (values) => ({
+  firstName: values.firstName.trim(),
+  lastName: values.lastName.trim(),
+  email: values.email.trim() || undefined,
+  phone: values.phone.trim() || undefined,
+  area: values.area.trim() || undefined,
+  role: values.role || "membre",
+  status: values.status || "actif",
+  joinedAt: values.joinedAt || undefined,
+  registrationNumber: values.registrationNumber.trim() || undefined,
+  church: values.church ? Number(values.church) : undefined,
+  flock: values.flock || undefined,
+  whatsapp: values.whatsapp.trim() || undefined,
+  address: values.address.trim() || undefined,
+  dateOfBirth: values.dateOfBirth || undefined,
+  gender: values.gender || undefined,
+  maritalStatus: values.maritalStatus || undefined,
+  childrenCount:
+    values.childrenCount !== "" ? Number(values.childrenCount) : undefined,
+  conversionYear:
+    values.conversionYear !== "" ? Number(values.conversionYear) : undefined,
+  baptism: {
+    water: Boolean(values.baptismWater),
+    waterYear:
+      values.baptismWaterYear !== ""
+        ? Number(values.baptismWaterYear)
+        : undefined,
+    holySpirit: Boolean(values.baptismHolySpirit),
+  },
+  previousChurch: values.previousChurch.trim() || undefined,
+  profession: values.profession.trim() || undefined,
+  skills: values.skills
+    ? values.skills
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+    : [],
+  desiredDepartment: values.desiredDepartment.trim() || undefined,
+  availability: values.availability.trim() || undefined,
+  emergencyContact: {
+    name: values.emergencyContactName.trim() || undefined,
+    phone: values.emergencyContactPhone.trim() || undefined,
+  },
+  notes: values.notes,
+});
+
 const memberColumns = [
+  {
+    key: "registrationNumber",
+    label: "Matricule",
+    render: (item) =>
+      item.registrationNumber
+        ? formatRegistrationNumber(item.registrationNumber)
+        : "—",
+  },
   {
     key: "name",
     label: "Membre",
@@ -232,9 +438,119 @@ const announcementColumns = [
   },
 ];
 
+const MemberExportButtons = ({ flockOptions }) => {
+  const [filters, setFilters] = useState({ church: "", flock: "", status: "" });
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+
+  // L'export passe par `fetch` plutôt qu'un simple lien : la route est
+  // protégée, et un `<a href>` n'emporte pas l'en-tête d'autorisation
+  // (même mécanisme que l'export CSV de la lettre d'information).
+  const download = async (kind) => {
+    setBusy(kind);
+    setError("");
+
+    try {
+      const query = new URLSearchParams(
+        Object.fromEntries(
+          Object.entries(filters).filter(([, value]) => value !== "")
+        )
+      );
+
+      const response = await fetch(
+        `${apiBaseUrl}/api/admin/members/export.${kind}?${query}`,
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+
+      if (!response.ok) {
+        throw new Error(`L'export a échoué (code ${response.status}).`);
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download =
+        kind === "xlsx" ? "membres-cava.xlsx" : "registre-membres-cava.pdf";
+      link.click();
+
+      URL.revokeObjectURL(url);
+    } catch (caught) {
+      setError(caught?.message ?? "L'export a échoué.");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  return (
+    <div className="admin-community__export">
+      <select
+        aria-label="Filtrer par église"
+        value={filters.church}
+        onChange={(event) =>
+          setFilters((previous) => ({ ...previous, church: event.target.value }))
+        }
+      >
+        <option value="">Toutes les églises</option>
+        {CHURCHES.map((church) => (
+          <option key={church.value} value={church.value}>
+            {church.label}
+          </option>
+        ))}
+      </select>
+
+      <select
+        aria-label="Filtrer par bergerie"
+        value={filters.flock}
+        onChange={(event) =>
+          setFilters((previous) => ({ ...previous, flock: event.target.value }))
+        }
+      >
+        <option value="">Toutes les bergeries</option>
+        {flockOptions.map((flock) => (
+          <option key={flock.value} value={flock.value}>
+            {flock.label}
+          </option>
+        ))}
+      </select>
+
+      <select
+        aria-label="Filtrer par statut"
+        value={filters.status}
+        onChange={(event) =>
+          setFilters((previous) => ({ ...previous, status: event.target.value }))
+        }
+      >
+        <option value="">Tous les statuts</option>
+        <option value="actif">Actif</option>
+        <option value="inactif">Inactif</option>
+      </select>
+
+      <button type="button" onClick={() => download("xlsx")} disabled={busy !== ""}>
+        <Download aria-hidden="true" />
+        {busy === "xlsx" ? "Export…" : "Excel"}
+      </button>
+
+      <button type="button" onClick={() => download("pdf")} disabled={busy !== ""}>
+        <Download aria-hidden="true" />
+        {busy === "pdf" ? "Export…" : "PDF"}
+      </button>
+
+      {error && (
+        <p className="admin-community__alert" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+};
+
 const TABS = [
   { id: "announcements", label: "Annonces" },
   { id: "members", label: "Membres" },
+  { id: "flocks", label: "Bergeries" },
+  { id: "submissions", label: "Inscriptions" },
 ];
 
 const CommunityAdmin = () => {
@@ -245,6 +561,15 @@ const CommunityAdmin = () => {
   });
 
   const [tab, setTab] = useState("announcements");
+
+  const { data: flockList } = useAsyncData(flocksApi.listAdmin);
+
+  const flockOptions = (flockList ?? []).map((flock) => ({
+    value: flock.id,
+    label: `${flock.name} (${churchLabel(flock.church)})`,
+  }));
+
+  const memberFields = buildMemberFields(flockOptions);
 
   return (
     <div className="admin-community">
@@ -325,24 +650,67 @@ const CommunityAdmin = () => {
         hidden={tab !== "members"}
       >
         {tab === "members" && (
+          <>
+            <MemberExportButtons flockOptions={flockOptions} />
+
+            <AdminCrud
+              resource={members}
+              fields={memberFields}
+              columns={memberColumns}
+              labels={{
+                singular: "un membre",
+                plural: "Membres",
+                add: "Ajouter un membre",
+                empty:
+                  "Aucun membre enregistré. Cette liste sert au suivi interne et n'est pas publiée sur le site.",
+                loadingSuffix: "des membres",
+                description:
+                  "Annuaire interne des membres. Ces informations ne sont jamais affichées sur le site public.",
+                titleKey: "lastName",
+              }}
+              toValues={memberToValues}
+              toPayload={memberToPayload}
+              sortItems={(items) => [...items].sort(compareByRegistrationOrder)}
+            />
+          </>
+        )}
+      </div>
+
+      <div
+        role="tabpanel"
+        id="admin-community-panel-flocks"
+        aria-labelledby="admin-community-tab-flocks"
+        hidden={tab !== "flocks"}
+      >
+        {tab === "flocks" && (
           <AdminCrud
-            resource={members}
-            fields={memberFields}
-            columns={memberColumns}
+            resource={flocksApi}
+            fields={flockFields}
+            columns={flockColumns}
             labels={{
-              singular: "un membre",
-              plural: "Membres",
-              add: "Ajouter un membre",
+              singular: "une bergerie",
+              plural: "Bergeries",
+              add: "Ajouter une bergerie",
               empty:
-                "Aucun membre enregistré. Cette liste sert au suivi interne et n'est pas publiée sur le site.",
-              loadingSuffix: "des membres",
+                "Aucune bergerie enregistrée. Elles alimentent la liste déroulante du formulaire d'inscription et de la fiche membre.",
+              loadingSuffix: "des bergeries",
               description:
-                "Annuaire interne des membres. Ces informations ne sont jamais affichées sur le site public.",
-              titleKey: "lastName",
+                "Chaque membre appartient à une bergerie, rattachée à une église.",
+              titleKey: "name",
             }}
-            toValues={memberToValues}
+            toValues={flockToValues}
+            toPayload={flockToPayload}
           />
         )}
+      </div>
+
+      <div
+        role="tabpanel"
+        id="admin-community-panel-submissions"
+        aria-labelledby="admin-community-tab-submissions"
+        hidden={tab !== "submissions"}
+      >
+        {tab === "submissions" && <SubmissionsPanel />}
       </div>
     </div>
   );

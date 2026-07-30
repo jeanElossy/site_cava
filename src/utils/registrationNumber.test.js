@@ -6,6 +6,8 @@ import {
   formatRegistrationNumber,
   hasValidShape,
   hasValidControlLetter,
+  parseRegistrationNumber,
+  compareByRegistrationOrder,
 } from "./registrationNumber";
 
 // Mêmes cas que le service backend équivalent
@@ -88,5 +90,81 @@ describe("hasValidControlLetter", () => {
   // du rang 44) doit être détecté comme invalide.
   it("détecte le cas fautif du registre papier 1ME23043R", () => {
     expect(hasValidControlLetter("1ME23043R")).toBe(false);
+  });
+});
+
+describe("parseRegistrationNumber", () => {
+  it("décompose un matricule bien formé", () => {
+    expect(parseRegistrationNumber("1ME23044R")).toEqual({
+      church: 1,
+      flockCode: "ME",
+      year: 23,
+      number: 44,
+      letter: "R",
+    });
+  });
+
+  it("renvoie null pour un format invalide", () => {
+    expect(parseRegistrationNumber("PASDUTOUT")).toBeNull();
+  });
+
+  it("renvoie null pour une entrée absente", () => {
+    expect(parseRegistrationNumber(undefined)).toBeNull();
+    expect(parseRegistrationNumber(null)).toBeNull();
+  });
+});
+
+describe("compareByRegistrationOrder", () => {
+  it("trie par ordre réel d'inscription, pas par ordre alphabétique du matricule", () => {
+    // "AA26002B" est alphabétiquement avant "ZZ26001A", mais le rang
+    // réel (2e position) place ZZ26001A en premier : c'est justement le
+    // piège que ce comparateur évite.
+    const members = [
+      { name: "Second réel", registrationNumber: "1AA26002B" },
+      { name: "Premier réel", registrationNumber: "1ZZ26001A" },
+    ];
+
+    const sorted = [...members].sort(compareByRegistrationOrder);
+
+    expect(sorted.map((m) => m.name)).toEqual([
+      "Premier réel",
+      "Second réel",
+    ]);
+  });
+
+  it("trie d'abord par église, puis par numéro de séquence", () => {
+    const members = [
+      { name: "Église 2, rang 1", registrationNumber: "2AA26001A" },
+      { name: "Église 1, rang 2", registrationNumber: "1AA26002B" },
+      { name: "Église 1, rang 1", registrationNumber: "1AA26001A" },
+    ];
+
+    const sorted = [...members].sort(compareByRegistrationOrder);
+
+    expect(sorted.map((m) => m.name)).toEqual([
+      "Église 1, rang 1",
+      "Église 1, rang 2",
+      "Église 2, rang 1",
+    ]);
+  });
+
+  it("place les membres sans matricule à la fin", () => {
+    const members = [
+      { name: "Sans matricule" },
+      { name: "Avec matricule", registrationNumber: "1AA26001A" },
+    ];
+
+    const sorted = [...members].sort(compareByRegistrationOrder);
+
+    expect(sorted.map((m) => m.name)).toEqual([
+      "Avec matricule",
+      "Sans matricule",
+    ]);
+  });
+
+  it("ne modifie pas l'ordre relatif de deux membres sans matricule", () => {
+    const members = [{ name: "A" }, { name: "B" }];
+
+    expect(compareByRegistrationOrder(members[0], members[1])).toBe(0);
   });
 });

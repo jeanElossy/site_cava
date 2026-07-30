@@ -52,9 +52,10 @@ const AdminCrud = ({
   toValues,
   toPayload,
   rowKey = "id",
+  sortItems,
 }) => {
   const {
-    items,
+    items: rawItems,
     loading,
     error,
     reload,
@@ -65,6 +66,13 @@ const AdminCrud = ({
     update,
     remove,
   } = useCrud(resource);
+
+  // Optionnel : certains écrans ont besoin d'un ordre d'affichage que
+  // l'API ne fournit pas telle quelle (ex. tri des membres par ordre
+  // réel d'inscription plutôt que par ordre alphabétique du matricule).
+  // Sans cette prop, le comportement est strictement identique à avant
+  // : la liste s'affiche dans l'ordre renvoyé par l'API.
+  const items = sortItems ? sortItems(rawItems) : rawItems;
 
   const [editing, setEditing] = useState(null);
   const [values, setValues] = useState({});
