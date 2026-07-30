@@ -57,8 +57,45 @@
     z-index: 2;
 
     width: 100%;
-    max-width: 760px;
+    max-width: 1400px;
     margin: 0 auto;
+    padding: 0 60px;
+
+    // Formulaire à gauche, carte de suivi collante à droite — même
+    // schéma que le tunnel de don (ContributionForm.scss).
+    display: grid;
+    grid-template-columns: 1.6fr 400px;
+    gap: 32px;
+    align-items: start;
+
+    @media (max-width: 992px) {
+      padding: 0 2rem;
+    }
+
+    @media (max-width: 768px) {
+      padding: 0 20px;
+    }
+
+    // Écran de confirmation : redevient une carte unique centrée,
+    // comme avant cette refonte — pas de grille à deux colonnes pour
+    // un seul bloc de contenu.
+    &--done {
+      display: block;
+
+      max-width: 760px;
+      padding: 42px;
+
+      background: #fff;
+      border-radius: 24px;
+      border-top: 4px solid $primary;
+
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  &__main {
+    position: relative;
+
     padding: 42px;
 
     background: #fff;
@@ -95,69 +132,169 @@
       color: #6b7280;
     }
   }
+
+  // Carte latérale collante : parcours de l'inscription + réassurance.
+  // Même traitement visuel que `.summary-card` du tunnel de don
+  // (dégradé vert foncé, halo décoratif, sticky au défilement).
+  &__sidebar {
+    position: sticky;
+    top: 120px;
+
+    overflow: hidden;
+
+    padding: 35px;
+    border-radius: 32px;
+
+    background: linear-gradient(145deg, #014321, #0c6b3c);
+    color: #fff;
+
+    box-shadow: 0 30px 70px rgba(1, 67, 33, 0.25);
+
+    &::before {
+      content: "";
+
+      position: absolute;
+      top: -180px;
+      right: -180px;
+
+      width: 350px;
+      height: 350px;
+
+      border-radius: 50%;
+
+      background: radial-gradient(
+        rgba(255, 255, 255, 0.15),
+        transparent 70%
+      );
+
+      pointer-events: none;
+    }
+
+    h3 {
+      position: relative;
+      z-index: 2;
+
+      margin: 0 0 26px;
+
+      color: #fff;
+      font-size: 1.3rem;
+      font-weight: 800;
+    }
+  }
+
+  // Points de réassurance sous le parcours, dans la carte latérale.
+  &__reassurance {
+    position: relative;
+    z-index: 2;
+
+    display: grid;
+    gap: 14px;
+
+    margin: 0;
+    padding: 24px 0 0;
+
+    border-top: 1px dashed rgba(255, 255, 255, 0.2);
+
+    list-style: none;
+
+    li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    svg {
+      flex-shrink: 0;
+      margin-top: 2px;
+
+      width: 16px;
+      height: 16px;
+
+      color: $secondary;
+    }
+  }
 }
 
+// Parcours de l'inscription, en vertical, dans la carte latérale —
+// même logique que le tunnel de don (courant / fait / à venir), avec
+// un connecteur vertical entre les puces plutôt qu'un trait horizontal.
 .registration-form .steps {
+  position: relative;
+  z-index: 2;
+
   list-style: none;
-  margin: 0 0 34px;
+  margin: 0 0 30px;
   padding: 0;
 
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
 
   &__item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    position: relative;
 
-    color: #9aa3ab;
-    font-size: 0.82rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+
+    padding-bottom: 22px;
+
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.9rem;
     font-weight: 600;
 
+    // Connecteur vertical entre les puces.
     &:not(:last-child)::after {
       content: "";
 
-      width: 16px;
-      height: 2px;
+      position: absolute;
+      top: 32px;
+      left: 15px;
+      bottom: 0;
 
-      background: #e5e7eb;
+      width: 2px;
+
+      background: rgba(255, 255, 255, 0.18);
 
       transition: background 0.3s ease;
     }
 
     &--current {
-      color: $primary;
+      color: #fff;
 
       .steps__bullet {
-        background: $primary;
-        color: #fff;
-        box-shadow: 0 0 0 4px rgba(13, 91, 62, 0.15);
+        background: $secondary;
+        color: $primary-dark;
+        box-shadow: 0 0 0 4px rgba(255, 210, 46, 0.25);
       }
     }
 
     &--done {
-      color: $primary;
+      color: rgba(255, 255, 255, 0.8);
 
       .steps__bullet {
-        background: $secondary;
-        color: #1f2937;
+        background: rgba(255, 255, 255, 0.92);
+        color: $primary-dark;
       }
 
       &::after {
-        background: $secondary;
+        background: rgba(255, 255, 255, 0.45);
       }
     }
   }
 
   &__bullet {
-    width: 30px;
-    height: 30px;
+    flex-shrink: 0;
+
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
 
-    background: #e5e7eb;
-    color: #6b7280;
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.7);
 
     display: flex;
     align-items: center;
@@ -166,9 +303,16 @@
     font-size: 0.8rem;
     font-weight: 700;
 
-    flex-shrink: 0;
-
     transition: all 0.3s ease;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  &__label {
+    padding-top: 6px;
   }
 }
 
@@ -498,11 +642,32 @@
   }
 }
 
+// La carte latérale repasse sous le formulaire dès que la largeur
+// n'offre plus assez de place pour les deux colonnes — même seuil que
+// le tunnel de don (ContributionForm.scss).
+@media (max-width: 1200px) {
+  // La variante `--done` (écran de confirmation) est déjà en
+  // `display: block` en permanence : rien à faire pour elle ici.
+  .registration-form__container {
+    grid-template-columns: 1fr;
+  }
+
+  .registration-form__sidebar {
+    position: relative;
+    top: auto;
+  }
+}
+
 @media (max-width: 768px) {
   .registration-form {
     padding: 50px 0;
 
-    &__container {
+    &__main {
+      padding: 26px;
+      border-radius: 18px;
+    }
+
+    &__sidebar {
       padding: 26px;
       border-radius: 18px;
     }
@@ -542,10 +707,6 @@
     }
   }
 
-  .registration-form .steps__label {
-    display: none;
-  }
-
   .registration-form .step-nav button {
     padding: 13px 20px;
     font-size: 0.92rem;
@@ -553,7 +714,8 @@
 }
 
 @media (max-width: 480px) {
-  .registration-form__container {
+  .registration-form__main,
+  .registration-form__sidebar {
     padding: 20px;
   }
 

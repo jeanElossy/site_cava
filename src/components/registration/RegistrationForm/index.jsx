@@ -14,6 +14,9 @@ import {
   BookOpenText,
   HandHeart,
   ClipboardCheck,
+  ShieldCheck,
+  Lock,
+  Clock3,
 } from "lucide-react";
 
 import { useRegistration } from "../../../context/RegistrationContext";
@@ -43,6 +46,15 @@ const STEP_ICONS = [
   BookOpenText,
   HandHeart,
   ClipboardCheck,
+];
+
+// Points de réassurance affichés sous la liste des étapes, dans la
+// carte latérale — même esprit que `.pay-reassurance` du tunnel de
+// don, mais fixe (pas de bouton de paiement ici).
+const REASSURANCE_POINTS = [
+  { icon: ShieldCheck, text: "Vérifié par une équipe avant tout enregistrement" },
+  { icon: Lock, text: "Vos informations restent privées" },
+  { icon: Clock3, text: "5 minutes suffisent" },
 ];
 
 const RegistrationForm = () => {
@@ -122,7 +134,7 @@ const RegistrationForm = () => {
   if (submitted) {
     return (
       <section className="registration-form">
-        <div className="registration-form__container">
+        <div className="registration-form__container registration-form__container--done">
           <div className="registration-form__done">
             <FaCheck aria-hidden="true" />
             <h2>Votre demande a été transmise à l&apos;équipe.</h2>
@@ -139,134 +151,153 @@ const RegistrationForm = () => {
   return (
     <section className="registration-form" id="registration-form">
       <div className="registration-form__container">
-        <p className="registration-form__lead">
-          Sept courtes étapes suffisent. Vous pouvez revenir en arrière
-          à tout moment, et rien n&apos;est enregistré dans
-          l&apos;annuaire des membres tant qu&apos;un responsable
-          n&apos;a pas vérifié votre demande.
-        </p>
+        <div className="registration-form__main">
+          <p className="registration-form__lead">
+            Sept courtes étapes suffisent. Vous pouvez revenir en
+            arrière à tout moment, et rien n&apos;est enregistré dans
+            l&apos;annuaire des membres tant qu&apos;un responsable
+            n&apos;a pas vérifié votre demande.
+          </p>
 
-        <ol className="steps" aria-label="Étapes de l'inscription">
-          {steps.map((label, index) => (
-            <li
-              key={label}
-              className={
-                index === step
-                  ? "steps__item steps__item--current"
-                  : index < step
-                    ? "steps__item steps__item--done"
-                    : "steps__item"
-              }
-              aria-current={index === step ? "step" : undefined}
+          <div className="step-head">
+            <span className="step-head__icon">
+              <StepIcon aria-hidden="true" />
+            </span>
+
+            <div>
+              <h2>{stepMeta[step].title}</h2>
+              <p>{stepMeta[step].description}</p>
+            </div>
+          </div>
+
+          <AnimatePresence
+            mode="wait"
+            initial={false}
+          >
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
             >
-              <span className="steps__bullet">
-                {index < step ? (
-                  <FaCheck aria-hidden="true" />
-                ) : (
-                  index + 1
-                )}
-              </span>
+              {step === 0 && (
+                <StepLookup
+                  state={state}
+                  dispatch={dispatch}
+                  updateData={updateData}
+                />
+              )}
+              {step === 1 && (
+                <StepIdentity
+                  state={state}
+                  updateData={updateData}
+                  churchOptions={churchOptions}
+                />
+              )}
+              {step === 2 && (
+                <StepContact state={state} updateData={updateData} />
+              )}
+              {step === 3 && (
+                <StepCivilStatus state={state} updateData={updateData} />
+              )}
+              {step === 4 && (
+                <StepSpiritualLife state={state} updateData={updateData} />
+              )}
+              {step === 5 && (
+                <StepEngagement state={state} updateData={updateData} />
+              )}
+              {step === 6 && (
+                <StepSummary state={state} churchOptions={churchOptions} />
+              )}
+            </motion.div>
+          </AnimatePresence>
 
-              <span className="steps__label">{label}</span>
-            </li>
-          ))}
-        </ol>
+          {error && (
+            <p className="step-error" role="alert">
+              {error}
+            </p>
+          )}
 
-        <div className="step-head">
-          <span className="step-head__icon">
-            <StepIcon aria-hidden="true" />
-          </span>
+          <div className="step-nav">
+            {step > 0 && (
+              <button
+                type="button"
+                className="step-nav__back"
+                onClick={goBack}
+              >
+                <FaArrowLeft aria-hidden="true" />
+                Retour
+              </button>
+            )}
 
-          <div>
-            <h2>{stepMeta[step].title}</h2>
-            <p>{stepMeta[step].description}</p>
+            {!isLastStep && (
+              <button
+                type="button"
+                className="step-nav__next"
+                onClick={goNext}
+              >
+                Suivant
+                <FaArrowRight aria-hidden="true" />
+              </button>
+            )}
+
+            {isLastStep && (
+              <button
+                type="button"
+                className="step-nav__next"
+                onClick={handleSubmit}
+                disabled={submitting}
+                aria-busy={submitting}
+              >
+                {submitting ? "Envoi…" : "Envoyer ma demande"}
+              </button>
+            )}
           </div>
         </div>
 
-        <AnimatePresence
-          mode="wait"
-          initial={false}
-        >
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, x: 16 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -16 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-          >
-            {step === 0 && (
-              <StepLookup
-                state={state}
-                dispatch={dispatch}
-                updateData={updateData}
-              />
-            )}
-            {step === 1 && (
-              <StepIdentity
-                state={state}
-                updateData={updateData}
-                churchOptions={churchOptions}
-              />
-            )}
-            {step === 2 && (
-              <StepContact state={state} updateData={updateData} />
-            )}
-            {step === 3 && (
-              <StepCivilStatus state={state} updateData={updateData} />
-            )}
-            {step === 4 && (
-              <StepSpiritualLife state={state} updateData={updateData} />
-            )}
-            {step === 5 && (
-              <StepEngagement state={state} updateData={updateData} />
-            )}
-            {step === 6 && (
-              <StepSummary state={state} churchOptions={churchOptions} />
-            )}
-          </motion.div>
-        </AnimatePresence>
+        <aside className="registration-form__sidebar">
+          <h3>Votre parcours</h3>
 
-        {error && (
-          <p className="step-error" role="alert">
-            {error}
-          </p>
-        )}
+          <ol className="steps" aria-label="Étapes de l'inscription">
+            {steps.map((label, index) => {
+              const Icon = STEP_ICONS[index];
 
-        <div className="step-nav">
-          {step > 0 && (
-            <button
-              type="button"
-              className="step-nav__back"
-              onClick={goBack}
-            >
-              <FaArrowLeft aria-hidden="true" />
-              Retour
-            </button>
-          )}
+              return (
+                <li
+                  key={label}
+                  className={
+                    index === step
+                      ? "steps__item steps__item--current"
+                      : index < step
+                        ? "steps__item steps__item--done"
+                        : "steps__item"
+                  }
+                  aria-current={index === step ? "step" : undefined}
+                >
+                  <span className="steps__bullet">
+                    {index < step ? (
+                      <FaCheck aria-hidden="true" />
+                    ) : (
+                      <Icon aria-hidden="true" />
+                    )}
+                  </span>
 
-          {!isLastStep && (
-            <button
-              type="button"
-              className="step-nav__next"
-              onClick={goNext}
-            >
-              Suivant
-              <FaArrowRight aria-hidden="true" />
-            </button>
-          )}
+                  <span className="steps__label">{label}</span>
+                </li>
+              );
+            })}
+          </ol>
 
-          {isLastStep && (
-            <button
-              type="button"
-              className="step-nav__next"
-              onClick={handleSubmit}
-              disabled={submitting}
-              aria-busy={submitting}
-            >
-              {submitting ? "Envoi…" : "Envoyer ma demande"}
-            </button>
-          )}
-        </div>
+          <ul className="registration-form__reassurance">
+            {REASSURANCE_POINTS.map(({ icon: Icon, text }) => (
+              <li key={text}>
+                <Icon aria-hidden="true" />
+                <span>{text}</span>
+              </li>
+            ))}
+          </ul>
+        </aside>
       </div>
     </section>
   );
