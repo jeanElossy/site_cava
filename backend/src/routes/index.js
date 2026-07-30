@@ -588,6 +588,23 @@ export const buildRoutes = () => {
     })
   );
 
+  memberExportRouter.get(
+    "/:id/card.jpg",
+    asyncHandler(async (req, res) => {
+      const buffer = await memberCardService.buildMemberCardJpeg(
+        req.params.id
+      );
+
+      res.setHeader("Content-Type", "image/jpeg");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="carte-membre-${req.params.id}.jpg"`
+      );
+
+      res.send(buffer);
+    })
+  );
+
   api.use("/admin/members", memberExportRouter);
 
   // Les membres portent des données personnelles : leur écriture est

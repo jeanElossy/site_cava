@@ -74,4 +74,42 @@ describe("memberCard.service (intégration MongoDB)", () => {
       (error) => error.status === 422
     );
   });
+
+  it("génère une carte JPEG valide pour un membre avec matricule", async () => {
+    const member = await Member.create({
+      firstName: "jean-baptiste",
+      lastName: TEST_LAST_NAME,
+      church: 1,
+      flock: testFlock._id,
+      registrationNumber: "1XC26007G",
+      joinedAt: new Date(2021, 0, 1),
+    });
+
+    const buffer = await buildMemberCardJpeg(member._id);
+
+    assert.ok(Buffer.isBuffer(buffer));
+    // Magic bytes JPEG (SOI marker) : 0xFF 0xD8.
+    assert.equal(buffer.subarray(0, 2).toString("hex"), "ffd8");
+  });
+
+  it("lève une 404 pour un membre introuvable (JPEG)", async () => {
+    await assert.rejects(
+      buildMemberCardJpeg(new mongoose.Types.ObjectId()),
+      (error) => error.status === 404
+    );
+  });
+
+  it("lève une 422 pour un membre sans matricule (JPEG)", async () => {
+    const member = await Member.create({
+      firstName: "SansMatriculeJpeg",
+      lastName: TEST_LAST_NAME,
+      church: 1,
+      flock: testFlock._id,
+    });
+
+    await assert.rejects(
+      buildMemberCardJpeg(member._id),
+      (error) => error.status === 422
+    );
+  });
 });

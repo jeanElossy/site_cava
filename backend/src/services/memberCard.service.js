@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-import { createCanvas, loadImage } from "@napi-rs/canvas";
+import { createCanvas, loadImage, GlobalFonts } from "@napi-rs/canvas";
 import QRCode from "qrcode";
 import PDFDocument from "pdfkit";
 
@@ -25,6 +25,54 @@ const LOGO_PATH = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   "../assets/logo-cava.png"
 );
+
+// @napi-rs/canvas s'appuie sur les polices disponibles sur la machine
+// qui l'exécute. En local (Windows), la police système suffit et le
+// rendu est correct — mais rien ne garantit qu'une police TrueType
+// soit installée sur l'image Node standard de Render (Linux minimal) :
+// si aucune ne l'est, le texte de la carte disparaîtrait purement et
+// simplement (glyphes vides), alors même que les tests passent en
+// local. On embarque donc Poppins — déjà la police du site (voir
+// index.html), sous licence SIL Open Font License (texte complet dans
+// assets/fonts/OFL.txt) qui autorise explicitement ce type
+// d'intégration — et on l'enregistre nous-mêmes, plutôt que de
+// dépendre de ce qui se trouve (ou non) sur le système hôte.
+//
+// Alias dédiés pour le gras plutôt que de compter sur la résolution de
+// `font-weight: bold` par le moteur de rendu à partir d'une seule
+// famille enregistrée : comportement identique quelle que soit la
+// plateforme.
+const FONTS_DIR = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../assets/fonts"
+);
+const CARD_FONT = "CavaCardSans";
+const CARD_FONT_BOLD = "CavaCardSansBold";
+
+const fontsRegistered =
+  Boolean(
+    GlobalFonts.registerFromPath(
+      path.join(FONTS_DIR, "Poppins-Regular.ttf"),
+      CARD_FONT
+    )
+  ) &&
+  Boolean(
+    GlobalFonts.registerFromPath(
+      path.join(FONTS_DIR, "Poppins-Bold.ttf"),
+      CARD_FONT_BOLD
+    )
+  );
+
+if (!fontsRegistered) {
+  // Ne bloque pas la génération (le canvas retombera sur une police par
+  // défaut, potentiellement absente elle aussi) mais doit rester
+  // visible dans les journaux du serveur : un texte manquant sur une
+  // carte imprimée est un défaut silencieux sinon.
+  // eslint-disable-next-line no-console
+  console.error(
+    "[memberCard] Échec de l'enregistrement de la police Poppins embarquée : le texte des cartes de membre risque de ne pas s'afficher."
+  );
+}
 
 // Format carte de crédit standard (85,60 × 53,98 mm), en points
 // (1 mm ≈ 2,83465 pt) — reconnaissable, imprimable tel quel.
@@ -145,12 +193,12 @@ const renderMemberCardCanvas = async (member, church) => {
   ctx.textBaseline = "alphabetic";
 
   ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 8.5px sans-serif";
+  ctx.font = `bold 8.5px ${CARD_FONT_BOLD}`;
   ctx.fillText("CENTRE APOSTOLIQUE", 42, 17, CARD_WIDTH - 52);
   ctx.fillText("VIE ET ABONDANCE", 42, 27, CARD_WIDTH - 52);
 
   ctx.fillStyle = GOLD;
-  ctx.font = "bold 6.5px sans-serif";
+  ctx.font = `bold 6.5px ${CARD_FONT_BOLD}`;
   ctx.fillText("CARTE DE MEMBRE", 42, 38, CARD_WIDTH - 52);
 
   // Pastille à initiales, à cheval sur la couture entre l'en-tête et
@@ -174,7 +222,7 @@ const renderMemberCardCanvas = async (member, church) => {
   ctx.stroke();
 
   ctx.fillStyle = GREEN_DEEP;
-  ctx.font = "bold 15px sans-serif";
+  ctx.font = `bold 15px ${CARD_FONT_BOLD}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(
@@ -214,7 +262,7 @@ const renderMemberCardCanvas = async (member, church) => {
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = INK_SOFT;
-  ctx.font = "bold 5.5px sans-serif";
+  ctx.font = `bold 5.5px ${CARD_FONT_BOLD}`;
   ctx.fillText("VÉRIFICATION", qrX + qrSize / 2, qrY + qrSize + 8);
 
   // Colonne de contenu : entre la pastille et le code QR.
@@ -225,12 +273,12 @@ const renderMemberCardCanvas = async (member, church) => {
   ctx.textBaseline = "alphabetic";
 
   ctx.fillStyle = INK;
-  ctx.font = "bold 12px sans-serif";
+  ctx.font = `bold 12px ${CARD_FONT_BOLD}`;
   ctx.fillText(fullName, contentX, BAND_HEIGHT + 21, contentWidth);
 
   // Matricule sous forme de « puce » plutôt qu'un simple texte : le
   // repère le plus important de la carte doit se voir en premier.
-  ctx.font = "bold 11px sans-serif";
+  ctx.font = `bold 11px ${CARD_FONT_BOLD}`;
 
   const chipTextWidth = ctx.measureText(matricule).width;
   const chipWidth = Math.min(chipTextWidth + 16, contentWidth);
@@ -256,7 +304,7 @@ const renderMemberCardCanvas = async (member, church) => {
 
   let rowY = BAND_HEIGHT + 58;
 
-  ctx.font = "7.8px sans-serif";
+  ctx.font = `7.8px ${CARD_FONT}`;
 
   for (const row of rows) {
     ctx.beginPath();

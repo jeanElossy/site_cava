@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { Download } from "lucide-react";
+import { Download, IdCard } from "lucide-react";
 
 import {
   announcements,
@@ -356,6 +356,84 @@ const toTitleCase = (value = "") =>
     .toLowerCase()
     .replace(/(^|[\s-])\p{L}/gu, (match) => match.toUpperCase());
 
+// Deux boutons de téléchargement par ligne de membre (PDF / JPEG) :
+// composant dédié avec son propre état `busy`/`error`, plutôt que de
+// la logique inline dans `render()` — potentiellement des dizaines de
+// lignes affichées à la fois. Même pattern `fetch` protégé que
+// `MemberExportButtons` ci-dessous (la route exige un jeton, un simple
+// `<a href>` ne l'emporterait pas).
+const MemberCardButtons = ({ memberId }) => {
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+
+  const download = async (format) => {
+    setBusy(format);
+    setError("");
+
+    try {
+      const response = await fetch(
+        `${apiBaseUrl}/api/admin/members/${memberId}/card.${format}`,
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Le téléchargement de la carte a échoué (code ${response.status}).`
+        );
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `carte-membre-${memberId}.${format}`;
+      link.click();
+
+      URL.revokeObjectURL(url);
+    } catch (caught) {
+      setError(caught?.message ?? "Le téléchargement de la carte a échoué.");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  return (
+    <div className="admin-community__card-buttons">
+      <button
+        type="button"
+        onClick={() => download("pdf")}
+        disabled={busy !== ""}
+        aria-label="Télécharger la carte de membre au format PDF"
+        title="Carte de membre (PDF)"
+      >
+        <IdCard aria-hidden="true" />
+        PDF
+      </button>
+
+      <button
+        type="button"
+        onClick={() => download("jpg")}
+        disabled={busy !== ""}
+        aria-label="Télécharger la carte de membre au format JPEG"
+        title="Carte de membre (JPEG)"
+      >
+        <IdCard aria-hidden="true" />
+        JPEG
+      </button>
+
+      {error && (
+        <p
+          className="admin-community__card-buttons-error"
+          role="alert"
+        >
+          {error}
+        </p>
+      )}
+    </div>
+  );
+};
+
 const memberColumns = [
   {
     key: "registrationNumber",
@@ -398,6 +476,18 @@ const memberColumns = [
         <span className="admin-crud__muted">Inactif</span>
       ) : (
         "Actif"
+      ),
+  },
+  {
+    key: "card",
+    label: "Carte",
+    render: (item) =>
+      // Le service refuse de générer une carte sans matricule : pas de
+      // bouton dans ce cas, plutôt qu'un bouton qui échouerait toujours.
+      item.registrationNumber ? (
+        <MemberCardButtons memberId={item.id} />
+      ) : (
+        "—"
       ),
   },
 ];
