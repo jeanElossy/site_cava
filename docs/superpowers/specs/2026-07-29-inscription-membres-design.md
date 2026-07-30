@@ -39,10 +39,10 @@ Deux corrections à faire lors de l'import initial (hors périmètre de cette sp
 
 ### Génération et concurrence
 
-Un compteur atomique par église, dans une nouvelle collection `MatriculeCounter` :
+Un compteur atomique par église, dans une nouvelle collection `RegistrationCounter` :
 
 ```
-{ eglise: 1, dernierNumero: 44 }
+{ church: 1, lastNumber: 44 }
 ```
 
 Incrémenté via `findOneAndUpdate` + `$inc` pour que deux validations simultanées par deux administrateurs ne produisent jamais deux fois le même numéro.
@@ -55,30 +55,30 @@ Incrémenté via `findOneAndUpdate` + `$inc` pour que deux validations simultan�
 
 ### `Member` (existant, étendu)
 
-Champs ajoutés au schéma actuel ([backend/src/models/Member.js](../../../backend/src/models/Member.js)) :
+Le modèle `Member` actuel nomme tous ses champs en anglais (`firstName`, `role`, `status`…), seules les VALEURS d'énumération et les libellés d'interface sont en français (ex. `role: "membre" | "serviteur" | "responsable"`). Les champs ajoutés suivent la même convention — nom de champ anglais, valeurs et libellés français :
 
-- `matricule` : String, unique, sparse (les tout premiers imports du registre papier peuvent temporairement ne pas en avoir un si non renseigné).
-- `eglise` : Number (1-5).
-- `bergerie` : ObjectId, référence `Bergerie`.
-- État civil : `dateNaissance`, `sexe` (enum `homme`/`femme`), `situationMatrimoniale`, `nombreEnfants`.
-- Vie spirituelle : `anneeConversion`, `bapteme.eau` (bool + année), `bapteme.saintEsprit` (bool), `egliseAnterieure`.
-- Engagement : `profession`, `competences` (tableau de chaînes), `departementSouhaite`, `disponibilites`.
-- Contact étendu : `whatsapp`, `commune`, `adresse`, `contactUrgence` (nom + téléphone), `photo` (URL Cloudinary).
+- `registrationNumber` : String, unique, sparse (les tout premiers imports du registre papier peuvent temporairement ne pas en avoir un si non renseigné). C'est le champ technique qui porte le matricule ; l'interface continue de l'afficher sous le nom « Matricule ».
+- `church` : Number (1-5).
+- `flock` : ObjectId, référence `Flock` — désigne la bergerie ; l'interface l'affiche sous le nom « Bergerie ».
+- État civil : `dateOfBirth`, `gender` (enum `"homme" | "femme"`), `maritalStatus` (enum `"celibataire" | "marie" | "veuf" | "divorce"`), `childrenCount`.
+- Vie spirituelle : `conversionYear`, `baptism.water` (bool + `baptism.waterYear`), `baptism.holySpirit` (bool), `previousChurch`.
+- Engagement : `profession`, `skills` (tableau de chaînes), `desiredDepartment`, `availability`.
+- Contact étendu : `whatsapp`, `address`, `emergencyContact.name`, `emergencyContact.phone`, `photo` (URL Cloudinary). Le quartier/commune n'est **pas** un nouveau champ : le modèle porte déjà `area` (« Quartier / groupe de maison ») depuis l'écran d'administration existant, qui couvre ce besoin.
 
 Tous ces champs sont optionnels au niveau du schéma (`required: false`) — c'est le formulaire d'inscription public qui impose ses propres règles de complétude par étape, pas le modèle. Cela évite de bloquer la saisie manuelle existante en administration, qui ne remplira pas nécessairement chaque champ.
 
-### `Bergerie` (nouveau)
+### `Flock` (nouveau — désigne une bergerie)
 
 ```
-{ code: String (2 lettres, unique par église), nom: String, eglise: Number, status }
+{ code: String (2 lettres, unique par église), name: String, church: Number, status }
 ```
 
-Exposée en CRUD via le même `resourceRouter`/`createCrudService` que les autres ressources de contenu, écriture réservée à `admin` (comme `members`).
+Exposée en CRUD via le même `resourceRouter`/`createCrudService` que les autres ressources de contenu. L'interface d'administration affiche cette ressource sous le nom « Bergeries ».
 
-### `MatriculeCounter` (nouveau, interne)
+### `RegistrationCounter` (nouveau, interne — compteur de matricules)
 
 ```
-{ eglise: Number (unique), dernierNumero: Number }
+{ church: Number (unique), lastNumber: Number }
 ```
 
 Jamais exposée directement par une route CRUD — seule la logique de validation d'inscription l'incrémente.
@@ -89,16 +89,18 @@ Représente une soumission publique en attente de traitement par un administrate
 
 ```
 {
-  type: "nouveau" | "maj",
-  matriculeSaisi: String | null,       // rempli seulement si type = "maj"
-  memberExistant: ObjectId | null,     // rempli si matriculeSaisi correspond à un Member connu
-  donnees: { ...tous les champs du formulaire ... },
-  statut: "en_attente" | "valide" | "rejete",
-  motifRejet: String | null,
-  traitePar: ObjectId (ref User) | null,
-  traiteLe: Date | null,
+  type: "new" | "update",
+  submittedRegistrationNumber: String | null,  // rempli seulement si type = "update"
+  existingMember: ObjectId | null,              // rempli si le matricule saisi correspond à un Member connu
+  data: { ...tous les champs du formulaire ... },
+  status: "pending" | "approved" | "rejected",
+  rejectionReason: String | null,
+  processedBy: ObjectId (ref User) | null,
+  processedAt: Date | null,
 }
 ```
+
+Les noms de champs suivent la convention anglaise du reste du code ; `type` et `status` portent des valeurs anglaises ici car ce sont des états internes jamais montrés tels quels à l'utilisateur (l'interface d'administration les traduit à l'affichage : « Nouveau »/« Mise à jour », « En attente »/« Validée »/« Rejetée »).
 
 ## Parcours publics
 
@@ -109,7 +111,7 @@ Nouvelle page publique `/inscription`, avec deux entrées :
 Formulaire en plusieurs étapes (assistant/wizard avec barre de progression, pas une page unique) :
 
 1. Identité (prénom, nom, église, bergerie)
-2. Contact (téléphone, WhatsApp, e-mail, commune, adresse, photo)
+2. Contact (téléphone, WhatsApp, e-mail, adresse, photo)
 3. État civil (date de naissance, sexe, situation matrimoniale, nombre d'enfants)
 4. Vie spirituelle (année de conversion, baptêmes, église antérieure)
 5. Engagement (profession, compétences, département souhaité, disponibilités)
