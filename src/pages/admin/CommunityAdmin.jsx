@@ -167,9 +167,13 @@ const buildMemberFields = (flockOptions, churchSelectOptions) => [
     options: MEMBER_STATUSES,
   },
   {
-    name: "joinedAt",
-    label: "Date d'arrivée",
-    type: "date",
+    // Le modèle ne porte qu'une date (`joinedAt`) ; comme sur le
+    // formulaire public d'inscription, on ne redemande que l'année —
+    // le jour et le mois exacts d'arrivée ne sont jamais connus pour
+    // la grande majorité des membres.
+    name: "arrivalYear",
+    label: "Année d'arrivée",
+    type: "number",
   },
   {
     name: "registrationNumber",
@@ -266,7 +270,9 @@ const memberToValues = (item) => ({
   // création sans choix explicite reste valide.
   role: item?.role ?? "membre",
   status: item?.status ?? "actif",
-  joinedAt: toDateInput(item?.joinedAt),
+  arrivalYear: item?.joinedAt
+    ? String(new Date(item.joinedAt).getFullYear())
+    : "",
   registrationNumber: item?.registrationNumber ?? "",
   church: item?.church ? String(item.church) : "",
   flock: item?.flock?.id ?? item?.flock ?? "",
@@ -298,7 +304,7 @@ const memberToPayload = (values) => ({
   area: values.area.trim() || undefined,
   role: values.role || "membre",
   status: values.status || "actif",
-  joinedAt: values.joinedAt || undefined,
+  joinedAt: values.arrivalYear !== "" ? `${values.arrivalYear}-01-01` : undefined,
   registrationNumber: values.registrationNumber.trim() || undefined,
   church: values.church ? Number(values.church) : undefined,
   flock: values.flock || undefined,
