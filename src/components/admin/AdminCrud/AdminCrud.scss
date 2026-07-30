@@ -173,6 +173,43 @@
     }
   }
 
+  // Colonne Actions (Modifier/Supprimer) : toujours deux icônes, jamais
+  // de texte long — `width: 1%` avec `white-space: nowrap` la force à
+  // se réduire à son contenu au lieu de se voir attribuer une part
+  // égale de la largeur du tableau (comportement par défaut de
+  // `table-layout: auto`), quel que soit l'écran.
+  &__actions-col {
+    width: 1%;
+    white-space: nowrap;
+  }
+
+  // Variante à colonnes figées : certains écrans (ex. la liste des
+  // membres) ont des colonnes qui wrappent sur plusieurs lignes alors
+  // que d'autres ont trop de place. `column.width` (voir AdminCrud/
+  // index.jsx) ne sert à rien tant que le tableau peut réajuster ces
+  // largeurs lui-même — `table-layout: fixed` les fige, et le
+  // débordement est coupé proprement (« … ») plutôt que de repasser à
+  // la ligne.
+  &__table--fixed {
+    table-layout: fixed;
+
+    th,
+    td {
+      overflow: hidden;
+
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    // `table-layout: fixed` prend `width: 1%` au pied de la lettre
+    // (contrairement au mode auto, où ça se contente de réduire la
+    // colonne à son contenu) : sans cette largeur minimale explicite,
+    // les deux boutons d'action n'auraient pas la place de tenir.
+    .admin-crud__actions-col {
+      width: 92px;
+    }
+  }
+
   &__row-actions {
     display: flex;
     justify-content: flex-end;

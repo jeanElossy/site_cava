@@ -53,6 +53,13 @@ const AdminCrud = ({
   toPayload,
   rowKey = "id",
   sortItems,
+  // Optionnel : `admin-crud__table--fixed` fige la largeur des
+  // colonnes (voir `column.width` ci-dessous) au lieu de les laisser
+  // s'ajuster au contenu — utile quand certaines colonnes wrappent
+  // sur plusieurs lignes alors que d'autres ont trop de place (ex. la
+  // liste des membres). N'affecte que les écrans qui le demandent
+  // explicitement ; tous les autres gardent leur comportement actuel.
+  tableClassName,
 }) => {
   const {
     items: rawItems,
@@ -190,7 +197,13 @@ const AdminCrud = ({
 
         {!loading && !error && items.length > 0 && (
           <div className="admin-crud__table-wrapper">
-            <table className="admin-crud__table">
+            <table
+              className={
+                tableClassName
+                  ? `admin-crud__table ${tableClassName}`
+                  : "admin-crud__table"
+              }
+            >
               <caption className="sr-only">
                 {labels.plural} — {items.length} élément
                 {items.length > 1 ? "s" : ""}
@@ -202,12 +215,13 @@ const AdminCrud = ({
                     <th
                       key={column.key}
                       scope="col"
+                      style={column.width ? { width: column.width } : undefined}
                     >
                       {column.label}
                     </th>
                   ))}
 
-                  <th scope="col">
+                  <th scope="col" className="admin-crud__actions-col">
                     <span className="sr-only">Actions</span>
                   </th>
                 </tr>
@@ -217,7 +231,10 @@ const AdminCrud = ({
                 {items.map((item) => (
                   <tr key={item[rowKey]}>
                     {columns.map((column) => (
-                      <td key={column.key}>
+                      <td
+                        key={column.key}
+                        style={column.width ? { width: column.width } : undefined}
+                      >
                         {column.render
                           ? column.render(item)
                           : item[column.key] || "—"}

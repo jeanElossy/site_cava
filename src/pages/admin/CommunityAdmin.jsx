@@ -434,10 +434,17 @@ const MemberCardButtons = ({ memberId }) => {
   );
 };
 
+// Largeurs figées (voir `tableClassName="admin-crud__table--fixed"` sur
+// l'AdminCrud des membres) : sans elles, une colonne à contenu large
+// (le nom, ou un long nom d'église/bergerie repris ailleurs) prenait
+// toute la place au détriment des autres, qui se retrouvaient à
+// repasser leur contenu à la ligne. Somme volontairement < 100 % :
+// le reste revient à la colonne Actions (voir `__actions-col`).
 const memberColumns = [
   {
     key: "registrationNumber",
     label: "Matricule",
+    width: "11%",
     render: (item) =>
       item.registrationNumber ? (
         <strong>{formatRegistrationNumber(item.registrationNumber)}</strong>
@@ -448,6 +455,7 @@ const memberColumns = [
   {
     key: "name",
     label: "Membre",
+    width: "20%",
     render: (item) => {
       const parts = [
         item.firstName ? toTitleCase(item.firstName) : "",
@@ -457,20 +465,22 @@ const memberColumns = [
       return parts.join(" ") || "—";
     },
   },
-  { key: "area", label: "Quartier / groupe" },
+  { key: "area", label: "Quartier / groupe", width: "15%" },
   {
     key: "role",
     label: "Rôle",
+    width: "9%",
     render: (item) => (
       <span className="admin-crud__pill">
         {ROLE_LABELS[item.role] ?? "—"}
       </span>
     ),
   },
-  { key: "phone", label: "Téléphone" },
+  { key: "phone", label: "Téléphone", width: "13%" },
   {
     key: "status",
     label: "Statut",
+    width: "8%",
     render: (item) =>
       item.status === "inactif" ? (
         <span className="admin-crud__muted">Inactif</span>
@@ -481,6 +491,7 @@ const memberColumns = [
   {
     key: "card",
     label: "Carte",
+    width: "16%",
     render: (item) =>
       // Le service refuse de générer une carte sans matricule : pas de
       // bouton dans ce cas, plutôt qu'un bouton qui échouerait toujours.
@@ -903,6 +914,7 @@ const CommunityAdmin = () => {
               resource={members}
               fields={memberFields}
               columns={memberColumns}
+              tableClassName="admin-crud__table--fixed"
               labels={{
                 singular: "un membre",
                 plural: "Membres",
