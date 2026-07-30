@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 import { Link } from "react-router-dom";
 
 import {
@@ -101,6 +103,28 @@ const Dashboard = () => {
   // Références stables de `services/api.js` : pas de `useCallback` requis.
   const statsQuery = useAsyncData(stats);
   const inboxQuery = useAsyncData(inbox.list);
+
+  // `reload` seul (et non `statsQuery`/`inboxQuery` en entier) comme
+  // dépendance : ces objets sont recréés à chaque rendu, alors que
+  // `reload` reste stable (voir useAsyncData) — le mettre en
+  // dépendance relancerait l'intervalle à chaque rendu.
+  const { reload: reloadStats } = statsQuery;
+  const { reload: reloadInbox } = inboxQuery;
+
+  // `useAsyncData` ne charge qu'une fois au montage : sans ce sondage,
+  // un message reçu ou un membre approuvé par quelqu'un d'autre
+  // n'apparaît sur ce tableau de bord qu'après un rechargement manuel
+  // de la page. `reload()` ne repasse pas par l'état « chargement »
+  // (voir useAsyncData) : le rafraîchissement est silencieux, sans
+  // clignotement des chiffres déjà affichés.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      reloadStats();
+      reloadInbox();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [reloadStats, reloadInbox]);
 
   const user = currentUser();
 
