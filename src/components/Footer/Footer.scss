@@ -278,6 +278,29 @@
     padding: 60px 30px;
 
     gap: 40px;
+
+    // En une seule colonne, un pied de page collé à gauche paraît
+    // bancal : chaque bloc est centré, comme le logo, les titres et
+    // les listes qu'il contient.
+    text-align: center;
+  }
+
+  .footer img {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .footer .socials {
+    justify-content: center;
+  }
+
+  .footer .contact-item {
+    justify-content: center;
+  }
+
+  .footer .newsletter {
+    max-width: 420px;
+    margin: 0 auto;
   }
 
   .footer__bottom {
@@ -288,6 +311,10 @@
     text-align: center;
 
     padding: 25px 30px;
+  }
+
+  .footer__bottom div {
+    justify-content: center;
   }
 }
 
