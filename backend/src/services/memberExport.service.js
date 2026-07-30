@@ -1,13 +1,28 @@
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
 import ExcelJS from "exceljs";
 import PDFDocument from "pdfkit";
 
 import Member from "../models/Member.js";
-import { formatRegistrationNumber } from "./registrationNumber.service.js";
+import {
+  formatRegistrationNumber,
+  parseRegistrationNumber,
+} from "./registrationNumber.service.js";
 
 const STATUS_LABELS = { actif: "Actif", inactif: "Inactif" };
 
 const GREEN = "#0d5b3e";
 const INK = "#1f2a25";
+
+// pdfkit ne lit que PNG/JPEG (pas le .gif utilisé côté site public) —
+// copié une fois dans le backend plutôt que lu depuis `public/` du
+// frontend, un dossier qui n'existe pas forcément dans le déploiement
+// du backend (services séparés sur Render).
+const LOGO_PATH = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../assets/logo-cava.png"
+);
 
 const fetchMembers = async (filter = {}) => {
   const criteria = {};
@@ -16,10 +31,37 @@ const fetchMembers = async (filter = {}) => {
   if (filter.flock) criteria.flock = filter.flock;
   if (filter.status) criteria.status = filter.status;
 
-  return Member.find(criteria)
+  const members = await Member.find(criteria)
     .populate("flock", "name code")
-    .sort({ church: 1, lastName: 1, firstName: 1 })
     .lean();
+
+  return members.sort(compareByRegistrationOrder);
+};
+
+// Ordre chronologique réel d'inscription (numéro de séquence dans le
+// matricule), PAS l'ordre alphabétique du matricule complet — même
+// logique que `compareByRegistrationOrder` côté frontend
+// (`src/utils/registrationNumber.js`), dupliquée ici faute de code
+// partagé entre le site et l'API dans ce dépôt. Les membres sans
+// matricule sont placés à la fin, triés par nom entre eux.
+const compareByRegistrationOrder = (a, b) => {
+  const parsedA = parseRegistrationNumber(a.registrationNumber);
+  const parsedB = parseRegistrationNumber(b.registrationNumber);
+
+  if (parsedA && parsedB) {
+    if (parsedA.church !== parsedB.church) {
+      return parsedA.church - parsedB.church;
+    }
+
+    return parsedA.number - parsedB.number;
+  }
+
+  if (parsedA) return -1;
+  if (parsedB) return 1;
+
+  return `${a.lastName} ${a.firstName}`.localeCompare(
+    `${b.lastName} ${b.firstName}`
+  );
 };
 
 export const buildMembersXlsx = async (filter = {}) => {
@@ -73,6 +115,9 @@ export const buildMembersPdf = async (filter = {}) => {
     doc.on("data", (chunk) => chunks.push(chunk));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
+
+    doc.image(LOGO_PATH, { width: 64, align: "center" });
+    doc.moveDown(0.4);
 
     doc
       .fontSize(16)
