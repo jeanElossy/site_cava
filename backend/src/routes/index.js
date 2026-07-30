@@ -22,6 +22,11 @@ import * as donationService from "../services/donation.service.js";
 import * as receiptService from "../services/receipt.service.js";
 import * as submissionService from "../services/submission.service.js";
 import * as memberExportService from "../services/memberExport.service.js";
+import * as memberCardService from "../services/memberCard.service.js";
+import {
+  parseRegistrationNumber,
+  releaseIfLastIssued,
+} from "../services/registrationNumber.service.js";
 
 import { resourceRouter } from "./resource.routes.js";
 
@@ -81,6 +86,35 @@ const members = createCrudService(Member, {
   publicFilter: { _id: null },
   searchableFields: ["firstName", "lastName", "registrationNumber"],
 });
+
+// Supprimer un membre ne doit pas laisser un trou permanent dans la
+// numérotation quand son matricule était le tout dernier émis pour
+// son église — cas fréquent en test (inscription puis suppression
+// immédiate). Enveloppe le `remove` générique plutôt que de dupliquer
+// la route DELETE (rôle admin, journal d'audit, réponse 204 déjà
+// gérés par resourceRouter) juste pour ce petit ajout.
+const removeMember = members.remove;
+
+members.remove = async (id) => {
+  const existing = await Member.findById(id)
+    .select("registrationNumber church")
+    .lean();
+
+  const result = await removeMember(id);
+
+  if (existing?.registrationNumber && existing.church) {
+    const parsed = parseRegistrationNumber(existing.registrationNumber);
+
+    if (parsed) {
+      await releaseIfLastIssued({
+        church: existing.church,
+        number: parsed.number,
+      });
+    }
+  }
+
+  return result;
+};
 
 const flocks = createCrudService(Flock, {
   label: "Bergerie",
@@ -526,6 +560,28 @@ export const buildRoutes = () => {
       res.setHeader(
         "Content-Disposition",
         'attachment; filename="registre-membres-cava.pdf"'
+      );
+
+      res.send(buffer);
+    })
+  );
+
+  // Carte de membre individuelle. Chemin à trois segments
+  // (/:id/card.pdf) : ne peut pas être confondu avec la route
+  // générique GET /admin/members/:id de la ressource CRUD montée plus
+  // bas, même sans l'égard d'ordre qui protège /export.xlsx et
+  // /export.pdf ci-dessus.
+  memberExportRouter.get(
+    "/:id/card.pdf",
+    asyncHandler(async (req, res) => {
+      const buffer = await memberCardService.buildMemberCardPdf(
+        req.params.id
+      );
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="carte-membre-${req.params.id}.pdf"`
       );
 
       res.send(buffer);

@@ -98,3 +98,24 @@ export const nextRegistrationNumber = async ({
 
   return { registrationNumber, number, letter };
 };
+
+// Rend un numéro au compteur quand le membre qui le portait est
+// supprimé — mais SEULEMENT si ce numéro est bien le tout dernier
+// émis pour cette église (cas typique : inscription de test suivie
+// d'une suppression immédiate). Sans cette condition, décrémenter
+// serait dangereux : si d'autres inscriptions ont eu lieu entre-temps,
+// ce numéro a pu être réattribué et deux membres se retrouveraient
+// avec le même matricule.
+//
+// `updateOne({ church, lastNumber: number }, ...)` : la condition sur
+// `lastNumber` rend l'opération atomique et sûre même en cas de
+// suppressions concurrentes — elle ne peut réussir QUE si personne
+// d'autre n'a avancé le compteur depuis.
+export const releaseIfLastIssued = async ({ church, number }) => {
+  if (!church || !Number.isInteger(number) || number < 1) return;
+
+  await RegistrationCounter.updateOne(
+    { church, lastNumber: number },
+    { $set: { lastNumber: number - 1 } }
+  );
+};

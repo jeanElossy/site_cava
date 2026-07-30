@@ -1,4 +1,4 @@
-import { describe, it, before, after } from "node:test";
+import { describe, it, before, after, afterEach } from "node:test";
 import assert from "node:assert/strict";
 
 import { connectTestDb, disconnectTestDb } from "../test/db.js";
@@ -10,6 +10,7 @@ import {
   parseRegistrationNumber,
   hasValidControlLetter,
   nextRegistrationNumber,
+  releaseIfLastIssued,
 } from "./registrationNumber.service.js";
 
 // ---- Fonctions pures (aucune base de données) ----------------------
@@ -123,5 +124,100 @@ describe("registrationNumber.service — nextRegistrationNumber (intégration Mo
     );
 
     assert.deepEqual(numbers, [1, 2, 3, 4, 5]);
+  });
+});
+
+// ---- releaseIfLastIssued (intégration MongoDB) ---------------------
+
+describe("registrationNumber.service — releaseIfLastIssued (intégration MongoDB)", () => {
+  const TEST_CHURCH = 9;
+
+  before(async () => {
+    await connectTestDb();
+    await RegistrationCounter.deleteOne({ church: TEST_CHURCH });
+  });
+
+  afterEach(async () => {
+    await RegistrationCounter.deleteOne({ church: TEST_CHURCH });
+  });
+
+  after(async () => {
+    await RegistrationCounter.deleteOne({ church: TEST_CHURCH });
+    await disconnectTestDb();
+  });
+
+  it("décrémente le compteur quand le numéro rendu est bien le tout dernier émis", async () => {
+    await nextRegistrationNumber({
+      church: TEST_CHURCH,
+      flockCode: "ZZ",
+      year: 2026,
+    }); // -> 1
+    const second = await nextRegistrationNumber({
+      church: TEST_CHURCH,
+      flockCode: "ZZ",
+      year: 2026,
+    }); // -> 2
+
+    await releaseIfLastIssued({ church: TEST_CHURCH, number: second.number });
+
+    const counter = await RegistrationCounter.findOne({
+      church: TEST_CHURCH,
+    }).lean();
+
+    assert.equal(
+      counter.lastNumber,
+      1,
+      "le numero 2 est rendu, le prochain doit redevenir 2"
+    );
+  });
+
+  it("ne fait rien si le numéro n'est plus le dernier émis (d'autres inscriptions ont eu lieu depuis)", async () => {
+    await nextRegistrationNumber({
+      church: TEST_CHURCH,
+      flockCode: "ZZ",
+      year: 2026,
+    }); // -> 1
+    const second = await nextRegistrationNumber({
+      church: TEST_CHURCH,
+      flockCode: "ZZ",
+      year: 2026,
+    }); // -> 2
+    await nextRegistrationNumber({
+      church: TEST_CHURCH,
+      flockCode: "ZZ",
+      year: 2026,
+    }); // -> 3, quelqu'un d'autre s'est inscrit entretemps
+
+    // Tentative de rendre le numéro 2, qui N'EST PLUS le dernier émis
+    // (c'est 3 désormais) : ne doit rien changer, sous peine de faire
+    // réattribuer le 3 à quelqu'un d'autre.
+    await releaseIfLastIssued({ church: TEST_CHURCH, number: second.number });
+
+    const counter = await RegistrationCounter.findOne({
+      church: TEST_CHURCH,
+    }).lean();
+
+    assert.equal(
+      counter.lastNumber,
+      3,
+      "le compteur ne doit pas reculer quand un numero plus recent existe deja"
+    );
+  });
+
+  it("ne fait rien pour des entrées invalides (pas d'église, ou numéro non positif)", async () => {
+    await nextRegistrationNumber({
+      church: TEST_CHURCH,
+      flockCode: "ZZ",
+      year: 2026,
+    }); // -> 1
+
+    await releaseIfLastIssued({ church: null, number: 1 });
+    await releaseIfLastIssued({ church: TEST_CHURCH, number: 0 });
+
+    const counter = await RegistrationCounter.findOne({
+      church: TEST_CHURCH,
+    }).lean();
+
+    assert.equal(counter.lastNumber, 1);
   });
 });
