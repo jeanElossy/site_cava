@@ -20,6 +20,7 @@ import * as newsletterService from "../services/newsletter.service.js";
 import * as donationService from "../services/donation.service.js";
 import * as receiptService from "../services/receipt.service.js";
 import * as submissionService from "../services/submission.service.js";
+import * as memberExportService from "../services/memberExport.service.js";
 
 import { resourceRouter } from "./resource.routes.js";
 
@@ -450,6 +451,58 @@ export const buildRoutes = () => {
   );
 
   api.use("/admin/submissions", adminSubmissions);
+
+  // ---- Export des membres (Excel / PDF) --------------------------
+  //
+  // Déclaré AVANT le montage de la ressource `members`, dont la route
+  // GET /admin/members/:id intercepterait sinon "export.xlsx" comme un
+  // identifiant — même piège que /donations/:reference/recu plus haut.
+  const memberExportRouter = Router();
+
+  memberExportRouter.use(requireAuth, requireRole("admin"));
+
+  memberExportRouter.get(
+    "/export.xlsx",
+    asyncHandler(async (req, res) => {
+      const buffer = await memberExportService.buildMembersXlsx({
+        church: req.query.church,
+        flock: req.query.flock,
+        status: req.query.status,
+      });
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="membres-cava.xlsx"'
+      );
+
+      res.send(buffer);
+    })
+  );
+
+  memberExportRouter.get(
+    "/export.pdf",
+    asyncHandler(async (req, res) => {
+      const buffer = await memberExportService.buildMembersPdf({
+        church: req.query.church,
+        flock: req.query.flock,
+        status: req.query.status,
+      });
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="registre-membres-cava.pdf"'
+      );
+
+      res.send(buffer);
+    })
+  );
+
+  api.use("/admin/members", memberExportRouter);
 
   // Les membres portent des données personnelles : leur écriture est
   // réservée aux administrateurs, un éditeur n'y touche pas.
