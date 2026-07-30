@@ -364,6 +364,85 @@ describe("submission.service (intégration MongoDB)", () => {
     assert.ok(submission.processedAt);
   });
 
+  it("un membre créé via une nouvelle inscription en ligne peut ensuite être retrouvé et mis à jour par son matricule (pas seulement les membres importés du registre papier)", async () => {
+    // Étape 1 : inscription en ligne d'un tout nouveau membre.
+    await submissionService.submit({
+      type: "new",
+      data: {
+        firstName: "Fraichement",
+        lastName: TEST_LAST_NAME,
+        church: 1,
+        flock: String(testFlockChurch1._id),
+        phone: "0700000099",
+      },
+    });
+
+    const pendingNew = await MemberSubmission.findOne({
+      "data.lastName": TEST_LAST_NAME,
+      type: "new",
+    }).lean();
+
+    const { member: createdMember } = await submissionService.approve(
+      pendingNew._id,
+      { user: { id: new mongoose.Types.ObjectId() } }
+    );
+
+    // Étape 2 : il revient plus tard avec ce matricule tout juste
+    // attribué pour compléter sa fiche — le "j'ai déjà un matricule"
+    // du formulaire public doit fonctionner pour lui comme pour un
+    // membre historique digitalisé depuis le registre papier.
+    const found = await submissionService.lookup({
+      registrationNumber: createdMember.registrationNumber,
+      lastName: TEST_LAST_NAME,
+    });
+
+    assert.equal(found.data.firstName, "Fraichement");
+
+    await submissionService.submit({
+      type: "update",
+      registrationNumber: createdMember.registrationNumber,
+      data: {
+        firstName: "Fraichement",
+        lastName: TEST_LAST_NAME,
+        // Le formulaire public redemande toujours église et bergerie,
+        // même en mise à jour (l'étape Identité n'est pas conditionnée
+        // au type de soumission) : `approve()` les exige quel que soit
+        // le parcours.
+        church: 1,
+        flock: String(testFlockChurch1._id),
+        phone: "0711111199",
+      },
+    });
+
+    const pendingUpdate = await MemberSubmission.findOne({
+      "data.lastName": TEST_LAST_NAME,
+      type: "update",
+    }).lean();
+
+    assert.equal(
+      String(pendingUpdate.existingMember),
+      String(createdMember._id ?? createdMember.id),
+      "la mise à jour doit se rattacher au membre fraîchement créé, pas en créer un nouveau"
+    );
+
+    const { member: updatedMember } = await submissionService.approve(
+      pendingUpdate._id,
+      { user: { id: new mongoose.Types.ObjectId() } }
+    );
+
+    assert.equal(updatedMember.phone, "0711111199");
+    assert.equal(
+      updatedMember.registrationNumber,
+      createdMember.registrationNumber,
+      "le matricule ne doit pas changer lors d'une mise à jour"
+    );
+
+    const countAfter = await Member.countDocuments({
+      lastName: TEST_LAST_NAME,
+    });
+    assert.equal(countAfter, 1, "toujours un seul membre, pas de doublon créé");
+  });
+
   it("approve() refuse une nouvelle inscription si un membre du même nom existe déjà dans la même église (accents et casse ignorés)", async () => {
     await Member.create({
       firstName: "Doublon",

@@ -16,6 +16,10 @@ import { memberToFormData } from "./data";
 // stabilisés : évite un appel réseau à chaque frappe.
 const LOOKUP_DELAY_MS = 600;
 
+// Civilité déduite du genre connu sur la fiche — usage courant en
+// français ("Bonjour Monsieur Liadé"), plus formel qu'un prénom seul.
+const GENDER_TITLES = { homme: "Monsieur", femme: "Madame" };
+
 const StepLookup = ({ state, dispatch, updateData }) => {
   const raw = state.submittedRegistrationNumber;
   const normalized = normalizeRegistrationNumber(raw);
@@ -39,9 +43,22 @@ const StepLookup = ({ state, dispatch, updateData }) => {
   const [internalStatus, setInternalStatus] = useState("idle");
   const lookupStatus = canLookup ? internalStatus : "idle";
 
-  // Prénom de la fiche retrouvée, pour personnaliser le message de
-  // confirmation ("Bonjour Jean !") plutôt qu'une phrase générique.
-  const [foundFirstName, setFoundFirstName] = useState("");
+  // Identité de la fiche retrouvée, pour personnaliser le message de
+  // confirmation ("Bonjour Monsieur Liadé !") plutôt qu'une phrase
+  // générique.
+  const [foundIdentity, setFoundIdentity] = useState({
+    firstName: "",
+    lastName: "",
+    gender: "",
+  });
+
+  const genderTitle = GENDER_TITLES[foundIdentity.gender];
+  // Civilité + nom de famille si le genre est connu ("Monsieur
+  // Liadé") ; à défaut, simple prénom ("Israël").
+  const greetingName =
+    genderTitle && foundIdentity.lastName
+      ? `${genderTitle} ${foundIdentity.lastName}`
+      : foundIdentity.firstName;
 
   const timerRef = useRef(null);
   const lastAttemptRef = useRef("");
@@ -58,14 +75,18 @@ const StepLookup = ({ state, dispatch, updateData }) => {
     timerRef.current = setTimeout(async () => {
       lastAttemptRef.current = attemptKey;
       setInternalStatus("searching");
-      setFoundFirstName("");
+      setFoundIdentity({ firstName: "", lastName: "", gender: "" });
 
       try {
         const result = await memberSubmissions.lookup(normalized, lastName);
 
         if (result) {
           updateData(memberToFormData(result));
-          setFoundFirstName(result.firstName ?? "");
+          setFoundIdentity({
+            firstName: result.firstName ?? "",
+            lastName: result.lastName ?? "",
+            gender: result.gender ?? "",
+          });
           setInternalStatus("found");
         } else {
           setInternalStatus("not-found");
@@ -177,8 +198,8 @@ const StepLookup = ({ state, dispatch, updateData }) => {
           {lookupStatus === "found" && (
             <p className="lookup-status lookup-status--found">
               <CheckCircle2 aria-hidden="true" />
-              {foundFirstName
-                ? `Bonjour ${foundFirstName} ! Nous avons retrouvé votre fiche et pré-rempli tout ce que nous savions déjà de vous dans les étapes suivantes. Vérifiez ces informations, complétez ce qui manque, puis envoyez votre demande — une équipe la validera avant tout enregistrement définitif.`
+              {greetingName
+                ? `Bonjour ${greetingName} ! Nous avons retrouvé votre fiche et pré-rempli tout ce que nous savions déjà de vous dans les étapes suivantes. Vérifiez ces informations, complétez ce qui manque, puis envoyez votre demande — une équipe la validera avant tout enregistrement définitif.`
                 : "Nous avons retrouvé votre fiche : les champs déjà connus ont été pré-remplis ci-après. Vérifiez-les et complétez le reste."}
             </p>
           )}
