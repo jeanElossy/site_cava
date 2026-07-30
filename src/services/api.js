@@ -89,6 +89,45 @@ export const medias = collection("medias");
 export const members = collection("members");
 export const announcements = collection("announcements");
 export const testimonials = collection("testimonials");
+export const flocks = collection("flocks");
+
+// ---------------------------------------------------------------
+// Inscriptions et mises à jour de fiche membre
+// ---------------------------------------------------------------
+export const memberSubmissions = {
+  // Écriture PUBLIQUE : le formulaire d'inscription du site.
+  submit: async (payload) =>
+    request("/api/submissions", {
+      method: "POST",
+      body: payload,
+    }),
+
+  list: async (params = {}) =>
+    requestWithMeta(
+      `/api/admin/submissions?${new URLSearchParams({
+        limit: 50,
+        ...params,
+      })}`,
+      { auth: true }
+    ),
+
+  get: async (id) =>
+    request(`/api/admin/submissions/${id}`, { auth: true }),
+
+  approve: async (id, overrides) =>
+    request(`/api/admin/submissions/${id}/approve`, {
+      method: "POST",
+      body: { overrides },
+      auth: true,
+    }),
+
+  reject: async (id, reason) =>
+    request(`/api/admin/submissions/${id}/reject`, {
+      method: "POST",
+      body: { reason },
+      auth: true,
+    }),
+};
 
 // ---------------------------------------------------------------
 // Boîte de réception
