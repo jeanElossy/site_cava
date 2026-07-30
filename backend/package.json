@@ -10,7 +10,8 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "seed": "node src/scripts/seed.js",
-    "restore:ministeres": "node src/scripts/restore-ministries.js"
+    "restore:ministeres": "node src/scripts/restore-ministries.js",
+    "test": "node --test"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
