@@ -1,5 +1,9 @@
 @use "../../styles/admin" as *;
 
+// Largeur repliée : juste assez pour une icône centrée et son
+// padding, pas de recherche du minimum absolu.
+$admin-rail-collapsed-width: 84px;
+
 // PIÈGE PROJET : une seule feuille de style pour tout le site. Chaque
 // règle est imbriquée sous `.admin-shell`, et aucun nom générique
 // (.rail, .brand, .avatar, .link…) n'existe à la racine de ce fichier.
@@ -36,6 +40,17 @@
     // Le rail défile indépendamment du contenu si la navigation
     // s'allonge.
     overflow-y: auto;
+
+    // Repli/dépli : seule la largeur change, en douceur. `overflow-x`
+    // masque le texte qui déborderait pendant que la barre rétrécit
+    // plutôt que de le laisser dépasser sur le contenu.
+    overflow-x: hidden;
+
+    transition: width 0.28s ease;
+  }
+
+  &__rail--collapsed {
+    width: $admin-rail-collapsed-width;
   }
 
   &__brand {
@@ -98,6 +113,57 @@
       width: 18px;
       height: 18px;
     }
+  }
+
+  // Poignée de repli/dépli, ancrée sur la couture entre le rail et le
+  // contenu — hors du flux de `&__brand`, pour ne jamais se
+  // retrouver à l'étroit quand la barre est repliée à 84px.
+  &__collapse-toggle {
+    position: absolute;
+    top: 28px;
+    left: $admin-rail-width - 14px;
+    z-index: 5;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 28px;
+    height: 28px;
+
+    border: 1px solid $admin-border;
+    border-radius: 50%;
+
+    background: $admin-surface;
+    box-shadow: $admin-shadow-sm;
+
+    color: $admin-ink-soft;
+
+    cursor: pointer;
+
+    transition: left 0.28s ease, background $admin-ease, color $admin-ease;
+
+    svg {
+      display: block;
+
+      width: 14px;
+      height: 14px;
+    }
+
+    &:hover {
+      background: $admin-surface-hover;
+
+      color: $admin-ink;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $admin-accent;
+      outline-offset: 2px;
+    }
+  }
+
+  &__rail--collapsed &__collapse-toggle {
+    left: $admin-rail-collapsed-width - 14px;
   }
 
   &__nav {
@@ -209,6 +275,28 @@
 
       font-size: 0.83rem;
     }
+  }
+
+  &__link-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 20px;
+    height: 20px;
+
+    margin-left: auto;
+    padding: 0 6px;
+
+    border-radius: 999px;
+
+    background: $admin-danger;
+
+    color: #fff;
+
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
   }
 
   &__rail-foot {
@@ -401,6 +489,52 @@
     backdrop-filter: blur(2px);
   }
 
+  // ---------------- Repli ----------------
+  //
+  // Icônes seules : le libellé disparaît d'un coup pendant que la
+  // largeur du rail, elle, s'anime — un texte qui se réduirait en
+  // fondu séparément serait plus décoratif que lisible. Chaque lien
+  // garde son `title` (voir AdminLayout.jsx) comme équivalent au
+  // survol.
+  &__rail--collapsed {
+    .admin-shell__brand {
+      justify-content: center;
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+
+    .admin-shell__brand > div {
+      display: none;
+    }
+
+    .admin-shell__group-title {
+      display: none;
+    }
+
+    .admin-shell__link {
+      justify-content: center;
+      padding: 12px 0;
+    }
+
+    .admin-shell__link span,
+    .admin-shell__link-badge {
+      display: none;
+    }
+
+    .admin-shell__link--active::before {
+      left: 0;
+    }
+
+    .admin-shell__rail-foot .admin-api-status {
+      justify-content: center;
+      padding-left: 0;
+    }
+
+    .admin-api-status span:not(.admin-api-status__dot) {
+      display: none;
+    }
+  }
+
   // ---------------- Adaptation ----------------
 
   @media (max-width: 1024px) {
@@ -419,11 +553,22 @@
       &--open {
         transform: translateX(0);
       }
+
+      // Le repli n'a de sens que pour le rail ancré au bureau : en
+      // tiroir mobile, il reste toujours pleine largeur, quelle que
+      // soit la préférence mémorisée.
+      &--collapsed {
+        width: $admin-rail-width;
+      }
     }
 
     &__rail-close,
     &__burger {
       display: block;
+    }
+
+    &__collapse-toggle {
+      display: none;
     }
 
     &__scrim {
