@@ -1,9 +1,12 @@
-import { churchLabel, GENDERS, MARITAL_STATUSES } from "./data";
+import { churchLabelFrom, GENDERS, MARITAL_STATUSES } from "./data";
 
 const labelFor = (list, value) =>
   list.find((item) => item.value === value)?.label ?? "—";
 
-const StepSummary = ({ state }) => (
+// `churchOptions` est chargé une seule fois par l'orchestrateur
+// (index.jsx) et transmis en prop, comme pour StepIdentity — pas de
+// second appel réseau ici.
+const StepSummary = ({ state, churchOptions }) => (
   <div className="step-panel">
     <div className="summary-block">
       <h3>Votre demande</h3>
@@ -27,7 +30,7 @@ const StepSummary = ({ state }) => (
 
         <div>
           <dt>Église</dt>
-          <dd>{churchLabel(state.data.church)}</dd>
+          <dd>{churchLabelFrom(churchOptions, state.data.church)}</dd>
         </div>
 
         <div>

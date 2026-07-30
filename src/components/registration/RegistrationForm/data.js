@@ -5,21 +5,16 @@
 
 import { normalizeRegistrationNumber } from "../../../utils/registrationNumber";
 
-// Les 5 églises du réseau ne changent pratiquement jamais : liste
-// codée en dur, comme MEMBER_ROLES dans CommunityAdmin.jsx. À adapter
-// ici si les noms réels des églises diffèrent de ces libellés
-// génériques.
-export const CHURCHES = [
-  { value: 1, label: "Église 1" },
-  { value: 2, label: "Église 2" },
-  { value: 3, label: "Église 3" },
-  { value: 4, label: "Église 4" },
-  { value: 5, label: "Église 5" },
-];
-
-export const churchLabel = (value) =>
-  CHURCHES.find((church) => church.value === Number(value))?.label ??
-  `Église ${value}`;
+// Les églises sont désormais gérées depuis l'administration (ressource
+// `churches`, voir services/api.js) : il n'y a plus de liste codée en
+// dur ici. Les écrans qui en ont besoin chargent la liste via l'API
+// (`churches.list()` côté public, `churches.listAdmin()` côté admin)
+// et résolvent le libellé à partir du résultat — voir le commentaire
+// dans RegistrationForm/index.jsx pour l'endroit où ce chargement se
+// fait pour le tunnel d'inscription.
+export const churchLabelFrom = (churchOptions, value) =>
+  churchOptions.find((church) => Number(church.value) === Number(value))
+    ?.label ?? `Église ${value}`;
 
 export const GENDERS = [
   { value: "homme", label: "Homme" },

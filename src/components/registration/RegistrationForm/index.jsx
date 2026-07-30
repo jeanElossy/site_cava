@@ -18,7 +18,8 @@ import {
 
 import { useRegistration } from "../../../context/RegistrationContext";
 import { steps, stepMeta, validateStep, buildSubmissionPayload } from "./data";
-import { memberSubmissions } from "../../../services/api";
+import { memberSubmissions, churches as churchesApi } from "../../../services/api";
+import useAsyncData from "../../../hooks/useAsyncData";
 
 import StepLookup from "./StepLookup";
 import StepIdentity from "./StepIdentity";
@@ -46,6 +47,17 @@ const STEP_ICONS = [
 
 const RegistrationForm = () => {
   const { state, dispatch } = useRegistration();
+
+  // Liste des églises chargée UNE SEULE FOIS ici plutôt que dans
+  // chaque étape qui en a besoin (StepIdentity pour le select,
+  // StepSummary pour le récapitulatif) : les deux consomment la même
+  // prop `churchOptions` au lieu de refaire chacune un appel réseau
+  // vers /api/churches.
+  const { data: churchList } = useAsyncData(churchesApi.list);
+  const churchOptions = (churchList ?? []).map((church) => ({
+    value: church.number,
+    label: church.name,
+  }));
 
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
@@ -190,7 +202,11 @@ const RegistrationForm = () => {
               />
             )}
             {step === 1 && (
-              <StepIdentity state={state} updateData={updateData} />
+              <StepIdentity
+                state={state}
+                updateData={updateData}
+                churchOptions={churchOptions}
+              />
             )}
             {step === 2 && (
               <StepContact state={state} updateData={updateData} />
@@ -204,7 +220,9 @@ const RegistrationForm = () => {
             {step === 5 && (
               <StepEngagement state={state} updateData={updateData} />
             )}
-            {step === 6 && <StepSummary state={state} />}
+            {step === 6 && (
+              <StepSummary state={state} churchOptions={churchOptions} />
+            )}
           </motion.div>
         </AnimatePresence>
 

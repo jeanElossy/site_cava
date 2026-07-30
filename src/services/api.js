@@ -90,6 +90,7 @@ export const members = collection("members");
 export const announcements = collection("announcements");
 export const testimonials = collection("testimonials");
 export const flocks = collection("flocks");
+export const churches = collection("churches");
 
 // ---------------------------------------------------------------
 // Inscriptions et mises à jour de fiche membre

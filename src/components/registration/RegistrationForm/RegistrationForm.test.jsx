@@ -8,9 +8,12 @@ import RegistrationForm from "./index";
 // église est choisie. Ce test ne va jamais jusque-là : la simple
 // présence du composant dans l'arbre suffit à déclencher l'appel côté
 // `StepLookup` -> `StepIdentity` au changement d'étape, donc on le
-// neutralise pour ne pas dépendre du réseau.
+// neutralise pour ne pas dépendre du réseau. L'orchestrateur charge
+// aussi la liste des églises dès le montage (voir index.jsx) : il faut
+// donc aussi neutraliser `churches.list`.
 vi.mock("../../../services/api", () => ({
   flocks: { list: vi.fn().mockResolvedValue([]) },
+  churches: { list: vi.fn().mockResolvedValue([]) },
   memberSubmissions: { submit: vi.fn().mockResolvedValue({ received: true }) },
 }));
 

@@ -2,14 +2,16 @@ import { useEffect, useState } from "react";
 
 import { CheckCircle2, XCircle } from "lucide-react";
 
-import { memberSubmissions, flocks as flocksApi } from "../../../services/api";
+import {
+  memberSubmissions,
+  flocks as flocksApi,
+  churches as churchesApi,
+} from "../../../services/api";
 
 import useAsyncData from "../../../hooks/useAsyncData";
 
 import AdminModal from "../AdminModal";
 import { AdminEmpty, AdminError, AdminLoading } from "../AdminFeedback";
-
-import { churchLabel } from "../../registration/RegistrationForm/data";
 
 import "./SubmissionsPanel.scss";
 
@@ -37,10 +39,10 @@ const KIND_LABELS = { new: "Nouveau", update: "Mise à jour" };
 
 const EDITABLE_FIELDS = ["firstName", "lastName", "phone", "email"];
 
-const formatValue = (field, value, flockNames) => {
+const formatValue = (field, value, flockNames, churchNames) => {
   if (value === undefined || value === null || value === "") return "—";
 
-  if (field === "church") return churchLabel(value);
+  if (field === "church") return churchNames[value] ?? `Église ${value}`;
   if (field === "flock") return flockNames[value] ?? String(value);
   if (Array.isArray(value)) return value.join(", ") || "—";
   if (typeof value === "object") return JSON.stringify(value);
@@ -48,13 +50,13 @@ const formatValue = (field, value, flockNames) => {
   return String(value);
 };
 
-const diffFields = (before = {}, after = {}, flockNames) =>
+const diffFields = (before = {}, after = {}, flockNames, churchNames) =>
   Object.keys(FIELD_LABELS)
     .map((field) => ({
       field,
       label: FIELD_LABELS[field],
-      before: formatValue(field, before[field], flockNames),
-      after: formatValue(field, after[field], flockNames),
+      before: formatValue(field, before[field], flockNames, churchNames),
+      after: formatValue(field, after[field], flockNames, churchNames),
     }))
     .filter((row) => row.before !== row.after);
 
@@ -64,6 +66,7 @@ const SubmissionsPanel = () => {
   );
 
   const [flockNames, setFlockNames] = useState({});
+  const [churchNames, setChurchNames] = useState({});
   const [selected, setSelected] = useState(null);
   const [detail, setDetail] = useState(null);
   const [detailError, setDetailError] = useState("");
@@ -84,6 +87,19 @@ const SubmissionsPanel = () => {
         setFlockNames(map);
       })
       .catch(() => setFlockNames({}));
+  }, []);
+
+  useEffect(() => {
+    churchesApi
+      .listAdmin({ limit: 200 })
+      .then((items) => {
+        const map = {};
+
+        for (const item of items) map[item.number] = item.name;
+
+        setChurchNames(map);
+      })
+      .catch(() => setChurchNames({}));
   }, []);
 
   const items = data?.items ?? [];
@@ -153,7 +169,12 @@ const SubmissionsPanel = () => {
 
   const rows = detail
     ? isUpdate && detail.currentMember
-      ? diffFields(detail.currentMember, detail.submission.data, flockNames)
+      ? diffFields(
+          detail.currentMember,
+          detail.submission.data,
+          flockNames,
+          churchNames
+        )
       : Object.keys(FIELD_LABELS).map((field) => ({
           field,
           label: FIELD_LABELS[field],
@@ -161,7 +182,8 @@ const SubmissionsPanel = () => {
           after: formatValue(
             field,
             detail.submission.data[field],
-            flockNames
+            flockNames,
+            churchNames
           ),
         }))
     : [];

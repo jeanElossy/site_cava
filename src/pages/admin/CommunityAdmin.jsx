@@ -6,6 +6,7 @@ import {
   announcements,
   members,
   flocks as flocksApi,
+  churches as churchesApi,
 } from "../../services/api";
 import { apiBaseUrl, getToken } from "../../services/http";
 
@@ -15,7 +16,7 @@ import useAsyncData from "../../hooks/useAsyncData";
 import AdminCrud from "../../components/admin/AdminCrud";
 import SubmissionsPanel from "../../components/admin/SubmissionsPanel";
 
-import { CHURCHES, churchLabel, GENDERS, MARITAL_STATUSES } from "../../components/registration/RegistrationForm/data";
+import { churchLabelFrom, GENDERS, MARITAL_STATUSES } from "../../components/registration/RegistrationForm/data";
 import {
   formatRegistrationNumber,
   compareByRegistrationOrder,
@@ -63,7 +64,11 @@ const FLOCK_STATUS_LABELS = Object.fromEntries(
   FLOCK_STATUSES.map((item) => [item.value, item.label])
 );
 
-const flockFields = [
+// Les champs/colonnes qui dépendent de la liste des églises (chargée
+// depuis l'API) sont construits par une fonction plutôt que déclarés
+// une fois pour toutes au niveau du module — voir `buildMemberFields`
+// pour la même raison.
+const buildFlockFields = (churchSelectOptions) => [
   {
     name: "code",
     label: "Code (2 lettres)",
@@ -76,10 +81,7 @@ const flockFields = [
     label: "Église",
     type: "select",
     required: true,
-    options: CHURCHES.map((church) => ({
-      value: String(church.value),
-      label: church.label,
-    })),
+    options: churchSelectOptions,
   },
   {
     name: "status",
@@ -89,13 +91,13 @@ const flockFields = [
   },
 ];
 
-const flockColumns = [
+const buildFlockColumns = (churchOptions) => [
   { key: "code", label: "Code" },
   { key: "name", label: "Nom" },
   {
     key: "church",
     label: "Église",
-    render: (item) => churchLabel(item.church),
+    render: (item) => churchLabelFrom(churchOptions, item.church),
   },
   {
     key: "status",
@@ -122,7 +124,7 @@ const flockToPayload = (values) => ({
 // un prénom ET un nom, tous deux obligatoires. L'enregistrement
 // echouait donc systématiquement sur « Les données envoyées sont
 // invalides ».
-const buildMemberFields = (flockOptions) => [
+const buildMemberFields = (flockOptions, churchSelectOptions) => [
   {
     name: "firstName",
     label: "Prénom",
@@ -177,10 +179,7 @@ const buildMemberFields = (flockOptions) => [
     name: "church",
     label: "Église",
     type: "select",
-    options: CHURCHES.map((church) => ({
-      value: String(church.value),
-      label: church.label,
-    })),
+    options: churchSelectOptions,
   },
   {
     name: "flock",
@@ -453,7 +452,7 @@ const announcementColumns = [
   },
 ];
 
-const MemberExportButtons = ({ flockOptions }) => {
+const MemberExportButtons = ({ flockOptions, churchOptions }) => {
   const [filters, setFilters] = useState({ church: "", flock: "", status: "" });
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -508,7 +507,7 @@ const MemberExportButtons = ({ flockOptions }) => {
         }
       >
         <option value="">Toutes les églises</option>
-        {CHURCHES.map((church) => (
+        {churchOptions.map((church) => (
           <option key={church.value} value={church.value}>
             {church.label}
           </option>
@@ -565,8 +564,58 @@ const TABS = [
   { id: "announcements", label: "Annonces" },
   { id: "members", label: "Membres" },
   { id: "flocks", label: "Bergeries" },
+  { id: "churches", label: "Églises" },
   { id: "submissions", label: "Inscriptions" },
 ];
+
+const CHURCH_STATUSES = [
+  { value: "published", label: "Active" },
+  { value: "draft", label: "Brouillon" },
+  { value: "archived", label: "Archivée" },
+];
+
+const churchFields = [
+  {
+    name: "number",
+    label: "Numéro",
+    type: "number",
+    required: true,
+    help: "Fait partie du format du matricule des membres (ex. 1OL16005E). Le changer après coup désynchronise les matricules déjà attribués à cette église : à ne modifier qu'en toute connaissance de cause.",
+  },
+  { name: "name", label: "Nom de l'église", required: true },
+  {
+    name: "status",
+    label: "Statut",
+    type: "select",
+    options: CHURCH_STATUSES,
+  },
+];
+
+const CHURCH_STATUS_LABELS = Object.fromEntries(
+  CHURCH_STATUSES.map((item) => [item.value, item.label])
+);
+
+const churchColumns = [
+  { key: "number", label: "Numéro" },
+  { key: "name", label: "Nom" },
+  {
+    key: "status",
+    label: "Statut",
+    render: (item) => CHURCH_STATUS_LABELS[item.status] ?? item.status,
+  },
+];
+
+const churchToValues = (item) => ({
+  number: item?.number ?? "",
+  name: item?.name ?? "",
+  status: item?.status ?? "published",
+});
+
+const churchToPayload = (values) => ({
+  number: Number(values.number),
+  name: values.name.trim(),
+  status: values.status || "published",
+});
 
 const CommunityAdmin = () => {
   usePageMeta({
@@ -578,13 +627,29 @@ const CommunityAdmin = () => {
   const [tab, setTab] = useState("announcements");
 
   const { data: flockList } = useAsyncData(flocksApi.listAdmin);
+  const { data: churchList } = useAsyncData(churchesApi.listAdmin);
+
+  // Options « brutes » (valeur numérique) pour la résolution d'un
+  // libellé, et variante en chaîne pour peupler les `<select>` des
+  // formulaires — même distinction que pour `flockOptions` ci-dessous.
+  const churchOptions = (churchList ?? []).map((church) => ({
+    value: church.number,
+    label: church.name,
+  }));
+
+  const churchSelectOptions = churchOptions.map((church) => ({
+    value: String(church.value),
+    label: church.label,
+  }));
 
   const flockOptions = (flockList ?? []).map((flock) => ({
     value: flock.id,
-    label: `${flock.name} (${churchLabel(flock.church)})`,
+    label: `${flock.name} (${churchLabelFrom(churchOptions, flock.church)})`,
   }));
 
-  const memberFields = buildMemberFields(flockOptions);
+  const memberFields = buildMemberFields(flockOptions, churchSelectOptions);
+  const flockFields = buildFlockFields(churchSelectOptions);
+  const flockColumns = buildFlockColumns(churchOptions);
 
   return (
     <div className="admin-community">
@@ -666,7 +731,10 @@ const CommunityAdmin = () => {
       >
         {tab === "members" && (
           <>
-            <MemberExportButtons flockOptions={flockOptions} />
+            <MemberExportButtons
+              flockOptions={flockOptions}
+              churchOptions={churchSelectOptions}
+            />
 
             <AdminCrud
               resource={members}
@@ -715,6 +783,34 @@ const CommunityAdmin = () => {
             }}
             toValues={flockToValues}
             toPayload={flockToPayload}
+          />
+        )}
+      </div>
+
+      <div
+        role="tabpanel"
+        id="admin-community-panel-churches"
+        aria-labelledby="admin-community-tab-churches"
+        hidden={tab !== "churches"}
+      >
+        {tab === "churches" && (
+          <AdminCrud
+            resource={churchesApi}
+            fields={churchFields}
+            columns={churchColumns}
+            labels={{
+              singular: "une église",
+              plural: "Églises",
+              add: "Ajouter une église",
+              empty:
+                "Aucune église enregistrée. Elles alimentent la liste déroulante du tunnel d'inscription et de la fiche membre.",
+              loadingSuffix: "des églises",
+              description:
+                "Une seule église existe aujourd'hui ; les numéros 2 à 5 sont réservés à de futures ouvertures.",
+              titleKey: "name",
+            }}
+            toValues={churchToValues}
+            toPayload={churchToPayload}
           />
         )}
       </div>

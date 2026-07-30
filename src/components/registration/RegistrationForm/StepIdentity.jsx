@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 
 import { flocks as flocksApi } from "../../../services/api";
-import { CHURCHES } from "./data";
 
-const StepIdentity = ({ state, updateData }) => {
+// La liste des églises est chargée UNE SEULE FOIS par l'orchestrateur
+// (index.jsx) et transmise en prop — voir le commentaire à cet endroit
+// pour la raison de ce choix (éviter un fetch redondant par étape).
+const StepIdentity = ({ state, updateData, churchOptions }) => {
   const [flockOptions, setFlockOptions] = useState([]);
   const [loadingFlocks, setLoadingFlocks] = useState(false);
 
@@ -74,7 +76,7 @@ const StepIdentity = ({ state, updateData }) => {
           }
         >
           <option value="">—</option>
-          {CHURCHES.map((church) => (
+          {churchOptions.map((church) => (
             <option key={church.value} value={church.value}>
               {church.label}
             </option>
