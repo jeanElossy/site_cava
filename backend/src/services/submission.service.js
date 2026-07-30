@@ -45,6 +45,56 @@ const pickAllowed = (payload = {}) =>
     return accumulator;
   }, {});
 
+// Compare deux noms sans tenir compte des accents ni de la casse
+// ("Liadé" doit correspondre à "liade").
+//
+// La plage de marques diacritiques combinantes (U+0300 à U+036F) est
+// construite à partir des codes numériques plutôt qu'écrite en
+// caractères littéraux dans le code source, pour rester lisible et
+// insensible à l'encodage de l'éditeur.
+const DIACRITICS = new RegExp(
+  `[${String.fromCharCode(0x0300)}-${String.fromCharCode(0x036f)}]`,
+  "g"
+);
+
+const stripAccents = (value) =>
+  String(value ?? "")
+    .normalize("NFD")
+    .replace(DIACRITICS, "")
+    .trim()
+    .toLowerCase();
+
+const sameName = (a, b) => stripAccents(a) === stripAccents(b);
+
+// ---- Pré-remplissage public (ancien membre) ------------------------
+//
+// Le matricule seul ne suffit pas : c'est un identifiant séquentiel,
+// donc partiellement devinable (voir registrationNumber.service.js).
+// Exiger EN PLUS le nom de famille exact avant de renvoyer quoi que ce
+// soit ferme la porte à un simple parcours des ~999 matricules d'une
+// église pour collecter des fiches au hasard.
+//
+// La réponse est volontairement IDENTIQUE (`{ data: null }`) que le
+// matricule n'existe pas ou que le nom ne corresponde pas : distinguer
+// les deux cas transformerait ce point d'entrée en outil de
+// vérification d'existence d'un matricule.
+export const lookup = async ({ registrationNumber, lastName }) => {
+  const normalized = normalizeRegistrationNumber(registrationNumber);
+  const cleanLastName = String(lastName ?? "").trim();
+
+  if (!normalized || !cleanLastName) return { data: null };
+
+  const member = await Member.findOne({
+    registrationNumber: normalized,
+  }).lean();
+
+  if (!member || !sameName(member.lastName, cleanLastName)) {
+    return { data: null };
+  }
+
+  return { data: pickAllowed(member) };
+};
+
 // ---- Écriture publique -------------------------------------------
 
 export const submit = async ({ type, registrationNumber, data }) => {

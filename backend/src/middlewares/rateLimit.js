@@ -154,3 +154,27 @@ export const submissionLimiter = rateLimit({
     });
   },
 });
+
+// Recherche d'un membre existant par matricule + nom, pour
+// pré-remplir le formulaire.
+//
+// Plafond volontairement bas et fenêtre longue : un matricule est un
+// identifiant séquentiel sur 3 chiffres (voir
+// registrationNumber.service.js), donc partiellement devinable. Cette
+// route est le seul point d'entrée qui pourrait servir à parcourir
+// les ~999 matricules d'une église pour collecter des noms au hasard
+// — la limiter sévèrement, en plus de l'exigence du nom exact déjà
+// posée par le service, ferme cette porte.
+export const lookupLimiter = rateLimit({
+  ...base,
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  handler: (_req, res) => {
+    res.status(429).json({
+      success: false,
+      message:
+        "Trop de tentatives de recherche. Merci de patienter avant de réessayer, ou continuez à remplir le formulaire manuellement.",
+      error: { status: 429 },
+    });
+  },
+});

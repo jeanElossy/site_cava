@@ -41,6 +41,7 @@ import {
   contactLimiter,
   donationLimiter,
   submissionLimiter,
+  lookupLimiter,
 } from "../middlewares/rateLimit.js";
 
 import QRCode from "qrcode";
@@ -372,6 +373,23 @@ export const buildRoutes = () => {
         message: "Votre demande a été transmise à l'équipe.",
         data: result,
       });
+    })
+  );
+
+  // Pré-remplissage pour un membre déjà informatisé : matricule + nom
+  // de famille exact requis (voir submission.service.js#lookup). La
+  // réponse est neutre dans tous les cas d'échec, pour ne pas servir
+  // de vérificateur d'existence de matricule.
+  api.post(
+    "/submissions/lookup",
+    lookupLimiter,
+    asyncHandler(async (req, res) => {
+      const result = await submissionService.lookup({
+        registrationNumber: req.body?.registrationNumber,
+        lastName: req.body?.lastName,
+      });
+
+      sendSuccess(res, { data: result.data });
     })
   );
 
