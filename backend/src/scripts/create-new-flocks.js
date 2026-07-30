@@ -9,16 +9,20 @@ import Flock from "../models/Flock.js";
 // rename-flocks.js). Ce sont des bergeries nouvellement créées,
 // destinées à accueillir les prochains membres inscrits.
 //
+// GI="El Gibbor" a fait partie de cette liste un temps, mais a été
+// retirée : voir fix-flocks-ezer-ori.js, qui a renommé ce document
+// (resté sans membre) en EZ="Yahvé Ézer" et créé OR="Yahvé Ori" à la
+// demande du client. Ne pas la remettre ici, sous peine de recréer par
+// erreur une bergerie qu'on vient précisément de supprimer si ce
+// script est rejoué.
+//
 // Idempotent : upsert par (église, code), rejouable sans risque.
 //
 // Usage : node src/scripts/create-new-flocks.js
 
 const CHURCH = 1;
 
-const NEW_FLOCKS = [
-  { code: "SA", name: "Yahvé Sabaoth" },
-  { code: "GI", name: "El Gibbor" },
-];
+const NEW_FLOCKS = [{ code: "SA", name: "Yahvé Sabaoth" }];
 
 const run = async () => {
   validateEnv();
