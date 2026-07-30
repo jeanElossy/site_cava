@@ -41,11 +41,7 @@ $admin-rail-collapsed-width: 84px;
     // s'allonge.
     overflow-y: auto;
 
-    // Repli/dépli : seule la largeur change, en douceur. `overflow-x`
-    // masque le texte qui déborderait pendant que la barre rétrécit
-    // plutôt que de le laisser dépasser sur le contenu.
-    overflow-x: hidden;
-
+    // Repli/dépli : seule la largeur change, en douceur.
     transition: width 0.28s ease;
   }
 
@@ -115,55 +111,47 @@ $admin-rail-collapsed-width: 84px;
     }
   }
 
-  // Poignée de repli/dépli, ancrée sur la couture entre le rail et le
-  // contenu — hors du flux de `&__brand`, pour ne jamais se
-  // retrouver à l'étroit quand la barre est repliée à 84px.
+  // Repli/dépli : un bouton de plus dans la ligne `&__brand`, au même
+  // niveau que `&__rail-close` — pas de positionnement à cheval sur le
+  // bord du rail (ça se faisait clipper par le `overflow` du rail, ou
+  // passer sous l'en-tête sticky du contenu : invisible ET incliquable
+  // dans les deux cas).
   &__collapse-toggle {
-    position: absolute;
-    top: 28px;
-    left: $admin-rail-width - 14px;
-    z-index: 5;
-
     display: flex;
     align-items: center;
     justify-content: center;
 
-    width: 28px;
-    height: 28px;
+    margin-left: auto;
+    padding: 6px;
 
-    border: 1px solid $admin-border;
-    border-radius: 50%;
+    border: 0;
+    border-radius: $admin-radius-sm;
 
-    background: $admin-surface;
-    box-shadow: $admin-shadow-sm;
+    background: rgba(255, 255, 255, 0.07);
 
-    color: $admin-ink-soft;
+    color: $admin-rail-ink;
 
     cursor: pointer;
 
-    transition: left 0.28s ease, background $admin-ease, color $admin-ease;
+    transition: background $admin-ease, color $admin-ease;
 
     svg {
       display: block;
 
-      width: 14px;
-      height: 14px;
+      width: 18px;
+      height: 18px;
     }
 
     &:hover {
-      background: $admin-surface-hover;
+      background: rgba(255, 255, 255, 0.14);
 
-      color: $admin-ink;
+      color: #fff;
     }
 
     &:focus-visible {
-      outline: 2px solid $admin-accent;
+      outline: 2px solid $secondary;
       outline-offset: 2px;
     }
-  }
-
-  &__rail--collapsed &__collapse-toggle {
-    left: $admin-rail-collapsed-width - 14px;
   }
 
   &__nav {
@@ -503,6 +491,7 @@ $admin-rail-collapsed-width: 84px;
       padding-right: 14px;
     }
 
+    .admin-shell__brand > img,
     .admin-shell__brand > div {
       display: none;
     }
