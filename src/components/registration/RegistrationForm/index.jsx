@@ -1,9 +1,23 @@
 import { useState } from "react";
 
-import { FaArrowRight, FaArrowLeft, FaCheck } from "react-icons/fa";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  FaArrowRight,
+  FaArrowLeft,
+  FaCheck,
+} from "react-icons/fa";
+import {
+  IdCard,
+  UserRound,
+  Phone,
+  HeartHandshake,
+  BookOpenText,
+  HandHeart,
+  ClipboardCheck,
+} from "lucide-react";
 
 import { useRegistration } from "../../../context/RegistrationContext";
-import { steps, validateStep, buildSubmissionPayload } from "./data";
+import { steps, stepMeta, validateStep, buildSubmissionPayload } from "./data";
 import { memberSubmissions } from "../../../services/api";
 
 import StepLookup from "./StepLookup";
@@ -16,6 +30,20 @@ import StepSummary from "./StepSummary";
 
 import "./RegistrationForm.scss";
 
+// Une icône par étape, dans l'ordre de `steps`/`stepMeta` — le seul
+// endroit du tunnel où framework JSX et données se rejoignent, d'où
+// sa présence ici plutôt que dans data.js (gardé sans JSX, comme
+// ContributionForm/data.js).
+const STEP_ICONS = [
+  IdCard,
+  UserRound,
+  Phone,
+  HeartHandshake,
+  BookOpenText,
+  HandHeart,
+  ClipboardCheck,
+];
+
 const RegistrationForm = () => {
   const { state, dispatch } = useRegistration();
 
@@ -25,6 +53,7 @@ const RegistrationForm = () => {
   const [submitted, setSubmitted] = useState(false);
 
   const isLastStep = step === steps.length - 1;
+  const StepIcon = STEP_ICONS[step];
 
   const clearError = () => {
     if (error) setError("");
@@ -81,13 +110,15 @@ const RegistrationForm = () => {
   if (submitted) {
     return (
       <section className="registration-form">
-        <div className="registration-form__done">
-          <FaCheck aria-hidden="true" />
-          <h2>Votre demande a été transmise à l&apos;équipe.</h2>
-          <p>
-            Un responsable vérifiera votre inscription. Vous
-            n&apos;avez rien d&apos;autre à faire pour le moment.
-          </p>
+        <div className="registration-form__container">
+          <div className="registration-form__done">
+            <FaCheck aria-hidden="true" />
+            <h2>Votre demande a été transmise à l&apos;équipe.</h2>
+            <p>
+              Un responsable vérifiera votre inscription. Vous
+              n&apos;avez rien d&apos;autre à faire pour le moment.
+            </p>
+          </div>
         </div>
       </section>
     );
@@ -96,6 +127,13 @@ const RegistrationForm = () => {
   return (
     <section className="registration-form" id="registration-form">
       <div className="registration-form__container">
+        <p className="registration-form__lead">
+          Sept courtes étapes suffisent. Vous pouvez revenir en arrière
+          à tout moment, et rien n&apos;est enregistré dans
+          l&apos;annuaire des membres tant qu&apos;un responsable
+          n&apos;a pas vérifié votre demande.
+        </p>
+
         <ol className="steps" aria-label="Étapes de l'inscription">
           {steps.map((label, index) => (
             <li
@@ -122,21 +160,53 @@ const RegistrationForm = () => {
           ))}
         </ol>
 
-        {step === 0 && <StepLookup state={state} dispatch={dispatch} />}
-        {step === 1 && (
-          <StepIdentity state={state} updateData={updateData} />
-        )}
-        {step === 2 && <StepContact state={state} updateData={updateData} />}
-        {step === 3 && (
-          <StepCivilStatus state={state} updateData={updateData} />
-        )}
-        {step === 4 && (
-          <StepSpiritualLife state={state} updateData={updateData} />
-        )}
-        {step === 5 && (
-          <StepEngagement state={state} updateData={updateData} />
-        )}
-        {step === 6 && <StepSummary state={state} />}
+        <div className="step-head">
+          <span className="step-head__icon">
+            <StepIcon aria-hidden="true" />
+          </span>
+
+          <div>
+            <h2>{stepMeta[step].title}</h2>
+            <p>{stepMeta[step].description}</p>
+          </div>
+        </div>
+
+        <AnimatePresence
+          mode="wait"
+          initial={false}
+        >
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -16 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+          >
+            {step === 0 && (
+              <StepLookup
+                state={state}
+                dispatch={dispatch}
+                updateData={updateData}
+              />
+            )}
+            {step === 1 && (
+              <StepIdentity state={state} updateData={updateData} />
+            )}
+            {step === 2 && (
+              <StepContact state={state} updateData={updateData} />
+            )}
+            {step === 3 && (
+              <StepCivilStatus state={state} updateData={updateData} />
+            )}
+            {step === 4 && (
+              <StepSpiritualLife state={state} updateData={updateData} />
+            )}
+            {step === 5 && (
+              <StepEngagement state={state} updateData={updateData} />
+            )}
+            {step === 6 && <StepSummary state={state} />}
+          </motion.div>
+        </AnimatePresence>
 
         {error && (
           <p className="step-error" role="alert">

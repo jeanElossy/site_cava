@@ -28,7 +28,12 @@ describe("RegistrationForm (orchestrateur)", () => {
     expect(
       screen.getByRole("list", { name: /étapes de l'inscription/i })
     ).toBeInTheDocument();
-    expect(screen.getByText("Votre situation")).toBeInTheDocument();
+    // "Votre situation" apparaît deux fois à l'écran (titre d'étape en
+    // <h2> ET label du choix nouveau/déjà-inscrit) : cibler le titre
+    // par son rôle lève l'ambiguïté.
+    expect(
+      screen.getByRole("heading", { name: "Votre situation" })
+    ).toBeInTheDocument();
   });
 
   it("bloque le passage à l'étape suivante quand un champ obligatoire manque", async () => {
