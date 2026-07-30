@@ -205,6 +205,21 @@ const buildMemberFields = (flockOptions) => [
   },
   { name: "childrenCount", label: "Nombre d'enfants", type: "number" },
   { name: "conversionYear", label: "Année de conversion", type: "number" },
+  {
+    name: "baptismWater",
+    type: "checkbox",
+    label: "Baptisé(e) d'eau",
+  },
+  {
+    name: "baptismWaterYear",
+    label: "Année du baptême d'eau",
+    type: "number",
+  },
+  {
+    name: "baptismHolySpirit",
+    type: "checkbox",
+    label: "Baptisé(e) du Saint-Esprit",
+  },
   { name: "previousChurch", label: "Église précédente" },
   { name: "profession", label: "Profession" },
   { name: "skills", label: "Compétences (séparées par des virgules)" },
