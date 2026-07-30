@@ -48,8 +48,11 @@ const RegistrationHero = () => {
               Votre identité dans l&apos;église
             </span>
 
+            {/* Forme du matricule, pas un exemple réel : un vrai
+                numéro pourrait coïncider avec celui d'un membre
+                existant et prêter à confusion. */}
             <span className="registration-hero__badge-code">
-              1OL 25-046 B
+              XXX XX-XXX X
             </span>
 
             <span className="registration-hero__badge-caption">
