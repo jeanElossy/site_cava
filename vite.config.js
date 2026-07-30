@@ -12,5 +12,10 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.js'],
+    // `backend/` a sa propre infrastructure de test (`node --test`),
+    // indépendante de celle-ci : sans cette exclusion, Vitest tente de
+    // regrouper ses fichiers `*.test.js` (qui importent `node:test`)
+    // dans le bundle du navigateur simulé et échoue au chargement.
+    exclude: ['node_modules/**', 'backend/**'],
   },
 })
