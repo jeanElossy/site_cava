@@ -6,6 +6,12 @@ import {
 
 const RegistrationContext = createContext();
 
+// Exporté pour les tests (voir RegistrationForm/data.test.js) et pour
+// RESET. Le composant du fichier reste RegistrationProvider ; ces
+// exports supplémentaires désactivent Fast Refresh sur ce fichier
+// précis, sans conséquence en dehors du confort de rechargement en
+// développement.
+// eslint-disable-next-line react-refresh/only-export-components
 export const initialState = {
   // "new" : jamais inscrit. "update" : porteur d'un matricule déjà
   // attribué (papier ou informatisé), qui vient compléter ou corriger
@@ -73,4 +79,5 @@ export const RegistrationProvider = ({ children }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useRegistration = () => useContext(RegistrationContext);
