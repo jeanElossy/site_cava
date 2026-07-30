@@ -9,6 +9,7 @@ import Testimonial from "../models/Testimonial.js";
 import Settings from "../models/Settings.js";
 import Message from "../models/Message.js";
 import Flock from "../models/Flock.js";
+import Church from "../models/Church.js";
 
 import { createCrudService } from "../services/crud.service.js";
 import * as authService from "../services/auth.service.js";
@@ -86,6 +87,13 @@ const flocks = createCrudService(Flock, {
   defaultSort: { church: 1, name: 1 },
   publicSort: { church: 1, name: 1 },
   searchableFields: ["name", "code"],
+});
+
+const churches = createCrudService(Church, {
+  label: "Église",
+  defaultSort: { number: 1 },
+  publicSort: { number: 1 },
+  searchableFields: ["name"],
 });
 
 const announcements = createCrudService(Announcement, {
@@ -335,6 +343,10 @@ export const buildRoutes = () => {
     publicBySlug: false,
     publicFilters: ["church"],
     auditResource: "flock",
+  });
+  mount("churches", churches, {
+    publicBySlug: false,
+    auditResource: "church",
   });
   mount("medias", medias, {
     publicBySlug: false,
