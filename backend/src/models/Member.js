@@ -157,6 +157,19 @@ const memberSchema = new mongoose.Schema(
       maxlength: 2000,
       select: false,
     },
+
+    // Verrou anti-énumération du pré-remplissage public par matricule
+    // — voir submission.service.js#lookup. Jamais exposés par une
+    // route publique ; purement internes au mécanisme de protection.
+    lookupFailedAttempts: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
+    lookupLockedUntil: {
+      type: Date,
+      select: false,
+    },
   },
   { timestamps: true }
 );

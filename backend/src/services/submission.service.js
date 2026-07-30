@@ -45,6 +45,36 @@ const pickAllowed = (payload = {}) =>
     return accumulator;
   }, {});
 
+// Champs renvoyés par le pré-remplissage public — ALLOWED_FIELDS
+// privé de `emergencyContact`. Le contact d'urgence est une PERSONNE
+// TIERCE (nom + téléphone) qui n'a donné aucun consentement à voir
+// ses coordonnées exposées à quiconque devine le matricule et le nom
+// du membre. Le membre le ressaisit lui-même si besoin ; ce n'est pas
+// le cas des autres champs, qui ne concernent que lui.
+const LOOKUP_FIELDS = ALLOWED_FIELDS.filter(
+  (field) => field !== "emergencyContact"
+);
+
+const pickLookup = (payload = {}) =>
+  LOOKUP_FIELDS.reduce((accumulator, field) => {
+    if (payload[field] !== undefined) accumulator[field] = payload[field];
+
+    return accumulator;
+  }, {});
+
+// Verrou anti-énumération, PAR MATRICULE plutôt que par adresse IP.
+//
+// La limitation de débit globale (lookupLimiter) borne le coût par IP,
+// mais un attaquant qui change d'IP la contourne entièrement — et le
+// nom de famille n'est pas toujours secret (certains apparaissent déjà
+// publiquement, ex. témoignages, responsables de ministères). Ce
+// verrou rend le coût d'une tentative sur UN matricule donné constant,
+// quelle que soit la diversité d'IP de l'attaquant : après quelques
+// échecs de nom sur ce matricule précis, il se bloque temporairement,
+// indépendamment de qui appelle.
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 60 * 60 * 1000;
+
 // Compare deux noms sans tenir compte des accents ni de la casse
 // ("Liadé" doit correspondre à "liade").
 //
@@ -75,24 +105,53 @@ const sameName = (a, b) => stripAccents(a) === stripAccents(b);
 // église pour collecter des fiches au hasard.
 //
 // La réponse est volontairement IDENTIQUE (`{ data: null }`) que le
-// matricule n'existe pas ou que le nom ne corresponde pas : distinguer
-// les deux cas transformerait ce point d'entrée en outil de
-// vérification d'existence d'un matricule.
+// matricule n'existe pas, que le nom ne corresponde pas, ou que le
+// matricule soit temporairement verrouillé : distinguer ces cas
+// transformerait ce point d'entrée en outil de vérification
+// d'existence d'un matricule.
 export const lookup = async ({ registrationNumber, lastName }) => {
   const normalized = normalizeRegistrationNumber(registrationNumber);
   const cleanLastName = String(lastName ?? "").trim();
 
   if (!normalized || !cleanLastName) return { data: null };
 
+  // `lookupFailedAttempts`/`lookupLockedUntil` portent `select: false`
+  // sur le schéma (jamais exposés par une route publique) : il faut
+  // les redemander explicitement ici, seul endroit qui a besoin de les
+  // lire et de les écrire.
   const member = await Member.findOne({
     registrationNumber: normalized,
-  }).lean();
+  }).select("+lookupFailedAttempts +lookupLockedUntil");
 
-  if (!member || !sameName(member.lastName, cleanLastName)) {
+  if (!member) return { data: null };
+
+  if (member.lookupLockedUntil && member.lookupLockedUntil > new Date()) {
     return { data: null };
   }
 
-  return { data: pickAllowed(member) };
+  if (!sameName(member.lastName, cleanLastName)) {
+    member.lookupFailedAttempts = (member.lookupFailedAttempts ?? 0) + 1;
+
+    if (member.lookupFailedAttempts >= MAX_FAILED_ATTEMPTS) {
+      member.lookupLockedUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
+      member.lookupFailedAttempts = 0;
+    }
+
+    await member.save();
+
+    return { data: null };
+  }
+
+  // Recherche aboutie : un compteur d'échecs laissé en place
+  // pénaliserait un membre légitime qui s'est trompé une fois avant de
+  // réussir.
+  if (member.lookupFailedAttempts) {
+    member.lookupFailedAttempts = 0;
+
+    await member.save();
+  }
+
+  return { data: pickLookup(member.toObject()) };
 };
 
 // ---- Écriture publique -------------------------------------------

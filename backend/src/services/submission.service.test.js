@@ -165,6 +165,132 @@ describe("submission.service (intégration MongoDB)", () => {
     assert.equal(stored.submittedRegistrationNumber, "1ZZ99001A");
   });
 
+  // ---- lookup() -------------------------------------------------------
+  //
+  // Comportement le plus sensible à une régression silencieuse : une
+  // réponse qui se mettrait à distinguer "matricule inconnu" de "nom
+  // erroné", ou qui recommencerait à renvoyer `emergencyContact`, ne
+  // casserait aucun autre test — d'où une couverture dédiée.
+
+  it("lookup() renvoie les données quand le matricule et le nom correspondent, accents et casse ignorés", async () => {
+    // Nom volontairement DIFFÉRENT de TEST_LAST_NAME (qui ne porte pas
+    // d'accent) pour tester réellement l'insensibilité aux accents —
+    // donc nettoyage explicite, hors de cleanupPeople().
+    const accented = await Member.create({
+      firstName: "Édouard",
+      lastName: "Gnézélé",
+      registrationNumber: "1ZZ99003C",
+      church: 1,
+      flock: testFlockChurch1._id,
+      phone: "0700000000",
+      emergencyContact: { name: "Un Proche", phone: "0788888888" },
+    });
+
+    try {
+      const result = await submissionService.lookup({
+        registrationNumber: "1zz 99-003 c",
+        lastName: "gnezele",
+      });
+
+      assert.equal(result.data.firstName, "Édouard");
+      assert.equal(result.data.phone, "0700000000");
+    } finally {
+      await Member.deleteOne({ _id: accented._id });
+    }
+  });
+
+  it("lookup() ne renvoie jamais le contact d'urgence (donnée d'un tiers non consentant)", async () => {
+    await Member.create({
+      firstName: "Édouard",
+      lastName: TEST_LAST_NAME,
+      registrationNumber: "1ZZ99004D",
+      church: 1,
+      flock: testFlockChurch1._id,
+      emergencyContact: { name: "Un Proche", phone: "0788888888" },
+    });
+
+    const result = await submissionService.lookup({
+      registrationNumber: "1ZZ99004D",
+      lastName: TEST_LAST_NAME,
+    });
+
+    assert.equal(result.data.emergencyContact, undefined);
+  });
+
+  it("lookup() ne renvoie rien si le nom ne correspond pas", async () => {
+    await Member.create({
+      firstName: "Jean",
+      lastName: TEST_LAST_NAME,
+      registrationNumber: "1ZZ99005E",
+      church: 1,
+      flock: testFlockChurch1._id,
+    });
+
+    const result = await submissionService.lookup({
+      registrationNumber: "1ZZ99005E",
+      lastName: "Nom Incorrect",
+    });
+
+    assert.equal(result.data, null);
+  });
+
+  it("lookup() ne renvoie rien pour un matricule inexistant", async () => {
+    const result = await submissionService.lookup({
+      registrationNumber: "1ZZ99998Y",
+      lastName: TEST_LAST_NAME,
+    });
+
+    assert.equal(result.data, null);
+  });
+
+  it("lookup() verrouille un matricule après 5 échecs de nom, même avec le bon nom ensuite, sans affecter un autre matricule", async () => {
+    const locked = await Member.create({
+      firstName: "Jean",
+      lastName: TEST_LAST_NAME,
+      registrationNumber: "1ZZ99006F",
+      church: 1,
+      flock: testFlockChurch1._id,
+    });
+
+    const other = await Member.create({
+      firstName: "Paul",
+      lastName: TEST_LAST_NAME,
+      registrationNumber: "1ZZ99007G",
+      church: 1,
+      flock: testFlockChurch1._id,
+    });
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      await submissionService.lookup({
+        registrationNumber: locked.registrationNumber,
+        lastName: "Nom Incorrect",
+      });
+    }
+
+    const stillLocked = await submissionService.lookup({
+      registrationNumber: locked.registrationNumber,
+      lastName: TEST_LAST_NAME,
+    });
+
+    assert.equal(
+      stillLocked.data,
+      null,
+      "le matricule verrouillé doit rester bloqué même avec le bon nom"
+    );
+
+    const unaffected = await submissionService.lookup({
+      registrationNumber: other.registrationNumber,
+      lastName: TEST_LAST_NAME,
+    });
+
+    assert.equal(
+      unaffected.data.firstName,
+      "Paul",
+      "un autre matricule ne doit pas être affecté par le verrou"
+    );
+  });
+
   // ---- listPending() / getById() ------------------------------------
 
   it("listPending() renvoie les soumissions en attente avec la métadonnée de pagination", async () => {
