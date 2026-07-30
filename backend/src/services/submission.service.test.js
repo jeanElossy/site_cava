@@ -364,6 +364,102 @@ describe("submission.service (intégration MongoDB)", () => {
     assert.ok(submission.processedAt);
   });
 
+  it("approve() refuse une nouvelle inscription si un membre du même nom existe déjà dans la même église (accents et casse ignorés)", async () => {
+    await Member.create({
+      firstName: "Doublon",
+      lastName: TEST_LAST_NAME,
+      church: 1,
+      flock: testFlockChurch1._id,
+    });
+
+    await submissionService.submit({
+      type: "new",
+      data: {
+        // Casse et accent différents de la fiche existante : la
+        // comparaison doit malgré tout les traiter comme identiques.
+        firstName: "dôublon",
+        lastName: TEST_LAST_NAME,
+        church: 1,
+        flock: String(testFlockChurch1._id),
+      },
+    });
+
+    const pending = await MemberSubmission.findOne({
+      "data.firstName": "dôublon",
+    }).lean();
+
+    const counterBefore = await RegistrationCounter.findOne({
+      church: 1,
+    }).lean();
+
+    await assert.rejects(
+      submissionService.approve(pending._id, {
+        user: { id: new mongoose.Types.ObjectId() },
+      }),
+      (error) => error.status === 409
+    );
+
+    const counterAfter = await RegistrationCounter.findOne({
+      church: 1,
+    }).lean();
+
+    assert.equal(
+      counterAfter?.lastNumber,
+      counterBefore?.lastNumber,
+      "un refus ne doit pas consommer de matricule"
+    );
+
+    const stillPending = await MemberSubmission.findById(pending._id).lean();
+    assert.equal(
+      stillPending.status,
+      "pending",
+      "la soumission refusée reste en attente, pas marquée traitée"
+    );
+
+    const membersCount = await Member.countDocuments({
+      lastName: TEST_LAST_NAME,
+    });
+    assert.equal(
+      membersCount,
+      1,
+      "aucun second membre ne doit avoir été créé"
+    );
+  });
+
+  it("approve() autorise le même nom dans une église différente", async () => {
+    await Member.create({
+      firstName: "MemeNom",
+      lastName: TEST_LAST_NAME,
+      church: 1,
+      flock: testFlockChurch1._id,
+    });
+
+    await submissionService.submit({
+      type: "new",
+      data: {
+        firstName: "MemeNom",
+        lastName: TEST_LAST_NAME,
+        church: 2,
+        flock: String(testFlockChurch2._id),
+      },
+    });
+
+    const pending = await MemberSubmission.findOne({
+      "data.church": 2,
+      "data.lastName": TEST_LAST_NAME,
+    }).lean();
+
+    try {
+      const { member } = await submissionService.approve(pending._id, {
+        user: { id: new mongoose.Types.ObjectId() },
+      });
+
+      assert.equal(member.church, 2);
+    } finally {
+      await RegistrationCounter.deleteOne({ church: 2 });
+    }
+  });
+
   it("approve() dérive `joinedAt` de `arrivalYear` plutôt que d'utiliser la date du jour, et conserve `area`", async () => {
     await submissionService.submit({
       type: "new",
@@ -390,6 +486,11 @@ describe("submission.service (intégration MongoDB)", () => {
       new Date(member.joinedAt).getFullYear(),
       2021,
       "joinedAt doit refléter l'année saisie par le membre, pas la date du jour"
+    );
+    assert.match(
+      member.registrationNumber,
+      /^1ZZ21\d{3}[A-Z]$/,
+      "le millésime du matricule doit lui aussi refléter `arrivalYear`, pas l'année du jour"
     );
   });
 

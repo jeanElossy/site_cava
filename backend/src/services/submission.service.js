@@ -249,6 +249,27 @@ export const getById = async (id) => {
   return { submission, currentMember };
 };
 
+// Empêche qu'une même personne se retrouve enregistrée deux fois sous
+// deux matricules différents — exactement ce qui s'est produit avec
+// un membre de test approuvé, supprimé, puis réinscrit : la seconde
+// approbation avait généré un second matricule au lieu d'être
+// refusée. Comparaison insensible à la casse ET aux accents via la
+// collation Mongo plutôt qu'en relisant tous les membres en mémoire.
+const assertNoDuplicateMember = async ({ firstName, lastName, church }) => {
+  const duplicate = await Member.findOne({ firstName, lastName, church })
+    .collation({ locale: "fr", strength: 1 })
+    .select("registrationNumber")
+    .lean();
+
+  if (duplicate) {
+    throw ApiError.conflict(
+      `Un membre du même nom existe déjà dans cette église (matricule ${
+        duplicate.registrationNumber ?? "non attribué"
+      }). Utilisez la mise à jour de sa fiche plutôt qu'une nouvelle inscription, ou rejetez cette demande si c'est une erreur de saisie.`
+    );
+  }
+};
+
 const assertFlockBelongsToChurch = async (flockId, church) => {
   const flock = await Flock.findById(flockId).lean();
 
@@ -335,11 +356,26 @@ export const approve = async (id, { overrides = {}, user } = {}) => {
       throw error;
     }
   } else {
-    const currentYear = new Date().getFullYear();
+    await assertNoDuplicateMember({
+      firstName: memberData.firstName,
+      lastName: memberData.lastName,
+      church: data.church,
+    });
+
+    // Les chiffres d'année du matricule doivent rester cohérents avec
+    // `joinedAt` : un membre qui indique être arrivé en 2025 ne doit
+    // pas se retrouver avec un matricule millésimé de l'année de
+    // traitement de sa demande (souvent différente, un dossier pouvant
+    // être validé après coup). Sans `arrivalYear`, on retombe sur
+    // l'année du jour, comme avant.
+    const registrationYear = arrivalYear
+      ? Number(arrivalYear)
+      : new Date().getFullYear();
+
     const { registrationNumber } = await nextRegistrationNumber({
       church: data.church,
       flockCode: flock.code,
-      year: currentYear,
+      year: registrationYear,
     });
 
     member = await Member.create({
