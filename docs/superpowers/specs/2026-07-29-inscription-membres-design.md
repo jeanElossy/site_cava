@@ -119,12 +119,11 @@ Chaque étape se valide avant de passer à la suivante. Champs obligatoires mini
 
 ### « J'ai déjà un matricule »
 
-Un champ de saisie unique, avec normalisation automatique de la saisie (accepte `1OL 16-005 E`, `1ol16005e`, `1OL-16-005-E`, tout est ramené à la forme canonique avant recherche). Puis le même formulaire multi-étapes :
+Un champ de saisie unique, avec normalisation automatique de la saisie (accepte `1OL 16-005 E`, `1ol16005e`, `1OL-16-005-E`, tout est ramené à la forme canonique avant recherche). La vérification se limite à un contrôle de format côté navigateur (structure + lettre de contrôle cohérente) — **aucun appel réseau ne confirme l'existence du matricule en base à ce stade**, pour ne pas transformer le champ en outil de vérification.
 
-- Si le matricule correspond à un `Member` déjà informatisé : les étapes s'ouvrent pré-remplies avec ses données actuelles.
-- Si le matricule ne correspond à rien en base (cas des matricules du registre papier jamais informatisés) : le formulaire s'ouvre vide, avec le matricule reporté tel quel dans la soumission.
+Le même formulaire multi-étapes s'ouvre ensuite, **toujours vierge**, que le matricule corresponde ou non à un `Member` déjà informatisé. Le membre ressaisit ce qu'il souhaite déclarer ou corriger ; ce n'est **jamais** un pré-remplissage à partir de la fiche existante — sinon quiconque devine un matricule verrait apparaître les données personnelles de son propriétaire. C'est uniquement l'écran de comparaison côté admin (section « Administration » ci-dessous), qui lui a accès à la fiche réelle côté serveur, qui rapproche l'ancien et le nouveau avant validation.
 
-Dans les deux cas, **aucune donnée existante n'est jamais renvoyée telle quelle au navigateur avant validation admin** — le pré-remplissage se fait côté formulaire au moment de l'ouverture, mais l'écran de confirmation final est neutre :
+Dans les deux cas, l'écran de confirmation final est neutre :
 
 > « Votre demande a été transmise à l'équipe. »
 
