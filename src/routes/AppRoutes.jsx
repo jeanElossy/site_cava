@@ -12,6 +12,7 @@ import Media from "../pages/Media/Media";
 import Communaute from "../pages/Communaute/Communaute";
 import Contact from "../pages/Contact/Contact";
 import Donate from "../pages/Donate/Donate";
+import Registration from "../pages/Registration/Registration";
 import DonationReturn from "../pages/DonationReturn/DonationReturn";
 import LegalNotice from "../pages/LegalNotice/LegalNotice";
 import PrivacyPolicy from "../pages/PrivacyPolicy/PrivacyPolicy";
@@ -112,6 +113,11 @@ const AppRoutes = () => {
       <Route
         path="/donate"
         element={<Donate />}
+      />
+
+      <Route
+        path="/inscription"
+        element={<Registration />}
       />
 
       {/* Retour du donateur depuis le guichet de paiement. L'adresse
