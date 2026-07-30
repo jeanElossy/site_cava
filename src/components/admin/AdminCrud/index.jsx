@@ -60,6 +60,13 @@ const AdminCrud = ({
   // liste des membres). N'affecte que les écrans qui le demandent
   // explicitement ; tous les autres gardent leur comportement actuel.
   tableClassName,
+  // Optionnel : `(item, { onEdit, onDelete }) => JSX` remplace les deux
+  // boutons Modifier/Supprimer par défaut par un rendu personnalisé —
+  // utilisé par la liste des membres pour regrouper Modifier,
+  // Supprimer ET le téléchargement de la carte dans un seul menu, sans
+  // dupliquer la logique d'édition/suppression déjà gérée ici. Les
+  // écrans qui ne le fournissent pas gardent le rendu par défaut.
+  rowActions,
 }) => {
   const {
     items: rawItems,
@@ -242,26 +249,35 @@ const AdminCrud = ({
                     ))}
 
                     <td className="admin-crud__row-actions">
-                      <button
-                        type="button"
-                        onClick={() => openEdit(item)}
-                        aria-label={`Modifier : ${
-                          item[labels.titleKey ?? "title"] ?? "élément"
-                        }`}
-                      >
-                        <Pencil aria-hidden="true" />
-                      </button>
+                      {rowActions ? (
+                        rowActions(item, {
+                          onEdit: () => openEdit(item),
+                          onDelete: () => setPendingDelete(item),
+                        })
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => openEdit(item)}
+                            aria-label={`Modifier : ${
+                              item[labels.titleKey ?? "title"] ?? "élément"
+                            }`}
+                          >
+                            <Pencil aria-hidden="true" />
+                          </button>
 
-                      <button
-                        type="button"
-                        className="admin-crud__danger"
-                        onClick={() => setPendingDelete(item)}
-                        aria-label={`Supprimer : ${
-                          item[labels.titleKey ?? "title"] ?? "élément"
-                        }`}
-                      >
-                        <Trash2 aria-hidden="true" />
-                      </button>
+                          <button
+                            type="button"
+                            className="admin-crud__danger"
+                            onClick={() => setPendingDelete(item)}
+                            aria-label={`Supprimer : ${
+                              item[labels.titleKey ?? "title"] ?? "élément"
+                            }`}
+                          >
+                            <Trash2 aria-hidden="true" />
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}

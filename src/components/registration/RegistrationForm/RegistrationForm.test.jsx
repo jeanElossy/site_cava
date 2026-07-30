@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 
 import { RegistrationProvider } from "../../../context/RegistrationContext";
 import RegistrationForm from "./index";
@@ -17,11 +18,15 @@ vi.mock("../../../services/api", () => ({
   memberSubmissions: { submit: vi.fn().mockResolvedValue({ received: true }) },
 }));
 
-const renderForm = () =>
+// `useSearchParams` (lecture de ?matricule= depuis le QR code de la
+// carte de membre, voir index.jsx) exige un contexte de routage.
+const renderForm = (initialEntries = ["/inscription"]) =>
   render(
-    <RegistrationProvider>
-      <RegistrationForm />
-    </RegistrationProvider>
+    <MemoryRouter initialEntries={initialEntries}>
+      <RegistrationProvider>
+        <RegistrationForm />
+      </RegistrationProvider>
+    </MemoryRouter>
   );
 
 describe("RegistrationForm (orchestrateur)", () => {
@@ -59,5 +64,18 @@ describe("RegistrationForm (orchestrateur)", () => {
       screen.getByText("Merci d'indiquer votre prénom.")
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Prénom")).toBeInTheDocument();
+  });
+
+  it("pré-remplit le matricule et bascule sur « j'ai déjà un matricule » depuis ?matricule= (lien du QR code)", () => {
+    renderForm(["/inscription?matricule=1OL25045S"]);
+
+    // Le champ « nom de famille » n'existe que pour kind === "update" :
+    // sa présence prouve le basculement automatique.
+    expect(
+      screen.getByLabelText("Votre matricule")
+    ).toHaveValue("1OL25045S");
+    expect(
+      screen.getByLabelText("Votre nom de famille")
+    ).toBeInTheDocument();
   });
 });

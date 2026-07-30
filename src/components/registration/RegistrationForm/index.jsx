@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { useSearchParams } from "react-router-dom";
 
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -75,6 +77,26 @@ const RegistrationForm = () => {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // Lien depuis le QR code de la carte de membre (?matricule=...) :
+  // pré-remplit le matricule et bascule sur « j'ai déjà un matricule »,
+  // mais laisse volontairement le nom de famille vide — c'est au
+  // membre de le saisir lui-même avant que la recherche parte, même
+  // protection anti-énumération que la saisie manuelle (voir
+  // StepLookup / submission.service.js#lookup).
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const matricule = searchParams.get("matricule");
+
+    if (matricule) {
+      dispatch({ type: "SET_KIND", payload: "update" });
+      dispatch({
+        type: "SET_SUBMITTED_REGISTRATION_NUMBER",
+        payload: matricule,
+      });
+    }
+  }, [searchParams, dispatch]);
 
   const isLastStep = step === steps.length - 1;
   const StepIcon = STEP_ICONS[step];

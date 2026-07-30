@@ -152,42 +152,113 @@
   color: $admin-danger;
 }
 
-.admin-community__card-buttons {
+// Menu unique (Modifier, Supprimer, Carte PDF/JPEG) sur la ligne d'un
+// membre — remplace quatre boutons alignés, qui ne laissaient plus
+// assez de place aux autres colonnes du tableau.
+.admin-community__row-menu {
   position: relative;
 
   display: inline-flex;
-  flex-wrap: wrap;
-  gap: 6px;
+}
+
+.admin-community__row-menu-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 34px;
+  height: 34px;
+
+  border: 1px solid $admin-border;
+  border-radius: $admin-radius-sm;
+
+  background: $admin-surface;
+
+  color: $admin-ink-soft;
+
+  cursor: pointer;
+
+  transition: $transition;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    border-color: $admin-accent;
+    color: $admin-accent-strong;
+  }
+
+  &[aria-expanded="true"] {
+    border-color: $admin-accent;
+    background: $admin-surface-hover;
+    color: $admin-accent-strong;
+  }
+}
+
+.admin-community__row-menu-panel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  right: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  // Largeur fixe plutôt que `max-content` : héritée du tableau
+  // (`.admin-crud__table--fixed` impose `white-space: nowrap` à tous
+  // ses descendants pour tronquer proprement le contenu des colonnes),
+  // `max-content` mesurait le texte des boutons comme s'il ne pouvait
+  // jamais retourner à la ligne nulle part, ce qui gonflait la largeur
+  // du menu bien au-delà de son contenu réel.
+  width: 220px;
+
+  padding: 6px;
+
+  border: 1px solid $admin-border;
+  border-radius: $admin-radius;
+
+  background: $admin-surface;
+  box-shadow: $admin-shadow-lg;
+  white-space: normal;
 
   button {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 5px;
+    justify-content: flex-start;
 
-    height: 30px;
-    padding: 0 10px;
-    border: 1px solid $admin-border;
-    border-radius: 7px;
+    width: 100%;
+    padding: 9px 10px;
+    border: 0;
+    border-radius: $admin-radius-sm;
 
-    background: $admin-surface;
+    background: transparent;
 
-    color: $admin-ink-soft;
+    color: $admin-ink;
 
-    font-size: 0.74rem;
-    font-weight: 700;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
 
     cursor: pointer;
 
-    transition: $transition;
+    transition: background $admin-ease;
 
     svg {
-      width: 14px;
-      height: 14px;
+      flex-shrink: 0;
+
+      width: 16px;
+      height: 16px;
+      margin-right: 10px;
+
+      color: $admin-ink-soft;
     }
 
     &:hover:not(:disabled) {
-      border-color: $admin-accent;
-      color: $admin-accent-strong;
+      background: $admin-surface-hover;
     }
 
     &:disabled {
@@ -195,19 +266,24 @@
       cursor: progress;
     }
   }
+
+  .admin-community__row-menu-danger {
+    color: $admin-danger;
+
+    svg {
+      color: $admin-danger;
+    }
+
+    &:hover:not(:disabled) {
+      background: $admin-danger-bg;
+    }
+  }
 }
 
-.admin-community__card-buttons-error {
-  position: absolute;
-  z-index: 1;
-  top: calc(100% + 6px);
-  left: 0;
-
-  width: max-content;
-  max-width: 220px;
-  margin: 0;
+.admin-community__row-menu-error {
+  margin: 4px 2px 0;
   padding: 8px 10px;
-  border-left: 4px solid $admin-danger;
+  border-left: 3px solid $admin-danger;
   border-radius: 8px;
 
   background: $admin-danger-bg;

@@ -204,9 +204,20 @@
     // `table-layout: fixed` prend `width: 1%` au pied de la lettre
     // (contrairement au mode auto, où ça se contente de réduire la
     // colonne à son contenu) : sans cette largeur minimale explicite,
-    // les deux boutons d'action n'auraient pas la place de tenir.
+    // les boutons d'action n'auraient pas la place de tenir.
     .admin-crud__actions-col {
-      width: 92px;
+      width: 60px;
+    }
+
+    // La colonne Actions ne contient jamais de texte à tronquer, mais
+    // potentiellement un menu déroulant positionné en absolu : `overflow:
+    // hidden` (hérité de la règle `th, td` ci-dessus) le couperait net à
+    // la limite de la cellule — même piège que documenté dans
+    // Navbar.jsx/AdminLayout.scss pour un élément fixe sous un ancêtre en
+    // overflow caché.
+    th.admin-crud__actions-col,
+    td.admin-crud__row-actions {
+      overflow: visible;
     }
   }
 

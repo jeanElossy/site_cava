@@ -8,6 +8,7 @@ import PDFDocument from "pdfkit";
 import Member from "../models/Member.js";
 import Church from "../models/Church.js";
 import { ApiError } from "../utils/ApiError.js";
+import { env } from "../config/env.js";
 import { formatRegistrationNumber } from "./registrationNumber.service.js";
 
 const GREEN = "#0d5b3e";
@@ -475,22 +476,19 @@ const renderMemberCardCanvas = async (member, church) => {
   ctx.lineTo(contentRight, 66);
   ctx.stroke();
 
-  // ---- Code QR : mêmes informations que celles déjà imprimées en
-  // clair sur la carte, rien de plus sensible.
+  // ---- Code QR : ouvre le tunnel d'inscription public en mode « j'ai
+  // déjà un matricule », matricule pré-rempli. Le nom de famille reste
+  // à saisir par le membre lui-même avant que la recherche parte —
+  // même protection anti-énumération que la saisie manuelle (voir
+  // submission.service.js#lookup), le QR ne fait qu'éviter d'avoir à
+  // retaper le matricule déjà imprimé juste à côté.
   const qrSize = 66;
   const qrX = contentRight - qrSize;
   const qrY = 84;
 
-  const qrContent = [
-    "CAVA - Carte de membre",
-    fullName,
-    `Matricule : ${matricule}`,
-    `Église : ${churchName}`,
-    `Bergerie : ${flockName}`,
-    joinedYear ? `Membre depuis ${joinedYear}` : null,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const qrContent = `${env.PUBLIC_SITE_URL}/inscription?matricule=${encodeURIComponent(
+    member.registrationNumber
+  )}`;
 
   const qrBuffer = await QRCode.toBuffer(qrContent, {
     type: "png",
@@ -516,8 +514,8 @@ const renderMemberCardCanvas = async (member, church) => {
   ctx.textAlign = "center";
   ctx.fillStyle = INK_SOFT;
   ctx.font = `bold 6px ${CARD_FONT_BOLD}`;
-  ctx.fillText("Scannez pour vérifier", qrCenterX, qrY + qrSize + 26, qrSize + 10);
-  ctx.fillText("l'authenticité", qrCenterX, qrY + qrSize + 34, qrSize + 10);
+  ctx.fillText("Scannez pour mettre à", qrCenterX, qrY + qrSize + 26, qrSize + 10);
+  ctx.fillText("jour votre fiche", qrCenterX, qrY + qrSize + 34, qrSize + 10);
   ctx.textAlign = "left";
 
   // ---- Lignes d'information, chacune avec son pictogramme -----------

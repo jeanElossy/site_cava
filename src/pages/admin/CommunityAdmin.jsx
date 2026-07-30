@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { Download, IdCard } from "lucide-react";
+import {
+  Download,
+  IdCard,
+  MoreVertical,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 
 import {
   announcements,
@@ -362,9 +368,40 @@ const toTitleCase = (value = "") =>
 // lignes affichées à la fois. Même pattern `fetch` protégé que
 // `MemberExportButtons` ci-dessous (la route exige un jeton, un simple
 // `<a href>` ne l'emporterait pas).
-const MemberCardButtons = ({ memberId }) => {
+// Un seul déclencheur (icône « ⋮ ») par ligne plutôt que quatre
+// boutons alignés (Modifier, Supprimer, Carte PDF, Carte JPEG) : ça
+// libère la place que réclament les autres colonnes. Reçoit
+// `onEdit`/`onDelete` de AdminCrud (via la prop `rowActions`) pour ne
+// pas dupliquer sa logique d'édition/suppression.
+const MemberRowMenu = ({ member, onEdit, onDelete }) => {
+  const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const containerRef = useRef(null);
+
+  // Ferme le menu au clic en dehors — comportement attendu d'un menu
+  // déroulant, qu'aucun composant du projet ne fournissait encore.
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+
+    return () =>
+      document.removeEventListener("mousedown", handlePointerDown);
+  }, [open]);
+
+  const memberLabel =
+    [member.firstName, member.lastName].filter(Boolean).join(" ") ||
+    "ce membre";
 
   const download = async (format) => {
     setBusy(format);
@@ -372,7 +409,7 @@ const MemberCardButtons = ({ memberId }) => {
 
     try {
       const response = await fetch(
-        `${apiBaseUrl}/api/admin/members/${memberId}/card.${format}`,
+        `${apiBaseUrl}/api/admin/members/${member.id}/card.${format}`,
         { headers: { Authorization: `Bearer ${getToken()}` } }
       );
 
@@ -387,10 +424,11 @@ const MemberCardButtons = ({ memberId }) => {
       const link = document.createElement("a");
 
       link.href = url;
-      link.download = `carte-membre-${memberId}.${format}`;
+      link.download = `carte-membre-${member.id}.${format}`;
       link.click();
 
       URL.revokeObjectURL(url);
+      setOpen(false);
     } catch (caught) {
       setError(caught?.message ?? "Le téléchargement de la carte a échoué.");
     } finally {
@@ -399,36 +437,75 @@ const MemberCardButtons = ({ memberId }) => {
   };
 
   return (
-    <div className="admin-community__card-buttons">
+    <div className="admin-community__row-menu" ref={containerRef}>
       <button
         type="button"
-        onClick={() => download("pdf")}
-        disabled={busy !== ""}
-        aria-label="Télécharger la carte de membre au format PDF"
-        title="Carte de membre (PDF)"
+        className="admin-community__row-menu-trigger"
+        onClick={() => setOpen((previous) => !previous)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`Actions : ${memberLabel}`}
       >
-        <IdCard aria-hidden="true" />
-        PDF
+        <MoreVertical aria-hidden="true" />
       </button>
 
-      <button
-        type="button"
-        onClick={() => download("jpg")}
-        disabled={busy !== ""}
-        aria-label="Télécharger la carte de membre au format JPEG"
-        title="Carte de membre (JPEG)"
-      >
-        <IdCard aria-hidden="true" />
-        JPEG
-      </button>
+      {open && (
+        <div className="admin-community__row-menu-panel" role="menu">
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onEdit();
+            }}
+          >
+            <Pencil aria-hidden="true" />
+            Voir / modifier
+          </button>
 
-      {error && (
-        <p
-          className="admin-community__card-buttons-error"
-          role="alert"
-        >
-          {error}
-        </p>
+          {member.registrationNumber && (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => download("pdf")}
+                disabled={busy !== ""}
+              >
+                <IdCard aria-hidden="true" />
+                {busy === "pdf" ? "Téléchargement…" : "Carte (PDF)"}
+              </button>
+
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => download("jpg")}
+                disabled={busy !== ""}
+              >
+                <IdCard aria-hidden="true" />
+                {busy === "jpg" ? "Téléchargement…" : "Carte (JPEG)"}
+              </button>
+            </>
+          )}
+
+          <button
+            type="button"
+            role="menuitem"
+            className="admin-community__row-menu-danger"
+            onClick={() => {
+              setOpen(false);
+              onDelete();
+            }}
+          >
+            <Trash2 aria-hidden="true" />
+            Supprimer
+          </button>
+
+          {error && (
+            <p className="admin-community__row-menu-error" role="alert">
+              {error}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
@@ -439,12 +516,15 @@ const MemberCardButtons = ({ memberId }) => {
 // (le nom, ou un long nom d'église/bergerie repris ailleurs) prenait
 // toute la place au détriment des autres, qui se retrouvaient à
 // repasser leur contenu à la ligne. Somme volontairement < 100 % :
-// le reste revient à la colonne Actions (voir `__actions-col`).
+// le reste revient à la colonne Actions (voir `__actions-col`). Pas de
+// colonne « Carte » séparée : son téléchargement vit désormais dans le
+// menu Actions (`MemberRowMenu`), avec Modifier et Supprimer — d'où la
+// place regagnée, redistribuée à Membre/Quartier/Téléphone.
 const memberColumns = [
   {
     key: "registrationNumber",
     label: "Matricule",
-    width: "11%",
+    width: "13%",
     render: (item) =>
       item.registrationNumber ? (
         <strong>{formatRegistrationNumber(item.registrationNumber)}</strong>
@@ -455,7 +535,7 @@ const memberColumns = [
   {
     key: "name",
     label: "Membre",
-    width: "20%",
+    width: "27%",
     render: (item) => {
       const parts = [
         item.firstName ? toTitleCase(item.firstName) : "",
@@ -465,40 +545,27 @@ const memberColumns = [
       return parts.join(" ") || "—";
     },
   },
-  { key: "area", label: "Quartier / groupe", width: "15%" },
+  { key: "area", label: "Quartier / groupe", width: "20%" },
   {
     key: "role",
     label: "Rôle",
-    width: "9%",
+    width: "10%",
     render: (item) => (
       <span className="admin-crud__pill">
         {ROLE_LABELS[item.role] ?? "—"}
       </span>
     ),
   },
-  { key: "phone", label: "Téléphone", width: "13%" },
+  { key: "phone", label: "Téléphone", width: "17%" },
   {
     key: "status",
     label: "Statut",
-    width: "8%",
+    width: "9%",
     render: (item) =>
       item.status === "inactif" ? (
         <span className="admin-crud__muted">Inactif</span>
       ) : (
         "Actif"
-      ),
-  },
-  {
-    key: "card",
-    label: "Carte",
-    width: "16%",
-    render: (item) =>
-      // Le service refuse de générer une carte sans matricule : pas de
-      // bouton dans ce cas, plutôt qu'un bouton qui échouerait toujours.
-      item.registrationNumber ? (
-        <MemberCardButtons memberId={item.id} />
-      ) : (
-        "—"
       ),
   },
 ];
@@ -915,6 +982,13 @@ const CommunityAdmin = () => {
               fields={memberFields}
               columns={memberColumns}
               tableClassName="admin-crud__table--fixed"
+              rowActions={(item, { onEdit, onDelete }) => (
+                <MemberRowMenu
+                  member={item}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                />
+              )}
               labels={{
                 singular: "un membre",
                 plural: "Membres",
