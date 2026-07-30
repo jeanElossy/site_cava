@@ -1,0 +1,216 @@
+@use "../../../styles/variables" as *;
+
+.registration-hero {
+  position: relative;
+
+  min-height: 700px;
+
+  display: flex;
+  align-items: center;
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  overflow: hidden;
+
+  &__overlay {
+    position: absolute;
+    inset: 0;
+
+    background:
+      linear-gradient(
+        90deg,
+        rgba(0, 55, 28, 0.92) 0%,
+        rgba(0, 55, 28, 0.82) 35%,
+        rgba(0, 55, 28, 0.45) 60%,
+        rgba(0, 0, 0, 0.15) 100%
+      );
+
+    z-index: 1;
+  }
+
+  &__container {
+    position: relative;
+    z-index: 2;
+
+    width: 100%;
+    max-width: 1400px;
+
+    margin: auto;
+    padding: 140px 60px 100px;
+  }
+
+  &__content {
+    max-width: 760px;
+    color: #fff;
+  }
+
+  &__tag {
+    display: block;
+
+    margin-bottom: 14px;
+
+    color: $secondary;
+
+    font-size: 0.9rem;
+    font-weight: 700;
+
+    letter-spacing: 2px;
+  }
+
+  h1 {
+    margin: 0;
+
+    font-size: clamp(2.2rem, 3.8vw, 3.4rem);
+    line-height: 1.15;
+    font-weight: 700;
+
+    color: #fff;
+
+    opacity: 0;
+    animation: registration-hero-fade-up 1s ease forwards;
+    animation-delay: 0.2s;
+  }
+
+  &__line {
+    width: 60px;
+    height: 4px;
+
+    margin: 28px 0;
+
+    background: $secondary;
+    border-radius: 50px;
+
+    opacity: 0;
+    animation: registration-hero-fade-up 1s ease forwards;
+    animation-delay: 0.4s;
+  }
+
+  p {
+    max-width: 640px;
+
+    margin: 0;
+
+    font-size: 1.15rem;
+    line-height: 1.85;
+
+    color: rgba(255, 255, 255, 0.92);
+
+    opacity: 0;
+    animation: registration-hero-fade-up 1s ease forwards;
+    animation-delay: 0.6s;
+  }
+
+  // Signature de la page : un aperçu du format de matricule, seul
+  // élément qui n'apparaît sur aucun autre héros du site.
+  &__badge {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 6px;
+
+    margin-top: 34px;
+    padding: 18px 24px;
+
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 16px;
+    backdrop-filter: blur(6px);
+
+    opacity: 0;
+    animation: registration-hero-fade-up 1s ease forwards;
+    animation-delay: 0.8s;
+  }
+
+  &__badge-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  &__badge-code {
+    color: $secondary;
+    font-family: "Courier New", ui-monospace, monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+  }
+
+  &__badge-caption {
+    max-width: 320px;
+
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+}
+
+@keyframes registration-hero-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 992px) {
+  .registration-hero {
+    min-height: 600px;
+
+    &__container {
+      padding: 120px 40px 80px;
+    }
+
+    h1 {
+      font-size: 2.6rem;
+    }
+
+    p {
+      font-size: 1.05rem;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .registration-hero {
+    min-height: auto;
+
+    &__container {
+      padding: 120px 25px 80px;
+    }
+
+    h1 {
+      font-size: 2.1rem;
+    }
+
+    p {
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+
+    &__badge {
+      padding: 14px 18px;
+    }
+
+    &__badge-code {
+      font-size: 1.25rem;
+      letter-spacing: 2px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .registration-hero h1 {
+    font-size: 1.85rem;
+  }
+
+  .registration-hero__tag {
+    font-size: 0.8rem;
+  }
+}

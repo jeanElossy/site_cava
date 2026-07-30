@@ -117,6 +117,12 @@ const Footer = () => {
             </li>
 
             <li>
+              <Link to="/inscription">
+                Devenir membre
+              </Link>
+            </li>
+
+            <li>
               <Link to="/contact">
                 Contact
               </Link>
