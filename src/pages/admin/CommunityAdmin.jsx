@@ -49,6 +49,9 @@ const MEMBER_ROLES = [
   { value: "membre", label: "Membre" },
   { value: "serviteur", label: "Serviteur" },
   { value: "responsable", label: "Responsable" },
+  { value: "pasteur", label: "Pasteur" },
+  { value: "chantre", label: "Chantre" },
+  { value: "dirigeant", label: "Dirigeant" },
 ];
 
 const MEMBER_STATUSES = [

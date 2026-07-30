@@ -78,7 +78,14 @@ const memberSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["membre", "serviteur", "responsable"],
+      enum: [
+        "membre",
+        "serviteur",
+        "responsable",
+        "pasteur",
+        "chantre",
+        "dirigeant",
+      ],
       default: "membre",
     },
 
