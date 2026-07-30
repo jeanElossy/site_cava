@@ -44,6 +44,17 @@ const StepContact = ({ state, updateData }) => (
     </div>
 
     <div className="form-group">
+      <label htmlFor="reg-area">Quartier / groupe de maison</label>
+      <input
+        id="reg-area"
+        type="text"
+        placeholder="Ex. Angré, Cocody"
+        value={state.data.area}
+        onChange={(event) => updateData({ area: event.target.value })}
+      />
+    </div>
+
+    <div className="form-group">
       <label>Personne à prévenir en cas d&apos;urgence</label>
 
       <div className="contact-grid">

@@ -230,6 +230,28 @@ describe("buildSubmissionPayload", () => {
     expect(payload.data.gender).toBeUndefined();
     expect(payload.data.maritalStatus).toBeUndefined();
   });
+
+  it("inclut `area` (quartier / groupe de maison), sans espaces superflus", () => {
+    const state = baseState();
+    state.data.area = "  Angré 7e tranche  ";
+
+    const payload = buildSubmissionPayload(state);
+
+    expect(payload.data.area).toBe("Angré 7e tranche");
+  });
+
+  it("convertit `arrivalYear` en nombre, et laisse `undefined` quand il est vide", () => {
+    const state = baseState();
+    state.data.arrivalYear = "2021";
+
+    const payload = buildSubmissionPayload(state);
+
+    expect(payload.data.arrivalYear).toBe(2021);
+
+    const emptyPayload = buildSubmissionPayload(baseState());
+
+    expect(emptyPayload.data.arrivalYear).toBeUndefined();
+  });
 });
 
 describe("memberToFormData", () => {
@@ -303,5 +325,19 @@ describe("memberToFormData", () => {
     const patch = memberToFormData({ skills: null });
 
     expect(patch.skills).toBeUndefined();
+  });
+
+  it("reprend `area` (quartier / groupe de maison) tel quel", () => {
+    const patch = memberToFormData({ area: "Angré 7e tranche" });
+
+    expect(patch.area).toBe("Angré 7e tranche");
+  });
+
+  it("déduit `arrivalYear` de `joinedAt` (le formulaire ne redemande que l'année)", () => {
+    const patch = memberToFormData({
+      joinedAt: "2021-03-15T00:00:00.000Z",
+    });
+
+    expect(patch.arrivalYear).toBe("2021");
   });
 });

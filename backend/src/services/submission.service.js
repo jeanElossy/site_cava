@@ -22,6 +22,7 @@ const ALLOWED_FIELDS = [
   "phone",
   "whatsapp",
   "address",
+  "area",
   "church",
   "flock",
   "dateOfBirth",
@@ -29,6 +30,10 @@ const ALLOWED_FIELDS = [
   "maritalStatus",
   "childrenCount",
   "conversionYear",
+  // Saisie brute (l'année seule) : ce n'est PAS un champ de `Member`,
+  // `approve()` la convertit en `joinedAt` (1er janvier de l'année
+  // indiquée) avant l'enregistrement.
+  "arrivalYear",
   "baptism",
   "previousChurch",
   "profession",
@@ -277,12 +282,24 @@ export const approve = async (id, { overrides = {}, user } = {}) => {
 
   const flock = await assertFlockBelongsToChurch(data.flock, data.church);
 
+  // `arrivalYear` (l'année seule, saisie par le membre) n'est pas un
+  // champ de `Member` — seul `joinedAt` (une date) l'est. On la retire
+  // ici et on la convertit au 1er janvier de l'année indiquée, comme
+  // c'était déjà fait pour un matricule papier ci-dessous.
+  const { arrivalYear, ...memberData } = data;
+  const joinedAtFromYear = arrivalYear
+    ? new Date(Number(arrivalYear), 0, 1)
+    : undefined;
+
   let member;
 
   if (submission.existingMember) {
     member = await Member.findByIdAndUpdate(
       submission.existingMember,
-      data,
+      {
+        ...memberData,
+        ...(joinedAtFromYear ? { joinedAt: joinedAtFromYear } : {}),
+      },
       { new: true, runValidators: true }
     );
 
@@ -292,16 +309,19 @@ export const approve = async (id, { overrides = {}, user } = {}) => {
   } else if (submission.submittedRegistrationNumber) {
     // Matricule papier jamais informatisé : repris tel quel, sans
     // passer par le compteur, qui ne doit générer QUE des matricules
-    // neufs. L'année d'arrivée se déduit du matricule lui-même plutôt
-    // que de la date du jour.
+    // neufs. L'année d'arrivée se déduit du matricule lui-même — plus
+    // fiable qu'une saisie libre pour un membre historique — plutôt
+    // que de `arrivalYear`.
     const parsed = parseRegistrationNumber(
       submission.submittedRegistrationNumber
     );
-    const joinedAt = parsed ? new Date(2000 + parsed.year, 0, 1) : undefined;
+    const joinedAt = parsed
+      ? new Date(2000 + parsed.year, 0, 1)
+      : joinedAtFromYear;
 
     try {
       member = await Member.create({
-        ...data,
+        ...memberData,
         registrationNumber: submission.submittedRegistrationNumber,
         ...(joinedAt ? { joinedAt } : {}),
       });
@@ -322,7 +342,11 @@ export const approve = async (id, { overrides = {}, user } = {}) => {
       year: currentYear,
     });
 
-    member = await Member.create({ ...data, registrationNumber });
+    member = await Member.create({
+      ...memberData,
+      registrationNumber,
+      ...(joinedAtFromYear ? { joinedAt: joinedAtFromYear } : {}),
+    });
   }
 
   submission.status = "approved";

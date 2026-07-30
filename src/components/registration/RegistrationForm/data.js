@@ -127,6 +127,7 @@ export const buildSubmissionPayload = (state) => ({
     whatsapp: state.data.whatsapp.trim(),
     email: state.data.email.trim(),
     address: state.data.address.trim(),
+    area: state.data.area.trim(),
     emergencyContact: {
       name: state.data.emergencyContactName.trim(),
       phone: state.data.emergencyContactPhone.trim(),
@@ -137,6 +138,10 @@ export const buildSubmissionPayload = (state) => ({
     childrenCount:
       state.data.childrenCount !== ""
         ? Number(state.data.childrenCount)
+        : undefined,
+    arrivalYear:
+      state.data.arrivalYear !== ""
+        ? Number(state.data.arrivalYear)
         : undefined,
     conversionYear:
       state.data.conversionYear !== ""
@@ -186,6 +191,13 @@ export const memberToFormData = (member = {}) => {
   if (member.whatsapp !== undefined) patch.whatsapp = member.whatsapp;
   if (member.email !== undefined) patch.email = member.email;
   if (member.address !== undefined) patch.address = member.address;
+  if (member.area !== undefined) patch.area = member.area;
+
+  // `Member` ne porte que `joinedAt` (une date) ; le formulaire ne
+  // redemande que l'année, comme `conversionYear`.
+  if (member.joinedAt !== undefined) {
+    patch.arrivalYear = String(new Date(member.joinedAt).getFullYear());
+  }
 
   if (member.emergencyContact) {
     if (member.emergencyContact.name !== undefined) {

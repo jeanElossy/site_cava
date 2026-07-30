@@ -364,6 +364,59 @@ describe("submission.service (intégration MongoDB)", () => {
     assert.ok(submission.processedAt);
   });
 
+  it("approve() dérive `joinedAt` de `arrivalYear` plutôt que d'utiliser la date du jour, et conserve `area`", async () => {
+    await submissionService.submit({
+      type: "new",
+      data: {
+        firstName: "AnneeArrivee",
+        lastName: TEST_LAST_NAME,
+        church: 1,
+        flock: String(testFlockChurch1._id),
+        area: "Angré 7e tranche",
+        arrivalYear: 2021,
+      },
+    });
+
+    const pending = await MemberSubmission.findOne({
+      "data.lastName": TEST_LAST_NAME,
+    }).lean();
+
+    const { member } = await submissionService.approve(pending._id, {
+      user: { id: new mongoose.Types.ObjectId() },
+    });
+
+    assert.equal(member.area, "Angré 7e tranche");
+    assert.equal(
+      new Date(member.joinedAt).getFullYear(),
+      2021,
+      "joinedAt doit refléter l'année saisie par le membre, pas la date du jour"
+    );
+  });
+
+  it("approve() se rabat sur la date du jour quand `arrivalYear` n'est pas fourni", async () => {
+    const before = new Date();
+
+    await submissionService.submit({
+      type: "new",
+      data: {
+        firstName: "SansAnnee",
+        lastName: TEST_LAST_NAME,
+        church: 1,
+        flock: String(testFlockChurch1._id),
+      },
+    });
+
+    const pending = await MemberSubmission.findOne({
+      "data.lastName": TEST_LAST_NAME,
+    }).lean();
+
+    const { member } = await submissionService.approve(pending._id, {
+      user: { id: new mongoose.Types.ObjectId() },
+    });
+
+    assert.ok(new Date(member.joinedAt) >= before);
+  });
+
   it("approve() met à jour un membre existant plutôt que d'en créer un nouveau (parcours 'update')", async () => {
     const existingMember = await Member.create({
       firstName: "Existant",

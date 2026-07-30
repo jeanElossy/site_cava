@@ -1,6 +1,20 @@
 const StepSpiritualLife = ({ state, updateData }) => (
   <div className="step-panel">
     <div className="form-group">
+      <label htmlFor="reg-arrival-year">Année d&apos;arrivée à CAVA</label>
+      <input
+        id="reg-arrival-year"
+        type="number"
+        min="1900"
+        max="2100"
+        value={state.data.arrivalYear}
+        onChange={(event) =>
+          updateData({ arrivalYear: event.target.value })
+        }
+      />
+    </div>
+
+    <div className="form-group">
       <label htmlFor="reg-conversion">Année de conversion</label>
       <input
         id="reg-conversion"
