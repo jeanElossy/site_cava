@@ -102,6 +102,16 @@ export const memberSubmissions = {
       body: payload,
     }),
 
+  // Lecture PUBLIQUE, mais conditionnelle : ne renvoie des données que
+  // si le matricule ET le nom de famille correspondent. `data` vaut
+  // `null` sans distinction entre « matricule inconnu » et « nom
+  // erroné » — voir submission.service.js#lookup côté serveur.
+  lookup: async (registrationNumber, lastName) =>
+    request("/api/submissions/lookup", {
+      method: "POST",
+      body: { registrationNumber, lastName },
+    }),
+
   list: async (params = {}) =>
     requestWithMeta(
       `/api/admin/submissions?${new URLSearchParams({

@@ -1,7 +1,11 @@
 import { describe, it, expect } from "vitest";
 
 import { initialState } from "../../../context/RegistrationContext";
-import { validateStep, buildSubmissionPayload } from "./data";
+import {
+  validateStep,
+  buildSubmissionPayload,
+  memberToFormData,
+} from "./data";
 
 // État de base réutilisé et complété par chaque test, pour ne pas
 // répéter toute la forme de `initialState` à chaque cas.
@@ -19,12 +23,25 @@ describe("validateStep", () => {
     );
   });
 
-  it("étape 0 (Matricule) : passe pour une mise à jour avec matricule saisi", () => {
+  it("étape 0 (Matricule) : bloque une mise à jour sans nom de famille, même avec un matricule saisi", () => {
     const state = {
       ...baseState(),
       kind: "update",
       submittedRegistrationNumber: "1OL16005E",
     };
+
+    expect(validateStep(0, state)).toBe(
+      "Merci d'indiquer votre nom de famille, pour retrouver votre fiche."
+    );
+  });
+
+  it("étape 0 (Matricule) : passe pour une mise à jour avec matricule ET nom de famille saisis", () => {
+    const state = {
+      ...baseState(),
+      kind: "update",
+      submittedRegistrationNumber: "1OL16005E",
+    };
+    state.data.lastName = "Kouassi";
 
     expect(validateStep(0, state)).toBe("");
   });
@@ -212,5 +229,79 @@ describe("buildSubmissionPayload", () => {
     expect(payload.data.dateOfBirth).toBeUndefined();
     expect(payload.data.gender).toBeUndefined();
     expect(payload.data.maritalStatus).toBeUndefined();
+  });
+});
+
+describe("memberToFormData", () => {
+  it("ne renvoie que les champs présents sur la fiche, sans écraser le reste avec des valeurs vides", () => {
+    const patch = memberToFormData({
+      firstName: "Jean",
+      lastName: "Kouassi",
+    });
+
+    expect(patch).toEqual({ firstName: "Jean", lastName: "Kouassi" });
+  });
+
+  it("renvoie un correctif vide quand la fiche est vide", () => {
+    expect(memberToFormData({})).toEqual({});
+    expect(memberToFormData()).toEqual({});
+  });
+
+  it("convertit `church` en chaîne (les champs de formulaire sont des <select> texte)", () => {
+    const patch = memberToFormData({ church: 3 });
+
+    expect(patch.church).toBe("3");
+  });
+
+  it("aplati `emergencyContact` en `emergencyContactName` / `emergencyContactPhone`", () => {
+    const patch = memberToFormData({
+      emergencyContact: { name: "Marie Koffi", phone: "0708000000" },
+    });
+
+    expect(patch).toEqual({
+      emergencyContactName: "Marie Koffi",
+      emergencyContactPhone: "0708000000",
+    });
+  });
+
+  it("tronque `dateOfBirth` au format AAAA-MM-JJ attendu par <input type='date'>", () => {
+    const patch = memberToFormData({
+      dateOfBirth: "1990-05-12T00:00:00.000Z",
+    });
+
+    expect(patch.dateOfBirth).toBe("1990-05-12");
+  });
+
+  it("convertit `childrenCount` et `conversionYear` en chaînes", () => {
+    const patch = memberToFormData({ childrenCount: 2, conversionYear: 2015 });
+
+    expect(patch.childrenCount).toBe("2");
+    expect(patch.conversionYear).toBe("2015");
+  });
+
+  it("aplatit `baptism` en `baptismWater` / `baptismWaterYear` / `baptismHolySpirit`", () => {
+    const patch = memberToFormData({
+      baptism: { water: true, waterYear: 2018, holySpirit: false },
+    });
+
+    expect(patch).toEqual({
+      baptismWater: true,
+      baptismWaterYear: "2018",
+      baptismHolySpirit: false,
+    });
+  });
+
+  it("joint `skills` (tableau) en chaîne séparée par des virgules", () => {
+    const patch = memberToFormData({
+      skills: ["musique", "informatique", "accueil"],
+    });
+
+    expect(patch.skills).toBe("musique, informatique, accueil");
+  });
+
+  it("ignore `skills` quand ce n'est pas un tableau", () => {
+    const patch = memberToFormData({ skills: null });
+
+    expect(patch.skills).toBeUndefined();
   });
 });
