@@ -22,9 +22,8 @@ const VisionMission = () => {
               <div className="vision-item__line"></div>
 
               <p>
-                Être une église passionnée par la présence de Dieu,
-                qui forme des disciples et envoie des leaders
-                pour transformer le monde.
+                Communiquer la vie abondante de Dieu par la Parole et le Saint-Esprit
+                à travers une Église spirituelle, organisée, structurée et impactante.
               </p>
             </div>
           </div>
@@ -42,9 +41,14 @@ const VisionMission = () => {
               <div className="vision-item__line"></div>
 
               <p>
-                Conduire chacun à une relation intime avec Jésus-Christ,
-                l'aider à découvrir son identité en Lui et l'équiper
-                pour impacter son monde avec l'amour de Dieu.
+                Le Centre Apostolique Vie et Abondance (ÇA.VA.) 
+                a pour mission d'annoncer fidèlement l'Évangile de Jésus-Christ, 
+                de conduire les hommes et les femmes à une relation vivante avec Lui, 
+                de les accompagner dans leur croissance spirituelle, 
+                de les former comme disciples, 
+                de les équiper pour le service et de les envoyer afin qu'ils manifestent la 
+                vie abondante de Dieu et les valeurs du Royaume dans tous les domaines de la société, 
+                par la Parole et le Saint-Esprit.
               </p>
             </div>
           </div>

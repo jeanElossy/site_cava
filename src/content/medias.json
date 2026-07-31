@@ -39,6 +39,18 @@
   ],
   "louanges": [
     {
+      "id": "6a613295b2e1664db94e2422",
+      "title": "test",
+      "author": "hbdv",
+      "duration": "",
+      "image": "https://res.cloudinary.com/dbrqr0x6y/image/upload/v1784754810/cava/medias/ydtgpwsueh9u3syw3riy.png",
+      "video": {
+        "kind": "file",
+        "src": "https://res.cloudinary.com/dbrqr0x6y/video/upload/v1784754793/cava/medias/z0n8vr2h0z8utaizkcpf.mp4"
+      },
+      "date": "01 janvier 2922"
+    },
+    {
       "id": "6a5e4da55532ad9570cfd532",
       "title": "Tout est possible",
       "author": "CAVA Worship",

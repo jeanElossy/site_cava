@@ -38,9 +38,8 @@ const Hero = () => {
           <div className="hero__line"></div>
 
           <p>
-            Un lieu où la foi prend vie,
-            l'amour se partage
-            et la destinée s'accomplit en Jésus-Christ.
+            Une église qui communique la vie abondante de Dieu
+            par la parole et par le Saint Esprit.
           </p>
 
           <div className="hero__buttons">

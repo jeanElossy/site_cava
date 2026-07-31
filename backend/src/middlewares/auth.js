@@ -82,6 +82,7 @@ export const verifyChallengeToken = (token) => {
   return payload;
 };
 
+
 // Vérifie le jeton PUIS recharge l'utilisateur en base.
 //
 // Le rechargement n'est pas superflu : un compte désactivé ou supprimé

@@ -22,16 +22,16 @@ import stored from "./settings.json";
 
 const FALLBACK = {
   churchName: "Centre Apostolique Vie et Abondance",
-  phonePrimary: "+225 07 12 34 56 78",
-  phoneSecondary: "",
-  email: "info@cava.ci",
-  address: "Abidjan, Côte d'Ivoire",
+  phonePrimary: "+225 07 88 06 15 84",
+  phoneSecondary: "+225 27 22 33 11 96",
+  email: "eglise.cava2021@gmail.com",
+  address: "Cocody Angré, Rue Domolon Villa 72 ",
 
   serviceTimes: [
     {
       label: "Culte dominical",
       day: "dimanche",
-      time: "09h00",
+      time: "08h30",
       description: "Louange, enseignement et prière.",
     },
     {
