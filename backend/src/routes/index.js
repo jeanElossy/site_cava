@@ -23,6 +23,8 @@ import * as receiptService from "../services/receipt.service.js";
 import * as submissionService from "../services/submission.service.js";
 import * as memberExportService from "../services/memberExport.service.js";
 import * as memberCardService from "../services/memberCard.service.js";
+import * as presenceQrService from "../services/presenceQr.service.js";
+import * as presenceService from "../services/presence.service.js";
 import {
   parseRegistrationNumber,
   releaseIfLastIssued,
@@ -40,6 +42,7 @@ import {
   requireAuth,
   requireRole,
 } from "../middlewares/auth.js";
+import { requirePresenceSession } from "../middlewares/presenceAuth.js";
 import {
   loginLimiter,
   twoFactorLimiter,
@@ -49,6 +52,8 @@ import {
   submissionLimiter,
   lookupLimiter,
   publicUploadLimiter,
+  presenceLoginLimiter,
+  presenceScanLimiter,
 } from "../middlewares/rateLimit.js";
 
 import QRCode from "qrcode";
@@ -455,6 +460,197 @@ export const buildRoutes = () => {
       })
     )
   );
+
+  // ---- Badgeage des présences ------------------------------------
+  //
+  // Trois routes PUBLIQUES (aucun jeton d'admin), car c'est ici que se
+  // joue l'authentification elle-même d'un agent : vérification du QR
+  // de sécurité, puis connexion par matricule. Voir
+  // docs/superpowers/specs/2026-08-04-badgeage-presences-design.md et
+  // presenceAuth.js pour le détail de ce que chaque jeton prouve.
+  const presencesPublic = Router();
+
+  presencesPublic.post(
+    "/qr/verify",
+    presenceLoginLimiter,
+    asyncHandler(async (req, res) => {
+      const result = await presenceQrService.verifyToken(req.body?.token);
+
+      if (!result.ok) {
+        return res.status(401).json({
+          success: false,
+          message: presenceQrService.REASON_MESSAGES[result.reason],
+          error: { status: 401, reason: result.reason },
+        });
+      }
+
+      sendSuccess(res, {
+        data: {
+          label: result.qr.label,
+          validFrom: result.qr.validFrom,
+          validUntil: result.qr.validUntil,
+        },
+      });
+    })
+  );
+
+  presencesPublic.post(
+    "/agent-login",
+    presenceLoginLimiter,
+    asyncHandler(async (req, res) => {
+      const result = await presenceService.agentLogin(
+        { token: req.body?.token, matricule: req.body?.matricule },
+        req
+      );
+
+      sendSuccess(res, { data: result });
+    })
+  );
+
+  presencesPublic.post(
+    "/scan",
+    presenceScanLimiter,
+    requirePresenceSession,
+    asyncHandler(async (req, res) => {
+      const result = await presenceService.scan(
+        { registrationNumber: req.body?.registrationNumber },
+        req.presenceAgent,
+        req.presenceQr,
+        req
+      );
+
+      sendSuccess(res, { data: result });
+    })
+  );
+
+  presencesPublic.get(
+    "/search",
+    presenceScanLimiter,
+    requirePresenceSession,
+    asyncHandler(async (req, res) => {
+      const results = await presenceService.search(req.query.q);
+
+      sendSuccess(res, { data: results });
+    })
+  );
+
+  presencesPublic.get(
+    "/stats",
+    requirePresenceSession,
+    asyncHandler(async (req, res) => {
+      const count = await presenceService.countAttendance(req.presenceQr._id);
+
+      sendSuccess(res, {
+        data: {
+          count,
+          qr: { label: req.presenceQr.label, validUntil: req.presenceQr.validUntil },
+        },
+      });
+    })
+  );
+
+  presencesPublic.post(
+    "/mark",
+    presenceScanLimiter,
+    requirePresenceSession,
+    asyncHandler(async (req, res) => {
+      const result = await presenceService.mark(
+        { memberId: req.body?.memberId },
+        req.presenceAgent,
+        req.presenceQr,
+        req
+      );
+
+      sendSuccess(res, { data: result });
+    })
+  );
+
+  api.use("/presences", presencesPublic);
+
+  // Administration des QR de sécurité — génération, révocation,
+  // historique d'usage, présences enregistrées.
+  const adminPresences = Router();
+
+  adminPresences.use(requireAuth, requireRole("admin"));
+
+  adminPresences.get(
+    "/qrcodes",
+    asyncHandler(async (_req, res) => {
+      const data = await presenceQrService.listAdmin();
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  adminPresences.post(
+    "/qrcodes",
+    asyncHandler(async (req, res) => {
+      const data = await presenceQrService.generate(
+        {
+          label: req.body?.label,
+          event: req.body?.event,
+          validFrom: req.body?.validFrom,
+          validUntil: req.body?.validUntil,
+        },
+        req.user
+      );
+
+      await audit.record(req, {
+        action: "create",
+        resource: "presenceSecurityQr",
+        resourceId: data.id,
+      });
+
+      sendCreated(res, { data });
+    })
+  );
+
+  adminPresences.get(
+    "/qrcodes/:id/image",
+    asyncHandler(async (req, res) => {
+      const dataUrl = await presenceQrService.getImage(req.params.id);
+
+      sendSuccess(res, { data: { dataUrl } });
+    })
+  );
+
+  adminPresences.post(
+    "/qrcodes/:id/revoke",
+    asyncHandler(async (req, res) => {
+      const data = await presenceQrService.revoke(req.params.id, req.user);
+
+      await audit.record(req, {
+        action: "update",
+        resource: "presenceSecurityQr",
+        resourceId: req.params.id,
+      });
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  adminPresences.get(
+    "/qrcodes/:id/history",
+    asyncHandler(async (req, res) => {
+      const data = await presenceQrService.history(req.params.id);
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  adminPresences.get(
+    "/attendance",
+    asyncHandler(async (req, res) => {
+      const data = await presenceService.listAttendance({
+        securityQr: req.query.securityQr,
+        limit: req.query.limit,
+      });
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  api.use("/admin/presences", adminPresences);
 
   const adminSubmissions = Router();
 

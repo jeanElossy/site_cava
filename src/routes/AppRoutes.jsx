@@ -47,6 +47,14 @@ const AdminRoutes = ADMIN_ENABLED
   ? lazy(() => import("./AdminRoutes"))
   : null;
 
+// Même raisonnement pour le badgeage des présences : `jsqr` et le
+// scanner caméra ne servent qu'aux agents du Service d'Ordre, jamais
+// au visiteur ordinaire du site. Un import direct en tête de module
+// les aurait embarqués dans le tronc commun de tout le site public.
+const Presence = ADMIN_ENABLED
+  ? lazy(() => import("../pages/Presence/Presence"))
+  : null;
+
 const AdminFallback = () => (
   <p
     style={{
@@ -145,6 +153,20 @@ const AppRoutes = () => {
           element={
             <Suspense fallback={<AdminFallback />}>
               <AdminRoutes />
+            </Suspense>
+          }
+        />
+      )}
+
+      {/* Badgeage des présences — outil interne réservé aux agents du
+          Service d'Ordre, soumis au même interrupteur que /admin (voir
+          docs/superpowers/specs/2026-08-04-badgeage-presences-design.md). */}
+      {ADMIN_ENABLED && (
+        <Route
+          path="/presences"
+          element={
+            <Suspense fallback={<AdminFallback />}>
+              <Presence />
             </Suspense>
           }
         />

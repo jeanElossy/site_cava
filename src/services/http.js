@@ -68,7 +68,7 @@ const normalize = (value) => {
 
 export const request = async (
   path,
-  { method = "GET", body, auth = false, signal } = {}
+  { method = "GET", body, auth = false, token, signal } = {}
 ) => {
   const headers = {};
 
@@ -76,10 +76,17 @@ export const request = async (
     headers["Content-Type"] = "application/json";
   }
 
-  if (auth) {
-    const token = getToken();
+  // `token` outrepasse `auth` : sert au jeton de session du badgeage
+  // des présences (services/presences.js), qui n'a rien à voir avec
+  // le jeton d'administration que lit `getToken()` — deux portées
+  // distinctes, jamais interchangeables (voir presenceAuth.js côté
+  // serveur).
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  } else if (auth) {
+    const stored = getToken();
 
-    if (token) headers.Authorization = `Bearer ${token}`;
+    if (stored) headers.Authorization = `Bearer ${stored}`;
   }
 
   let response;

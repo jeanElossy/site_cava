@@ -6,7 +6,11 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import User from "../models/User.js";
 
 // Extrait le jeton de l'en-tête `Authorization: Bearer <token>`.
-const extractToken = (req) => {
+//
+// Exporté : `presenceAuth.js` le réutilise pour le jeton de session
+// agent du badgeage, qui partage le même en-tête `Authorization` mais
+// une portée (`scope`) totalement distincte des jetons ci-dessous.
+export const extractToken = (req) => {
   const header = req.headers.authorization;
 
   if (!header?.startsWith("Bearer ")) return null;

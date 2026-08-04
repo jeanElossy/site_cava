@@ -200,3 +200,44 @@ export const publicUploadLimiter = rateLimit({
     });
   },
 });
+
+// Connexion agent au badgeage (QR de sécurité + matricule).
+//
+// Le matricule est un identifiant séquentiel partiellement devinable
+// (voir `lookupLimiter` ci-dessus pour le même raisonnement) : sans
+// cette limite, quelqu'un en possession d'un QR de sécurité valide
+// pourrait essayer des matricules au hasard jusqu'à en trouver un
+// habilité au badgeage.
+export const presenceLoginLimiter = rateLimit({
+  ...base,
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  skipSuccessfulRequests: true,
+  handler: (_req, res) => {
+    res.status(429).json({
+      success: false,
+      message:
+        "Trop de tentatives de connexion. Réessayez dans quelques minutes.",
+      error: { status: 429 },
+    });
+  },
+});
+
+// Scan et recherche pendant une session de badgeage déjà authentifiée.
+//
+// Plafond haut : un agent enchaîne légitimement des dizaines de scans
+// par minute à l'entrée d'un culte. La limite ne sert qu'à borner
+// l'abus d'une session déjà valide (jeton volé, script), pas à freiner
+// l'usage normal.
+export const presenceScanLimiter = rateLimit({
+  ...base,
+  windowMs: 60 * 1000,
+  limit: 60,
+  handler: (_req, res) => {
+    res.status(429).json({
+      success: false,
+      message: "Trop de scans en peu de temps. Merci de patienter un instant.",
+      error: { status: 429 },
+    });
+  },
+});
