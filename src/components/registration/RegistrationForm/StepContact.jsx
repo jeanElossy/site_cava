@@ -16,7 +16,7 @@ const StepContact = ({ state, updateData }) => (
       <input
         id="reg-whatsapp"
         type="tel"
-        placeholder="Si différent du téléphone"
+        placeholder="Confirmez votre numero"
         value={state.data.whatsapp}
         onChange={(event) => updateData({ whatsapp: event.target.value })}
       />
