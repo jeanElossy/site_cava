@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 import { DOMParser } from "linkedom";
 import { Resvg } from "@resvg/resvg-js";
-import { createCanvas, loadImage } from "@napi-rs/canvas";
+import { createCanvas, loadImage, GlobalFonts } from "@napi-rs/canvas";
 import QRCode from "qrcode";
 import PDFDocument from "pdfkit";
 
@@ -97,12 +97,151 @@ const RESVG_FONT_OPTIONS = {
   defaultFontFamily: CARD_FONT_FAMILY,
 };
 
+// Même Poppins, mais enregistrée séparément auprès de @napi-rs/canvas
+// (utilisé ici uniquement pour MESURER du texte — voir
+// reflowMultiTspanText — jamais pour dessiner la carte elle-même,
+// toujours rasterisée par resvg-js).
+const CANVAS_FONT_REGULAR = "CavaCardMeasureRegular";
+const CANVAS_FONT_BOLD = "CavaCardMeasureBold";
+
+GlobalFonts.registerFromPath(POPPINS_REGULAR_PATH, CANVAS_FONT_REGULAR);
+GlobalFonts.registerFromPath(POPPINS_BOLD_PATH, CANVAS_FONT_BOLD);
+
+const textMeasureContext = createCanvas(10, 10).getContext("2d");
+
 const rewriteFontFamilies = (svgSource) =>
   svgSource.replace(/font-family:\s*([^;]+);/g, (match, families) => {
     const weight = /bold|black|medium/i.test(families) ? 700 : 400;
 
     return `font-family: ${CARD_FONT_FAMILY}; font-weight: ${weight};`;
   });
+
+// Lit une propriété CSS (`property`) pour une classe donnée dans le
+// bloc <style> du gabarit — les règles y sont souvent groupées par
+// sélecteur multiple (ex. ".cls-12, .cls-41 { font-size: 5px; }"),
+// d'où la recherche par appartenance à la liste plutôt qu'un sélecteur
+// exact.
+const getStylePropertyForClass = (svgSource, className, property) => {
+  const styleStart = svgSource.indexOf("<style");
+
+  if (styleStart === -1) return null;
+
+  const bodyStart = svgSource.indexOf(">", styleStart) + 1;
+  const styleEnd = svgSource.indexOf("</style>", bodyStart);
+
+  if (styleEnd === -1) return null;
+
+  const css = svgSource.slice(bodyStart, styleEnd);
+  const target = `.${className}`;
+
+  for (const rule of css.split("}")) {
+    const braceIndex = rule.indexOf("{");
+
+    if (braceIndex === -1) continue;
+
+    const selectors = rule
+      .slice(0, braceIndex)
+      .split(",")
+      .map((selector) => selector.trim());
+
+    if (!selectors.includes(target)) continue;
+
+    const match = rule
+      .slice(braceIndex + 1)
+      .match(new RegExp(`${property}:\\s*([^;]+);`));
+
+    if (match) return match[1].trim();
+  }
+
+  return null;
+};
+
+// Taille et graisse effectives d'un élément <text>, lues dans le bloc
+// <style> via ses classes CSS — nécessaires pour mesurer précisément
+// le texte avec la police de substitution (voir reflowMultiTspanText).
+// `null` si la taille n'a pas pu être déterminée : mieux vaut renoncer
+// au repositionnement que deviner une taille fausse.
+const resolveFontMetrics = (svgSource, element) => {
+  const classes = (element.getAttribute("class") ?? "")
+    .split(/\s+/)
+    .filter(Boolean);
+
+  let fontSize = null;
+  let fontWeight = null;
+
+  for (const className of classes) {
+    fontSize ??= getStylePropertyForClass(svgSource, className, "font-size");
+    fontWeight ??= getStylePropertyForClass(svgSource, className, "font-weight");
+  }
+
+  if (!fontSize) return null;
+
+  return {
+    fontSizePx: parseFloat(fontSize),
+    bold: fontWeight ? parseInt(fontWeight, 10) >= 700 : false,
+  };
+};
+
+// GARDE-FOU GÉNÉRAL contre la substitution de police (voir plus haut) :
+// un export Illustrator positionne souvent le texte en plusieurs
+// <tspan>, un par caractère ou par groupe portant le même style,
+// chacun avec un x calculé au pixel près pour LA POLICE D'ORIGINE.
+// Une fois cette police remplacée par Poppins (largeurs de caractère
+// différentes), ces x figés ne correspondent plus à rien : lettres qui
+// se chevauchent ou espaces qui s'ouvrent au mauvais endroit — visible
+// sur les textes décoratifs (devise, "CARTE VALIDE JUSQU'AU"...) que
+// le code ne modifie jamais autrement.
+//
+// Recalcule le x de chaque tspan à partir de la largeur RÉELLEMENT
+// mesurée (avec la police de substitution) des tspans précédents,
+// plutôt que de faire confiance aux x d'origine — jamais de nouveau
+// texte, jamais de changement de taille/couleur/position verticale,
+// seulement une réédition de la position horizontale pour qu'elle
+// corresponde à la police réellement utilisée.
+//
+// Les champs dynamiques (id `field-*`) sont ignorés : `setElementText`
+// les a déjà réduits à un tspan unique, rien à recalculer.
+const reflowMultiTspanText = (document, svgSource) => {
+  for (const textElement of document.querySelectorAll("text")) {
+    const id = textElement.getAttribute("id");
+
+    if (id?.startsWith("field-")) continue;
+
+    const tspans = [...textElement.querySelectorAll("tspan")];
+
+    if (tspans.length < 2) continue;
+
+    const metrics = resolveFontMetrics(svgSource, textElement);
+
+    if (!metrics) continue;
+
+    textMeasureContext.font = `${metrics.fontSizePx}px ${
+      metrics.bold ? CANVAS_FONT_BOLD : CANVAS_FONT_REGULAR
+    }`;
+
+    // Un même <text> peut porter plusieurs LIGNES (motto sur deux
+    // lignes, légende du logo…), chaque nouvelle ligne repérable à un
+    // `y` de tspan différent du précédent — le x d'origine de son
+    // premier tspan reste la référence pour cette ligne (son propre
+    // retrait/alignement voulu) : le cumul ne doit repartir qu'à
+    // l'intérieur d'une même ligne, jamais se poursuivre d'une ligne à
+    // l'autre.
+    let cursorX = null;
+    let currentLineY = null;
+
+    for (const tspan of tspans) {
+      const tspanY = tspan.getAttribute("y");
+
+      if (currentLineY === null || tspanY !== currentLineY) {
+        currentLineY = tspanY;
+        cursorX = parseFloat(tspan.getAttribute("x") ?? "0");
+      }
+
+      tspan.setAttribute("x", String(cursorX));
+      cursorX += textMeasureContext.measureText(tspan.textContent).width;
+    }
+  }
+};
 
 let cachedVersoPng = null;
 let cachedRectoTemplateSource = null;
@@ -476,16 +615,23 @@ const injectRectoFields = async (document, member, church) => {
 const buildRectoPng = async (memberId) => {
   const { member, church } = await loadMemberForCard(memberId);
 
-  const document = parseSvgDocument(getRectoTemplateSource());
+  const source = getRectoTemplateSource();
+  const document = parseSvgDocument(source);
 
   await injectRectoFields(document, member, church);
+  reflowMultiTspanText(document, source);
 
   return rasterizeSvgToPng(serializeSvg(document));
 };
 
 const buildVersoPng = () => {
   if (!cachedVersoPng) {
-    cachedVersoPng = rasterizeSvgToPng(readSvgTemplate(getVersoPath()));
+    const source = readSvgTemplate(getVersoPath());
+    const document = parseSvgDocument(source);
+
+    reflowMultiTspanText(document, source);
+
+    cachedVersoPng = rasterizeSvgToPng(serializeSvg(document));
   }
 
   return cachedVersoPng;
