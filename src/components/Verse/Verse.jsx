@@ -9,9 +9,10 @@ const Verse = () => {
       </div>
 
       <h2>
-        Je suis venu afin qu'ils
-        aient la vie, et qu'ils
-        l'aient en abondance.
+        ... je suis venu afin que les
+        brebis aient la vie, 
+        et qu'elles soient 
+        dans l'abondance.
       </h2>
 
       <p>Jean 10:10</p>
