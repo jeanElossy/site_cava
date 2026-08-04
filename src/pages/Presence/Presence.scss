@@ -33,6 +33,12 @@
   --presence-border-strong: rgba(255, 255, 255, 0.15);
   --presence-camera-frame: rgba(0, 0, 0, 0.35);
   --presence-logo-chip: rgba(255, 255, 255, 0.94);
+  // Fond PLEIN (jamais transparent), pour tout élément qui flotte
+  // par-dessus d'autre contenu (la bulle de résultat du scanner,
+  // `position: fixed`) — contrairement à `--presence-surface`, pensé
+  // pour un panneau posé à même le dégradé de la page, une transparence
+  // ici laisserait transparaître le texte en dessous.
+  --presence-overlay: #0c2a1e;
   --presence-danger: #fca5a5;
   --presence-danger-bg: rgba(248, 113, 113, 0.1);
   --presence-danger-border: rgba(248, 113, 113, 0.35);
@@ -58,6 +64,7 @@
     --presence-border-strong: #c7d5cd;
     --presence-camera-frame: rgba(15, 30, 24, 0.06);
     --presence-logo-chip: #ffffff;
+    --presence-overlay: #ffffff;
     --presence-danger: #b42318;
     --presence-danger-bg: rgba(180, 35, 24, 0.08);
     --presence-danger-border: rgba(180, 35, 24, 0.25);
@@ -1010,32 +1017,38 @@
   // que l'entrée/la sortie se voie plutôt que d'apparaître/disparaître
   // d'un coup. `pointer-events: none` au repos : invisible aux clics,
   // elle ne doit jamais bloquer la caméra ni les boutons dessous.
+  // Centrée dans le viewport plutôt qu'accrochée en haut : cette
+  // position ne dépend jamais de la hauteur réelle de l'en-tête (qui
+  // varie — bandeau agent, compte à rebours passant sur deux lignes en
+  // dessous de 520px…), donc ne chevauche jamais son texte. Elle
+  // recouvre brièvement le cadre de la caméra, ce qui est attendu :
+  // c'est précisément l'endroit que l'agent regarde au moment du scan.
   &__result-toast {
     position: fixed;
-    top: 72px;
+    top: 50%;
     left: 50%;
     z-index: 40;
 
-    width: min(92vw, 420px);
+    width: min(92vw, 380px);
 
     padding: 18px;
 
-    border: 1px solid var(--presence-border);
+    border: 1px solid var(--presence-border-strong);
     border-radius: 18px;
 
-    background: var(--presence-surface);
-    box-shadow: 0 16px 36px rgba(4, 23, 15, 0.35);
+    background: var(--presence-overlay);
+    box-shadow: 0 20px 44px rgba(2, 12, 8, 0.45);
 
     opacity: 0;
     pointer-events: none;
-    transform: translate(-50%, -14px);
+    transform: translate(-50%, -50%) scale(0.94);
 
     transition: opacity 0.25s ease, transform 0.25s ease;
 
     &--visible {
       opacity: 1;
       pointer-events: auto;
-      transform: translate(-50%, 0);
+      transform: translate(-50%, -50%) scale(1);
     }
   }
 
@@ -1288,6 +1301,6 @@
 
   .presence-scanner__result-toast {
     transition: opacity 0.01ms;
-    transform: translate(-50%, 0);
+    transform: translate(-50%, -50%);
   }
 }
