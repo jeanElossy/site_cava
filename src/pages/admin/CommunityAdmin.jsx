@@ -440,27 +440,16 @@ const MemberRowMenu = ({ member, onEdit, onDelete, reload, onStatusChanged }) =>
     [member.firstName, member.lastName].filter(Boolean).join(" ") ||
     "ce membre";
 
-  // Trois faces possibles, chacune avec sa propre route et son propre
-  // nom de fichier côté serveur (voir routes/index.js) — le recto et
-  // le verso ne sont jamais fusionnés dans un seul fichier image.
-  const CARD_DOWNLOADS = {
-    pdf: { urlSuffix: "card.pdf", filename: (id) => `carte-membre-${id}.pdf` },
-    jpg: { urlSuffix: "card.jpg", filename: (id) => `carte-membre-${id}.jpg` },
-    "verso-jpg": {
-      urlSuffix: "card-verso.jpg",
-      filename: (id) => `carte-membre-${id}-verso.jpg`,
-    },
-  };
-
+  // Un seul format proposé : le PDF (recto+verso) sert aussi bien à
+  // l'impression qu'à être gardé sur le téléphone comme version
+  // numérique — pas de JPEG recto/verso séparés.
   const download = async (kind) => {
     setBusy(kind);
     setError("");
 
     try {
-      const { urlSuffix, filename } = CARD_DOWNLOADS[kind];
-
       const response = await fetch(
-        `${apiBaseUrl}/api/admin/members/${member.id}/${urlSuffix}`,
+        `${apiBaseUrl}/api/admin/members/${member.id}/card.pdf`,
         { headers: { Authorization: `Bearer ${getToken()}` } }
       );
 
@@ -475,7 +464,7 @@ const MemberRowMenu = ({ member, onEdit, onDelete, reload, onStatusChanged }) =>
       const link = document.createElement("a");
 
       link.href = url;
-      link.download = filename(member.id);
+      link.download = `carte-membre-${member.id}.pdf`;
       link.click();
 
       URL.revokeObjectURL(url);
@@ -514,41 +503,22 @@ const MemberRowMenu = ({ member, onEdit, onDelete, reload, onStatusChanged }) =>
             Voir / modifier
           </button>
 
-          {/* Carte désactivée pour un membre inactif : mêmes fichiers
+          {/* Carte désactivée pour un membre inactif : même fichier
               que le registre exporté, jamais émis pour un membre
-              désactivé (voir memberCardSvg.service.js). */}
+              désactivé (voir memberCardSvg.service.js). Un seul bouton
+              (PDF recto+verso) : il sert aussi bien à l'impression
+              qu'à être gardé sur le téléphone comme version numérique
+              — pas besoin des JPEG recto/verso séparés. */}
           {member.registrationNumber && !isInactive && (
-            <>
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => download("pdf")}
-                disabled={busy !== ""}
-              >
-                <IdCard aria-hidden="true" />
-                {busy === "pdf" ? "Téléchargement…" : "Carte imprimable (PDF)"}
-              </button>
-
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => download("jpg")}
-                disabled={busy !== ""}
-              >
-                <IdCard aria-hidden="true" />
-                {busy === "jpg" ? "Téléchargement…" : "Carte numérique (recto)"}
-              </button>
-
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => download("verso-jpg")}
-                disabled={busy !== ""}
-              >
-                <IdCard aria-hidden="true" />
-                {busy === "verso-jpg" ? "Téléchargement…" : "Verso de la carte"}
-              </button>
-            </>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => download("pdf")}
+              disabled={busy !== ""}
+            >
+              <IdCard aria-hidden="true" />
+              {busy === "pdf" ? "Téléchargement…" : "Carte imprimable (PDF)"}
+            </button>
           )}
 
           <button
