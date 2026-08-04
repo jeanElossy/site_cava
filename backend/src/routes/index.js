@@ -808,10 +808,12 @@ export const buildRoutes = () => {
   memberExportRouter.get(
     "/export.xlsx",
     asyncHandler(async (req, res) => {
+      // Pas de paramètre `status` : les membres désactivés sont
+      // toujours exclus du registre exporté (voir
+      // memberExport.service.js#fetchMembers).
       const buffer = await memberExportService.buildMembersXlsx({
         church: req.query.church,
         flock: req.query.flock,
-        status: req.query.status,
       });
 
       res.setHeader(
@@ -833,7 +835,6 @@ export const buildRoutes = () => {
       const buffer = await memberExportService.buildMembersPdf({
         church: req.query.church,
         flock: req.query.flock,
-        status: req.query.status,
       });
 
       res.setHeader("Content-Type", "application/pdf");

@@ -1,6 +1,7 @@
 import { describe, it, before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import mongoose from "mongoose";
+import ExcelJS from "exceljs";
 
 import { connectTestDb, disconnectTestDb } from "../test/db.js";
 import Member from "../models/Member.js";
@@ -85,6 +86,30 @@ describe("presenceExport.service (intégration MongoDB)", () => {
     assert.ok(Buffer.isBuffer(buffer));
     // Signature ZIP (les .xlsx sont des archives ZIP) : "PK".
     assert.equal(buffer.subarray(0, 2).toString("latin1"), "PK");
+  });
+
+  it("neutralise une identité de visiteur piégée en formule Excel (injection CSV/formule)", async () => {
+    await Attendance.create({
+      kind: "visitor",
+      // Charge utile classique d'injection de formule : Excel
+      // exécuterait cette commande à l'ouverture si elle n'était pas
+      // neutralisée (voir utils/excelSafeCell.js).
+      visitor: { firstName: "=cmd|'/c calc'!A1", lastName: "Traoré" },
+      securityQr: qr._id,
+      agent: agent._id,
+      method: "manual",
+    });
+
+    const buffer = await buildAttendanceXlsx(qr._id);
+
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+
+    const sheet = workbook.getWorksheet("Présences");
+    const firstNameCell = sheet.getRow(2).getCell(2).value;
+
+    assert.equal(typeof firstNameCell, "string");
+    assert.ok(firstNameCell.startsWith("'"));
   });
 
   it("lève une 404 pour un QR de sécurité introuvable (xlsx)", async () => {

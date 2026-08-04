@@ -152,6 +152,15 @@
   color: $admin-danger;
 }
 
+.admin-community__export-hint {
+  width: 100%;
+  margin: 0;
+
+  color: $admin-ink-faint;
+
+  font-size: 0.8rem;
+}
+
 // Menu unique (Modifier, Supprimer, Carte PDF/JPEG) sur la ligne d'un
 // membre — remplace quatre boutons alignés, qui ne laissaient plus
 // assez de place aux autres colonnes du tableau.

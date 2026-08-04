@@ -7,6 +7,7 @@ import PDFDocument from "pdfkit";
 import Attendance from "../models/Attendance.js";
 import PresenceSecurityQr from "../models/PresenceSecurityQr.js";
 import { ApiError } from "../utils/ApiError.js";
+import { excelSafeCell } from "../utils/excelSafeCell.js";
 
 // Export de la liste des présences d'un service, avec le décompte
 // membres/visiteurs — voir docs/superpowers/specs/2026-08-04-badgeage-
@@ -96,21 +97,32 @@ export const buildAttendanceXlsx = async (securityQrId) => {
   for (const record of records) {
     const isMember = record.kind === "member";
 
+    // `excelSafeCell` neutralise l'injection de formule Excel/CSV sur
+    // tout champ texte libre saisi par un tiers non administrateur :
+    // nom/prénom/téléphone/quartier d'un membre (formulaire public
+    // d'inscription) ou d'un visiteur (saisie libre par l'agent au
+    // badgeage) — voir utils/excelSafeCell.js.
     sheet.addRow({
-      lastName: isMember ? record.member?.lastName ?? "—" : record.visitor?.lastName ?? "—",
-      firstName: isMember ? record.member?.firstName ?? "—" : record.visitor?.firstName ?? "—",
+      lastName: excelSafeCell(
+        isMember ? record.member?.lastName ?? "—" : record.visitor?.lastName ?? "—"
+      ),
+      firstName: excelSafeCell(
+        isMember ? record.member?.firstName ?? "—" : record.visitor?.firstName ?? "—"
+      ),
       kind: isMember ? "Membre" : "Visiteur",
       registrationNumber: isMember ? record.member?.registrationNumber ?? "—" : "—",
-      phone: (isMember ? record.member?.phone : record.visitor?.phone) ?? "—",
-      area: isMember ? record.member?.area ?? "—" : "—",
+      phone: excelSafeCell((isMember ? record.member?.phone : record.visitor?.phone) ?? "—"),
+      area: excelSafeCell(isMember ? record.member?.area ?? "—" : "—"),
       recordedAt: new Date(record.recordedAt).toLocaleTimeString("fr-FR", {
         hour: "2-digit",
         minute: "2-digit",
       }),
       method: record.method === "scan" ? "Scan" : "Manuel",
-      agent: record.agent
-        ? `${record.agent.firstName} ${record.agent.lastName}`.trim()
-        : "—",
+      agent: excelSafeCell(
+        record.agent
+          ? `${record.agent.firstName} ${record.agent.lastName}`.trim()
+          : "—"
+      ),
     });
   }
 

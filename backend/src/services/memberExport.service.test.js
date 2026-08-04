@@ -133,6 +133,51 @@ describe("memberExport.service (intégration MongoDB)", () => {
     assert.equal(lastName, TEST_LAST_NAME.toUpperCase());
   });
 
+  it("exclut toujours les membres désactivés, même sans filtre de statut explicite", async () => {
+    await Member.create([
+      {
+        firstName: "Actif",
+        lastName: TEST_LAST_NAME,
+        church: 1,
+        flock: testFlock._id,
+        registrationNumber: "1XM26010J",
+        status: "actif",
+      },
+      {
+        firstName: "Inactif",
+        lastName: TEST_LAST_NAME,
+        church: 1,
+        flock: testFlock._id,
+        registrationNumber: "1XM26011K",
+        status: "inactif",
+      },
+    ]);
+
+    // Un `status` fourni par l'appelant ne doit rien changer : le
+    // registre exporté exclut systématiquement les membres désactivés.
+    const buffer = await buildMembersXlsx({
+      church: 1,
+      flock: testFlock.id,
+      status: "inactif",
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+
+    const sheet = workbook.getWorksheet("Membres");
+    const firstNames = [];
+
+    sheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return;
+
+      if (row.getCell(2).value === TEST_LAST_NAME.toUpperCase()) {
+        firstNames.push(row.getCell(3).value);
+      }
+    });
+
+    assert.deepEqual(firstNames, ["Actif"]);
+  });
+
   it("buildMembersPdf renvoie un PDF valide avec le logo intégré, sans erreur", async () => {
     await Member.create({
       firstName: "Pdf",

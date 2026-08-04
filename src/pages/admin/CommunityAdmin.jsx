@@ -6,6 +6,8 @@ import {
   MoreVertical,
   Pencil,
   Trash2,
+  UserCheck,
+  UserX,
 } from "lucide-react";
 
 import {
@@ -383,11 +385,31 @@ const toTitleCase = (value = "") =>
 // libère la place que réclament les autres colonnes. Reçoit
 // `onEdit`/`onDelete` de AdminCrud (via la prop `rowActions`) pour ne
 // pas dupliquer sa logique d'édition/suppression.
-const MemberRowMenu = ({ member, onEdit, onDelete }) => {
+const MemberRowMenu = ({ member, onEdit, onDelete, reload }) => {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const containerRef = useRef(null);
+
+  const isInactive = member.status === "inactif";
+
+  const toggleStatus = async () => {
+    setBusy("status");
+    setError("");
+
+    try {
+      await members.update(member.id, {
+        status: isInactive ? "actif" : "inactif",
+      });
+
+      reload?.();
+      setOpen(false);
+    } catch (caught) {
+      setError(caught?.message ?? "Le changement de statut a échoué.");
+    } finally {
+      setBusy("");
+    }
+  };
 
   // Ferme le menu au clic en dehors — comportement attendu d'un menu
   // déroulant, qu'aucun composant du projet ne fournissait encore.
@@ -496,6 +518,24 @@ const MemberRowMenu = ({ member, onEdit, onDelete }) => {
               </button>
             </>
           )}
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={toggleStatus}
+            disabled={busy !== ""}
+          >
+            {isInactive ? (
+              <UserCheck aria-hidden="true" />
+            ) : (
+              <UserX aria-hidden="true" />
+            )}
+            {busy === "status"
+              ? "Mise à jour…"
+              : isInactive
+                ? "Réactiver"
+                : "Désactiver"}
+          </button>
 
           <button
             type="button"
@@ -660,7 +700,7 @@ const announcementColumns = [
 ];
 
 const MemberExportButtons = ({ flockOptions, churchOptions }) => {
-  const [filters, setFilters] = useState({ church: "", flock: "", status: "" });
+  const [filters, setFilters] = useState({ church: "", flock: "" });
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
 
@@ -736,18 +776,6 @@ const MemberExportButtons = ({ flockOptions, churchOptions }) => {
         ))}
       </select>
 
-      <select
-        aria-label="Filtrer par statut"
-        value={filters.status}
-        onChange={(event) =>
-          setFilters((previous) => ({ ...previous, status: event.target.value }))
-        }
-      >
-        <option value="">Tous les statuts</option>
-        <option value="actif">Actif</option>
-        <option value="inactif">Inactif</option>
-      </select>
-
       <button type="button" onClick={() => download("xlsx")} disabled={busy !== ""}>
         <Download aria-hidden="true" />
         {busy === "xlsx" ? "Export…" : "Excel"}
@@ -763,6 +791,10 @@ const MemberExportButtons = ({ flockOptions, churchOptions }) => {
           {error}
         </p>
       )}
+
+      <p className="admin-community__export-hint">
+        Les membres désactivés n&apos;apparaissent jamais dans ces exports.
+      </p>
     </div>
   );
 };
@@ -992,11 +1024,15 @@ const CommunityAdmin = () => {
               fields={memberFields}
               columns={memberColumns}
               tableClassName="admin-crud__table--fixed"
-              rowActions={(item, { onEdit, onDelete }) => (
+              rowClassName={(item) =>
+                item.status === "inactif" ? "admin-crud__row--inactive" : ""
+              }
+              rowActions={(item, { onEdit, onDelete, reload }) => (
                 <MemberRowMenu
                   member={item}
                   onEdit={onEdit}
                   onDelete={onDelete}
+                  reload={reload}
                 />
               )}
               labels={{

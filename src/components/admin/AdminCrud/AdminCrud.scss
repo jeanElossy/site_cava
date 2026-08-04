@@ -173,6 +173,18 @@
     }
   }
 
+  // Ligne d'un élément désactivé (ex. membre au statut "inactif") —
+  // grisée pour rester lisible dans la liste sans se confondre avec
+  // les lignes actives. Opt-in via `rowClassName` : n'affecte que les
+  // écrans qui le demandent.
+  &__row--inactive {
+    td {
+      color: $admin-ink-faint;
+    }
+
+    opacity: 0.65;
+  }
+
   // Colonne Actions (Modifier/Supprimer) : toujours deux icônes, jamais
   // de texte long — `width: 1%` avec `white-space: nowrap` la force à
   // se réduire à son contenu au lieu de se voir attribuer une part

@@ -9,6 +9,7 @@ import {
   formatRegistrationNumber,
   parseRegistrationNumber,
 } from "./registrationNumber.service.js";
+import { excelSafeCell } from "../utils/excelSafeCell.js";
 
 const STATUS_LABELS = { actif: "Actif", inactif: "Inactif" };
 
@@ -41,12 +42,17 @@ const displayFirstName = (member) =>
 const displayLastName = (member) =>
   member.lastName ? member.lastName.toUpperCase() : "";
 
+// Un membre désactivé (ne fréquente plus régulièrement — voir
+// `Member.status`) ne doit JAMAIS apparaître dans le registre exporté :
+// c'est le document remis ou archivé comme liste officielle des
+// membres, pas un export de travail. `status` n'est donc pas un filtre
+// que l'appelant peut assouplir — il est toujours forcé à "actif",
+// quoi que `filter` contienne.
 const fetchMembers = async (filter = {}) => {
-  const criteria = {};
+  const criteria = { status: "actif" };
 
   if (filter.church) criteria.church = Number(filter.church);
   if (filter.flock) criteria.flock = filter.flock;
-  if (filter.status) criteria.status = filter.status;
 
   const members = await Member.find(criteria)
     .populate("flock", "name code")
@@ -103,15 +109,19 @@ export const buildMembersXlsx = async (filter = {}) => {
   sheet.views = [{ state: "frozen", ySplit: 1 }];
 
   for (const member of members) {
+    // `excelSafeCell` neutralise l'injection de formule Excel/CSV sur
+    // les champs texte libre saisis par le formulaire public
+    // d'inscription (nom, prénom, téléphone) — voir
+    // utils/excelSafeCell.js.
     sheet.addRow({
       registrationNumber: member.registrationNumber
         ? formatRegistrationNumber(member.registrationNumber)
         : "—",
-      lastName: displayLastName(member),
-      firstName: displayFirstName(member),
+      lastName: excelSafeCell(displayLastName(member)),
+      firstName: excelSafeCell(displayFirstName(member)),
       church: member.church ?? "—",
-      flock: member.flock?.name ?? "—",
-      phone: member.phone ?? "—",
+      flock: excelSafeCell(member.flock?.name ?? "—"),
+      phone: excelSafeCell(member.phone ?? "—"),
       status: STATUS_LABELS[member.status] ?? member.status,
       joinedAt: member.joinedAt
         ? new Date(member.joinedAt).toLocaleDateString("fr-FR")

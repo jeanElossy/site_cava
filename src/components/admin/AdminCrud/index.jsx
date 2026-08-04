@@ -60,13 +60,21 @@ const AdminCrud = ({
   // liste des membres). N'affecte que les écrans qui le demandent
   // explicitement ; tous les autres gardent leur comportement actuel.
   tableClassName,
-  // Optionnel : `(item, { onEdit, onDelete }) => JSX` remplace les deux
-  // boutons Modifier/Supprimer par défaut par un rendu personnalisé —
-  // utilisé par la liste des membres pour regrouper Modifier,
-  // Supprimer ET le téléchargement de la carte dans un seul menu, sans
-  // dupliquer la logique d'édition/suppression déjà gérée ici. Les
-  // écrans qui ne le fournissent pas gardent le rendu par défaut.
+  // Optionnel : `(item, { onEdit, onDelete, reload }) => JSX` remplace
+  // les deux boutons Modifier/Supprimer par défaut par un rendu
+  // personnalisé — utilisé par la liste des membres pour regrouper
+  // Modifier, Supprimer, le téléchargement de la carte ET la bascule
+  // rapide de statut dans un seul menu, sans dupliquer la logique
+  // d'édition/suppression déjà gérée ici. `reload` permet à une action
+  // qui écrit directement (hors formulaire d'édition) de rafraîchir la
+  // liste ensuite. Les écrans qui ne le fournissent pas gardent le
+  // rendu par défaut.
   rowActions,
+  // Optionnel : `(item) => string` ajoute une classe CSS par ligne —
+  // utilisé par la liste des membres pour griser visuellement un
+  // membre désactivé, sans imposer cette notion de statut aux autres
+  // écrans qui ne la connaissent pas.
+  rowClassName,
 }) => {
   const {
     items: rawItems,
@@ -236,7 +244,10 @@ const AdminCrud = ({
 
               <tbody>
                 {items.map((item) => (
-                  <tr key={item[rowKey]}>
+                  <tr
+                    key={item[rowKey]}
+                    className={rowClassName?.(item) || undefined}
+                  >
                     {columns.map((column) => (
                       <td
                         key={column.key}
@@ -253,6 +264,12 @@ const AdminCrud = ({
                         rowActions(item, {
                           onEdit: () => openEdit(item),
                           onDelete: () => setPendingDelete(item),
+                          // Pour une action qui modifie l'élément sans
+                          // passer par le formulaire d'édition (ex. bascule
+                          // rapide d'un statut) — sans ça, la ligne
+                          // resterait affichée avec sa valeur périmée
+                          // jusqu'au prochain rechargement manuel.
+                          reload,
                         })
                       ) : (
                         <>
