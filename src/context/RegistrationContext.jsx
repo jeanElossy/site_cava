@@ -23,6 +23,7 @@ export const initialState = {
   data: {
     firstName: "",
     lastName: "",
+    photo: "",
     church: "",
     flock: "",
     phone: "",

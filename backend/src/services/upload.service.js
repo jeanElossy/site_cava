@@ -40,6 +40,7 @@ const FOLDERS = {
   medias: "cava/medias",
   events: "cava/events",
   ministries: "cava/ministries",
+  members: "cava/members",
   divers: "cava/divers",
 };
 

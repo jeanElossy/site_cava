@@ -178,3 +178,25 @@ export const lookupLimiter = rateLimit({
     });
   },
 });
+
+// Signature d'envoi de photo pour le formulaire public d'inscription.
+//
+// Seule route de signature Cloudinary accessible SANS authentification
+// (voir upload.service.js : « il faut d'abord être authentifié sur
+// notre API » ne s'applique qu'aux routes /admin/uploads/*). Le
+// service restreint cette route à un unique dossier (« members »), et
+// cette limite en plus empêche un visiteur d'en faire un générateur de
+// signatures à volonté.
+export const publicUploadLimiter = rateLimit({
+  ...base,
+  windowMs: 60 * 60 * 1000,
+  limit: 15,
+  handler: (_req, res) => {
+    res.status(429).json({
+      success: false,
+      message:
+        "Trop d'envois de photo récemment. Merci de patienter avant de réessayer.",
+      error: { status: 429 },
+    });
+  },
+});

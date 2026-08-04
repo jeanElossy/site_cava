@@ -106,20 +106,126 @@ describe("validateStep", () => {
     );
   });
 
-  it("étape 2 (Contact) : passe avec un téléphone renseigné", () => {
+  // Remplit les champs de l'étape 2, dans l'ordre où `validateStep`
+  // les vérifie, pour isoler celui testé à chaque fois.
+  const fillStep2UpTo = (state, field) => {
+    const order = [
+      "phone",
+      "whatsapp",
+      "email",
+      "address",
+      "area",
+      "emergencyContactName",
+      "emergencyContactPhone",
+    ];
+    const values = {
+      phone: "0700000000",
+      whatsapp: "0700000001",
+      email: "jean@example.com",
+      address: "Angré 7e tranche",
+      area: "Angré",
+      emergencyContactName: "Marie Koffi",
+      emergencyContactPhone: "0708000000",
+    };
+
+    for (const key of order) {
+      if (key === field) break;
+      state.data[key] = values[key];
+    }
+  };
+
+  it("étape 2 (Contact) : exige aussi WhatsApp, e-mail, adresse, quartier et le contact d'urgence", () => {
+    const withPhone = () => {
+      const state = baseState();
+      fillStep2UpTo(state, "whatsapp");
+      return state;
+    };
+
+    expect(validateStep(2, withPhone())).toBe(
+      "Merci d'indiquer un numéro WhatsApp."
+    );
+  });
+
+  it("étape 2 (Contact) : passe quand tous les champs sont renseignés", () => {
     const state = baseState();
-    state.data.phone = "0700000000";
+    fillStep2UpTo(state, null);
 
     expect(validateStep(2, state)).toBe("");
   });
 
-  it("étapes suivantes (3 à 6) : aucune validation bloquante", () => {
+  it("étape 3 (État civil) : exige date de naissance, genre, situation matrimoniale et nombre d'enfants", () => {
     const state = baseState();
 
+    expect(validateStep(3, state)).toBe(
+      "Merci d'indiquer votre date de naissance."
+    );
+
+    state.data.dateOfBirth = "1990-05-12";
+    expect(validateStep(3, state)).toBe("Merci d'indiquer votre genre.");
+
+    state.data.gender = "homme";
+    expect(validateStep(3, state)).toBe(
+      "Merci d'indiquer votre situation matrimoniale."
+    );
+
+    state.data.maritalStatus = "celibataire";
+    expect(validateStep(3, state)).toBe(
+      "Merci d'indiquer votre nombre d'enfants (0 si aucun)."
+    );
+
+    // "0" est une réponse complète, pas une case vide.
+    state.data.childrenCount = "0";
     expect(validateStep(3, state)).toBe("");
+  });
+
+  it("étape 4 (Vie spirituelle) : exige année d'arrivée et de conversion, mais pas l'église précédente", () => {
+    const state = baseState();
+
+    expect(validateStep(4, state)).toBe(
+      "Merci d'indiquer votre année d'arrivée à CAVA."
+    );
+
+    state.data.arrivalYear = "2021";
+    expect(validateStep(4, state)).toBe(
+      "Merci d'indiquer votre année de conversion."
+    );
+
+    state.data.conversionYear = "2015";
+    // `previousChurch` reste vide : ne doit rien bloquer.
     expect(validateStep(4, state)).toBe("");
+  });
+
+  it("étape 4 (Vie spirituelle) : l'année de baptême d'eau n'est exigée que si la case est cochée", () => {
+    const state = baseState();
+    state.data.arrivalYear = "2021";
+    state.data.conversionYear = "2015";
+
+    state.data.baptismWater = true;
+    expect(validateStep(4, state)).toBe(
+      "Merci d'indiquer l'année de votre baptême d'eau."
+    );
+
+    state.data.baptismWaterYear = "2022";
+    expect(validateStep(4, state)).toBe("");
+  });
+
+  it("étape 5 (Engagement) : exige profession, compétences, département et disponibilités", () => {
+    const state = baseState();
+
+    expect(validateStep(5, state)).toBe(
+      "Merci d'indiquer votre profession."
+    );
+
+    state.data.profession = "Enseignant";
+    state.data.skills = "Musique";
+    state.data.desiredDepartment = "Louange";
+    state.data.availability = "Dimanche matin";
+
     expect(validateStep(5, state)).toBe("");
-    expect(validateStep(6, state)).toBe("");
+  });
+
+  it("étape 6 (Récapitulatif) : aucun champ propre, jamais bloquante", () => {
+    expect(validateStep(6, baseState())).toBe("");
   });
 });
 

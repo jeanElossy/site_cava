@@ -48,6 +48,7 @@ import {
   donationLimiter,
   submissionLimiter,
   lookupLimiter,
+  publicUploadLimiter,
 } from "../middlewares/rateLimit.js";
 
 import QRCode from "qrcode";
@@ -437,6 +438,22 @@ export const buildRoutes = () => {
 
       sendSuccess(res, { data: result.data });
     })
+  );
+
+  // Signature d'envoi de photo pour le formulaire public d'inscription
+  // — seule route de signature Cloudinary sans authentification (voir
+  // le commentaire sur `publicUploadLimiter`). Le dossier est imposé
+  // ici, sans jamais lire `req.body.folder` : un visiteur ne peut pas
+  // se servir de cette route pour écrire dans un autre dossier
+  // (medias, ministries...) réservé à l'administration.
+  api.post(
+    "/uploads/signature",
+    publicUploadLimiter,
+    asyncHandler(async (_req, res) =>
+      sendSuccess(res, {
+        data: uploadService.createSignature({ folder: "members" }),
+      })
+    )
   );
 
   const adminSubmissions = Router();

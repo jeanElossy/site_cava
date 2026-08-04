@@ -18,6 +18,7 @@ import "./SubmissionsPanel.scss";
 const FIELD_LABELS = {
   firstName: "Prénom",
   lastName: "Nom",
+  photo: "Photo",
   email: "E-mail",
   phone: "Téléphone",
   whatsapp: "WhatsApp",
@@ -50,6 +51,24 @@ const formatValue = (field, value, flockNames, churchNames) => {
   if (typeof value === "object") return JSON.stringify(value);
 
   return String(value);
+};
+
+// Une photo se vérifie à l'œil, pas en lisant son URL Cloudinary —
+// l'admin doit pouvoir la voir avant d'approuver une demande, la
+// photo étant le seul champ non-textuel qu'un visiteur peut soumettre
+// librement.
+const renderDiffValue = (field, value) => {
+  if (field === "photo" && value !== "—") {
+    return (
+      <img
+        src={value}
+        alt=""
+        className="submissions-panel__photo-preview"
+      />
+    );
+  }
+
+  return value;
 };
 
 const diffFields = (before = {}, after = {}, flockNames, churchNames) =>
@@ -266,8 +285,10 @@ const SubmissionsPanel = () => {
                   {rows.map((row) => (
                     <tr key={row.field}>
                       <td>{row.label}</td>
-                      {isUpdate && <td>{row.before}</td>}
-                      <td>{row.after}</td>
+                      {isUpdate && (
+                        <td>{renderDiffValue(row.field, row.before)}</td>
+                      )}
+                      <td>{renderDiffValue(row.field, row.after)}</td>
                     </tr>
                   ))}
 

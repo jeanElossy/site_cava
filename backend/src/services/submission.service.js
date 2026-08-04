@@ -18,6 +18,7 @@ const MAX_LIMIT = 100;
 const ALLOWED_FIELDS = [
   "firstName",
   "lastName",
+  "photo",
   "email",
   "phone",
   "whatsapp",

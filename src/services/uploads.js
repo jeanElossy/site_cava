@@ -89,31 +89,45 @@ const validate = (file, accept) => {
  * @param {string} options.accept   "image" ou "media"
  * @param {Function} options.onProgress  reçoit un pourcentage 0-100
  * @param {AbortSignal} options.signal
+ * @param {string} options.signaturePath  route de signature à
+ *   utiliser — `/api/admin/uploads/signature` (jeton requis) par
+ *   défaut, pour tout usage dans l'administration.
+ * @param {boolean} options.auth  joindre le jeton admin à la demande
+ *   de signature. À `false` uniquement pour la photo du formulaire
+ *   public d'inscription (voir `uploadMemberPhoto` ci-dessous), qui
+ *   utilise une route de signature dédiée et sans authentification.
  */
 export const uploadFile = async (
   file,
-  { folder = "divers", accept = "image", onProgress, signal } = {}
+  {
+    folder = "divers",
+    accept = "image",
+    onProgress,
+    signal,
+    signaturePath = "/api/admin/uploads/signature",
+    auth = true,
+  } = {}
 ) => {
   validate(file, accept);
 
-  const auth = await request("/api/admin/uploads/signature", {
+  const authData = await request(signaturePath, {
     method: "POST",
     body: { folder },
-    auth: true,
+    auth,
   });
 
   const form = new FormData();
 
   form.append("file", file);
-  form.append("api_key", auth.apiKey);
-  form.append("timestamp", auth.timestamp);
-  form.append("signature", auth.signature);
-  form.append("folder", auth.folder);
+  form.append("api_key", authData.apiKey);
+  form.append("timestamp", authData.timestamp);
+  form.append("signature", authData.signature);
+  form.append("folder", authData.folder);
 
   // `auto` laisse Cloudinary reconnaître image, vidéo ou audio. Ce
   // paramètre n'entre pas dans la signature : il fait partie de
   // l'URL, pas des champs signés.
-  const endpoint = `https://api.cloudinary.com/v1_1/${auth.cloudName}/auto/upload`;
+  const endpoint = `https://api.cloudinary.com/v1_1/${authData.cloudName}/auto/upload`;
 
   // XMLHttpRequest et non fetch : c'est la seule API qui expose la
   // progression de l'envoi. Sans elle, l'utilisateur n'a aucun retour
@@ -179,6 +193,24 @@ export const uploadFile = async (
     xhr.send(form);
   });
 };
+
+/**
+ * Envoi de la photo depuis le formulaire PUBLIC d'inscription — un
+ * visiteur non connecté n'a pas de jeton admin à joindre à la demande
+ * de signature. Route de signature dédiée côté serveur
+ * (`/api/uploads/signature`), limitée en débit et restreinte au seul
+ * dossier "members" (voir upload.service.js et
+ * middlewares/rateLimit.js#publicUploadLimiter).
+ */
+export const uploadMemberPhoto = (file, { onProgress, signal } = {}) =>
+  uploadFile(file, {
+    folder: "members",
+    accept: "image",
+    onProgress,
+    signal,
+    signaturePath: "/api/uploads/signature",
+    auth: false,
+  });
 
 // Miniature Cloudinary générée à la volée par transformation d'URL.
 //

@@ -1,11 +1,21 @@
 import { describe, it, before, after, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import mongoose from "mongoose";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
 import { connectTestDb, disconnectTestDb } from "../test/db.js";
 import Flock from "../models/Flock.js";
 import Member from "../models/Member.js";
 import { buildMemberCardPdf, buildMemberCardJpeg } from "./memberCard.service.js";
+
+// Même logo que celui affiché sur la carte : un fichier local existant,
+// suffisant pour vérifier le chemin de code "photo réelle" sans
+// dépendre d'un service externe.
+const LOCAL_TEST_IMAGE = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../assets/logo-cava.png"
+);
 
 // Isolation : nom de famille improbable en production, code de
 // bergerie distinct des autres suites de tests ("ZZ"/"YY"/"XM").
@@ -111,5 +121,40 @@ describe("memberCard.service (intégration MongoDB)", () => {
       buildMemberCardJpeg(member._id),
       (error) => error.status === 422
     );
+  });
+
+  it("utilise la vraie photo du membre quand elle est renseignée, plutôt que les initiales", async () => {
+    const member = await Member.create({
+      firstName: "AvecPhoto",
+      lastName: TEST_LAST_NAME,
+      church: 1,
+      flock: testFlock._id,
+      registrationNumber: "1XC26008H",
+      photo: LOCAL_TEST_IMAGE,
+    });
+
+    const buffer = await buildMemberCardPdf(member._id);
+
+    assert.ok(Buffer.isBuffer(buffer));
+    assert.equal(buffer.subarray(0, 5).toString("latin1"), "%PDF-");
+  });
+
+  it("revient aux initiales si l'URL de la photo est inaccessible, sans faire échouer la carte", async () => {
+    const member = await Member.create({
+      firstName: "PhotoCassee",
+      lastName: TEST_LAST_NAME,
+      church: 1,
+      flock: testFlock._id,
+      registrationNumber: "1XC26009I",
+      // .invalid est un domaine réservé (RFC 2606), garanti de ne
+      // jamais résoudre — teste le repli sans dépendre d'un vrai hôte
+      // injoignable dont la lenteur varierait.
+      photo: "https://exemple.invalid/introuvable.jpg",
+    });
+
+    const buffer = await buildMemberCardJpeg(member._id);
+
+    assert.ok(Buffer.isBuffer(buffer));
+    assert.equal(buffer.subarray(0, 2).toString("hex"), "ffd8");
   });
 });

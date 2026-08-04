@@ -147,6 +147,14 @@ const buildMemberFields = (flockOptions, churchSelectOptions) => [
     required: true,
   },
   {
+    name: "photo",
+    label: "Photo",
+    type: "upload",
+    folder: "members",
+    accept: "image",
+    wide: true,
+  },
+  {
     name: "email",
     label: "Adresse e-mail",
     type: "email",
@@ -272,6 +280,7 @@ const toDateInput = (value) =>
 const memberToValues = (item) => ({
   firstName: item?.firstName ?? "",
   lastName: item?.lastName ?? "",
+  photo: item?.photo ?? "",
   email: item?.email ?? "",
   phone: item?.phone ?? "",
   area: item?.area ?? "",
@@ -308,6 +317,7 @@ const memberToValues = (item) => ({
 const memberToPayload = (values) => ({
   firstName: values.firstName.trim(),
   lastName: values.lastName.trim(),
+  photo: values.photo || undefined,
   email: values.email.trim() || undefined,
   phone: values.phone.trim() || undefined,
   area: values.area.trim() || undefined,

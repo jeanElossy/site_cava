@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { flocks as flocksApi } from "../../../services/api";
+import PhotoField from "./PhotoField";
 
 // La liste des églises est chargée UNE SEULE FOIS par l'orchestrateur
 // (index.jsx) et transmise en prop — voir le commentaire à cet endroit
@@ -46,6 +47,11 @@ const StepIdentity = ({ state, updateData, churchOptions }) => {
 
   return (
     <div className="step-panel">
+      <PhotoField
+        value={state.data.photo}
+        onChange={(photo) => updateData({ photo })}
+      />
+
       <div className="form-group">
         <label htmlFor="reg-firstName">Prénom</label>
         <input

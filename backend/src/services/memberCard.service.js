@@ -382,35 +382,74 @@ const renderMemberCardCanvas = async (member, church) => {
   ctx.fillText("CENTRE APOSTOLIQUE", 14, 62, PANEL_WIDTH - 18);
   ctx.fillText("VIE ET ABONDANCE", 14, 69, PANEL_WIDTH - 18);
 
-  // ---- Pastille à initiales (aucune fiche n'a de photo) ------------
+  // ---- Photo si le membre en a envoyé une, sinon pastille à
+  // initiales (le cas le plus courant tant que peu de monde a
+  // téléversé la sienne).
 
   const avatarCx = PANEL_WIDTH / 2;
   const avatarCy = 122;
   const avatarSize = 76;
+  const avatarX = avatarCx - avatarSize / 2;
+  const avatarY = avatarCy - avatarSize / 2;
 
-  roundedRectPath(
-    ctx,
-    avatarCx - avatarSize / 2,
-    avatarCy - avatarSize / 2,
-    avatarSize,
-    avatarSize,
-    14
-  );
-  ctx.fillStyle = CREAM;
-  ctx.fill();
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = GOLD;
-  ctx.stroke();
+  let photoImage = null;
 
-  ctx.fillStyle = GREEN_DEEP;
-  ctx.font = `bold 26px ${CARD_FONT_BOLD}`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(
-    initialsOf(member.firstName, member.lastName),
-    avatarCx,
-    avatarCy + 2
-  );
+  if (member.photo) {
+    try {
+      photoImage = await loadImage(member.photo);
+    } catch {
+      // URL cassée ou hôte injoignable au moment du rendu : repli sur
+      // les initiales plutôt que de faire échouer toute la carte.
+      photoImage = null;
+    }
+  }
+
+  if (photoImage) {
+    ctx.save();
+    roundedRectPath(ctx, avatarX, avatarY, avatarSize, avatarSize, 14);
+    ctx.clip();
+
+    // Recadrage centré au carré (« cover ») : la photo source n'a pas
+    // forcément le même ratio que la pastille.
+    const sourceSize = Math.min(photoImage.width, photoImage.height);
+    const sourceX = (photoImage.width - sourceSize) / 2;
+    const sourceY = (photoImage.height - sourceSize) / 2;
+
+    ctx.drawImage(
+      photoImage,
+      sourceX,
+      sourceY,
+      sourceSize,
+      sourceSize,
+      avatarX,
+      avatarY,
+      avatarSize,
+      avatarSize
+    );
+    ctx.restore();
+
+    roundedRectPath(ctx, avatarX, avatarY, avatarSize, avatarSize, 14);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = GOLD;
+    ctx.stroke();
+  } else {
+    roundedRectPath(ctx, avatarX, avatarY, avatarSize, avatarSize, 14);
+    ctx.fillStyle = CREAM;
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = GOLD;
+    ctx.stroke();
+
+    ctx.fillStyle = GREEN_DEEP;
+    ctx.font = `bold 26px ${CARD_FONT_BOLD}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(
+      initialsOf(member.firstName, member.lastName),
+      avatarCx,
+      avatarCy + 2
+    );
+  }
 
   // ---- Devise de l'église, sous la pastille -------------------------
 

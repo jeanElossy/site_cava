@@ -430,6 +430,144 @@
     font-size: 0.85rem;
   }
 
+  .photo-field__dropzone {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+
+    padding: 14px;
+
+    border: 2px dashed #dfe6e2;
+    border-radius: 16px;
+
+    transition: 0.2s ease;
+
+    &--over {
+      border-color: $primary;
+      background: rgba(13, 91, 62, 0.04);
+    }
+  }
+
+  .photo-field__avatar {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+
+    width: 76px;
+    height: 76px;
+
+    border: 0;
+    border-radius: 50%;
+
+    background: #f1f5f2;
+
+    color: $primary;
+
+    cursor: pointer;
+    overflow: hidden;
+
+    transition: background 0.2s ease;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    svg {
+      width: 26px;
+      height: 26px;
+    }
+
+    &:hover:not(:disabled) {
+      background: rgba(13, 91, 62, 0.1);
+    }
+
+    &:disabled {
+      cursor: progress;
+    }
+  }
+
+  .photo-field__spin {
+    animation: registration-photo-spin 0.9s linear infinite;
+  }
+
+  .photo-field__body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+
+    min-width: 0;
+
+    p {
+      margin: 0;
+      color: #444;
+      font-size: 0.9rem;
+    }
+  }
+
+  .photo-field__pick {
+    padding: 0;
+    border: 0;
+    background: none;
+
+    color: $primary;
+
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-decoration: underline;
+
+    cursor: pointer;
+  }
+
+  .photo-field__hint {
+    color: #6b7280;
+    font-size: 0.82rem;
+  }
+
+  .photo-field__remove {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    margin-top: 2px;
+    padding: 0;
+    border: 0;
+    background: none;
+
+    color: #b42318;
+
+    font-size: 0.85rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .photo-field__input {
+    // Le déclencheur visuel est le bouton/la pastille, pas ce champ
+    // natif — masqué plutôt que `display: none` pour rester
+    // atteignable au clavier/lecteur d'écran comme le reste du champ.
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+  }
+
+  .photo-field__error {
+    margin: 8px 0 0;
+    color: #b42318;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
   .kind-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -750,5 +888,11 @@
 @media (prefers-reduced-motion: reduce) {
   .registration-form * {
     transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes registration-photo-spin {
+  to {
+    transform: rotate(360deg);
   }
 }

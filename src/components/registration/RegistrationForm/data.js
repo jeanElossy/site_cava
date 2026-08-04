@@ -76,6 +76,16 @@ export const stepMeta = [
   },
 ];
 
+// Tous les champs sont obligatoires, à deux exceptions volontaires :
+// - `photo` : personne ne peut être obligé d'en avoir une sous la
+//   main au moment de s'inscrire (voir PhotoField).
+// - `previousChurch` : n'a de sens que pour un membre qui vient
+//   effectivement d'une autre église — le laisser vide est une
+//   réponse complète, pas un oubli.
+// Les cases à cocher (baptêmes) ne sont pas rendues "obligatoires" au
+// sens classique : ne pas cocher est déjà une réponse valide (tout le
+// monde n'est pas encore baptisé). `baptismWaterYear` ne devient
+// obligatoire QUE si `baptismWater` est cochée.
 export const validateStep = (step, state) => {
   if (step === 0 && state.kind === "update") {
     if (!state.submittedRegistrationNumber.trim()) {
@@ -105,8 +115,84 @@ export const validateStep = (step, state) => {
     }
   }
 
-  if (step === 2 && !state.data.phone.trim()) {
-    return "Merci d'indiquer un numéro de téléphone.";
+  if (step === 2) {
+    if (!state.data.phone.trim()) {
+      return "Merci d'indiquer un numéro de téléphone.";
+    }
+
+    if (!state.data.whatsapp.trim()) {
+      return "Merci d'indiquer un numéro WhatsApp.";
+    }
+
+    if (!state.data.email.trim()) {
+      return "Merci d'indiquer une adresse e-mail.";
+    }
+
+    if (!state.data.address.trim()) {
+      return "Merci d'indiquer votre adresse.";
+    }
+
+    if (!state.data.area.trim()) {
+      return "Merci d'indiquer votre quartier ou groupe de maison.";
+    }
+
+    if (!state.data.emergencyContactName.trim()) {
+      return "Merci d'indiquer le nom de la personne à prévenir en cas d'urgence.";
+    }
+
+    if (!state.data.emergencyContactPhone.trim()) {
+      return "Merci d'indiquer le téléphone de la personne à prévenir en cas d'urgence.";
+    }
+  }
+
+  if (step === 3) {
+    if (!state.data.dateOfBirth) {
+      return "Merci d'indiquer votre date de naissance.";
+    }
+
+    if (!state.data.gender) {
+      return "Merci d'indiquer votre genre.";
+    }
+
+    if (!state.data.maritalStatus) {
+      return "Merci d'indiquer votre situation matrimoniale.";
+    }
+
+    if (state.data.childrenCount === "") {
+      return "Merci d'indiquer votre nombre d'enfants (0 si aucun).";
+    }
+  }
+
+  if (step === 4) {
+    if (state.data.arrivalYear === "") {
+      return "Merci d'indiquer votre année d'arrivée à CAVA.";
+    }
+
+    if (state.data.conversionYear === "") {
+      return "Merci d'indiquer votre année de conversion.";
+    }
+
+    if (state.data.baptismWater && state.data.baptismWaterYear === "") {
+      return "Merci d'indiquer l'année de votre baptême d'eau.";
+    }
+  }
+
+  if (step === 5) {
+    if (!state.data.profession.trim()) {
+      return "Merci d'indiquer votre profession.";
+    }
+
+    if (!state.data.skills.trim()) {
+      return "Merci d'indiquer au moins une compétence.";
+    }
+
+    if (!state.data.desiredDepartment.trim()) {
+      return "Merci d'indiquer le département où vous souhaitez servir.";
+    }
+
+    if (!state.data.availability.trim()) {
+      return "Merci d'indiquer vos disponibilités.";
+    }
   }
 
   return "";
@@ -121,6 +207,7 @@ export const buildSubmissionPayload = (state) => ({
   data: {
     firstName: state.data.firstName.trim(),
     lastName: state.data.lastName.trim(),
+    photo: state.data.photo || undefined,
     church: Number(state.data.church),
     flock: state.data.flock,
     phone: state.data.phone.trim(),
@@ -185,6 +272,7 @@ export const memberToFormData = (member = {}) => {
 
   if (member.firstName !== undefined) patch.firstName = member.firstName;
   if (member.lastName !== undefined) patch.lastName = member.lastName;
+  if (member.photo !== undefined) patch.photo = member.photo;
   if (member.church !== undefined) patch.church = String(member.church);
   if (member.flock !== undefined) patch.flock = member.flock;
   if (member.phone !== undefined) patch.phone = member.phone;
