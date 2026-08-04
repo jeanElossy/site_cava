@@ -198,6 +198,29 @@ describe("submission.service (intégration MongoDB)", () => {
     assert.equal(stored.submittedRegistrationNumber, "2ZZ99001A");
   });
 
+  it("submit() de type 'update' ne résout PAS `existingMember` pour un membre désactivé — son matricule ne doit plus fonctionner nulle part sur le site", async () => {
+    const inactiveMember = await Member.create({
+      firstName: "Desactive",
+      lastName: TEST_LAST_NAME,
+      registrationNumber: "2ZZ99008H",
+      church: TEST_CHURCH,
+      flock: testFlockChurch1._id,
+      status: "inactif",
+    });
+
+    await submissionService.submit({
+      type: "update",
+      registrationNumber: inactiveMember.registrationNumber,
+      data: { firstName: "Desactive", lastName: TEST_LAST_NAME },
+    });
+
+    const stored = await MemberSubmission.findOne({
+      submittedRegistrationNumber: inactiveMember.registrationNumber,
+    }).lean();
+
+    assert.equal(stored.existingMember, undefined);
+  });
+
   // ---- lookup() -------------------------------------------------------
   //
   // Comportement le plus sensible à une régression silencieuse : une
@@ -270,6 +293,24 @@ describe("submission.service (intégration MongoDB)", () => {
   it("lookup() ne renvoie rien pour un matricule inexistant", async () => {
     const result = await submissionService.lookup({
       registrationNumber: "2ZZ99998Y",
+      lastName: TEST_LAST_NAME,
+    });
+
+    assert.equal(result.data, null);
+  });
+
+  it("lookup() ne renvoie rien pour un membre désactivé, même avec le bon matricule et le bon nom — son matricule ne doit plus fonctionner nulle part sur le site", async () => {
+    const inactiveMember = await Member.create({
+      firstName: "Desactive",
+      lastName: TEST_LAST_NAME,
+      registrationNumber: "2ZZ99009I",
+      church: TEST_CHURCH,
+      flock: testFlockChurch1._id,
+      status: "inactif",
+    });
+
+    const result = await submissionService.lookup({
+      registrationNumber: inactiveMember.registrationNumber,
       lastName: TEST_LAST_NAME,
     });
 

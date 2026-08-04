@@ -127,7 +127,10 @@ export const scan = async ({ registrationNumber }, presenceAgent, presenceQr, re
 
   const member = await Member.findOne({ registrationNumber: normalized });
 
-  if (!member) {
+  // Même message qu'un matricule réellement inconnu : un membre
+  // désactivé ne doit plus fonctionner nulle part sur le site, y
+  // compris pour le badgeage.
+  if (!member || member.status !== "actif") {
     throw ApiError.notFound("Aucun membre avec ce matricule.");
   }
 
@@ -149,7 +152,11 @@ export const scan = async ({ registrationNumber }, presenceAgent, presenceQr, re
 export const mark = async ({ memberId }, presenceAgent, presenceQr, req) => {
   const member = await Member.findById(memberId);
 
-  if (!member) {
+  // `search()` (secours "carte oubliée") ne propose déjà que des
+  // membres actifs, mais `memberId` reste un identifiant fourni par
+  // l'appelant : à revérifier ici en défense en profondeur, plutôt
+  // que de faire reposer la garantie sur le seul filtre de `search`.
+  if (!member || member.status !== "actif") {
     throw ApiError.notFound("Membre introuvable.");
   }
 

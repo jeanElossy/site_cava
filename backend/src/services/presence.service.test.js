@@ -228,6 +228,36 @@ describe("presence.service (intégration MongoDB)", () => {
       );
     });
 
+    it("scan() renvoie une 404 (même message qu'un matricule inconnu) pour un membre désactivé — le matricule ne doit plus fonctionner nulle part sur le site", async () => {
+      await assert.rejects(
+        presenceService.scan(
+          { registrationNumber: inactiveMember.registrationNumber },
+          { id: agent._id },
+          qr,
+          fakeReq
+        ),
+        (error) => error.status === 404
+      );
+
+      const count = await Attendance.countDocuments({
+        member: inactiveMember._id,
+        securityQr: qr._id,
+      });
+      assert.equal(count, 0);
+    });
+
+    it("mark() renvoie une 404 pour un membre désactivé, même en ciblant directement son id", async () => {
+      await assert.rejects(
+        presenceService.mark(
+          { memberId: inactiveMember._id },
+          { id: agent._id },
+          qr,
+          fakeReq
+        ),
+        (error) => error.status === 404
+      );
+    });
+
     it("mark() (« carte oubliée ») partage le même verrou d'idempotence que scan()", async () => {
       const scanned = await presenceService.scan(
         { registrationNumber: memberToScan.registrationNumber },

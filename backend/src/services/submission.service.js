@@ -132,6 +132,12 @@ export const lookup = async ({ registrationNumber, lastName }) => {
 
   if (!member) return { data: null };
 
+  // Un membre désactivé ne doit plus être trouvable par ce point
+  // d'entrée public — même réponse neutre que "matricule inconnu",
+  // pour ne pas laisser deviner qu'un matricule existe mais a été
+  // désactivé.
+  if (member.status !== "actif") return { data: null };
+
   if (member.lookupLockedUntil && member.lookupLockedUntil > new Date()) {
     return { data: null };
   }
@@ -174,7 +180,7 @@ export const submit = async ({ type, registrationNumber, data }) => {
   // valeur ne provenant pas de notre Cloudinary ne peut venir que
   // d'un appel direct à l'API (le formulaire n'y écrit jamais une URL
   // arbitraire) — voir utils/cloudinaryUrl.js pour le risque exact
-  // (SSRF via memberCard.service.js). Autant garder le reste d'une
+  // (SSRF via memberCardSvg.service.js). Autant garder le reste d'une
   // demande par ailleurs légitime que de tout bloquer pour ce seul
   // champ.
   if (clean.photo && !isTrustedMemberPhotoUrl(clean.photo)) {
@@ -202,8 +208,14 @@ export const submit = async ({ type, registrationNumber, data }) => {
 
     // Recherché côté serveur uniquement : jamais renvoyé à
     // l'appelant, qui ne reçoit qu'un accusé de réception neutre.
+    // `status: "actif"` : un membre désactivé ne doit plus être
+    // rattachable par ce point d'entrée, cohérent avec `lookup()`
+    // ci-dessus — la demande est tout de même enregistrée (accusé
+    // neutre), mais sans lien vers une fiche existante à mettre à
+    // jour.
     const existing = await Member.findOne({
       registrationNumber: normalized,
+      status: "actif",
     })
       .select("_id")
       .lean();
