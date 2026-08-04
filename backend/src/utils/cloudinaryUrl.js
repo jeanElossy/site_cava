@@ -6,7 +6,7 @@ import { env } from "../config/env.js";
 // falsifiée (le champ `photo` transite tel quel dans
 // submission.service.js, jamais généré par le serveur) ou par une
 // saisie manuelle dans l'admin (`FileField` autorise "saisir une
-// adresse à la main"). Or `memberCard.service.js` fait FAIRE une
+// adresse à la main"). Or `memberCardSvg.service.js` fait FAIRE une
 // requête AU SERVEUR vers cette URL (`loadImage`) pour générer la
 // carte : sans cette vérification, n'importe quelle adresse (service
 // interne, métadonnées cloud, etc.) serait interrogée par le serveur
@@ -16,7 +16,7 @@ import { env } from "../config/env.js";
 // importable depuis un modèle : appliqué à la fois comme validateur
 // de schéma (Member.js — garantit l'invariant quel que soit le chemin
 // d'écriture) et avant tout appel à `loadImage` en défense en
-// profondeur (memberCard.service.js), et à l'ingestion d'une
+// profondeur (memberCardSvg.service.js), et à l'ingestion d'une
 // soumission publique (submission.service.js).
 export const isTrustedMemberPhotoUrl = (value) => {
   if (typeof value !== "string" || !value) return false;

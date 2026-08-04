@@ -22,7 +22,7 @@ import * as donationService from "../services/donation.service.js";
 import * as receiptService from "../services/receipt.service.js";
 import * as submissionService from "../services/submission.service.js";
 import * as memberExportService from "../services/memberExport.service.js";
-import * as memberCardService from "../services/memberCard.service.js";
+import * as memberCardService from "../services/memberCardSvg.service.js";
 import * as presenceQrService from "../services/presenceQr.service.js";
 import * as presenceService from "../services/presence.service.js";
 import * as presenceExportService from "../services/presenceExport.service.js";
@@ -880,6 +880,27 @@ export const buildRoutes = () => {
       res.setHeader(
         "Content-Disposition",
         `attachment; filename="carte-membre-${req.params.id}.jpg"`
+      );
+
+      res.send(buffer);
+    })
+  );
+
+  // Verso : identique pour tous les membres (aucune donnée injectée),
+  // mais servi via la même vérification d'existence/statut que le
+  // recto — pas de fuite d'un verso pour un membre introuvable ou
+  // désactivé.
+  memberExportRouter.get(
+    "/:id/card-verso.jpg",
+    asyncHandler(async (req, res) => {
+      const buffer = await memberCardService.buildMemberCardVersoJpeg(
+        req.params.id
+      );
+
+      res.setHeader("Content-Type", "image/jpeg");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="carte-membre-${req.params.id}-verso.jpg"`
       );
 
       res.send(buffer);

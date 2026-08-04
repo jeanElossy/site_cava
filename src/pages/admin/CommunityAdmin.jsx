@@ -440,13 +440,27 @@ const MemberRowMenu = ({ member, onEdit, onDelete, reload, onStatusChanged }) =>
     [member.firstName, member.lastName].filter(Boolean).join(" ") ||
     "ce membre";
 
-  const download = async (format) => {
-    setBusy(format);
+  // Trois faces possibles, chacune avec sa propre route et son propre
+  // nom de fichier côté serveur (voir routes/index.js) — le recto et
+  // le verso ne sont jamais fusionnés dans un seul fichier image.
+  const CARD_DOWNLOADS = {
+    pdf: { urlSuffix: "card.pdf", filename: (id) => `carte-membre-${id}.pdf` },
+    jpg: { urlSuffix: "card.jpg", filename: (id) => `carte-membre-${id}.jpg` },
+    "verso-jpg": {
+      urlSuffix: "card-verso.jpg",
+      filename: (id) => `carte-membre-${id}-verso.jpg`,
+    },
+  };
+
+  const download = async (kind) => {
+    setBusy(kind);
     setError("");
 
     try {
+      const { urlSuffix, filename } = CARD_DOWNLOADS[kind];
+
       const response = await fetch(
-        `${apiBaseUrl}/api/admin/members/${member.id}/card.${format}`,
+        `${apiBaseUrl}/api/admin/members/${member.id}/${urlSuffix}`,
         { headers: { Authorization: `Bearer ${getToken()}` } }
       );
 
@@ -461,7 +475,7 @@ const MemberRowMenu = ({ member, onEdit, onDelete, reload, onStatusChanged }) =>
       const link = document.createElement("a");
 
       link.href = url;
-      link.download = `carte-membre-${member.id}.${format}`;
+      link.download = filename(member.id);
       link.click();
 
       URL.revokeObjectURL(url);
@@ -500,7 +514,10 @@ const MemberRowMenu = ({ member, onEdit, onDelete, reload, onStatusChanged }) =>
             Voir / modifier
           </button>
 
-          {member.registrationNumber && (
+          {/* Carte désactivée pour un membre inactif : mêmes fichiers
+              que le registre exporté, jamais émis pour un membre
+              désactivé (voir memberCardSvg.service.js). */}
+          {member.registrationNumber && !isInactive && (
             <>
               <button
                 type="button"
@@ -509,7 +526,7 @@ const MemberRowMenu = ({ member, onEdit, onDelete, reload, onStatusChanged }) =>
                 disabled={busy !== ""}
               >
                 <IdCard aria-hidden="true" />
-                {busy === "pdf" ? "Téléchargement…" : "Carte (PDF)"}
+                {busy === "pdf" ? "Téléchargement…" : "Carte imprimable (PDF)"}
               </button>
 
               <button
@@ -519,7 +536,17 @@ const MemberRowMenu = ({ member, onEdit, onDelete, reload, onStatusChanged }) =>
                 disabled={busy !== ""}
               >
                 <IdCard aria-hidden="true" />
-                {busy === "jpg" ? "Téléchargement…" : "Carte (JPEG)"}
+                {busy === "jpg" ? "Téléchargement…" : "Carte numérique (recto)"}
+              </button>
+
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => download("verso-jpg")}
+                disabled={busy !== ""}
+              >
+                <IdCard aria-hidden="true" />
+                {busy === "verso-jpg" ? "Téléchargement…" : "Verso de la carte"}
               </button>
             </>
           )}

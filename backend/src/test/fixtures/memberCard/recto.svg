@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 315.36 225.36" width="315.36" height="225.36">
+  <!-- Gabarit de TEST uniquement — reproduit le contrat d'id attendu
+       du vrai recto.svg (voir memberCardSvg.service.js), pas le
+       design réel. Utilisé par les tests via
+       MEMBER_CARD_RECTO_PATH_OVERRIDE tant que le fichier réel
+       n'a pas encore ces id.
+
+       `field-nom`/`field-matricule` reproduisent volontairement le
+       texte éclaté en plusieurs <tspan> par caractère (comme un
+       export Illustrator réel) : c'est ce qui a révélé un bug (seul
+       le dernier tspan était remplacé) lors du premier test contre le
+       vrai fichier. `field-photo`/`field-qr` sont des <rect>, pas des
+       <image> — reproduit aussi la forme réelle des cadres. -->
+  <rect width="315.36" height="225.36" fill="#faf8f3" />
+  <text x="10" y="20" font-family="AcuminConcept-Bold, 'Acumin Variable Concept'" font-size="10">NOM &amp; PRENOM(S)</text>
+  <text id="field-nom" font-family="AcuminConcept-Regular, 'Acumin Variable Concept'" font-size="10" transform="translate(10 35)"><tspan x="0" y="0">-</tspan><tspan x="4" y="0">-</tspan></text>
+  <text id="field-matricule" font-size="10" transform="translate(10 50)"><tspan x="0" y="0">-</tspan><tspan x="4" y="0">-</tspan></text>
+  <text id="field-annee-arrivee" x="10" y="65" font-size="10">-</text>
+  <text id="field-expiration" x="10" y="80" font-size="10">-</text>
+  <text id="field-bergerie" x="10" y="95" font-size="10">-</text>
+  <text id="field-assemblee" x="10" y="110" font-size="10">-</text>
+  <text id="field-ministere" x="10" y="125" font-size="10">-</text>
+  <rect id="field-photo" x="200" y="10" width="50" height="50" rx="4" ry="4" fill="#ffffff" stroke="#f9b233" />
+  <rect id="field-qr" x="200" y="70" width="50" height="50" fill="none" stroke="#063" />
+</svg>

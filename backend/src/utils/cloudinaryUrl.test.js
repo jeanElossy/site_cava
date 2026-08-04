@@ -26,7 +26,7 @@ describe("cloudinaryUrl — isTrustedMemberPhotoUrl", () => {
   });
 
   // Le cas concret qui a motivé cette validation : le serveur
-  // (memberCard.service.js) récupère lui-même cette URL — la laisser
+  // (memberCardSvg.service.js) récupère lui-même cette URL — la laisser
   // pointer vers un service interne ou des métadonnées cloud serait
   // une SSRF.
   it("refuse une adresse interne ou locale (SSRF)", () => {

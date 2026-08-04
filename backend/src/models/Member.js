@@ -159,7 +159,7 @@ const memberSchema = new mongoose.Schema(
     // Doit être une URL Cloudinary de NOTRE compte, dans le dossier
     // membres (voir utils/cloudinaryUrl.js) : le serveur va lui-même
     // récupérer cette URL pour générer la carte de membre
-    // (memberCard.service.js) — une valeur libre exposerait le
+    // (memberCardSvg.service.js) — une valeur libre exposerait le
     // serveur à une requête vers une adresse choisie par un
     // attaquant (SSRF), quel que soit le chemin qui a écrit le champ.
     photo: {
