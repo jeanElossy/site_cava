@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { readFileSync } from "node:fs";
 
-import { parseHTML } from "linkedom";
+import { DOMParser } from "linkedom";
 import { Resvg } from "@resvg/resvg-js";
 import { createCanvas, loadImage } from "@napi-rs/canvas";
 import QRCode from "qrcode";
@@ -123,16 +123,26 @@ const getRectoTemplateSource = () => {
   return cachedRectoTemplateSource;
 };
 
+// Analyse en mode XML strict (`image/svg+xml`), PAS `parseHTML` : un
+// parseur HTML applique les règles d'insertion "contenu étranger" du
+// HTML5 pour le SVG imbriqué, incomplètes dans linkedom pour certains
+// éléments peu courants — les primitives de filtre (`feComposite`
+// notamment, utilisées par l'ombre portée du badge "MEMBRE ACTIF")
+// disparaissaient silencieusement au moment de resérialiser le
+// document, invalidant le filtre et rendant TOUT l'élément qui le
+// référence invisible (comportement du spec SVG pour une référence de
+// filtre brisée). Le mode XML strict préserve fidèlement l'intégralité
+// du document, y compris ces éléments.
 const parseSvgDocument = (svgSource) => {
-  const { document } = parseHTML(`<!doctype html><body>${svgSource}</body>`);
+  const parser = new DOMParser();
 
-  return document;
+  return parser.parseFromString(svgSource, "image/svg+xml");
 };
 
 const serializeSvg = (document) => {
-  const svgElement = document.querySelector("svg");
+  const svgElement = document.documentElement;
 
-  if (!svgElement) {
+  if (!svgElement || svgElement.tagName?.toLowerCase() !== "svg") {
     throw new Error("Gabarit de carte invalide : aucun élément <svg> trouvé.");
   }
 
