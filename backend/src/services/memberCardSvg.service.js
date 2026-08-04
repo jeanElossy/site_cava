@@ -201,44 +201,137 @@ const resolveFontMetrics = (svgSource, element) => {
 //
 // Les champs dynamiques (id `field-*`) sont ignorés : `setElementText`
 // les a déjà réduits à un tspan unique, rien à recalculer.
+// Un même <text> peut porter plusieurs LIGNES (motto sur deux lignes,
+// légende du logo…), chaque nouvelle ligne repérable à un `y` de
+// tspan différent du précédent — regroupées ici pour être traitées
+// indépendamment (voir reflowMultiTspanText).
+const groupTspansIntoLines = (tspans) => {
+  const lines = [];
+  let currentY = null;
+
+  for (const tspan of tspans) {
+    const y = tspan.getAttribute("y");
+
+    if (lines.length === 0 || y !== currentY) {
+      currentY = y;
+      lines.push([]);
+    }
+
+    lines[lines.length - 1].push(tspan);
+  }
+
+  return lines;
+};
+
+// Positionne une ligne de tspans à une taille de police donnée, sans
+// écrire quoi que ce soit dans le document — un simple calcul, appelé
+// une ou deux fois par reflowMultiTspanText (la seconde en cas de
+// réduction de taille).
+const layoutLine = (lineTspans, fontSizePx, bold) => {
+  textMeasureContext.font = `${fontSizePx}px ${
+    bold ? CANVAS_FONT_BOLD : CANVAS_FONT_REGULAR
+  }`;
+
+  const positions = [];
+  let cursorX = null;
+  let previousOriginalX = null;
+  let previousMeasuredWidth = 0;
+
+  for (const tspan of lineTspans) {
+    const originalX = parseFloat(tspan.getAttribute("x") ?? "0");
+
+    if (cursorX === null) {
+      cursorX = originalX;
+    } else {
+      // Avance d'AU MOINS la largeur réellement mesurée du tspan
+      // précédent (empêche tout chevauchement avec la police de
+      // substitution), mais jamais moins que l'écart voulu par le
+      // gabarit d'origine (`originalGap`) : certains tspans ne se
+      // suivent pas au pixel près par kerning fin, mais par un
+      // espacement délibérément généreux — ex. la lettre "Ç" du logo
+      // CAVA dans sa pastille colorée, suivie du mot "entre" bien plus
+      // loin que sa seule largeur de glyphe. Prendre le maximum des
+      // deux respecte les deux cas sans avoir à les distinguer
+      // explicitement.
+      const originalGap = originalX - previousOriginalX;
+
+      cursorX += Math.max(previousMeasuredWidth, originalGap);
+    }
+
+    const measuredWidth = textMeasureContext.measureText(
+      tspan.textContent
+    ).width;
+
+    positions.push({ tspan, x: cursorX, width: measuredWidth });
+
+    previousOriginalX = originalX;
+    previousMeasuredWidth = measuredWidth;
+  }
+
+  const first = positions[0];
+  const last = positions[positions.length - 1];
+
+  return { positions, totalWidth: last.x + last.width - first.x };
+};
+
 const reflowMultiTspanText = (document, svgSource) => {
   for (const textElement of document.querySelectorAll("text")) {
     const id = textElement.getAttribute("id");
 
     if (id?.startsWith("field-")) continue;
 
-    const tspans = [...textElement.querySelectorAll("tspan")];
+    const allTspans = [...textElement.querySelectorAll("tspan")];
 
-    if (tspans.length < 2) continue;
+    if (allTspans.length < 2) continue;
 
     const metrics = resolveFontMetrics(svgSource, textElement);
 
     if (!metrics) continue;
 
-    textMeasureContext.font = `${metrics.fontSizePx}px ${
-      metrics.bold ? CANVAS_FONT_BOLD : CANVAS_FONT_REGULAR
-    }`;
+    for (const lineTspans of groupTspansIntoLines(allTspans)) {
+      if (lineTspans.length < 2) continue;
 
-    // Un même <text> peut porter plusieurs LIGNES (motto sur deux
-    // lignes, légende du logo…), chaque nouvelle ligne repérable à un
-    // `y` de tspan différent du précédent — le x d'origine de son
-    // premier tspan reste la référence pour cette ligne (son propre
-    // retrait/alignement voulu) : le cumul ne doit repartir qu'à
-    // l'intérieur d'une même ligne, jamais se poursuivre d'une ligne à
-    // l'autre.
-    let cursorX = null;
-    let currentLineY = null;
+      let fontSizePx = metrics.fontSizePx;
+      let layout = layoutLine(lineTspans, fontSizePx, metrics.bold);
 
-    for (const tspan of tspans) {
-      const tspanY = tspan.getAttribute("y");
+      // GARDE-FOU : la police de substitution peut être plus large que
+      // l'originale au point de faire déborder toute la ligne au-delà
+      // de son empan d'origine (ex. la légende du logo débordant du
+      // bandeau vert sur lequel elle est posée) — un problème
+      // d'ampleur globale que l'espacement au cas par cas ci-dessus ne
+      // peut pas résoudre. `originalBudget` réutilise la même mesure
+      // (police de substitution, même taille) pour son dernier
+      // caractère : une comparaison à mesure égale, jamais une
+      // estimation de la police d'origine que nous n'avons pas le
+      // droit d'embarquer.
+      const originalFirstX = parseFloat(
+        lineTspans[0].getAttribute("x") ?? "0"
+      );
+      const originalLastX = parseFloat(
+        lineTspans[lineTspans.length - 1].getAttribute("x") ?? "0"
+      );
+      const lastMeasuredWidth =
+        layout.positions[layout.positions.length - 1].width;
+      const originalBudget =
+        originalLastX - originalFirstX + lastMeasuredWidth;
 
-      if (currentLineY === null || tspanY !== currentLineY) {
-        currentLineY = tspanY;
-        cursorX = parseFloat(tspan.getAttribute("x") ?? "0");
+      if (originalBudget > 0 && layout.totalWidth > originalBudget) {
+        fontSizePx *= originalBudget / layout.totalWidth;
+        layout = layoutLine(lineTspans, fontSizePx, metrics.bold);
       }
 
-      tspan.setAttribute("x", String(cursorX));
-      cursorX += textMeasureContext.measureText(tspan.textContent).width;
+      for (const { tspan, x } of layout.positions) {
+        tspan.setAttribute("x", String(x));
+
+        // Style EN LIGNE, pas l'attribut `font-size` seul : une règle
+        // de <style> (celle qui fixait la taille d'origine) l'emporte
+        // sur un attribut de présentation, mais jamais sur un style en
+        // ligne — seul moyen fiable de réduire la taille juste pour
+        // cette ligne sans toucher aux autres lignes du même texte.
+        if (fontSizePx !== metrics.fontSizePx) {
+          tspan.setAttribute("style", `font-size: ${fontSizePx}px`);
+        }
+      }
     }
   }
 };
