@@ -26,6 +26,33 @@ describe("Attendance (modèle) — validation du schéma (sans base)", () => {
 
     assert.ok(doc.validateSync().errors.method);
   });
+
+  it("exige prénom et nom du visiteur quand kind vaut « visitor », mais pas member", () => {
+    const doc = new Attendance({
+      kind: "visitor",
+      securityQr: new mongoose.Types.ObjectId(),
+      agent: new mongoose.Types.ObjectId(),
+      method: "manual",
+    });
+
+    const error = doc.validateSync();
+
+    assert.ok(error.errors["visitor.firstName"]);
+    assert.ok(error.errors["visitor.lastName"]);
+    assert.equal(error.errors.member, undefined);
+  });
+
+  it("accepte un visiteur avec prénom et nom, sans member", () => {
+    const doc = new Attendance({
+      kind: "visitor",
+      visitor: { firstName: "Awa", lastName: "Traoré" },
+      securityQr: new mongoose.Types.ObjectId(),
+      agent: new mongoose.Types.ObjectId(),
+      method: "manual",
+    });
+
+    assert.equal(doc.validateSync(), undefined);
+  });
 });
 
 describe("Attendance (modèle) — idempotence (intégration MongoDB)", () => {
@@ -69,5 +96,28 @@ describe("Attendance (modèle) — idempotence (intégration MongoDB)", () => {
 
     assert.ok(second._id);
     await Attendance.deleteOne({ _id: second._id });
+  });
+
+  it("l'index unique est PARTIEL (kind: member) : deux visiteurs sur le même QR ne collisionnent jamais", async () => {
+    const first = await Attendance.create({
+      kind: "visitor",
+      visitor: { firstName: "Awa", lastName: "Traoré" },
+      securityQr,
+      agent,
+      method: "manual",
+    });
+
+    const second = await Attendance.create({
+      kind: "visitor",
+      visitor: { firstName: "Koffi", lastName: "N'Guessan" },
+      securityQr,
+      agent,
+      method: "manual",
+    });
+
+    assert.ok(first._id);
+    assert.ok(second._id);
+
+    await Attendance.deleteMany({ _id: { $in: [first._id, second._id] } });
   });
 });

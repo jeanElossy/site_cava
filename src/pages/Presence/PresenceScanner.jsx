@@ -9,11 +9,13 @@ import {
   Search,
   ShieldCheck,
   User,
+  UserPlus,
   Users,
 } from "lucide-react";
 
 import {
   markPresenceManually,
+  markVisitorPresence,
   presenceStats,
   scanMemberCard,
   searchPresenceMembers,
@@ -21,6 +23,7 @@ import {
 import { extractQrParam } from "../../utils/qrLink";
 
 import QrCameraScanner from "../../components/presence/QrCameraScanner/QrCameraScanner";
+import ThemeToggle from "../../components/presence/ThemeToggle/ThemeToggle";
 
 // Rôles habilités au badgeage (voir presenceAuth.js#PRESENCE_AGENT_ROLES
 // côté serveur) — libellés propres à cet écran plutôt qu'un import
@@ -82,20 +85,31 @@ const formatDateTime = (date) =>
     minute: "2-digit",
   });
 
-const PresenceScanner = ({ session, onLogout, onSessionRejected }) => {
+const PresenceScanner = ({
+  session,
+  theme,
+  onToggleTheme,
+  onLogout,
+  onSessionRejected,
+}) => {
   const { sessionToken, agent, qr } = session;
 
   const [scanning, setScanning] = useState(true);
   const [busy, setBusy] = useState(false);
   const [lastResult, setLastResult] = useState(null);
   const [lastError, setLastError] = useState(null);
-  const [count, setCount] = useState(null);
+  const [counts, setCounts] = useState(null);
   const [now, setNow] = useState(() => new Date());
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
+
+  const [visitorFormOpen, setVisitorFormOpen] = useState(false);
+  const [visitorFirstName, setVisitorFirstName] = useState("");
+  const [visitorLastName, setVisitorLastName] = useState("");
+  const [visitorPhone, setVisitorPhone] = useState("");
 
   const resumeTimerRef = useRef(null);
   const mountedRef = useRef(true);
@@ -110,7 +124,15 @@ const PresenceScanner = ({ session, onLogout, onSessionRejected }) => {
 
   useEffect(() => {
     presenceStats(sessionToken)
-      .then((data) => mountedRef.current && setCount(data.count))
+      .then(
+        (data) =>
+          mountedRef.current &&
+          setCounts({
+            total: data.total,
+            members: data.members,
+            visitors: data.visitors,
+          })
+      )
       .catch((error) => {
         if (error?.status === 401) onSessionRejected();
       });
@@ -122,14 +144,26 @@ const PresenceScanner = ({ session, onLogout, onSessionRejected }) => {
     return () => window.clearInterval(timer);
   }, []);
 
-  const applyResult = (result) => {
+  const applyResult = (result, kind) => {
     if (!mountedRef.current) return;
 
-    setLastResult(result);
+    setLastResult({ ...result, kind });
     setLastError(null);
+
     if (!result.alreadyRecorded) {
-      setCount((previous) => (previous === null ? previous : previous + 1));
+      setCounts((previous) => {
+        if (!previous) return previous;
+
+        const key = kind === "visitor" ? "visitors" : "members";
+
+        return {
+          ...previous,
+          total: previous.total + 1,
+          [key]: previous[key] + 1,
+        };
+      });
     }
+
     playConfirmationBeep();
   };
 
@@ -161,7 +195,7 @@ const PresenceScanner = ({ session, onLogout, onSessionRejected }) => {
 
     try {
       const result = await scanMemberCard(registrationNumber, sessionToken);
-      applyResult(result);
+      applyResult(result, "member");
     } catch (error) {
       applyError(error);
     } finally {
@@ -202,7 +236,36 @@ const PresenceScanner = ({ session, onLogout, onSessionRejected }) => {
 
     try {
       const result = await markPresenceManually(memberId, sessionToken);
-      applyResult(result);
+      applyResult(result, "member");
+    } catch (error) {
+      applyError(error);
+    } finally {
+      if (mountedRef.current) setBusy(false);
+    }
+  };
+
+  const handleAddVisitor = async (event) => {
+    event.preventDefault();
+
+    if (busy || !visitorFirstName.trim() || !visitorLastName.trim()) return;
+
+    setBusy(true);
+
+    try {
+      const result = await markVisitorPresence(
+        {
+          firstName: visitorFirstName.trim(),
+          lastName: visitorLastName.trim(),
+          phone: visitorPhone.trim() || undefined,
+        },
+        sessionToken
+      );
+
+      applyResult(result, "visitor");
+      setVisitorFormOpen(false);
+      setVisitorFirstName("");
+      setVisitorLastName("");
+      setVisitorPhone("");
     } catch (error) {
       applyError(error);
     } finally {
@@ -220,6 +283,11 @@ const PresenceScanner = ({ session, onLogout, onSessionRejected }) => {
 
   return (
     <div className="presence-scanner">
+      <ThemeToggle
+        theme={theme}
+        onToggle={onToggleTheme}
+      />
+
       <header className="presence-scanner__header">
         <div className="presence-scanner__title">
           <span
@@ -339,6 +407,66 @@ const PresenceScanner = ({ session, onLogout, onSessionRejected }) => {
                   ))}
               </ul>
             )}
+
+            {!visitorFormOpen ? (
+              <button
+                type="button"
+                className="presence-scanner__add-visitor"
+                onClick={() => setVisitorFormOpen(true)}
+              >
+                <UserPlus aria-hidden="true" />
+                Ajouter un visiteur (sans carte)
+              </button>
+            ) : (
+              <form
+                className="presence-scanner__visitor-form"
+                onSubmit={handleAddVisitor}
+              >
+                <input
+                  type="text"
+                  value={visitorFirstName}
+                  onChange={(event) => setVisitorFirstName(event.target.value)}
+                  placeholder="Prénom du visiteur"
+                  disabled={busy}
+                  autoFocus
+                />
+                <input
+                  type="text"
+                  value={visitorLastName}
+                  onChange={(event) => setVisitorLastName(event.target.value)}
+                  placeholder="Nom du visiteur"
+                  disabled={busy}
+                />
+                <input
+                  type="tel"
+                  value={visitorPhone}
+                  onChange={(event) => setVisitorPhone(event.target.value)}
+                  placeholder="Téléphone (facultatif)"
+                  disabled={busy}
+                />
+
+                <div className="presence-scanner__visitor-form-actions">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVisitorFormOpen(false);
+                      setVisitorFirstName("");
+                      setVisitorLastName("");
+                      setVisitorPhone("");
+                    }}
+                    disabled={busy}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={busy || !visitorFirstName.trim() || !visitorLastName.trim()}
+                  >
+                    Enregistrer la présence
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </section>
 
@@ -373,7 +501,7 @@ const PresenceScanner = ({ session, onLogout, onSessionRejected }) => {
             </div>
           )}
 
-          {lastResult?.member && (
+          {lastResult?.kind === "member" && lastResult.member && (
             <div className="presence-scanner__member">
               {lastResult.member.photo ? (
                 <img
@@ -405,6 +533,24 @@ const PresenceScanner = ({ session, onLogout, onSessionRejected }) => {
             </div>
           )}
 
+          {lastResult?.kind === "visitor" && lastResult.visitor && (
+            <div className="presence-scanner__member">
+              <span className="presence-scanner__member-initials">
+                {lastResult.visitor.firstName?.[0]}
+                {lastResult.visitor.lastName?.[0]}
+              </span>
+
+              <div>
+                <strong>
+                  {lastResult.visitor.firstName} {lastResult.visitor.lastName}
+                </strong>
+
+                <span>Visiteur</span>
+                <p>{lastResult.visitor.phone || "Téléphone non renseigné"}</p>
+              </div>
+            </div>
+          )}
+
           {!lastResult && !lastError && (
             <p className="presence-scanner__result-placeholder">
               Scannez une carte pour voir apparaître la présence ici.
@@ -416,8 +562,14 @@ const PresenceScanner = ({ session, onLogout, onSessionRejected }) => {
       <div className="presence-scanner__stats">
         <div className="presence-scanner__stat">
           <Users aria-hidden="true" />
-          <strong>{count ?? "—"}</strong>
+          <strong>{counts?.total ?? "—"}</strong>
           <span>Présents</span>
+        </div>
+
+        <div className="presence-scanner__stat">
+          <UserPlus aria-hidden="true" />
+          <strong>{counts?.visitors ?? "—"}</strong>
+          <span>Visiteurs</span>
         </div>
 
         <div className="presence-scanner__stat">

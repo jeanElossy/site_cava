@@ -21,7 +21,7 @@
 
     border-radius: 20px;
 
-    background: rgba(0, 0, 0, 0.35);
+    background: var(--presence-camera-frame);
 
     overflow: hidden;
   }
@@ -40,7 +40,7 @@
     width: 64px;
     height: 64px;
 
-    color: rgba(255, 255, 255, 0.25);
+    color: var(--presence-ink-subtle);
   }
 
   &__corner {
@@ -112,7 +112,7 @@
   &__hint {
     margin: 0;
 
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--presence-ink-soft);
 
     font-size: 0.8rem;
     text-align: center;

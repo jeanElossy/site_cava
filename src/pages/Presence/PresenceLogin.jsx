@@ -17,10 +17,11 @@ import { presenceAgentLogin, verifyPresenceQr } from "../../services/presences";
 import { extractQrParam } from "../../utils/qrLink";
 
 import QrCameraScanner from "../../components/presence/QrCameraScanner/QrCameraScanner";
+import ThemeToggle from "../../components/presence/ThemeToggle/ThemeToggle";
 
 import logo from "../../assets/logo/logo_cava.gif";
 
-const PresenceLogin = ({ onAuthenticated }) => {
+const PresenceLogin = ({ theme, onToggleTheme, onAuthenticated }) => {
   const [searchParams] = useSearchParams();
 
   const [matricule, setMatricule] = useState("");
@@ -101,6 +102,11 @@ const PresenceLogin = ({ onAuthenticated }) => {
 
   return (
     <div className="presence-login">
+      <ThemeToggle
+        theme={theme}
+        onToggle={onToggleTheme}
+      />
+
       <div className="presence-login__shell">
         <header className="presence-login__brand">
           <img

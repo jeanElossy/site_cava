@@ -15,12 +15,15 @@ import {
 
 import { events } from "../../services/api";
 import {
+  adminAttendanceCounts,
   adminGeneratePresenceQr,
   adminListAttendance,
   adminPresenceQrHistory,
   adminPresenceQrImage,
   adminListPresenceQrs,
   adminRevokePresenceQr,
+  downloadAttendancePdf,
+  downloadAttendanceXlsx,
 } from "../../services/presences";
 
 import useAsyncData from "../../hooks/useAsyncData";
@@ -373,8 +376,16 @@ const QrDetailModal = ({ qr, onClose, onRevoked }) => {
     attendanceLoad
   );
 
+  const countsLoad = useCallback(() => adminAttendanceCounts(qr.id), [qr.id]);
+  const { data: counts } = useAsyncData(countsLoad);
+
   const [revoking, setRevoking] = useState(false);
   const [revoked, setRevoked] = useState(qr.status === "revoked");
+
+  // "xlsx" | "pdf" | "" — distingue quel bouton est occupé, les deux
+  // exports pouvant être déclenchés indépendamment.
+  const [exporting, setExporting] = useState("");
+  const [exportError, setExportError] = useState("");
 
   const handleRevoke = async () => {
     if (revoking) return;
@@ -387,6 +398,37 @@ const QrDetailModal = ({ qr, onClose, onRevoked }) => {
       onRevoked();
     } finally {
       setRevoking(false);
+    }
+  };
+
+  const handleExport = async (format) => {
+    if (exporting) return;
+
+    setExporting(format);
+    setExportError("");
+
+    try {
+      const { blob, filename } =
+        format === "pdf"
+          ? await downloadAttendancePdf(qr.id)
+          : await downloadAttendanceXlsx(qr.id);
+
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = filename;
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      URL.revokeObjectURL(url);
+    } catch (caught) {
+      setExportError(caught?.message ?? "L'export n'a pas pu être généré.");
+    } finally {
+      setExporting("");
     }
   };
 
@@ -430,13 +472,79 @@ const QrDetailModal = ({ qr, onClose, onRevoked }) => {
         </section>
 
         <section className="admin-presences__detail-section">
-          <h3>
-            <Users
-              size={16}
-              aria-hidden="true"
-            />
-            Présences enregistrées ({attendance?.length ?? 0})
-          </h3>
+          <div className="admin-presences__detail-heading">
+            <h3>
+              <Users
+                size={16}
+                aria-hidden="true"
+              />
+              Présences enregistrées ({counts?.total ?? attendance?.length ?? 0})
+            </h3>
+
+            <div className="admin-presences__export-group">
+              <button
+                type="button"
+                className="admin-presences__export"
+                onClick={() => handleExport("xlsx")}
+                disabled={Boolean(exporting)}
+              >
+                {exporting === "xlsx" ? (
+                  <Loader2
+                    className="admin-presences__spin"
+                    size={14}
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <Download
+                    size={14}
+                    aria-hidden="true"
+                  />
+                )}
+                {exporting === "xlsx" ? "Génération…" : "Excel (.xlsx)"}
+              </button>
+
+              <button
+                type="button"
+                className="admin-presences__export"
+                onClick={() => handleExport("pdf")}
+                disabled={Boolean(exporting)}
+              >
+                {exporting === "pdf" ? (
+                  <Loader2
+                    className="admin-presences__spin"
+                    size={14}
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <Download
+                    size={14}
+                    aria-hidden="true"
+                  />
+                )}
+                {exporting === "pdf" ? "Génération…" : "PDF"}
+              </button>
+            </div>
+          </div>
+
+          {counts && (
+            <p className="admin-presences__counts">
+              {counts.members} membre{counts.members > 1 ? "s" : ""} · {counts.visitors} visiteur
+              {counts.visitors > 1 ? "s" : ""}
+            </p>
+          )}
+
+          {exportError && (
+            <p
+              className="admin-presences__form-error"
+              role="alert"
+            >
+              <AlertCircle
+                size={16}
+                aria-hidden="true"
+              />
+              {exportError}
+            </p>
+          )}
 
           {attendanceLoading && <AdminLoading label="Chargement…" />}
 
@@ -451,9 +559,15 @@ const QrDetailModal = ({ qr, onClose, onRevoked }) => {
               {attendance.map((record) => (
                 <li key={record.id}>
                   <span>
-                    {record.member?.firstName} {record.member?.lastName}
+                    {record.kind === "visitor"
+                      ? `${record.visitor?.firstName ?? ""} ${record.visitor?.lastName ?? ""}`.trim()
+                      : `${record.member?.firstName ?? ""} ${record.member?.lastName ?? ""}`.trim()}
                   </span>
-                  <span>{record.member?.registrationNumber}</span>
+                  <span>
+                    {record.kind === "visitor"
+                      ? "Visiteur"
+                      : record.member?.registrationNumber ?? "—"}
+                  </span>
                   <span>
                     {new Date(record.recordedAt).toLocaleTimeString("fr-FR", {
                       hour: "2-digit",

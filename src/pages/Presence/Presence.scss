@@ -5,13 +5,67 @@
 // chacun sous sa propre classe racine (`.presence-login`,
 // `.presence-welcome`, `.presence-scanner`) — aucun nom générique
 // (`.card`, `.stat`, `.panel`…) n'apparaît à la racine de ce fichier.
+//
+// THÈME CLAIR/SOMBRE — même mécanisme que l'administration
+// (AdminLayout.scss) : les couleurs de surface/texte sont des CSS
+// custom properties déclarées sur `.presence-app` (le conteneur posé
+// par Presence.jsx, `display: contents` — il ne prend aucune place,
+// il ne fait que porter l'attribut `data-theme` et les variables).
+// Sombre par défaut (c'est la maquette d'origine) ; `[data-theme=
+// "light"]` bascule vers la variante claire. Tous les écrans enfants
+// héritent des variables par la cascade normale du CSS.
+.presence-app {
+  display: contents;
 
-$presence-bg: linear-gradient(
+  --presence-bg: linear-gradient(
     160deg,
     #05170f 0%,
     #06231a 55%,
     #04120c 100%
   );
+  --presence-ink: #ffffff;
+  --presence-ink-soft: rgba(255, 255, 255, 0.6);
+  --presence-ink-faint: rgba(255, 255, 255, 0.42);
+  --presence-ink-subtle: rgba(255, 255, 255, 0.28);
+  --presence-surface: rgba(255, 255, 255, 0.035);
+  --presence-surface-strong: rgba(255, 255, 255, 0.055);
+  --presence-border: rgba(255, 255, 255, 0.09);
+  --presence-border-strong: rgba(255, 255, 255, 0.15);
+  --presence-camera-frame: rgba(0, 0, 0, 0.35);
+  --presence-logo-chip: rgba(255, 255, 255, 0.94);
+  --presence-danger: #fca5a5;
+  --presence-danger-bg: rgba(248, 113, 113, 0.1);
+  --presence-danger-border: rgba(248, 113, 113, 0.35);
+  // Or vif, lisible sur fond sombre. Sur fond clair, la même valeur
+  // manque de contraste (voir l'alternative ci-dessous) — d'où un
+  // jeton plutôt qu'une couleur fixe.
+  --presence-gold: #{$secondary};
+
+  &[data-theme="light"] {
+    --presence-bg: linear-gradient(
+      160deg,
+      #f4f8f6 0%,
+      #eef4f0 55%,
+      #e6efe8 100%
+    );
+    --presence-ink: #16241d;
+    --presence-ink-soft: #5a6862;
+    --presence-ink-faint: #7c8b85;
+    --presence-ink-subtle: #a7b5af;
+    --presence-surface: #ffffff;
+    --presence-surface-strong: #f4f7f5;
+    --presence-border: #dfe8e3;
+    --presence-border-strong: #c7d5cd;
+    --presence-camera-frame: rgba(15, 30, 24, 0.06);
+    --presence-logo-chip: #ffffff;
+    --presence-danger: #b42318;
+    --presence-danger-bg: rgba(180, 35, 24, 0.08);
+    --presence-danger-border: rgba(180, 35, 24, 0.25);
+    // Or clair peu lisible sur fond blanc : variante plus sombre,
+    // même teinte.
+    --presence-gold: #{$secondary-dark};
+  }
+}
 
 // =====================================================================
 // Connexion agent
@@ -26,7 +80,7 @@ $presence-bg: linear-gradient(
 
   padding: 32px 18px;
 
-  background: $presence-bg;
+  background: var(--presence-bg);
 
   &__shell {
     width: 100%;
@@ -51,13 +105,13 @@ $presence-bg: linear-gradient(
 
       object-fit: contain;
 
-      background: rgba(255, 255, 255, 0.94);
+      background: var(--presence-logo-chip);
     }
 
     strong {
       display: block;
 
-      color: #fff;
+      color: var(--presence-ink);
 
       font-size: 1.15rem;
       font-weight: 700;
@@ -67,7 +121,7 @@ $presence-bg: linear-gradient(
     span {
       display: block;
 
-      color: rgba(255, 255, 255, 0.55);
+      color: var(--presence-ink-soft);
 
       font-size: 0.75rem;
     }
@@ -91,13 +145,13 @@ $presence-bg: linear-gradient(
     h1 {
       margin: 0 0 8px;
 
-      color: #fff;
+      color: var(--presence-ink);
 
       font-size: 1.5rem;
       font-weight: 700;
 
       span {
-        color: $secondary;
+        color: var(--presence-gold);
       }
     }
 
@@ -106,7 +160,7 @@ $presence-bg: linear-gradient(
 
       max-width: 320px;
 
-      color: rgba(255, 255, 255, 0.55);
+      color: var(--presence-ink-soft);
 
       font-size: 0.87rem;
       line-height: 1.55;
@@ -122,10 +176,10 @@ $presence-bg: linear-gradient(
   &__step {
     padding: 18px 18px 20px;
 
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    border: 1px solid var(--presence-border);
     border-radius: 16px;
 
-    background: rgba(255, 255, 255, 0.035);
+    background: var(--presence-surface);
 
     h2 {
       display: flex;
@@ -134,7 +188,7 @@ $presence-bg: linear-gradient(
 
       margin: 0 0 12px;
 
-      color: #fff;
+      color: var(--presence-ink);
 
       font-size: 0.95rem;
       font-weight: 700;
@@ -145,7 +199,7 @@ $presence-bg: linear-gradient(
 
       margin-bottom: 6px;
 
-      color: rgba(255, 255, 255, 0.75);
+      color: var(--presence-ink-soft);
 
       font-size: 0.8rem;
       font-weight: 600;
@@ -164,7 +218,7 @@ $presence-bg: linear-gradient(
 
     background: rgba(22, 160, 106, 0.25);
 
-    color: $secondary;
+    color: var(--presence-gold);
 
     font-size: 0.78rem;
     font-weight: 700;
@@ -173,7 +227,7 @@ $presence-bg: linear-gradient(
   &__step-lead {
     margin: 0 0 12px;
 
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--presence-ink-faint);
 
     font-size: 0.8rem;
   }
@@ -181,7 +235,7 @@ $presence-bg: linear-gradient(
   &__step-hint {
     margin: 10px 0 0;
 
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--presence-ink-faint);
 
     font-size: 0.76rem;
     text-align: center;
@@ -191,15 +245,15 @@ $presence-bg: linear-gradient(
     display: flex;
     align-items: center;
 
-    border: 1.5px solid rgba(255, 255, 255, 0.14);
+    border: 1.5px solid var(--presence-border-strong);
     border-radius: 12px;
 
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--presence-surface-strong);
 
     transition: border-color 0.18s ease, box-shadow 0.18s ease;
 
     &:focus-within {
-      border-color: $secondary;
+      border-color: var(--presence-gold);
       box-shadow: 0 0 0 3px rgba(255, 210, 46, 0.18);
     }
 
@@ -210,7 +264,7 @@ $presence-bg: linear-gradient(
       height: 18px;
       margin-left: 14px;
 
-      color: rgba(255, 255, 255, 0.4);
+      color: var(--presence-ink-faint);
     }
 
     input {
@@ -222,7 +276,7 @@ $presence-bg: linear-gradient(
       border: 0;
       background: transparent;
 
-      color: #fff;
+      color: var(--presence-ink);
 
       font-family: inherit;
       font-size: 0.95rem;
@@ -232,7 +286,7 @@ $presence-bg: linear-gradient(
       }
 
       &::placeholder {
-        color: rgba(255, 255, 255, 0.28);
+        color: var(--presence-ink-subtle);
       }
     }
   }
@@ -261,7 +315,7 @@ $presence-bg: linear-gradient(
     strong {
       display: block;
 
-      color: #fff;
+      color: var(--presence-ink);
 
       font-size: 0.9rem;
     }
@@ -269,7 +323,7 @@ $presence-bg: linear-gradient(
     span {
       display: block;
 
-      color: rgba(255, 255, 255, 0.55);
+      color: var(--presence-ink-soft);
 
       font-size: 0.78rem;
     }
@@ -284,12 +338,12 @@ $presence-bg: linear-gradient(
     margin: 12px auto 0;
     padding: 8px 16px;
 
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    border: 1px solid var(--presence-border-strong);
     border-radius: 999px;
 
     background: transparent;
 
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--presence-ink-soft);
 
     font-family: inherit;
     font-size: 0.8rem;
@@ -302,8 +356,8 @@ $presence-bg: linear-gradient(
     }
 
     &:hover {
-      border-color: $secondary;
-      color: #fff;
+      border-color: var(--presence-gold);
+      color: var(--presence-ink);
     }
   }
 
@@ -315,12 +369,12 @@ $presence-bg: linear-gradient(
     margin: 0;
     padding: 12px 14px;
 
-    border: 1px solid rgba(248, 113, 113, 0.35);
+    border: 1px solid var(--presence-danger-border);
     border-radius: 11px;
 
-    background: rgba(248, 113, 113, 0.1);
+    background: var(--presence-danger-bg);
 
-    color: #fca5a5;
+    color: var(--presence-danger);
 
     font-size: 0.85rem;
     line-height: 1.5;
@@ -384,12 +438,12 @@ $presence-bg: linear-gradient(
     margin: 0;
     padding: 13px 14px;
 
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--presence-border);
     border-radius: 12px;
 
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--presence-surface);
 
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--presence-ink-soft);
 
     font-size: 0.78rem;
     line-height: 1.55;
@@ -399,7 +453,7 @@ $presence-bg: linear-gradient(
       width: 16px;
       height: 16px;
       margin-top: 1px;
-      color: $secondary;
+      color: var(--presence-gold);
     }
   }
 }
@@ -421,7 +475,7 @@ $presence-bg: linear-gradient(
 
   text-align: center;
 
-  background: $presence-bg;
+  background: var(--presence-bg);
 
   &__badge {
     display: flex;
@@ -448,7 +502,7 @@ $presence-bg: linear-gradient(
   h1 {
     margin: 0;
 
-    color: #fff;
+    color: var(--presence-ink);
 
     font-size: 1.5rem;
     font-weight: 700;
@@ -457,14 +511,14 @@ $presence-bg: linear-gradient(
   p {
     margin: 0;
 
-    color: $secondary;
+    color: var(--presence-gold);
 
     font-size: 1.05rem;
     font-weight: 600;
   }
 
   span {
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--presence-ink-soft);
 
     font-size: 0.88rem;
   }
@@ -479,7 +533,7 @@ $presence-bg: linear-gradient(
 
   padding: 20px 18px 32px;
 
-  background: $presence-bg;
+  background: var(--presence-bg);
 
   display: flex;
   flex-direction: column;
@@ -494,10 +548,10 @@ $presence-bg: linear-gradient(
 
     padding: 16px 18px;
 
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    border: 1px solid var(--presence-border);
     border-radius: 16px;
 
-    background: rgba(255, 255, 255, 0.035);
+    background: var(--presence-surface);
   }
 
   &__title {
@@ -508,7 +562,7 @@ $presence-bg: linear-gradient(
     h1 {
       margin: 0;
 
-      color: #fff;
+      color: var(--presence-ink);
 
       font-size: 1.05rem;
       font-weight: 700;
@@ -522,7 +576,7 @@ $presence-bg: linear-gradient(
 
       margin: 2px 0 0;
 
-      color: rgba(255, 255, 255, 0.55);
+      color: var(--presence-ink-soft);
 
       font-size: 0.82rem;
     }
@@ -564,13 +618,13 @@ $presence-bg: linear-gradient(
 
     padding: 8px 14px;
 
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--presence-border-strong);
     border-radius: 12px;
 
     span {
       display: block;
 
-      color: rgba(255, 255, 255, 0.5);
+      color: var(--presence-ink-faint);
 
       font-size: 0.72rem;
     }
@@ -578,7 +632,7 @@ $presence-bg: linear-gradient(
     strong {
       display: block;
 
-      color: #fff;
+      color: var(--presence-ink);
 
       font-size: 1.15rem;
       font-variant-numeric: tabular-nums;
@@ -587,14 +641,14 @@ $presence-bg: linear-gradient(
     em {
       display: block;
 
-      color: rgba(255, 255, 255, 0.4);
+      color: var(--presence-ink-faint);
 
       font-size: 0.72rem;
       font-style: normal;
     }
 
     &--warning strong {
-      color: #fca5a5;
+      color: var(--presence-danger);
     }
   }
 
@@ -606,17 +660,17 @@ $presence-bg: linear-gradient(
 
     padding: 12px 18px;
 
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    border: 1px solid var(--presence-border);
     border-radius: 14px;
 
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--presence-surface);
 
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--presence-ink-soft);
 
     font-size: 0.83rem;
 
     strong {
-      color: #fff;
+      color: var(--presence-ink);
     }
   }
 
@@ -646,10 +700,10 @@ $presence-bg: linear-gradient(
   &__result-panel {
     padding: 20px;
 
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    border: 1px solid var(--presence-border);
     border-radius: 18px;
 
-    background: rgba(255, 255, 255, 0.035);
+    background: var(--presence-surface);
 
     h2 {
       display: flex;
@@ -658,7 +712,7 @@ $presence-bg: linear-gradient(
 
       margin: 0 0 4px;
 
-      color: #fff;
+      color: var(--presence-ink);
 
       font-size: 0.95rem;
       font-weight: 700;
@@ -673,7 +727,7 @@ $presence-bg: linear-gradient(
     > p {
       margin: 0 0 16px;
 
-      color: rgba(255, 255, 255, 0.5);
+      color: var(--presence-ink-faint);
 
       font-size: 0.8rem;
     }
@@ -686,7 +740,7 @@ $presence-bg: linear-gradient(
 
     margin: 18px 0;
 
-    color: rgba(255, 255, 255, 0.35);
+    color: var(--presence-ink-subtle);
 
     font-size: 0.75rem;
     font-weight: 700;
@@ -698,7 +752,7 @@ $presence-bg: linear-gradient(
       flex: 1;
       height: 1px;
 
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--presence-border-strong);
     }
   }
 
@@ -710,7 +764,7 @@ $presence-bg: linear-gradient(
 
       margin-bottom: 8px;
 
-      color: rgba(255, 255, 255, 0.75);
+      color: var(--presence-ink-soft);
 
       font-size: 0.83rem;
       font-weight: 600;
@@ -733,23 +787,23 @@ $presence-bg: linear-gradient(
 
       padding: 12px 14px;
 
-      border: 1.5px solid rgba(255, 255, 255, 0.14);
+      border: 1.5px solid var(--presence-border-strong);
       border-radius: 12px;
 
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--presence-surface-strong);
 
-      color: #fff;
+      color: var(--presence-ink);
 
       font-family: inherit;
       font-size: 0.9rem;
 
       &:focus {
         outline: none;
-        border-color: $secondary;
+        border-color: var(--presence-gold);
       }
 
       &::placeholder {
-        color: rgba(255, 255, 255, 0.28);
+        color: var(--presence-ink-subtle);
       }
     }
 
@@ -776,6 +830,107 @@ $presence-bg: linear-gradient(
     }
   }
 
+  &__add-visitor {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px 14px;
+
+    border: 1px dashed var(--presence-border-strong);
+    border-radius: 12px;
+
+    background: transparent;
+
+    color: var(--presence-ink-soft);
+
+    font-family: inherit;
+    font-size: 0.83rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      border-color: $primary;
+      color: var(--presence-ink);
+    }
+  }
+
+  &__visitor-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    margin-top: 10px;
+
+    input {
+      padding: 11px 12px;
+
+      border: 1.5px solid var(--presence-border-strong);
+      border-radius: 10px;
+
+      background: var(--presence-surface-strong);
+
+      color: var(--presence-ink);
+
+      font-family: inherit;
+      font-size: 0.87rem;
+
+      &:focus {
+        outline: none;
+        border-color: var(--presence-gold);
+      }
+
+      &::placeholder {
+        color: var(--presence-ink-subtle);
+      }
+    }
+  }
+
+  &__visitor-form-actions {
+    display: flex;
+    gap: 8px;
+
+    button {
+      flex: 1;
+
+      padding: 10px;
+
+      border-radius: 10px;
+
+      font-family: inherit;
+      font-size: 0.83rem;
+      font-weight: 600;
+
+      cursor: pointer;
+
+      &[type="submit"] {
+        border: 0;
+        background: $primary;
+        color: #fff;
+
+        &[disabled] {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+
+      &[type="button"] {
+        border: 1px solid var(--presence-border-strong);
+        background: transparent;
+        color: var(--presence-ink-soft);
+      }
+    }
+  }
+
   &__results {
     list-style: none;
 
@@ -797,12 +952,12 @@ $presence-bg: linear-gradient(
       width: 100%;
       padding: 10px 12px;
 
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--presence-border);
       border-radius: 10px;
 
-      background: rgba(255, 255, 255, 0.03);
+      background: var(--presence-surface);
 
-      color: #fff;
+      color: var(--presence-ink);
 
       cursor: pointer;
 
@@ -812,7 +967,7 @@ $presence-bg: linear-gradient(
         flex-shrink: 0;
         width: 16px;
         height: 16px;
-        color: rgba(255, 255, 255, 0.4);
+        color: var(--presence-ink-faint);
       }
 
       strong {
@@ -823,7 +978,7 @@ $presence-bg: linear-gradient(
       em {
         display: block;
 
-        color: rgba(255, 255, 255, 0.45);
+        color: var(--presence-ink-faint);
 
         font-size: 0.74rem;
         font-style: normal;
@@ -843,7 +998,7 @@ $presence-bg: linear-gradient(
   &__results-empty {
     padding: 10px 12px;
 
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--presence-ink-faint);
 
     font-size: 0.8rem;
   }
@@ -885,17 +1040,17 @@ $presence-bg: linear-gradient(
       }
 
       span {
-        color: rgba(255, 255, 255, 0.6);
+        color: var(--presence-ink-soft);
       }
     }
 
     &--error {
-      border: 1px solid rgba(248, 113, 113, 0.35);
-      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid var(--presence-danger-border);
+      background: var(--presence-danger-bg);
 
       svg,
       strong {
-        color: #fca5a5;
+        color: var(--presence-danger);
       }
     }
   }
@@ -925,7 +1080,7 @@ $presence-bg: linear-gradient(
 
       background: rgba(22, 160, 106, 0.2);
 
-      color: $secondary;
+      color: var(--presence-gold);
 
       font-size: 1.2rem;
       font-weight: 700;
@@ -940,7 +1095,7 @@ $presence-bg: linear-gradient(
 
       margin-bottom: 6px;
 
-      color: #fff;
+      color: var(--presence-ink);
 
       font-size: 1rem;
     }
@@ -948,7 +1103,7 @@ $presence-bg: linear-gradient(
     span {
       display: block;
 
-      color: rgba(255, 255, 255, 0.4);
+      color: var(--presence-ink-faint);
 
       font-size: 0.72rem;
       text-transform: uppercase;
@@ -958,7 +1113,7 @@ $presence-bg: linear-gradient(
     p {
       margin: 0 0 8px;
 
-      color: rgba(255, 255, 255, 0.8);
+      color: var(--presence-ink-soft);
 
       font-size: 0.88rem;
     }
@@ -968,7 +1123,7 @@ $presence-bg: linear-gradient(
     margin: 0;
     padding: 20px 0;
 
-    color: rgba(255, 255, 255, 0.35);
+    color: var(--presence-ink-subtle);
 
     font-size: 0.85rem;
     text-align: center;
@@ -988,10 +1143,10 @@ $presence-bg: linear-gradient(
 
     padding: 16px;
 
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    border: 1px solid var(--presence-border);
     border-radius: 14px;
 
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--presence-surface);
 
     text-align: center;
 
@@ -999,16 +1154,16 @@ $presence-bg: linear-gradient(
       width: 20px;
       height: 20px;
       margin-bottom: 4px;
-      color: $secondary;
+      color: var(--presence-gold);
     }
 
     strong {
-      color: #fff;
+      color: var(--presence-ink);
       font-size: 1.2rem;
     }
 
     span {
-      color: rgba(255, 255, 255, 0.5);
+      color: var(--presence-ink-faint);
       font-size: 0.76rem;
     }
   }
@@ -1044,12 +1199,12 @@ $presence-bg: linear-gradient(
   }
 
   &__logout {
-    border: 1px solid rgba(248, 113, 113, 0.4);
+    border: 1px solid var(--presence-danger-border);
     background: transparent;
-    color: #fca5a5;
+    color: var(--presence-danger);
 
     &:hover {
-      background: rgba(248, 113, 113, 0.1);
+      background: var(--presence-danger-bg);
     }
   }
 

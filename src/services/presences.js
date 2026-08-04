@@ -1,4 +1,4 @@
-import { request } from "./http";
+import { apiBaseUrl, getToken, request } from "./http";
 
 // Badgeage des présences — voir docs/superpowers/specs/2026-08-04-
 // badgeage-presences-design.md.
@@ -66,6 +66,13 @@ export const markPresenceManually = (memberId, sessionToken) =>
     token: sessionToken,
   });
 
+export const markVisitorPresence = ({ firstName, lastName, phone }, sessionToken) =>
+  request("/api/presences/mark-visitor", {
+    method: "POST",
+    body: { firstName, lastName, phone },
+    token: sessionToken,
+  });
+
 export const presenceStats = (sessionToken) =>
   request("/api/presences/stats", { token: sessionToken });
 
@@ -98,3 +105,35 @@ export const adminListAttendance = (params = {}) =>
     `/api/admin/presences/attendance?${new URLSearchParams(params)}`,
     { auth: true }
   );
+
+export const adminAttendanceCounts = (id) =>
+  request(`/api/admin/presences/qrcodes/${id}/attendance-counts`, {
+    auth: true,
+  });
+
+// Récupéré en binaire plutôt que lié directement : la route exige un
+// jeton d'administration (en-tête `Authorization`), qu'un simple lien
+// `<a href>` ne peut pas porter — même raisonnement que
+// `services/donations.js#fetchReceipt`.
+const downloadAttendanceExport = async (id, format) => {
+  const response = await fetch(
+    `${apiBaseUrl}/api/admin/presences/qrcodes/${id}/export.${format}`,
+    { headers: { Authorization: `Bearer ${getToken() ?? ""}` } }
+  );
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+
+    throw new Error(
+      payload?.message ?? "L'export n'a pas pu être généré."
+    );
+  }
+
+  return {
+    blob: await response.blob(),
+    filename: `presences-${id}.${format}`,
+  };
+};
+
+export const downloadAttendanceXlsx = (id) => downloadAttendanceExport(id, "xlsx");
+export const downloadAttendancePdf = (id) => downloadAttendanceExport(id, "pdf");

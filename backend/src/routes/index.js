@@ -25,6 +25,7 @@ import * as memberExportService from "../services/memberExport.service.js";
 import * as memberCardService from "../services/memberCard.service.js";
 import * as presenceQrService from "../services/presenceQr.service.js";
 import * as presenceService from "../services/presence.service.js";
+import * as presenceExportService from "../services/presenceExport.service.js";
 import {
   parseRegistrationNumber,
   releaseIfLastIssued,
@@ -538,11 +539,11 @@ export const buildRoutes = () => {
     "/stats",
     requirePresenceSession,
     asyncHandler(async (req, res) => {
-      const count = await presenceService.countAttendance(req.presenceQr._id);
+      const counts = await presenceService.countAttendance(req.presenceQr._id);
 
       sendSuccess(res, {
         data: {
-          count,
+          ...counts,
           qr: { label: req.presenceQr.label, validUntil: req.presenceQr.validUntil },
         },
       });
@@ -562,6 +563,26 @@ export const buildRoutes = () => {
       );
 
       sendSuccess(res, { data: result });
+    })
+  );
+
+  presencesPublic.post(
+    "/mark-visitor",
+    presenceScanLimiter,
+    requirePresenceSession,
+    asyncHandler(async (req, res) => {
+      const result = await presenceService.markVisitor(
+        {
+          firstName: req.body?.firstName,
+          lastName: req.body?.lastName,
+          phone: req.body?.phone,
+        },
+        req.presenceAgent,
+        req.presenceQr,
+        req
+      );
+
+      sendCreated(res, { data: result });
     })
   );
 
@@ -647,6 +668,52 @@ export const buildRoutes = () => {
       });
 
       sendSuccess(res, { data });
+    })
+  );
+
+  adminPresences.get(
+    "/qrcodes/:id/attendance-counts",
+    asyncHandler(async (req, res) => {
+      const data = await presenceService.countAttendance(req.params.id);
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  adminPresences.get(
+    "/qrcodes/:id/export.xlsx",
+    asyncHandler(async (req, res) => {
+      const buffer = await presenceExportService.buildAttendanceXlsx(
+        req.params.id
+      );
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="presences-${req.params.id}.xlsx"`
+      );
+
+      res.send(buffer);
+    })
+  );
+
+  adminPresences.get(
+    "/qrcodes/:id/export.pdf",
+    asyncHandler(async (req, res) => {
+      const buffer = await presenceExportService.buildAttendancePdf(
+        req.params.id
+      );
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="presences-${req.params.id}.pdf"`
+      );
+
+      res.send(buffer);
     })
   );
 

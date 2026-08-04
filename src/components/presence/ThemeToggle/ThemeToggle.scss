@@ -1,0 +1,44 @@
+@use "../../../styles/variables" as *;
+
+// Bouton isolé, hors de tout conteneur habillé : position fixe pour
+// rester accessible quelle que soit la longueur de la page (le
+// scanner défile sur petit écran).
+.presence-theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 20;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 40px;
+  height: 40px;
+
+  border: 1px solid var(--presence-border-strong);
+  border-radius: 50%;
+
+  background: var(--presence-surface-strong);
+
+  color: var(--presence-ink-soft);
+
+  cursor: pointer;
+
+  transition: color 0.18s ease, border-color 0.18s ease;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    border-color: $primary;
+    color: var(--presence-ink);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+  }
+}

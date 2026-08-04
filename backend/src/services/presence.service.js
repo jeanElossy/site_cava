@@ -85,14 +85,16 @@ export const agentLogin = async ({ token, matricule }, req) => {
   };
 };
 
-// Écrit la présence si elle n'existe pas déjà pour ce membre et ce QR
-// (index unique `Attendance{member, securityQr}`) ; sinon renvoie
-// l'enregistrement existant. S'appuie sur l'erreur de doublon plutôt
-// que sur une lecture préalable, pour rester correct sous deux scans
-// presque simultanés du même membre.
-const recordAttendance = async ({ member, securityQr, agentId, method, req }) => {
+// Écrit la présence d'un MEMBRE si elle n'existe pas déjà pour ce
+// membre et ce QR (index unique partiel `Attendance{member,
+// securityQr}`, restreint à `kind: "member"` — voir Attendance.js) ;
+// sinon renvoie l'enregistrement existant. S'appuie sur l'erreur de
+// doublon plutôt que sur une lecture préalable, pour rester correct
+// sous deux scans presque simultanés du même membre.
+const recordMemberAttendance = async ({ member, securityQr, agentId, method, req }) => {
   try {
     const attendance = await Attendance.create({
+      kind: "member",
       member: member._id,
       securityQr,
       agent: agentId,
@@ -129,7 +131,7 @@ export const scan = async ({ registrationNumber }, presenceAgent, presenceQr, re
     throw ApiError.notFound("Aucun membre avec ce matricule.");
   }
 
-  const { attendance, alreadyRecorded } = await recordAttendance({
+  const { attendance, alreadyRecorded } = await recordMemberAttendance({
     member,
     securityQr: presenceQr._id,
     agentId: presenceAgent.id,
@@ -151,7 +153,7 @@ export const mark = async ({ memberId }, presenceAgent, presenceQr, req) => {
     throw ApiError.notFound("Membre introuvable.");
   }
 
-  const { attendance, alreadyRecorded } = await recordAttendance({
+  const { attendance, alreadyRecorded } = await recordMemberAttendance({
     member,
     securityQr: presenceQr._id,
     agentId: presenceAgent.id,
@@ -162,6 +164,43 @@ export const mark = async ({ memberId }, presenceAgent, presenceQr, req) => {
   return {
     member: serializeMember(member),
     alreadyRecorded,
+    recordedAt: attendance.recordedAt,
+  };
+};
+
+// Présence d'un VISITEUR sans carte ni dossier `Member` — saisie
+// directe par l'agent (nom, prénom, téléphone facultatif). Aucune
+// déduplication possible (pas d'identité stable), donc toujours
+// `alreadyRecorded: false` : chaque appel crée une nouvelle ligne.
+export const markVisitor = async ({ firstName, lastName, phone }, presenceAgent, presenceQr, req) => {
+  const cleanFirstName = String(firstName ?? "").trim();
+  const cleanLastName = String(lastName ?? "").trim();
+
+  if (!cleanFirstName || !cleanLastName) {
+    throw ApiError.badRequest("Le prénom et le nom du visiteur sont obligatoires.");
+  }
+
+  const attendance = await Attendance.create({
+    kind: "visitor",
+    visitor: {
+      firstName: cleanFirstName,
+      lastName: cleanLastName,
+      phone: phone ? String(phone).trim() : undefined,
+    },
+    securityQr: presenceQr._id,
+    agent: presenceAgent.id,
+    method: "manual",
+    ip: req?.ip,
+    userAgent: req?.headers?.["user-agent"]?.slice(0, 300),
+  });
+
+  return {
+    visitor: {
+      firstName: cleanFirstName,
+      lastName: cleanLastName,
+      phone: attendance.visitor.phone,
+    },
+    alreadyRecorded: false,
     recordedAt: attendance.recordedAt,
   };
 };
@@ -202,11 +241,18 @@ export const search = async (query) => {
 };
 
 // Nombre de présences déjà enregistrées pour le QR de la session en
-// cours — alimente le compteur "Présents" du scanner, une donnée
-// réelle plutôt qu'une statistique fabriquée (voir le point "hors
-// périmètre" de la spec sur les statistiques avancées).
-export const countAttendance = (securityQr) =>
-  Attendance.countDocuments({ securityQr });
+// cours, réparti membres/visiteurs — alimente le compteur "Présents"
+// du scanner et le résumé de l'export admin. Donnée réelle plutôt
+// qu'une statistique fabriquée (voir le point "hors périmètre" de la
+// spec sur les statistiques avancées).
+export const countAttendance = async (securityQr) => {
+  const [members, visitors] = await Promise.all([
+    Attendance.countDocuments({ securityQr, kind: "member" }),
+    Attendance.countDocuments({ securityQr, kind: "visitor" }),
+  ]);
+
+  return { total: members + visitors, members, visitors };
+};
 
 // Présences enregistrées, pour le tableau de bord admin. Filtrable par
 // QR de sécurité (un service donné) ; sinon les plus récentes toutes
@@ -225,6 +271,7 @@ export const listAttendance = async ({ securityQr, limit = 100 } = {}) => {
 
   return records.map((record) => ({
     id: String(record._id),
+    kind: record.kind,
     method: record.method,
     recordedAt: record.recordedAt,
     member: record.member
@@ -237,6 +284,7 @@ export const listAttendance = async ({ securityQr, limit = 100 } = {}) => {
           area: record.member.area,
         }
       : null,
+    visitor: record.kind === "visitor" ? record.visitor : null,
     agent: record.agent
       ? {
           firstName: record.agent.firstName,

@@ -325,6 +325,65 @@
     }
   }
 
+  &__detail-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+
+    h3 {
+      margin: 0;
+    }
+  }
+
+  &__export-group {
+    display: flex;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  &__export {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+
+    padding: 7px 12px;
+
+    border: 1px solid $admin-border-strong;
+    border-radius: $admin-radius-sm;
+
+    background: $admin-surface-muted;
+
+    color: $admin-ink;
+
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: $admin-ease;
+
+    &:hover:not([disabled]) {
+      border-color: $admin-accent;
+      color: $admin-accent;
+    }
+
+    &[disabled] {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  &__counts {
+    margin: -6px 0 12px;
+
+    color: $admin-ink-faint;
+
+    font-size: 0.8rem;
+  }
+
   &__detail-empty {
     margin: 0;
 

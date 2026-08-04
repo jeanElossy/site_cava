@@ -276,6 +276,71 @@ describe("presence.service (intégration MongoDB)", () => {
     });
   });
 
+  describe("markVisitor", () => {
+    it("enregistre un visiteur sans dossier Member, sans jamais le dédupliquer", async () => {
+      const first = await presenceService.markVisitor(
+        { firstName: "Awa", lastName: "Traoré", phone: "0700000099" },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+
+      assert.equal(first.alreadyRecorded, false);
+      assert.equal(first.visitor.firstName, "Awa");
+      assert.equal(first.visitor.phone, "0700000099");
+
+      const second = await presenceService.markVisitor(
+        { firstName: "Awa", lastName: "Traoré" },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+
+      // Même nom/prénom qu'au-dessus, mais AUCUNE identité stable côté
+      // visiteur : chaque appel crée sa propre ligne, jamais fusionné.
+      assert.equal(second.alreadyRecorded, false);
+
+      const count = await Attendance.countDocuments({
+        securityQr: qr._id,
+        kind: "visitor",
+      });
+      assert.equal(count, 2);
+    });
+
+    it("refuse un visiteur sans prénom ou sans nom", async () => {
+      await assert.rejects(
+        presenceService.markVisitor(
+          { firstName: "", lastName: "Traoré" },
+          { id: agent._id },
+          qr,
+          fakeReq
+        ),
+        (error) => error.status === 400
+      );
+    });
+  });
+
+  describe("countAttendance", () => {
+    it("répartit le total entre membres et visiteurs", async () => {
+      await presenceService.scan(
+        { registrationNumber: memberToScan.registrationNumber },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+      await presenceService.markVisitor(
+        { firstName: "Koffi", lastName: "N'Guessan" },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+
+      const counts = await presenceService.countAttendance(qr._id);
+
+      assert.deepEqual(counts, { total: 2, members: 1, visitors: 1 });
+    });
+  });
+
   describe("listAttendance", () => {
     it("liste les présences d'un QR, les plus récentes en premier, avec membre/agent peuplés", async () => {
       await presenceService.scan(
@@ -290,9 +355,29 @@ describe("presence.service (intégration MongoDB)", () => {
       });
 
       assert.equal(records.length, 1);
+      assert.equal(records[0].kind, "member");
       assert.equal(records[0].member.registrationNumber, "1XP26004D");
       assert.equal(records[0].agent.registrationNumber, "1XP26001A");
       assert.equal(records[0].securityQr.label, QR_LABEL);
+    });
+
+    it("inclut les visiteurs, avec leur identité déclarée plutôt qu'un membre", async () => {
+      await presenceService.markVisitor(
+        { firstName: "Koffi", lastName: "N'Guessan", phone: "0700000098" },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+
+      const records = await presenceService.listAttendance({
+        securityQr: qr._id,
+      });
+
+      assert.equal(records.length, 1);
+      assert.equal(records[0].kind, "visitor");
+      assert.equal(records[0].member, null);
+      assert.equal(records[0].visitor.firstName, "Koffi");
+      assert.equal(records[0].visitor.phone, "0700000098");
     });
   });
 });
