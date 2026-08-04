@@ -229,15 +229,27 @@
   }
 
   // Ligne d'un élément désactivé (ex. membre au statut "inactif") —
-  // grisée pour rester lisible dans la liste sans se confondre avec
-  // les lignes actives. Opt-in via `rowClassName` : n'affecte que les
-  // écrans qui le demandent.
+  // toute la ligne grisée, lisible dans les deux thèmes (clair/sombre),
+  // sans se confondre avec les lignes actives. Opt-in via
+  // `rowClassName` : n'affecte que les écrans qui le demandent.
+  //
+  // `opacity` PAR CELLULE (pas sur la ligne entière) : appliquée à la
+  // ligne, `opacity < 1` crée un contexte d'empilement qui capture
+  // avec lui tout élément positionné en absolu à l'intérieur — ici le
+  // panneau du menu Actions, qui héritait de la transparence de la
+  // ligne ET se retrouvait peint SOUS la ligne suivante (son z-index
+  // ne joue qu'à l'intérieur de ce contexte capturé), rendant ses
+  // boutons impossibles à cliquer. En excluant la cellule Actions
+  // (`:not(.admin-crud__row-actions)`), tout le reste de la ligne
+  // grisé visuellement, exactement comme si l'opacité portait sur la
+  // ligne entière, mais le menu reste dans son propre contexte
+  // d'empilement normal — pleinement opaque et cliquable.
   &__row--inactive {
-    td {
-      color: $admin-ink-faint;
-    }
+    background: $admin-surface-muted;
 
-    opacity: 0.65;
+    td:not(.admin-crud__row-actions) {
+      opacity: 0.55;
+    }
   }
 
   // Colonne Actions (Modifier/Supprimer) : toujours deux icônes, jamais
