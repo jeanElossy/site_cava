@@ -144,6 +144,37 @@ describe("submission.service (intégration MongoDB)", () => {
     assert.equal(stored.data.phone, "0700000000");
   });
 
+  it("submit() écarte une photo dont l'URL ne provient pas de notre Cloudinary (SSRF), sans rejeter le reste de la demande", async () => {
+    const result = await submissionService.submit({
+      type: "new",
+      data: {
+        firstName: "Jean",
+        lastName: TEST_LAST_NAME,
+        church: TEST_CHURCH,
+        flock: String(testFlockChurch1._id),
+        phone: "0700000000",
+        photo: "http://169.254.169.254/latest/meta-data/",
+      },
+    });
+
+    assert.deepEqual(result, { received: true });
+
+    const stored = await MemberSubmission.findOne({
+      "data.lastName": TEST_LAST_NAME,
+    }).lean();
+
+    assert.equal(
+      stored.data.photo,
+      undefined,
+      "une URL non fiable ne doit jamais atteindre la soumission stockée"
+    );
+    assert.equal(
+      stored.data.phone,
+      "0700000000",
+      "le reste de la demande doit rester intact"
+    );
+  });
+
   it("submit() de type 'update' résout `existingMember` quand le matricule correspond à un membre informatisé", async () => {
     const existingMember = await Member.create({
       firstName: "Existant",

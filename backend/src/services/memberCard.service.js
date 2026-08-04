@@ -9,6 +9,7 @@ import Member from "../models/Member.js";
 import Church from "../models/Church.js";
 import { ApiError } from "../utils/ApiError.js";
 import { env } from "../config/env.js";
+import { isTrustedMemberPhotoUrl } from "../utils/cloudinaryUrl.js";
 import { formatRegistrationNumber } from "./registrationNumber.service.js";
 
 const GREEN = "#0d5b3e";
@@ -394,7 +395,12 @@ const renderMemberCardCanvas = async (member, church) => {
 
   let photoImage = null;
 
-  if (member.photo) {
+  // Défense en profondeur : le schéma (Member.js) refuse déjà d'
+  // enregistrer une URL qui ne provient pas de notre Cloudinary, mais
+  // cette vérification est refaite ici, juste avant la seule ligne où
+  // le SERVEUR récupère lui-même une URL fournie par un membre — le
+  // point d'impact réel d'un éventuel SSRF (voir utils/cloudinaryUrl.js).
+  if (member.photo && isTrustedMemberPhotoUrl(member.photo)) {
     try {
       photoImage = await loadImage(member.photo);
     } catch {

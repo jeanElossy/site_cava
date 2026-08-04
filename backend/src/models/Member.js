@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+import { isTrustedMemberPhotoUrl } from "../utils/cloudinaryUrl.js";
+
 const baptismSchema = new mongoose.Schema(
   {
     water: { type: Boolean, default: false },
@@ -154,7 +156,21 @@ const memberSchema = new mongoose.Schema(
       type: emergencyContactSchema,
       default: () => ({}),
     },
-    photo: { type: String, trim: true },
+    // Doit être une URL Cloudinary de NOTRE compte, dans le dossier
+    // membres (voir utils/cloudinaryUrl.js) : le serveur va lui-même
+    // récupérer cette URL pour générer la carte de membre
+    // (memberCard.service.js) — une valeur libre exposerait le
+    // serveur à une requête vers une adresse choisie par un
+    // attaquant (SSRF), quel que soit le chemin qui a écrit le champ.
+    photo: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: (value) => !value || isTrustedMemberPhotoUrl(value),
+        message:
+          "La photo doit provenir d'un envoi via le formulaire ou l'administration, pas d'une adresse saisie librement.",
+      },
+    },
 
     // Notes internes de l'équipe pastorale. Jamais exposées
     // publiquement : à exclure explicitement de toute route publique.

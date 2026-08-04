@@ -124,7 +124,15 @@ describe("memberCard.service (intégration MongoDB)", () => {
   });
 
   it("utilise la vraie photo du membre quand elle est renseignée, plutôt que les initiales", async () => {
-    const member = await Member.create({
+    // `Member.photo` valide désormais son URL (voir utils/
+    // cloudinaryUrl.test.js pour cette règle elle-même) : un chemin de
+    // fichier local n'est pas une URL Cloudinary et serait refusé à
+    // l'enregistrement. `validateBeforeSave: false` est délibéré ici
+    // — ce test porte sur le RENDU d'une vraie photo, pas sur la
+    // validation du champ, déjà couverte ailleurs. Un fichier local
+    // reste la façon la plus simple de vérifier le rendu sans
+    // dépendre d'un service externe joignable pendant les tests.
+    const member = new Member({
       firstName: "AvecPhoto",
       lastName: TEST_LAST_NAME,
       church: 1,
@@ -133,24 +141,32 @@ describe("memberCard.service (intégration MongoDB)", () => {
       photo: LOCAL_TEST_IMAGE,
     });
 
+    await member.save({ validateBeforeSave: false });
+
     const buffer = await buildMemberCardPdf(member._id);
 
     assert.ok(Buffer.isBuffer(buffer));
     assert.equal(buffer.subarray(0, 5).toString("latin1"), "%PDF-");
   });
 
-  it("revient aux initiales si l'URL de la photo est inaccessible, sans faire échouer la carte", async () => {
-    const member = await Member.create({
-      firstName: "PhotoCassee",
+  it("ignore une photo dont l'URL n'est pas fiable, sans jamais la récupérer (SSRF)", async () => {
+    // Même raison de bypass que ci-dessus : ce test vérifie que le
+    // service REFUSE d'aller chercher une URL non fiable — y compris
+    // dans l'hypothèse où elle aurait, par un autre chemin que ceux
+    // déjà protégés, atteint la base. `.invalid` est un domaine
+    // réservé (RFC 2606) qui ne résout jamais : si le service tentait
+    // malgré tout de le récupérer, ce test échouerait par lenteur/
+    // erreur réseau plutôt que par un repli immédiat et silencieux.
+    const member = new Member({
+      firstName: "PhotoNonFiable",
       lastName: TEST_LAST_NAME,
       church: 1,
       flock: testFlock._id,
       registrationNumber: "1XC26009I",
-      // .invalid est un domaine réservé (RFC 2606), garanti de ne
-      // jamais résoudre — teste le repli sans dépendre d'un vrai hôte
-      // injoignable dont la lenteur varierait.
       photo: "https://exemple.invalid/introuvable.jpg",
     });
+
+    await member.save({ validateBeforeSave: false });
 
     const buffer = await buildMemberCardJpeg(member._id);
 

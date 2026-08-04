@@ -3,6 +3,7 @@ import Member from "../models/Member.js";
 import Flock from "../models/Flock.js";
 
 import { ApiError } from "../utils/ApiError.js";
+import { isTrustedMemberPhotoUrl } from "../utils/cloudinaryUrl.js";
 import {
   normalizeRegistrationNumber,
   parseRegistrationNumber,
@@ -168,6 +169,17 @@ export const submit = async ({ type, registrationNumber, data }) => {
   }
 
   const clean = pickAllowed(data);
+
+  // Rejeté silencieusement plutôt que la soumission entière : une
+  // valeur ne provenant pas de notre Cloudinary ne peut venir que
+  // d'un appel direct à l'API (le formulaire n'y écrit jamais une URL
+  // arbitraire) — voir utils/cloudinaryUrl.js pour le risque exact
+  // (SSRF via memberCard.service.js). Autant garder le reste d'une
+  // demande par ailleurs légitime que de tout bloquer pour ce seul
+  // champ.
+  if (clean.photo && !isTrustedMemberPhotoUrl(clean.photo)) {
+    delete clean.photo;
+  }
 
   if (!clean.firstName?.trim() || !clean.lastName?.trim()) {
     throw ApiError.badRequest(
