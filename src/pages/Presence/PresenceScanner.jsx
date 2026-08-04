@@ -43,6 +43,13 @@ const AGENT_ROLE_LABELS = {
 // elle reste dans le cadre.
 const RESUME_DELAY_MS = 1800;
 
+// Durée d'affichage de la bulle de confirmation (voir __result-toast) —
+// volontairement un peu plus longue que RESUME_DELAY_MS : elle reste
+// visible un instant après que la caméra a repris, plutôt que de
+// disparaître pile au moment où l'agent pourrait encore vouloir la
+// lire.
+const TOAST_DURATION_MS = 2600;
+
 // Confirmation sonore courte, générée plutôt que chargée depuis un
 // fichier : aucune dépendance, aucune requête externe (CSP stricte du
 // site — voir vercel.json).
@@ -98,6 +105,7 @@ const PresenceScanner = ({
   const [busy, setBusy] = useState(false);
   const [lastResult, setLastResult] = useState(null);
   const [lastError, setLastError] = useState(null);
+  const [toastVisible, setToastVisible] = useState(false);
   const [counts, setCounts] = useState(null);
   const [now, setNow] = useState(() => new Date());
 
@@ -112,6 +120,7 @@ const PresenceScanner = ({
   const [visitorPhone, setVisitorPhone] = useState("");
 
   const resumeTimerRef = useRef(null);
+  const toastTimerRef = useRef(null);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -119,8 +128,23 @@ const PresenceScanner = ({
     return () => {
       mountedRef.current = false;
       if (resumeTimerRef.current) window.clearTimeout(resumeTimerRef.current);
+      if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
     };
   }, []);
+
+  // Affiche la bulle de confirmation/erreur puis la masque toute
+  // seule — l'agent reste sur l'écran du scanner en permanence, sans
+  // avoir à faire défiler la page pour voir le résultat (voir
+  // __result-toast dans Presence.scss).
+  const showToast = () => {
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+
+    setToastVisible(true);
+
+    toastTimerRef.current = window.setTimeout(() => {
+      if (mountedRef.current) setToastVisible(false);
+    }, TOAST_DURATION_MS);
+  };
 
   useEffect(() => {
     presenceStats(sessionToken)
@@ -149,6 +173,7 @@ const PresenceScanner = ({
 
     setLastResult({ ...result, kind });
     setLastError(null);
+    showToast();
 
     if (!result.alreadyRecorded) {
       setCounts((previous) => {
@@ -177,6 +202,7 @@ const PresenceScanner = ({
 
     setLastError(error?.message ?? "Le badgeage a échoué.");
     setLastResult(null);
+    showToast();
   };
 
   const scheduleResume = () => {
@@ -331,7 +357,7 @@ const PresenceScanner = ({
         </span>
       </div>
 
-      <div className="presence-scanner__grid">
+      <div className="presence-scanner__main">
         <section className="presence-scanner__scan-panel">
           <h2>
             <QrCode aria-hidden="true" />
@@ -470,93 +496,90 @@ const PresenceScanner = ({
           </div>
         </section>
 
-        <aside className="presence-scanner__result-panel">
-          <h2>
-            <User aria-hidden="true" />
-            Dernière présence enregistrée
-          </h2>
+      </div>
 
-          {lastError && (
-            <div
-              className="presence-scanner__feedback presence-scanner__feedback--error"
-              role="alert"
-            >
-              <AlertCircle aria-hidden="true" />
-              <strong>{lastError}</strong>
-            </div>
-          )}
+      {/* Bulle flottante : apparaît par-dessus l'écran du scanner à
+          chaque badgeage puis se referme toute seule (voir
+          showToast/TOAST_DURATION_MS) — l'agent n'a jamais besoin de
+          faire défiler la page pour voir le résultat, la caméra reste
+          visible en permanence. Toujours montée (même vide) pour que
+          la transition d'entrée/sortie s'anime plutôt que d'apparaître
+          d'un coup. */}
+      <div
+        className={`presence-scanner__result-toast${
+          toastVisible ? " presence-scanner__result-toast--visible" : ""
+        }`}
+        role="status"
+        aria-live="polite"
+      >
+        {lastError && (
+          <div className="presence-scanner__feedback presence-scanner__feedback--error">
+            <AlertCircle aria-hidden="true" />
+            <strong>{lastError}</strong>
+          </div>
+        )}
 
-          {lastResult && (
-            <div
-              className="presence-scanner__feedback presence-scanner__feedback--success"
-              role="status"
-            >
-              <CheckCircle2 aria-hidden="true" />
-              <strong>
-                {lastResult.alreadyRecorded
-                  ? "Déjà enregistrée"
-                  : "Présence enregistrée !"}
-              </strong>
-              <span>{formatTime(lastResult.recordedAt)}</span>
-            </div>
-          )}
+        {lastResult && (
+          <div className="presence-scanner__feedback presence-scanner__feedback--success">
+            <CheckCircle2 aria-hidden="true" />
+            <strong>
+              {lastResult.alreadyRecorded
+                ? "Déjà enregistrée"
+                : "Présence enregistrée !"}
+            </strong>
+            <span>{formatTime(lastResult.recordedAt)}</span>
+          </div>
+        )}
 
-          {lastResult?.kind === "member" && lastResult.member && (
-            <div className="presence-scanner__member">
-              {lastResult.member.photo ? (
-                <img
-                  src={lastResult.member.photo}
-                  alt=""
-                />
-              ) : (
-                <span className="presence-scanner__member-initials">
-                  {lastResult.member.firstName?.[0]}
-                  {lastResult.member.lastName?.[0]}
-                </span>
-              )}
-
-              <div>
-                <strong>
-                  {lastResult.member.firstName} {lastResult.member.lastName}
-                </strong>
-
-                <span>Matricule</span>
-                <p>{lastResult.member.registrationNumber}</p>
-
-                {lastResult.member.area && (
-                  <>
-                    <span>Quartier</span>
-                    <p>{lastResult.member.area}</p>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {lastResult?.kind === "visitor" && lastResult.visitor && (
-            <div className="presence-scanner__member">
+        {lastResult?.kind === "member" && lastResult.member && (
+          <div className="presence-scanner__member">
+            {lastResult.member.photo ? (
+              <img
+                src={lastResult.member.photo}
+                alt=""
+              />
+            ) : (
               <span className="presence-scanner__member-initials">
-                {lastResult.visitor.firstName?.[0]}
-                {lastResult.visitor.lastName?.[0]}
+                {lastResult.member.firstName?.[0]}
+                {lastResult.member.lastName?.[0]}
               </span>
+            )}
 
-              <div>
-                <strong>
-                  {lastResult.visitor.firstName} {lastResult.visitor.lastName}
-                </strong>
+            <div>
+              <strong>
+                {lastResult.member.firstName} {lastResult.member.lastName}
+              </strong>
 
-                <span>Visiteur</span>
-                <p>{lastResult.visitor.phone || "Téléphone non renseigné"}</p>
-              </div>
+              <span>Matricule</span>
+              <p>{lastResult.member.registrationNumber}</p>
+
+              {lastResult.member.area && (
+                <>
+                  <span>Quartier</span>
+                  <p>{lastResult.member.area}</p>
+                </>
+              )}
             </div>
-          )}
+          </div>
+        )}
 
-          {!lastResult && !lastError && (
-            <p className="presence-scanner__result-placeholder">
-              Scannez une carte pour voir apparaître la présence ici.
-            </p>
-          )}
-        </aside>
+        {lastResult?.kind === "visitor" && lastResult.visitor && (
+          <div className="presence-scanner__member">
+            <span className="presence-scanner__member-initials">
+              {lastResult.visitor.firstName?.[0]}
+              {lastResult.visitor.lastName?.[0]}
+            </span>
+
+            <div>
+              <strong>
+                {lastResult.visitor.firstName} {lastResult.visitor.lastName}
+              </strong>
+
+              <span>Visiteur</span>
+              <p>{lastResult.visitor.phone || "Téléphone non renseigné"}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="presence-scanner__stats">
@@ -599,6 +622,8 @@ const PresenceScanner = ({
           type="button"
           className="presence-scanner__next"
           onClick={() => {
+            if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+            setToastVisible(false);
             setLastResult(null);
             setLastError(null);
             setScanning(true);

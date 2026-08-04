@@ -688,16 +688,16 @@
     }
   }
 
-  &__grid {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: 16px;
-
-    align-items: start;
+  // Contenu principal unique (plus de colonne de résultat à côté) :
+  // l'agent voit le scanner dès l'arrivée sur la page, sans avoir à
+  // faire défiler quoi que ce soit — le résultat d'un badgeage
+  // s'affiche par-dessus, en bulle flottante (voir __result-toast).
+  &__main {
+    max-width: 480px;
+    margin: 0 auto;
   }
 
-  &__scan-panel,
-  &__result-panel {
+  &__scan-panel {
     padding: 20px;
 
     border: 1px solid var(--presence-border);
@@ -1003,6 +1003,42 @@
     font-size: 0.8rem;
   }
 
+  // Bulle flottante de résultat : au-dessus de tout le reste, centrée
+  // en haut du viewport (`position: fixed`, donc visible quel que soit
+  // le défilement de la page). Toujours montée dans le DOM, y compris
+  // vide — seule la classe `--visible` en contrôle l'apparition, pour
+  // que l'entrée/la sortie se voie plutôt que d'apparaître/disparaître
+  // d'un coup. `pointer-events: none` au repos : invisible aux clics,
+  // elle ne doit jamais bloquer la caméra ni les boutons dessous.
+  &__result-toast {
+    position: fixed;
+    top: 72px;
+    left: 50%;
+    z-index: 40;
+
+    width: min(92vw, 420px);
+
+    padding: 18px;
+
+    border: 1px solid var(--presence-border);
+    border-radius: 18px;
+
+    background: var(--presence-surface);
+    box-shadow: 0 16px 36px rgba(4, 23, 15, 0.35);
+
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -14px);
+
+    transition: opacity 0.25s ease, transform 0.25s ease;
+
+    &--visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, 0);
+    }
+  }
+
   &__feedback {
     display: flex;
     flex-direction: column;
@@ -1119,15 +1155,6 @@
     }
   }
 
-  &__result-placeholder {
-    margin: 0;
-    padding: 20px 0;
-
-    color: var(--presence-ink-subtle);
-
-    font-size: 0.85rem;
-    text-align: center;
-  }
 
   &__stats {
     display: grid;
@@ -1223,12 +1250,6 @@
     }
   }
 
-  @media (max-width: 860px) {
-    &__grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
   @media (max-width: 520px) {
     &__header {
       flex-direction: column;
@@ -1263,5 +1284,10 @@
   .presence-login__spin,
   .presence-welcome__badge {
     animation: none;
+  }
+
+  .presence-scanner__result-toast {
+    transition: opacity 0.01ms;
+    transform: translate(-50%, 0);
   }
 }
