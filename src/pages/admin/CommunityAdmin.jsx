@@ -385,7 +385,7 @@ const toTitleCase = (value = "") =>
 // libère la place que réclament les autres colonnes. Reçoit
 // `onEdit`/`onDelete` de AdminCrud (via la prop `rowActions`) pour ne
 // pas dupliquer sa logique d'édition/suppression.
-const MemberRowMenu = ({ member, onEdit, onDelete, reload }) => {
+const MemberRowMenu = ({ member, onEdit, onDelete, reload, onStatusChanged }) => {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -403,6 +403,11 @@ const MemberRowMenu = ({ member, onEdit, onDelete, reload }) => {
       });
 
       reload?.();
+      // Distinct de `reload` : celui-ci rafraîchit la LISTE affichée,
+      // `onStatusChanged` le compteur du badge d'onglet — deux données
+      // chargées séparément (voir useMembersCount), toutes deux
+      // périmées par ce changement.
+      onStatusChanged?.();
       setOpen(false);
     } catch (caught) {
       setError(caught?.message ?? "Le changement de statut a échoué.");
@@ -699,8 +704,17 @@ const announcementColumns = [
   },
 ];
 
-const MemberExportButtons = ({ flockOptions, churchOptions }) => {
-  const [filters, setFilters] = useState({ church: "", flock: "" });
+// `filters`/`onFiltersChange` sont possédés par l'écran parent
+// (CommunityAdmin) plutôt que par ce composant : le tableau des
+// membres (`AdminCrud`, via `listParams`) doit filtrer sur les mêmes
+// église/bergerie que ce qui sera exporté, sinon l'export téléchargé
+// pourrait surprendre en ne correspondant pas à ce qui est affiché.
+const MemberExportButtons = ({
+  flockOptions,
+  churchOptions,
+  filters,
+  onFiltersChange,
+}) => {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
 
@@ -750,7 +764,10 @@ const MemberExportButtons = ({ flockOptions, churchOptions }) => {
         aria-label="Filtrer par église"
         value={filters.church}
         onChange={(event) =>
-          setFilters((previous) => ({ ...previous, church: event.target.value }))
+          onFiltersChange((previous) => ({
+            ...previous,
+            church: event.target.value,
+          }))
         }
       >
         <option value="">Toutes les églises</option>
@@ -765,7 +782,10 @@ const MemberExportButtons = ({ flockOptions, churchOptions }) => {
         aria-label="Filtrer par bergerie"
         value={filters.flock}
         onChange={(event) =>
-          setFilters((previous) => ({ ...previous, flock: event.target.value }))
+          onFiltersChange((previous) => ({
+            ...previous,
+            flock: event.target.value,
+          }))
         }
       >
         <option value="">Toutes les bergeries</option>
@@ -879,8 +899,18 @@ const CommunityAdmin = () => {
 
   const [tab, setTab] = useState("announcements");
 
+  // Église/bergerie : un seul état, partagé entre le tableau (via
+  // `listParams`) et les boutons d'export — ce qui se télécharge
+  // correspond toujours à ce qui est affiché à l'écran.
+  const [memberFilters, setMemberFilters] = useState({ church: "", flock: "" });
+
   const pendingSubmissionsCount = usePendingSubmissionsCount();
-  const membersCount = useMembersCount();
+  // Ne compte que les membres ACTIFS : un membre désactivé n'est plus
+  // considéré comme faisant partie de l'effectif courant, cohérent
+  // avec son exclusion des exports et son grisage dans la liste.
+  const [membersCount, refreshMembersCount] = useMembersCount({
+    status: "actif",
+  });
   const tabBadgeValues = {
     pendingSubmissions: pendingSubmissionsCount,
     membersTotal: membersCount,
@@ -1017,6 +1047,8 @@ const CommunityAdmin = () => {
             <MemberExportButtons
               flockOptions={flockOptions}
               churchOptions={churchSelectOptions}
+              filters={memberFilters}
+              onFiltersChange={setMemberFilters}
             />
 
             <AdminCrud
@@ -1024,6 +1056,12 @@ const CommunityAdmin = () => {
               fields={memberFields}
               columns={memberColumns}
               tableClassName="admin-crud__table--fixed"
+              searchable
+              searchPlaceholder="Rechercher par nom ou matricule…"
+              listParams={{
+                church: memberFilters.church || undefined,
+                flock: memberFilters.flock || undefined,
+              }}
               rowClassName={(item) =>
                 item.status === "inactif" ? "admin-crud__row--inactive" : ""
               }
@@ -1033,6 +1071,7 @@ const CommunityAdmin = () => {
                   onEdit={onEdit}
                   onDelete={onDelete}
                   reload={reload}
+                  onStatusChanged={refreshMembersCount}
                 />
               )}
               labels={{

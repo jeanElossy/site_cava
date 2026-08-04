@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 
 import useCrud from "../../../hooks/useCrud";
 
@@ -75,7 +75,32 @@ const AdminCrud = ({
   // membre désactivé, sans imposer cette notion de statut aux autres
   // écrans qui ne la connaissent pas.
   rowClassName,
+  // Optionnel : objet fusionné dans les paramètres envoyés à
+  // `listAdmin` (ex. `{ church, flock }` pour la liste des membres) —
+  // recréer cet objet à chaque rendu ne pose pas de problème, `useCrud`
+  // compare son CONTENU, pas sa référence.
+  listParams,
+  // Optionnel : affiche un champ de recherche au-dessus du tableau,
+  // relié au paramètre `search` déjà supporté par `listAdmin` côté
+  // serveur (voir crud.service.js#buildSearch). Anti-rebond intégré :
+  // aucune requête à chaque frappe.
+  searchable = false,
+  searchPlaceholder = "Rechercher…",
 }) => {
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(search), 300);
+
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  const listAdminParams = {
+    ...listParams,
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+  };
+
   const {
     items: rawItems,
     loading,
@@ -87,7 +112,7 @@ const AdminCrud = ({
     create,
     update,
     remove,
-  } = useCrud(resource);
+  } = useCrud(resource, listAdminParams);
 
   // Optionnel : certains écrans ont besoin d'un ordre d'affichage que
   // l'API ne fournit pas telle quelle (ex. tri des membres par ordre
@@ -166,6 +191,20 @@ const AdminCrud = ({
           {labels.add ?? `Ajouter ${labels.singular}`}
         </button>
       </header>
+
+      {searchable && (
+        <div className="admin-crud__search">
+          <Search aria-hidden="true" />
+
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
+          />
+        </div>
+      )}
 
       {actionError && !editing && !pendingDelete && (
         <p

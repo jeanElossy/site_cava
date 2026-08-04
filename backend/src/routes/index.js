@@ -894,6 +894,7 @@ export const buildRoutes = () => {
     publicBySlug: false,
     auditResource: "member",
     writeRoles: ["admin"],
+    adminFilters: ["church", "flock"],
   });
 
   // ---- Messages ----------------------------------------------

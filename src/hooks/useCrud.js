@@ -14,16 +14,23 @@ import useAsyncData from "./useAsyncData";
  * modifiée localement : c'est ce que fera un vrai backend, et cela évite
  * de faire diverger l'affichage de la source de vérité.
  */
-const useCrud = (resource) => {
+// `params` (recherche, statut, filtres…) : objet simple, comparé par
+// sa forme sérialisée plutôt que par référence — sinon un objet
+// littéral recréé à chaque rendu de l'écran appelant relancerait le
+// chargement en boucle, même quand son CONTENU n'a pas changé.
+const useCrud = (resource, params = {}) => {
+  const serializedParams = JSON.stringify(params);
+
   // `listAdmin` et non `list` : la route publique ne renvoie que le
   // contenu publié. L'administration doit voir aussi les brouillons et
   // les archives, sinon elle ne peut pas les rouvrir.
-  //
-  // Fonction de portée module (voir la fabrique `collection` de
-  // services/api.js) : stable, donc utilisable sans `useCallback`.
-  const { data, loading, error, reload } = useAsyncData(
-    resource.listAdmin
+  const load = useCallback(
+    () => resource.listAdmin(params),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [resource, serializedParams]
   );
+
+  const { data, loading, error, reload } = useAsyncData(load);
 
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState(null);

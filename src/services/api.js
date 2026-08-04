@@ -16,11 +16,23 @@
 
 import { request, requestWithMeta } from "./http";
 
+// `new URLSearchParams({ a: undefined })` ne l'omet PAS : il produit
+// littéralement `a=undefined`, une chaîne non vide que le serveur lit
+// comme une vraie valeur de filtre (et qui ne correspond jamais à
+// rien, renvoyant silencieusement une liste vide). Un filtre optionnel
+// non renseigné doit être absent de l'objet, pas valoir `undefined`.
+const cleanParams = (params = {}) =>
+  Object.fromEntries(
+    Object.entries(params).filter(
+      ([, value]) => value !== undefined && value !== null && value !== ""
+    )
+  );
+
 // Fabrique de collection : les 5 ressources partagent le même contrat.
 const collection = (path) => ({
   // Lecture publique — ne renvoie que le contenu publié.
   list: async (params = {}) => {
-    const query = new URLSearchParams(params).toString();
+    const query = new URLSearchParams(cleanParams(params)).toString();
 
     return request(`/api/${path}${query ? `?${query}` : ""}`);
   },
@@ -33,10 +45,9 @@ const collection = (path) => ({
   // 20 éléments : l'administrateur ne verrait pas son contenu et ne
   // saurait pas pourquoi.
   listAdmin: async (params = {}) => {
-    const query = new URLSearchParams({
-      limit: 100,
-      ...params,
-    });
+    const query = new URLSearchParams(
+      cleanParams({ limit: 100, ...params })
+    );
 
     const { items } = await requestWithMeta(
       `/api/admin/${path}?${query}`,
@@ -50,7 +61,7 @@ const collection = (path) => ({
   // navigation entre pages.
   listAdminPaged: async (params = {}) =>
     requestWithMeta(
-      `/api/admin/${path}?${new URLSearchParams(params)}`,
+      `/api/admin/${path}?${new URLSearchParams(cleanParams(params))}`,
       { auth: true }
     ),
 

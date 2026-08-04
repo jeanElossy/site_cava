@@ -151,6 +151,12 @@ const AdminLayout = () => {
   const [theme, setTheme] = useState(getInitialTheme);
 
   const [refreshing, setRefreshing] = useState(false);
+  // Change à chaque clic sur « Actualiser » : posé en `key` sur
+  // `<Outlet>`, il force React à démonter puis remonter l'écran actuel
+  // — chaque page relance alors son propre chargement de données (son
+  // propre petit indicateur, ex. `AdminLoading`), sans recharger tout
+  // le navigateur ni perdre la mise en page de l'administration.
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const navigate = useNavigate();
 
@@ -189,14 +195,16 @@ const AdminLayout = () => {
     });
   };
 
-  // Rechargement complet et volontairement simple : pas de système
-  // d'événements pour rafraîchir chaque page sélectivement. La courte
-  // rotation de l'icône n'est qu'un accusé de réception visuel avant
-  // que la page ne parte.
+  // Démonte/remonte l'écran actuel (voir `refreshKey`) au lieu d'un
+  // rechargement complet du navigateur : chaque page relance son
+  // propre chargement de données avec son propre indicateur, sans le
+  // flash blanc ni perdre l'état de CETTE mise en page (barre latérale
+  // repliée, thème…), qui vit ici et non dans l'écran remonté.
   const handleRefresh = () => {
     setRefreshing(true);
+    setRefreshKey((previous) => previous + 1);
 
-    window.setTimeout(() => window.location.reload(), 320);
+    window.setTimeout(() => setRefreshing(false), 320);
   };
 
   // Échap referme le tiroir, et le défilement de la page est gelé tant
@@ -454,7 +462,7 @@ const AdminLayout = () => {
         </header>
 
         <main className="admin-shell__content">
-          <Outlet />
+          <Outlet key={refreshKey} />
         </main>
       </div>
     </div>

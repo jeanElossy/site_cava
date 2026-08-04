@@ -34,6 +34,12 @@ export const resourceRouter = (service, options = {}) => {
     // les ressources portant des données personnelles (membres)
     // exigent un administrateur.
     writeRoles = ["admin", "editor"],
+    // Filtres supplémentaires autorisés en ADMINISTRATION (liste
+    // blanche, même principe que `publicFilters` ci-dessus) — ex.
+    // filtrer la liste des membres par église ou bergerie. `status` et
+    // `search` restent gérés séparément : ce sont les seuls filtres
+    // communs à toutes les ressources.
+    adminFilters = [],
   } = options;
 
   const publicRouter = Router();
@@ -81,11 +87,23 @@ export const resourceRouter = (service, options = {}) => {
   adminRouter.get(
     "/",
     asyncHandler(async (req, res) => {
+      // Chaque valeur est forcée en chaîne, comme pour `publicFilters` :
+      // un paramètre objet deviendrait un opérateur MongoDB une fois
+      // passé à Mongoose.
+      const filter = {};
+
+      for (const key of adminFilters) {
+        const value = asString(req.query[key], 60);
+
+        if (value) filter[key] = value;
+      }
+
       const { items, meta } = await service.listAdmin({
         page: req.query.page,
         limit: req.query.limit,
         status: req.query.status,
         search: req.query.search,
+        filter,
       });
 
       sendSuccess(res, { data: items, meta });
