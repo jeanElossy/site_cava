@@ -36,6 +36,24 @@
     object-fit: cover;
   }
 
+  // Flux caméra brut : jamais affiché (le recadrage carré est dessiné
+  // à la main sur `&__video`, qui est un <canvas> — voir
+  // QrCameraScanner.jsx). Reste dans le DOM, dimensionné normalement,
+  // pour continuer à décoder ses images dans tous les navigateurs —
+  // `display: none`/`visibility: hidden` suspend le décodage sur
+  // certains d'entre eux.
+  &__source-video {
+    position: absolute;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    opacity: 0;
+
+    pointer-events: none;
+  }
+
   &__placeholder {
     width: 64px;
     height: 64px;
