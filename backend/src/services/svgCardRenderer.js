@@ -482,9 +482,15 @@ export const setElementImageSource = (element, dataUri) => {
   );
 };
 
-export const rasterizeSvgToPng = (svgSource) => {
+// `scale` optionnel : la carte de membre (un seul gabarit à la fois)
+// reste à RASTER_SCALE par défaut pour un rendu net à l'impression ;
+// les badges invités (10 gabarits assemblés dans un seul PDF, voir
+// guestBadgeSvg.service.js) utilisent une échelle plus basse pour
+// rester rapides à générer et légers à télécharger/partager, sans
+// perte visible sur un format badge imprimé.
+export const rasterizeSvgToPng = (svgSource, scale = RASTER_SCALE) => {
   const resvg = new Resvg(svgSource, {
-    fitTo: { mode: "zoom", value: RASTER_SCALE },
+    fitTo: { mode: "zoom", value: scale },
     font: RESVG_FONT_OPTIONS,
   });
 

@@ -8,7 +8,6 @@ import PDFDocument from "pdfkit";
 
 import { env } from "../config/env.js";
 import {
-  RASTER_SCALE,
   rewriteFontFamilies,
   reflowMultiTspanText,
   parseSvgDocument,
@@ -39,6 +38,13 @@ const GENDERS = [
   { code: "FEMME", fileName: "femme.svg" },
 ];
 const BADGES_PER_GENDER = 5;
+
+// Échelle plus basse que RASTER_SCALE (carte de membre imprimée seule,
+// nécessite un rendu net) : le PDF des badges assemble 10 gabarits
+// d'un coup, un rendu net à l'impression n'exige pas une résolution
+// aussi élevée — vise un fichier téléchargeable/partageable en
+// quelques secondes plutôt que 50-60s / ~77 Mo.
+const BADGE_RASTER_SCALE = 3;
 
 // Même format que les liens de mise à jour de fiche membre
 // (memberCardSvg.service.js#buildQrDataUri) — reconnu par le même
@@ -78,7 +84,17 @@ const buildBadgePng = async (genderDef, index) => {
 
   reflowMultiTspanText(document, source);
 
-  return rasterizeSvgToPng(serializeSvg(document));
+  return rasterizeSvgToPng(serializeSvg(document), BADGE_RASTER_SCALE);
+};
+
+const pngToJpeg = async (png) => {
+  const image = await loadImage(png);
+  const canvas = createCanvas(image.width, image.height);
+  const ctx = canvas.getContext("2d");
+
+  ctx.drawImage(image, 0, 0);
+
+  return canvas.toBuffer("image/jpeg", 0.85);
 };
 
 // Un badge à la fois (ex. pour un aperçu), plutôt que le PDF complet.
@@ -90,13 +106,8 @@ export const buildGuestBadgeJpeg = async (genderCode, index) => {
   }
 
   const png = await buildBadgePng(genderDef, index);
-  const image = await loadImage(png);
-  const canvas = createCanvas(image.width, image.height);
-  const ctx = canvas.getContext("2d");
 
-  ctx.drawImage(image, 0, 0);
-
-  return canvas.toBuffer("image/jpeg", 0.92);
+  return pngToJpeg(png);
 };
 
 // Les 10 badges (5 homme + 5 femme), un par page, prêts à imprimer et
@@ -109,11 +120,12 @@ export const buildGuestBadgesPdf = async () => {
     for (let index = 1; index <= BADGES_PER_GENDER; index += 1) {
       const png = await buildBadgePng(genderDef, index);
       const image = await loadImage(png);
+      const jpeg = await pngToJpeg(png);
 
       pages.push({
-        png,
-        width: image.width / RASTER_SCALE,
-        height: image.height / RASTER_SCALE,
+        jpeg,
+        width: image.width / BADGE_RASTER_SCALE,
+        height: image.height / BADGE_RASTER_SCALE,
       });
     }
   }
@@ -128,7 +140,7 @@ export const buildGuestBadgesPdf = async () => {
 
     for (const page of pages) {
       doc.addPage({ size: [page.width, page.height], margin: 0 });
-      doc.image(page.png, 0, 0, { width: page.width, height: page.height });
+      doc.image(page.jpeg, 0, 0, { width: page.width, height: page.height });
     }
 
     doc.end();

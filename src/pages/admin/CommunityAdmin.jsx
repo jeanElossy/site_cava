@@ -713,6 +713,60 @@ const announcementColumns = [
   },
 ];
 
+// Les 10 badges invités (5 homme + 5 femme, voir
+// guestBadgeSvg.service.js) — pas liés à un membre ni filtrable par
+// église/bergerie, contrairement à l'export ci-dessous : un bouton
+// autonome, pas une variante de `MemberExportButtons`.
+const GuestBadgesDownloadButton = () => {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const download = async () => {
+    setBusy(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        `${apiBaseUrl}/api/admin/guest-badges/pdf`,
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+
+      if (!response.ok) {
+        throw new Error(`La génération a échoué (code ${response.status}).`);
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = "badges-invites-cava.pdf";
+      link.click();
+
+      URL.revokeObjectURL(url);
+    } catch (caught) {
+      setError(caught?.message ?? "La génération a échoué.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="admin-community__export">
+      <button type="button" onClick={download} disabled={busy}>
+        <Download aria-hidden="true" />
+        {busy ? "Génération…" : "Télécharger les 10 cartes invités"}
+      </button>
+
+      {error && (
+        <p className="admin-community__alert" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+};
+
 // `filters`/`onFiltersChange` sont possédés par l'écran parent
 // (CommunityAdmin) plutôt que par ce composant : le tableau des
 // membres (`AdminCrud`, via `listParams`) doit filtrer sur les mêmes
@@ -1059,6 +1113,8 @@ const CommunityAdmin = () => {
               filters={memberFilters}
               onFiltersChange={setMemberFilters}
             />
+
+            <GuestBadgesDownloadButton />
 
             <AdminCrud
               resource={members}

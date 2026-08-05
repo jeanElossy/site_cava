@@ -327,6 +327,22 @@ export const listVisitors = async (securityQr) => {
 // au nom et prénom (voir décision produit) : ce document est destiné à
 // être partagé/affiché, pas à circuler avec des coordonnées
 // personnelles.
+// Date/heure du service à afficher dans l'export — la date d'ACTIVATION
+// effective (premier scan d'agent, voir presenceQrWindow.js), pas la
+// date de création du QR : c'est elle qui correspond au moment réel où
+// le service a eu lieu, y compris pour un QR généré à l'avance et
+// resté "en attente" plusieurs jours avant le culte.
+const formatEventDateTime = (securityQr) => {
+  const { validFrom } = getEffectiveWindow(securityQr);
+
+  if (!validFrom) return "Service pas encore démarré";
+
+  return validFrom.toLocaleString("fr-FR", {
+    dateStyle: "full",
+    timeStyle: "short",
+  });
+};
+
 export const buildVisitorsPdf = async (securityQr) => {
   const visitors = await listVisitors(securityQr._id);
 
@@ -349,7 +365,12 @@ export const buildVisitorsPdf = async (securityQr) => {
     doc
       .fontSize(11)
       .fillColor("#1f2a25")
-      .text(`Visiteurs — ${securityQr.label}`, { align: "center" })
+      .text(`Visiteurs — ${securityQr.label}`, { align: "center" });
+
+    doc
+      .fontSize(9)
+      .fillColor("#5a6862")
+      .text(formatEventDateTime(securityQr), { align: "center" })
       .moveDown(0.8);
 
     if (visitors.length === 0) {
