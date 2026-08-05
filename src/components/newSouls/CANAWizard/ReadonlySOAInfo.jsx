@@ -1,6 +1,14 @@
+import StatusBadge from "../shared/StatusBadge";
 import "../shared/NewSouls.scss";
 
 const formatDate = (value) => (value ? new Date(value).toLocaleDateString("fr-FR") : "—");
+
+const initialsOf = (firstName, lastName) =>
+  [firstName, lastName]
+    .filter(Boolean)
+    .map((part) => part.trim()[0]?.toUpperCase())
+    .filter(Boolean)
+    .join("") || "?";
 
 const Item = ({ label, value }) => (
   <div className="new-soul-readonly__item">
@@ -12,12 +20,24 @@ const Item = ({ label, value }) => (
 // Toutes les informations enregistrées par le SOA (§A à §G),
 // affichées en LECTURE SEULE — jamais un champ modifiable ici. C'est
 // l'exigence métier centrale du module : la CANA ne ressaisit rien.
-const ReadonlySOAInfo = ({ soa, caseNumber }) => (
+const ReadonlySOAInfo = ({ soa, caseNumber, status }) => (
   <div className="new-soul-readonly">
     <div className="new-soul-readonly__header">
-      <h3 className="new-soul-readonly__title">
-        Dossier {caseNumber} — enregistré par le SOA
-      </h3>
+      <div className="new-soul-readonly__identity">
+        <span className="new-soul-readonly__avatar">
+          {initialsOf(soa.firstName, soa.lastName)}
+        </span>
+        <div>
+          <h3 className="new-soul-readonly__title">
+            {`${soa.lastName ?? ""} ${soa.firstName ?? ""}`.trim() || "Dossier SOA"}
+          </h3>
+          <p className="new-soul-readonly__subtitle">
+            Dossier {caseNumber} — enregistré par le SOA
+          </p>
+        </div>
+      </div>
+
+      {status && <StatusBadge status={status} />}
     </div>
 
     <div className="new-soul-readonly__grid">

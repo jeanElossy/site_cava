@@ -1,4 +1,16 @@
 import { useEffect, useState } from "react";
+import {
+  CalendarCheck,
+  Compass,
+  FileCheck,
+  Flag,
+  Flame,
+  GraduationCap,
+  HeartPulse,
+  Info,
+  MessageCircle,
+  Users,
+} from "lucide-react";
 
 import { flocks as flocksApi, newSouls } from "../../../services/api";
 import StepperShell from "../shared/StepperShell";
@@ -17,16 +29,76 @@ import StepMonthlyFollowUp from "./StepMonthlyFollowUp";
 import StepClosure from "./StepClosure";
 
 const STEPS = [
-  { id: "opening", label: "Ouverture", Component: StepOpening },
-  { id: "first-contact", label: "Premier contact", Component: StepFirstContact },
-  { id: "interview", label: "Entretien", Component: StepInterview },
-  { id: "additional-info", label: "Informations complémentaires", Component: StepAdditionalInfo },
-  { id: "spiritual", label: "Diagnostic spirituel", Component: StepSpiritualDiagnosis },
-  { id: "intercession", label: "Intercession & délivrance", Component: StepIntercession },
-  { id: "social-training", label: "Social, formation & disponibilité", Component: StepSocialTraining },
-  { id: "orientations", label: "Orientations & plan", Component: StepOrientations },
-  { id: "monthly", label: "Suivi mensuel", Component: StepMonthlyFollowUp },
-  { id: "closure", label: "Bilan final & clôture", Component: StepClosure },
+  {
+    id: "opening",
+    label: "Ouverture",
+    description: "Réception & responsable",
+    Icon: FileCheck,
+    Component: StepOpening,
+  },
+  {
+    id: "first-contact",
+    label: "Premier contact",
+    description: "Circonstances",
+    Icon: MessageCircle,
+    Component: StepFirstContact,
+  },
+  {
+    id: "interview",
+    label: "Entretien",
+    description: "Rencontre & écoute",
+    Icon: Users,
+    Component: StepInterview,
+  },
+  {
+    id: "additional-info",
+    label: "Informations complémentaires",
+    description: "Compléments",
+    Icon: Info,
+    Component: StepAdditionalInfo,
+  },
+  {
+    id: "spiritual",
+    label: "Diagnostic spirituel",
+    description: "État spirituel",
+    Icon: HeartPulse,
+    Component: StepSpiritualDiagnosis,
+  },
+  {
+    id: "intercession",
+    label: "Intercession & délivrance",
+    description: "Prière & délivrance",
+    Icon: Flame,
+    Component: StepIntercession,
+  },
+  {
+    id: "social-training",
+    label: "Social, formation & disponibilité",
+    description: "Cadre de vie",
+    Icon: GraduationCap,
+    Component: StepSocialTraining,
+  },
+  {
+    id: "orientations",
+    label: "Orientations & plan",
+    description: "Bergerie & plan",
+    Icon: Compass,
+    Component: StepOrientations,
+  },
+  {
+    id: "monthly",
+    label: "Suivi mensuel",
+    description: "Accompagnement",
+    Icon: CalendarCheck,
+    Component: StepMonthlyFollowUp,
+  },
+  {
+    id: "closure",
+    label: "Bilan final & clôture",
+    description: "Clôture du dossier",
+    Icon: Flag,
+    Component: StepClosure,
+  },
 ];
 
 const formatDate = (value) => (value ? new Date(value).toLocaleDateString("fr-FR") : "—");
@@ -96,7 +168,7 @@ const CANAWizard = ({ newSoul, currentRole, onUpdated }) => {
 
   return (
     <div>
-      <ReadonlySOAInfo soa={record.soa ?? {}} caseNumber={record.caseNumber} />
+      <ReadonlySOAInfo soa={record.soa ?? {}} caseNumber={record.caseNumber} status={record.status} />
 
       <StepperShell
         steps={STEPS}

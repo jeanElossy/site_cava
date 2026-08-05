@@ -54,8 +54,8 @@
 
 .stepper-shell {
   display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 28px;
+  grid-template-columns: 264px 1fr;
+  gap: 24px;
 
   align-items: start;
 
@@ -66,17 +66,18 @@
   &__nav {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
 
     position: sticky;
     top: 20px;
 
-    padding: 10px;
+    padding: 12px;
 
     border: 1px solid $admin-border;
-    border-radius: $admin-radius;
+    border-radius: $admin-radius-lg;
 
     background: $admin-surface;
+    box-shadow: $admin-shadow-sm;
 
     @media (max-width: 860px) {
       position: static;
@@ -89,23 +90,20 @@
   &__step {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 11px;
 
-    padding: 10px 12px;
+    padding: 9px 12px;
 
     border: none;
-    border-radius: $admin-radius-sm;
+    border-radius: $admin-radius;
 
     background: none;
 
-    color: $admin-ink-soft;
-    font-size: 0.86rem;
-    font-weight: 600;
     text-align: left;
 
     cursor: pointer;
 
-    transition: background $admin-ease, color $admin-ease;
+    transition: background $admin-ease, color $admin-ease, transform $admin-ease;
 
     &:hover {
       background: $admin-surface-hover;
@@ -113,8 +111,42 @@
 
     &--active {
       background: $admin-accent-soft;
-      color: $admin-accent-strong;
     }
+  }
+
+  &__step-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+
+    min-width: 0;
+  }
+
+  &__step-label {
+    overflow: hidden;
+
+    color: $admin-ink-soft;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__step--active &__step-label {
+    color: $admin-accent-strong;
+  }
+
+  &__step--done &__step-label {
+    color: $admin-ink;
+  }
+
+  &__step-description {
+    overflow: hidden;
+
+    color: $admin-ink-faint;
+    font-size: 0.72rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   &__step-index {
@@ -122,43 +154,83 @@
     align-items: center;
     justify-content: center;
 
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
     flex-shrink: 0;
 
     border-radius: 999px;
 
     background: $admin-surface-muted;
+    color: $admin-ink-faint;
 
-    font-size: 0.74rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+
+    transition: background $admin-ease, color $admin-ease;
   }
 
   &__step--active &__step-index {
     background: $admin-accent-strong;
     color: #fff;
+    box-shadow: 0 0 0 4px $admin-accent-soft;
   }
 
   &__step--done &__step-index {
-    background: $admin-success;
-    color: #fff;
+    background: $admin-success-bg;
+    color: $admin-success;
   }
 
   &__panel {
-    padding: 22px;
+    padding: 24px 26px;
 
     border: 1px solid $admin-border;
-    border-radius: $admin-radius;
+    border-radius: $admin-radius-lg;
 
     background: $admin-surface;
     box-shadow: $admin-shadow-sm;
   }
 
+  &__panel-header {
+    margin-bottom: 18px;
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: $admin-accent-strong;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
   &__panel-title {
-    margin: 0 0 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    margin: 0;
 
     color: $admin-ink;
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     font-weight: 700;
+  }
+
+  &__panel-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+
+    border-radius: $admin-radius;
+
+    background: $admin-accent-soft;
+    color: $admin-accent-strong;
   }
 
   &__footer {
@@ -166,8 +238,8 @@
     justify-content: space-between;
     align-items: center;
 
-    margin-top: 22px;
-    padding-top: 18px;
+    margin-top: 20px;
+    padding-top: 16px;
 
     border-top: 1px solid $admin-border;
   }
@@ -183,24 +255,114 @@
   }
 }
 
+// Bandeau décoratif "Aperçu du processus" — rappelle les grandes
+// étapes du parcours (enregistrement → transmission →
+// accompagnement → suivi → intégration), purement illustratif : ne
+// reflète aucun état réel, contrairement au stepper lui-même.
+.new-soul-process {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  margin-top: 24px;
+  padding: 20px;
+
+  border: 1px solid $admin-border;
+  border-radius: $admin-radius-lg;
+
+  background: $admin-surface;
+
+  &__title {
+    flex-basis: 100%;
+
+    margin: 0 0 14px;
+
+    color: $admin-ink-soft;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  &__step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    flex: 1;
+    min-width: 90px;
+
+    text-align: center;
+  }
+
+  &__step-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 40px;
+    height: 40px;
+
+    margin-bottom: 8px;
+
+    border-radius: 999px;
+
+    background: $admin-accent-soft;
+    color: $admin-accent-strong;
+  }
+
+  &__step-label {
+    color: $admin-ink-soft;
+    font-size: 0.76rem;
+    font-weight: 600;
+  }
+}
+
 .new-soul-readonly {
   display: grid;
-  gap: 14px;
+  gap: 16px;
 
   margin-bottom: 24px;
-  padding: 18px;
+  padding: 20px;
 
-  border: 1px dashed $admin-border-strong;
-  border-radius: $admin-radius;
+  border: 1px solid $admin-border;
+  border-radius: $admin-radius-lg;
 
-  background: $admin-surface-muted;
+  background: $admin-surface;
+  box-shadow: $admin-shadow-sm;
 
   &__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
+  }
+
+  &__identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    width: 44px;
+    height: 44px;
+
+    border-radius: 999px;
+
+    background: $admin-accent-soft;
+    color: $admin-accent-strong;
+
+    font-size: 0.92rem;
+    font-weight: 700;
   }
 
   &__title {
@@ -209,6 +371,13 @@
     color: $admin-ink;
     font-size: 0.95rem;
     font-weight: 700;
+  }
+
+  &__subtitle {
+    margin: 2px 0 0;
+
+    color: $admin-ink-faint;
+    font-size: 0.78rem;
   }
 
   &__grid {

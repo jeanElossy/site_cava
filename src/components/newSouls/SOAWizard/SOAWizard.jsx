@@ -1,4 +1,17 @@
 import { useState } from "react";
+import {
+  ClipboardList,
+  FileText,
+  Heart,
+  MessageCircle,
+  Phone,
+  Send,
+  ShieldCheck,
+  User,
+  UserCheck,
+  UserPlus,
+  Users,
+} from "lucide-react";
 
 import { newSouls } from "../../../services/api";
 import StepperShell from "../shared/StepperShell";
@@ -14,14 +27,72 @@ import StepConsent from "./StepConsent";
 import StepTransmission from "./StepTransmission";
 
 const STEPS = [
-  { id: "dossier", label: "Dossier", Component: StepDossier },
-  { id: "personal", label: "Informations personnelles", Component: StepPersonal },
-  { id: "contact", label: "Contact", Component: StepContact },
-  { id: "first-contact", label: "Premier contact", Component: StepFirstContact },
-  { id: "spiritual", label: "Situation spirituelle", Component: StepSpiritual },
-  { id: "needs", label: "Besoins", Component: StepNeeds },
-  { id: "consent", label: "Consentement", Component: StepConsent },
-  { id: "transmission", label: "Transmission", Component: StepTransmission },
+  {
+    id: "dossier",
+    label: "Dossier",
+    description: "Informations générales",
+    Icon: FileText,
+    Component: StepDossier,
+  },
+  {
+    id: "personal",
+    label: "Informations personnelles",
+    description: "Identité & coordonnées",
+    Icon: User,
+    Component: StepPersonal,
+  },
+  {
+    id: "contact",
+    label: "Contact",
+    description: "Moyens de contact",
+    Icon: Phone,
+    Component: StepContact,
+  },
+  {
+    id: "first-contact",
+    label: "Premier contact",
+    description: "Circonstances",
+    Icon: MessageCircle,
+    Component: StepFirstContact,
+  },
+  {
+    id: "spiritual",
+    label: "Situation spirituelle",
+    description: "Décision & baptême",
+    Icon: Heart,
+    Component: StepSpiritual,
+  },
+  {
+    id: "needs",
+    label: "Besoins",
+    description: "Demandes exprimées",
+    Icon: ClipboardList,
+    Component: StepNeeds,
+  },
+  {
+    id: "consent",
+    label: "Consentement",
+    description: "Accord & validation",
+    Icon: ShieldCheck,
+    Component: StepConsent,
+  },
+  {
+    id: "transmission",
+    label: "Transmission",
+    description: "Vers la CANA",
+    Icon: Send,
+    Component: StepTransmission,
+  },
+];
+
+// Bandeau décoratif rappelant les grandes étapes du parcours complet
+// (au-delà du seul formulaire SOA) — purement illustratif.
+const PROCESS_OVERVIEW = [
+  { label: "Enregistrement\nPar le SOA", Icon: UserPlus },
+  { label: "Transmission\nÀ la CANA", Icon: Send },
+  { label: "Accompagnement\nPar la CANA", Icon: Users },
+  { label: "Suivi 4 mois\nAccompagnement", Icon: Heart },
+  { label: "Intégration\nEn bergerie", Icon: UserCheck },
 ];
 
 // Wizard d'enregistrement SOA (§A à §G de la fiche officielle). Gère
@@ -56,21 +127,43 @@ const SOAWizard = ({ newSoul, onTransmitted, sessionToken }) => {
   const { Component } = STEPS[activeIndex];
 
   return (
-    <StepperShell
-      steps={STEPS}
-      activeIndex={activeIndex}
-      onStepChange={setActiveIndex}
-      saveState={disabled ? "idle" : saveState}
-    >
-      <Component
-        data={data}
-        onChange={patch}
-        disabled={disabled}
-        caseNumber={newSoul.caseNumber}
-        agentName={newSoul.soa?.agentName}
-        onTransmit={handleTransmit}
-      />
-    </StepperShell>
+    <div>
+      <StepperShell
+        steps={STEPS}
+        activeIndex={activeIndex}
+        onStepChange={setActiveIndex}
+        saveState={disabled ? "idle" : saveState}
+      >
+        <Component
+          data={data}
+          onChange={patch}
+          disabled={disabled}
+          caseNumber={newSoul.caseNumber}
+          agentName={newSoul.soa?.agentName}
+          onTransmit={handleTransmit}
+        />
+      </StepperShell>
+
+      <div className="new-soul-process">
+        <p className="new-soul-process__title">Aperçu du processus</p>
+
+        {PROCESS_OVERVIEW.map((item) => (
+          <div className="new-soul-process__step" key={item.label}>
+            <span className="new-soul-process__step-icon">
+              <item.Icon size={18} aria-hidden="true" />
+            </span>
+            <span className="new-soul-process__step-label">
+              {item.label.split("\n").map((line) => (
+                <span key={line}>
+                  {line}
+                  <br />
+                </span>
+              ))}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
