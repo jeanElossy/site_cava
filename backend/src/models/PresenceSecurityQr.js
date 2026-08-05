@@ -12,10 +12,20 @@ import mongoose from "mongoose";
 //
 // CE QUE CE DOCUMENT NE PORTE PAS : la validité n'est jamais tranchée
 // par le jeton JWT encodé sur le QR (voir `presenceAuth.js`), toujours
-// par CE document — `status` et la fenêtre `validFrom`/`validUntil`.
-// C'est ce qui permet à un administrateur de révoquer un QR déjà
-// imprimé et déjà scanné : le jeton reste cryptographiquement valide,
-// mais l'accès est refusé dès la prochaine vérification.
+// par CE document — `status` et la fenêtre de validité. C'est ce qui
+// permet à un administrateur de révoquer un QR déjà imprimé et déjà
+// scanné : le jeton reste cryptographiquement valide, mais l'accès est
+// refusé dès la prochaine vérification.
+//
+// ACTIVATION PARESSEUSE : un QR peut être généré et imprimé bien avant
+// le jour J (plusieurs à la fois, pour plusieurs services à venir),
+// sans dates de validité figées à la création — seulement une DURÉE
+// (`durationMinutes`). La fenêtre réelle ne démarre qu'au tout premier
+// scan réussi, qui pose `activatedAt` une fois pour toutes (voir
+// `presenceQr.service.js#verifyToken` et `utils/presenceQrWindow.js`
+// pour le calcul de la fenêtre effective). Tant que `activatedAt` est
+// vide, le QR est simplement "en attente" — il reste imprimable et
+// dépose sans qu'aucune horloge ne tourne encore.
 const presenceSecurityQrSchema = new mongoose.Schema(
   {
     label: {
@@ -33,20 +43,28 @@ const presenceSecurityQrSchema = new mongoose.Schema(
       ref: "Event",
     },
 
-    validFrom: {
-      type: Date,
-      required: [true, "Le début de validité est obligatoire."],
+    // Durée de validité à partir de l'ACTIVATION (premier scan), pas
+    // depuis la création — voir le calcul dans utils/presenceQrWindow.js.
+    // Plafond généreux (7 jours) : garde-fou contre une saisie erronée
+    // (ex. minutes tapées à la place d'heures), pas une limite métier.
+    durationMinutes: {
+      type: Number,
+      required: [true, "La durée de validité est obligatoire."],
+      min: [1, "La durée doit être d'au moins 1 minute."],
+      max: [7 * 24 * 60, "La durée ne peut pas dépasser 7 jours."],
     },
 
-    validUntil: {
+    // Optionnel : empêche l'activation avant cette date/heure, même si
+    // quelqu'un scanne le QR par erreur ou par curiosité avant le jour
+    // prévu (un QR préimprimé et déposé à l'avance reste scannable en
+    // pratique). Laissé vide, le QR est activable dès sa création.
+    notBefore: Date,
+
+    // Posé UNE SEULE FOIS, au tout premier scan réussi — jamais modifié
+    // ensuite. `null` = QR encore "en attente", jamais scanné.
+    activatedAt: {
       type: Date,
-      required: [true, "La fin de validité est obligatoire."],
-      validate: {
-        validator: function (value) {
-          return !this.validFrom || value > this.validFrom;
-        },
-        message: "La fin de validité doit être postérieure au début.",
-      },
+      default: null,
     },
 
     // Identifiant opaque embarqué dans le JWT — jamais le seul
@@ -80,6 +98,6 @@ const presenceSecurityQrSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-presenceSecurityQrSchema.index({ validFrom: -1 });
+presenceSecurityQrSchema.index({ createdAt: -1 });
 
 export default mongoose.model("PresenceSecurityQr", presenceSecurityQrSchema);

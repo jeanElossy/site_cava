@@ -240,6 +240,15 @@
     gap: 14px;
   }
 
+  &__form-hint {
+    margin: -4px 0 0;
+
+    color: $admin-ink-faint;
+
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
   &__form-error {
     display: flex;
     align-items: flex-start;

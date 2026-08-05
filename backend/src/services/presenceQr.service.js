@@ -4,6 +4,7 @@ import { env } from "../config/env.js";
 import { ApiError } from "../utils/ApiError.js";
 import PresenceSecurityQr from "../models/PresenceSecurityQr.js";
 import PresenceLogin from "../models/PresenceLogin.js";
+import { getEffectiveWindow } from "../utils/presenceQrWindow.js";
 import {
   signPresenceQrToken,
   verifyPresenceQrToken,
@@ -15,51 +16,68 @@ import {
 
 const buildUrl = (token) => `${env.PUBLIC_SITE_URL}/presences?qr=${token}`;
 
-// Statut affiché à l'administration : dérivé de `status` + de la
-// fenêtre horaire, jamais stocké — sinon un statut "à venir" resterait
-// figé après l'heure de début si personne ne repasse sur l'écran.
+// Statut affiché à l'administration : dérivé de `status` + de l'état
+// d'activation + de la fenêtre effective, jamais stocké — sinon un
+// statut figerait dès qu'on cesse de repasser sur l'écran.
 export const computeStatus = (qr, now = new Date()) => {
   if (qr.status === "revoked") return "revoked";
-  if (now < qr.validFrom) return "upcoming";
-  if (now > qr.validUntil) return "expired";
-  return "active";
+  if (!qr.activatedAt) return "pending";
+
+  const { validUntil } = getEffectiveWindow(qr);
+
+  return now > validUntil ? "expired" : "active";
 };
 
-const serialize = (qr) => ({
-  id: String(qr._id),
-  label: qr.label,
-  event: qr.event ? String(qr.event) : null,
-  validFrom: qr.validFrom,
-  validUntil: qr.validUntil,
-  status: qr.status,
-  computedStatus: computeStatus(qr),
-  createdAt: qr.createdAt,
-  revokedAt: qr.revokedAt ?? null,
-});
+const serialize = (qr) => {
+  const { validFrom, validUntil } = getEffectiveWindow(qr);
 
-export const generate = async ({ label, event, validFrom, validUntil }, user) => {
-  const from = new Date(validFrom);
-  const until = new Date(validUntil);
+  return {
+    id: String(qr._id),
+    label: qr.label,
+    event: qr.event ? String(qr.event) : null,
+    durationMinutes: qr.durationMinutes,
+    notBefore: qr.notBefore ?? null,
+    activatedAt: qr.activatedAt ?? null,
+    validFrom,
+    validUntil,
+    status: qr.status,
+    computedStatus: computeStatus(qr),
+    createdAt: qr.createdAt,
+    revokedAt: qr.revokedAt ?? null,
+  };
+};
 
+export const generate = async (
+  { label, event, durationMinutes, notBefore },
+  user
+) => {
   if (!label || typeof label !== "string" || !label.trim()) {
     throw ApiError.badRequest("Le libellé est obligatoire.");
   }
 
-  if (Number.isNaN(from.getTime()) || Number.isNaN(until.getTime())) {
-    throw ApiError.badRequest("Dates de validité invalides.");
+  const duration = Number(durationMinutes);
+
+  if (!Number.isFinite(duration) || duration <= 0) {
+    throw ApiError.badRequest(
+      "La durée de validité doit être un nombre de minutes positif."
+    );
   }
 
-  if (until <= from) {
-    throw ApiError.badRequest(
-      "La fin de validité doit être postérieure au début."
-    );
+  let notBeforeDate;
+
+  if (notBefore) {
+    notBeforeDate = new Date(notBefore);
+
+    if (Number.isNaN(notBeforeDate.getTime())) {
+      throw ApiError.badRequest("Date d'activation minimale invalide.");
+    }
   }
 
   const qr = await PresenceSecurityQr.create({
     label: label.trim(),
     event: event || undefined,
-    validFrom: from,
-    validUntil: until,
+    durationMinutes: duration,
+    notBefore: notBeforeDate,
     createdBy: user?.id,
   });
 
@@ -68,7 +86,7 @@ export const generate = async ({ label, event, validFrom, validUntil }, user) =>
 
 export const listAdmin = async () => {
   const qrs = await PresenceSecurityQr.find({})
-    .sort({ validFrom: -1 })
+    .sort({ createdAt: -1 })
     .lean();
 
   return qrs.map(serialize);
@@ -135,6 +153,15 @@ export const history = async (id) => {
 // par la route publique `qr/verify` et par `presence.service.js#agentLogin`,
 // qui ne fait jamais confiance à une vérification déjà faite côté
 // client.
+//
+// C'EST ICI QUE L'ACTIVATION A LIEU : si le QR n'a encore jamais été
+// scanné avec succès (`activatedAt` vide), ce tout premier scan pose
+// `activatedAt = maintenant` — la fenêtre de validité (voir
+// utils/presenceQrWindow.js) ne démarre qu'à cet instant, jamais à la
+// création du QR. `findOneAndUpdate` conditionné sur `activatedAt:
+// null` rend cette écriture atomique : si deux scans arrivent au même
+// instant (deux agents, ou un double-scan), un seul gagne la course et
+// pose la date — l'autre relit simplement la valeur déjà posée.
 export const verifyToken = async (token) => {
   const payload = verifyPresenceQrToken(token);
 
@@ -142,7 +169,7 @@ export const verifyToken = async (token) => {
     return { ok: false, reason: "invalide" };
   }
 
-  const qr = await PresenceSecurityQr.findOne({ jti: payload.jti });
+  let qr = await PresenceSecurityQr.findOne({ jti: payload.jti });
 
   if (!qr) {
     return { ok: false, reason: "invalide" };
@@ -154,11 +181,22 @@ export const verifyToken = async (token) => {
 
   const now = new Date();
 
-  if (now < qr.validFrom) {
+  if (qr.notBefore && now < qr.notBefore) {
     return { ok: false, reason: "pas_encore_valide", qr };
   }
 
-  if (now > qr.validUntil) {
+  if (!qr.activatedAt) {
+    qr =
+      (await PresenceSecurityQr.findOneAndUpdate(
+        { _id: qr._id, activatedAt: null },
+        { activatedAt: now },
+        { new: true }
+      )) ?? (await PresenceSecurityQr.findById(qr._id));
+  }
+
+  const { validUntil } = getEffectiveWindow(qr);
+
+  if (now > validUntil) {
     return { ok: false, reason: "expire", qr };
   }
 

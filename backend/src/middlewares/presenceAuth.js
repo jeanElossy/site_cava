@@ -6,6 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { extractToken } from "./auth.js";
 import Member from "../models/Member.js";
 import PresenceSecurityQr from "../models/PresenceSecurityQr.js";
+import { getEffectiveWindow } from "../utils/presenceQrWindow.js";
 
 // Authentification du badgeage des présences — deux jetons distincts,
 // signés avec le même `JWT_SECRET` que l'administration mais une
@@ -65,11 +66,15 @@ export const verifyPresenceQrToken = (token) => {
 };
 
 // Durée du jeton de session : le plus court entre 6h et la fin de
-// validité du QR ayant servi à la connexion — un agent connecté tôt
-// dans un service de 5h ne garde jamais l'accès au-delà de sa fin.
+// validité EFFECTIVE du QR ayant servi à la connexion (activation +
+// durée — voir utils/presenceQrWindow.js) — un agent connecté tôt dans
+// un service de 5h ne garde jamais l'accès au-delà de sa fin. Appelé
+// uniquement après un `verifyToken` réussi, qui a déjà activé le QR :
+// `validUntil` n'est donc jamais nul ici.
 export const signPresenceSessionToken = ({ agent, qr }) => {
+  const { validUntil } = getEffectiveWindow(qr);
   const maxSessionEnd = Date.now() + PRESENCE_SESSION_MAX_HOURS * 60 * 60 * 1000;
-  const expiresAt = Math.min(qr.validUntil.getTime(), maxSessionEnd);
+  const expiresAt = Math.min(validUntil.getTime(), maxSessionEnd);
   const expiresInSeconds = Math.max(60, Math.ceil((expiresAt - Date.now()) / 1000));
 
   return jwt.sign(
@@ -119,13 +124,9 @@ export const requirePresenceSession = asyncHandler(async (req, _res, next) => {
   }
 
   const now = new Date();
+  const { validUntil } = getEffectiveWindow(qr ?? {});
 
-  if (
-    !qr ||
-    qr.status !== "active" ||
-    now < qr.validFrom ||
-    now > qr.validUntil
-  ) {
+  if (!qr || qr.status !== "active" || !validUntil || now > validUntil) {
     throw ApiError.unauthorized(
       "Le QR de sécurité de cette session n'est plus valide."
     );

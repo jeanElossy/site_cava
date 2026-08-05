@@ -8,6 +8,7 @@ import Attendance from "../models/Attendance.js";
 import PresenceSecurityQr from "../models/PresenceSecurityQr.js";
 import { ApiError } from "../utils/ApiError.js";
 import { excelSafeCell } from "../utils/excelSafeCell.js";
+import { getEffectiveWindow } from "../utils/presenceQrWindow.js";
 
 // Export de la liste des présences d'un service, avec le décompte
 // membres/visiteurs — voir docs/superpowers/specs/2026-08-04-badgeage-
@@ -25,6 +26,18 @@ const LOGO_PATH = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   "../assets/logo-cava.png"
 );
+
+// Formate la fenêtre de validité EFFECTIVE (activation + durée — voir
+// utils/presenceQrWindow.js), avec un repli explicite pour un QR
+// encore "en attente" : sans ça, `.toLocaleString()` sur un `validFrom`
+// nul ferait planter l'export au lieu d'un message clair.
+const formatWindow = (qr) => {
+  const { validFrom, validUntil } = getEffectiveWindow(qr);
+
+  if (!validFrom) return "QR jamais activé — aucune présence possible.";
+
+  return `${validFrom.toLocaleString("fr-FR")} → ${validUntil.toLocaleString("fr-FR")}`;
+};
 
 const fetchAttendanceReport = async (securityQrId) => {
   const qr = await PresenceSecurityQr.findById(securityQrId).lean();
@@ -67,7 +80,7 @@ export const buildAttendanceXlsx = async (securityQrId) => {
     { label: "Service", value: qr.label },
     {
       label: "Fenêtre de validité",
-      value: `${qr.validFrom.toLocaleString("fr-FR")} → ${qr.validUntil.toLocaleString("fr-FR")}`,
+      value: formatWindow(qr),
     },
     { label: "Total présents", value: records.length },
     { label: "Dont membres", value: members.length },
@@ -154,10 +167,7 @@ export const buildAttendancePdf = async (securityQrId) => {
       .text(qr.label, { align: "center" })
       .fontSize(9)
       .fillColor(GREEN)
-      .text(
-        `${qr.validFrom.toLocaleString("fr-FR")} → ${qr.validUntil.toLocaleString("fr-FR")}`,
-        { align: "center" }
-      )
+      .text(formatWindow(qr), { align: "center" })
       .moveDown(0.6);
 
     doc

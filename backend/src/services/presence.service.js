@@ -3,6 +3,7 @@ import PresenceLogin from "../models/PresenceLogin.js";
 import Attendance from "../models/Attendance.js";
 import { ApiError } from "../utils/ApiError.js";
 import { normalizeRegistrationNumber } from "./registrationNumber.service.js";
+import { getEffectiveWindow } from "../utils/presenceQrWindow.js";
 import * as presenceQrService from "./presenceQr.service.js";
 import {
   signPresenceSessionToken,
@@ -68,6 +69,8 @@ export const agentLogin = async ({ token, matricule }, req) => {
     userAgent: req?.headers?.["user-agent"]?.slice(0, 300),
   });
 
+  const { validFrom, validUntil } = getEffectiveWindow(verification.qr);
+
   return {
     sessionToken,
     agent: {
@@ -79,8 +82,8 @@ export const agentLogin = async ({ token, matricule }, req) => {
     },
     qr: {
       label: verification.qr.label,
-      validFrom: verification.qr.validFrom,
-      validUntil: verification.qr.validUntil,
+      validFrom,
+      validUntil,
     },
   };
 };

@@ -88,10 +88,13 @@ describe("presence.service (intégration MongoDB)", () => {
         }),
       ]);
 
+    // Activation paresseuse (voir presenceQr.service.js#verifyToken) :
+    // pas besoin de fenêtre fixée ici, `agentLogin` déclenche lui-même
+    // l'activation au premier appel qui l'utilise, dans les tests
+    // ci-dessous.
     qr = await PresenceSecurityQr.create({
       label: QR_LABEL,
-      validFrom: new Date(Date.now() - 60_000),
-      validUntil: new Date(Date.now() + 60 * 60_000),
+      durationMinutes: 60,
     });
   });
 
@@ -164,8 +167,10 @@ describe("presence.service (intégration MongoDB)", () => {
     it("refuse un QR expiré, avant même de regarder le matricule", async () => {
       const expiredQr = await PresenceSecurityQr.create({
         label: QR_LABEL,
-        validFrom: new Date(Date.now() - 2 * 60 * 60_000),
-        validUntil: new Date(Date.now() - 60 * 60_000),
+        durationMinutes: 60,
+        // Déjà activé il y a 2h, pour une durée de 60min : sa fenêtre
+        // effective s'est donc terminée il y a 1h.
+        activatedAt: new Date(Date.now() - 2 * 60 * 60_000),
       });
 
       const token = signPresenceQrToken(expiredQr);

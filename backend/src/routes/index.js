@@ -44,6 +44,7 @@ import {
   requireRole,
 } from "../middlewares/auth.js";
 import { requirePresenceSession } from "../middlewares/presenceAuth.js";
+import { getEffectiveWindow } from "../utils/presenceQrWindow.js";
 import {
   loginLimiter,
   twoFactorLimiter,
@@ -485,11 +486,13 @@ export const buildRoutes = () => {
         });
       }
 
+      const { validFrom, validUntil } = getEffectiveWindow(result.qr);
+
       sendSuccess(res, {
         data: {
           label: result.qr.label,
-          validFrom: result.qr.validFrom,
-          validUntil: result.qr.validUntil,
+          validFrom,
+          validUntil,
         },
       });
     })
@@ -540,11 +543,12 @@ export const buildRoutes = () => {
     requirePresenceSession,
     asyncHandler(async (req, res) => {
       const counts = await presenceService.countAttendance(req.presenceQr._id);
+      const { validUntil } = getEffectiveWindow(req.presenceQr);
 
       sendSuccess(res, {
         data: {
           ...counts,
-          qr: { label: req.presenceQr.label, validUntil: req.presenceQr.validUntil },
+          qr: { label: req.presenceQr.label, validUntil },
         },
       });
     })
@@ -610,8 +614,8 @@ export const buildRoutes = () => {
         {
           label: req.body?.label,
           event: req.body?.event,
-          validFrom: req.body?.validFrom,
-          validUntil: req.body?.validUntil,
+          durationMinutes: req.body?.durationMinutes,
+          notBefore: req.body?.notBefore,
         },
         req.user
       );

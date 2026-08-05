@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 
 import {
   AlertCircle,
@@ -39,10 +39,39 @@ import {
 import "./PresencesAdmin.scss";
 
 const STATUS_LABELS = {
-  upcoming: "À venir",
+  pending: "En attente",
   active: "Actif",
   expired: "Expiré",
   revoked: "Révoqué",
+};
+
+// Durée affichée en heures/minutes plutôt qu'en minutes brutes — ce
+// que l'admin a réellement saisi à la création.
+const formatDuration = (minutes) => {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+
+  if (hours === 0) return `${rest} min`;
+  if (rest === 0) return `${hours} h`;
+
+  return `${hours} h ${rest} min`;
+};
+
+// Un QR "en attente" (jamais scanné) n'a pas encore de fenêtre
+// concrète — `validFrom`/`validUntil` valent `null` (voir
+// presenceQr.service.js#serialize) : on décrit alors sa durée prévue
+// et, s'il y en a une, la date à partir de laquelle il devient
+// activable, plutôt que d'afficher des dates vides.
+const describeWindow = (qr) => {
+  if (qr.validFrom) {
+    return `${formatDateTime(qr.validFrom)} → ${formatDateTime(qr.validUntil)}`;
+  }
+
+  const duration = formatDuration(qr.durationMinutes);
+
+  return qr.notBefore
+    ? `En attente — activable à partir du ${formatDateTime(qr.notBefore)} (${duration})`
+    : `En attente du premier scan (${duration})`;
 };
 
 const formatDateTime = (value) => {
@@ -148,7 +177,7 @@ const PresencesAdmin = () => {
                   size={14}
                   aria-hidden="true"
                 />
-                {formatDateTime(qr.validFrom)} → {formatDateTime(qr.validUntil)}
+                {describeWindow(qr)}
               </p>
 
               <button
@@ -195,23 +224,25 @@ const CreateQrModal = ({ onClose, onCreated }) => {
   const eventsLoad = useCallback(() => events.listAdmin(), []);
   const { data: eventList } = useAsyncData(eventsLoad);
 
-  const now = useMemo(() => new Date(), []);
-  const defaultUntil = useMemo(
-    () => new Date(now.getTime() + 4 * 60 * 60 * 1000),
-    [now]
-  );
-
   const [label, setLabel] = useState("");
   const [eventId, setEventId] = useState("");
-  const [validFrom, setValidFrom] = useState(toLocalInputValue(now));
-  const [validUntil, setValidUntil] = useState(toLocalInputValue(defaultUntil));
+  // Durée en HEURES, saisie décimale acceptée (1.5 = 1h30) — convertie
+  // en minutes à l'envoi, seule unité que le serveur connaît (voir
+  // PresenceSecurityQr.js#durationMinutes).
+  const [durationHours, setDurationHours] = useState("4");
+  // Vide par défaut : le QR est activable dès sa création. Un admin
+  // qui génère plusieurs QR à l'avance, à imprimer et déposer avant le
+  // jour J, peut ici empêcher toute activation prématurée (scan par
+  // erreur ou curiosité avant l'événement réel).
+  const [notBefore, setNotBefore] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  // Choisir un événement pré-remplit le libellé et, s'ils existent, les
-  // horaires — un simple confort, jamais un lien obligatoire (voir la
-  // spec : la fenêtre de badgeage diffère souvent de l'horaire affiché
-  // de l'événement, ex. accueil dès 07h30 pour un culte à 08h30).
+  // Choisir un événement pré-remplit le libellé et, s'ils existent,
+  // l'heure de début (comme date minimale d'activation) et la durée —
+  // un simple confort, jamais un lien obligatoire (voir la spec : la
+  // fenêtre de badgeage diffère souvent de l'horaire affiché de
+  // l'événement, ex. accueil dès 07h30 pour un culte à 08h30).
   const handleEventChange = (id) => {
     setEventId(id);
 
@@ -221,10 +252,14 @@ const CreateQrModal = ({ onClose, onCreated }) => {
     setLabel(found.title);
 
     if (found.startAt) {
-      setValidFrom(toLocalInputValue(new Date(found.startAt)));
+      setNotBefore(toLocalInputValue(new Date(found.startAt)));
     }
-    if (found.endAt) {
-      setValidUntil(toLocalInputValue(new Date(found.endAt)));
+    if (found.startAt && found.endAt) {
+      const hours =
+        (new Date(found.endAt).getTime() - new Date(found.startAt).getTime()) /
+        (60 * 60 * 1000);
+
+      if (hours > 0) setDurationHours(String(Math.round(hours * 4) / 4));
     }
   };
 
@@ -237,11 +272,17 @@ const CreateQrModal = ({ onClose, onCreated }) => {
     setError("");
 
     try {
+      const hours = Number(durationHours);
+
+      if (!Number.isFinite(hours) || hours <= 0) {
+        throw new Error("La durée doit être un nombre d'heures positif.");
+      }
+
       await adminGeneratePresenceQr({
         label,
         event: eventId || undefined,
-        validFrom: new Date(validFrom).toISOString(),
-        validUntil: new Date(validUntil).toISOString(),
+        durationMinutes: Math.round(hours * 60),
+        notBefore: notBefore ? new Date(notBefore).toISOString() : undefined,
       });
 
       onCreated();
@@ -297,29 +338,37 @@ const CreateQrModal = ({ onClose, onCreated }) => {
 
         <div className="admin-presences__form-row">
           <label>
-            <span>Début de validité</span>
+            <span>Durée de validité (heures)</span>
 
             <input
-              type="datetime-local"
-              value={validFrom}
-              onChange={(event) => setValidFrom(event.target.value)}
+              type="number"
+              min="0.25"
+              step="0.25"
+              value={durationHours}
+              onChange={(event) => setDurationHours(event.target.value)}
               required
               disabled={busy}
             />
           </label>
 
           <label>
-            <span>Fin de validité</span>
+            <span>Activable à partir de (facultatif)</span>
 
             <input
               type="datetime-local"
-              value={validUntil}
-              onChange={(event) => setValidUntil(event.target.value)}
-              required
+              value={notBefore}
+              onChange={(event) => setNotBefore(event.target.value)}
               disabled={busy}
             />
           </label>
         </div>
+
+        <p className="admin-presences__form-hint">
+          Le compte à rebours ne démarre pas à la création : la durée
+          court à partir du tout premier scan par un agent. Générez et
+          imprimez plusieurs QR à l&apos;avance sans risque — chacun
+          reste « en attente » tant que personne ne l&apos;a scanné.
+        </p>
 
         {error && (
           <p
@@ -435,7 +484,7 @@ const QrDetailModal = ({ qr, onClose, onRevoked }) => {
   return (
     <AdminModal
       title={qr.label}
-      description={`${formatDateTime(qr.validFrom)} → ${formatDateTime(qr.validUntil)}`}
+      description={describeWindow(qr)}
       onClose={onClose}
     >
       <div className="admin-presences__detail">

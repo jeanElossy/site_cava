@@ -51,8 +51,8 @@ describe("presenceExport.service (intégration MongoDB)", () => {
 
     qr = await PresenceSecurityQr.create({
       label: QR_LABEL,
-      validFrom: new Date(Date.now() - 60_000),
-      validUntil: new Date(Date.now() + 60 * 60_000),
+      durationMinutes: 60,
+      activatedAt: new Date(Date.now() - 60_000),
     });
   });
 

@@ -45,8 +45,11 @@ describe("requirePresenceSession (intégration MongoDB)", () => {
 
     qr = await PresenceSecurityQr.create({
       label: QR_LABEL,
-      validFrom: new Date(Date.now() - 60_000),
-      validUntil: new Date(Date.now() + 60 * 60_000),
+      durationMinutes: 60,
+      // Déjà activé (premier scan simulé) : `signPresenceSessionToken`
+      // n'est appelé qu'après une activation réussie en pratique — voir
+      // presenceQr.service.js#verifyToken.
+      activatedAt: new Date(Date.now() - 60_000),
     });
   });
 
