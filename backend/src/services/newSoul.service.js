@@ -167,21 +167,38 @@ export const getById = async (id, actor) => {
   return attachDisplayNames(stripConfidentialFields(newSoul, actor));
 };
 
-export const list = async (actor, { status, search } = {}) => {
-  const filter = {};
+// Filtre de visibilité partagé entre `list` et `getStats` : une seule
+// définition de "qui voit quoi" pour ce module, plutôt qu'une copie
+// par endpoint qui finit par diverger.
+const buildVisibilityFilter = (actor) => {
+  if (isAdminUser(actor)) return {};
 
-  if (isAdminUser(actor)) {
-    // Aucun filtre : voit tout.
-  } else if (isSoaCapable(actor)) {
-    filter["createdBy.kind"] = actor.kind;
-    filter["createdBy.id"] = actor.id;
-  } else if (isCanaSideUser(actor)) {
-    filter.status = { $nin: SOA_EDITABLE_STATUSES };
-  } else {
-    throw ApiError.forbidden("Votre rôle ne permet pas de consulter ces dossiers.");
+  if (isSoaCapable(actor)) {
+    return { "createdBy.kind": actor.kind, "createdBy.id": actor.id };
   }
 
+  if (isCanaSideUser(actor)) {
+    return { status: { $nin: SOA_EDITABLE_STATUSES } };
+  }
+
+  throw ApiError.forbidden("Votre rôle ne permet pas de consulter ces dossiers.");
+};
+
+export const list = async (actor, { status, search } = {}) => {
+  const filter = buildVisibilityFilter(actor);
+
   if (status && NEW_SOUL_STATUSES.includes(status)) {
+    // Un statut explicite ne doit jamais ÉLARGIR la visibilité : sans
+    // ce garde-fou, `filter.status = status` écrasait purement et
+    // simplement le `$nin` posé ci-dessus pour la CANA, lui laissant
+    // voir n'importe quel dossier "nouveau"/"enregistre_soa" — donc
+    // pas encore transmis — en passant juste ce statut en paramètre.
+    if (isCanaSideUser(actor) && SOA_EDITABLE_STATUSES.includes(status)) {
+      throw ApiError.forbidden(
+        "Ce statut concerne des dossiers non encore transmis à la CANA."
+      );
+    }
+
     filter.status = status;
   }
 
@@ -203,6 +220,73 @@ export const list = async (actor, { status, search } = {}) => {
 
     return item;
   });
+};
+
+// Fenêtre de rappel pour les suivis mensuels CANA (§O) : les 14
+// prochains jours — assez large pour anticiper une prise de
+// rendez-vous, assez courte pour ne pas noyer le tableau de bord de
+// suivis encore lointains.
+const UPCOMING_FOLLOW_UP_WINDOW_DAYS = 14;
+
+// Chiffres clés du tableau de bord "Nouvelles âmes", dans le même
+// périmètre de visibilité que `list` (voir `buildVisibilityFilter`) :
+// un agent SOA n'y voit que ses propres dossiers, la CANA que les
+// dossiers déjà transmis.
+export const getStats = async (actor) => {
+  const filter = buildVisibilityFilter(actor);
+
+  const items = await NewSoul.find(filter)
+    .select("caseNumber status soa.firstName soa.lastName cana.monthlyFollowUps cana.closedAt")
+    .lean();
+
+  const byStatus = Object.fromEntries(NEW_SOUL_STATUSES.map((status) => [status, 0]));
+  const soaEditableSet = new Set(SOA_EDITABLE_STATUSES);
+
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const followUpDeadline = new Date(now.getTime() + UPCOMING_FOLLOW_UP_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+
+  let soaPending = 0;
+  let canaActive = 0;
+  let closedThisMonth = 0;
+  const upcomingFollowUps = [];
+
+  for (const item of items) {
+    if (byStatus[item.status] !== undefined) byStatus[item.status] += 1;
+
+    if (soaEditableSet.has(item.status)) {
+      soaPending += 1;
+    } else if (item.status !== "cloture") {
+      canaActive += 1;
+    }
+
+    if (item.status === "cloture" && item.cana?.closedAt >= startOfMonth) {
+      closedThisMonth += 1;
+    }
+
+    for (const followUp of item.cana?.monthlyFollowUps ?? []) {
+      if (followUp.reviewDate && followUp.reviewDate >= now && followUp.reviewDate <= followUpDeadline) {
+        upcomingFollowUps.push({
+          newSoulId: item._id,
+          caseNumber: item.caseNumber,
+          name: `${item.soa?.firstName ?? ""} ${item.soa?.lastName ?? ""}`.trim(),
+          period: followUp.period,
+          reviewDate: followUp.reviewDate,
+        });
+      }
+    }
+  }
+
+  upcomingFollowUps.sort((a, b) => a.reviewDate - b.reviewDate);
+
+  return {
+    total: items.length,
+    byStatus,
+    soaPending,
+    canaActive,
+    closedThisMonth,
+    upcomingFollowUps: upcomingFollowUps.slice(0, 5),
+  };
 };
 
 export const updateSoa = async (id, patch, actor) => {

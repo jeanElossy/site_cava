@@ -6,6 +6,7 @@ import { currentUser } from "../../../services/auth";
 import usePageMeta from "../../../hooks/usePageMeta";
 import useAsyncData from "../../../hooks/useAsyncData";
 import StatusBadge from "../../../components/newSouls/shared/StatusBadge";
+import JourneyTimeline from "../../../components/newSouls/shared/JourneyTimeline";
 import SOAWizard from "../../../components/newSouls/SOAWizard/SOAWizard";
 import CANAWizard from "../../../components/newSouls/CANAWizard/CANAWizard";
 import "../../../components/newSouls/shared/NewSouls.scss";
@@ -53,6 +54,8 @@ const NewSoulDetailPage = () => {
         </div>
         <StatusBadge status={record.status} />
       </header>
+
+      <JourneyTimeline status={record.status} statusHistory={record.statusHistory} />
 
       {transmitted ? (
         <CANAWizard newSoul={record} currentRole={role} onUpdated={reload} />

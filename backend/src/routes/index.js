@@ -1599,6 +1599,18 @@ export const buildRoutes = () => {
     })
   );
 
+  // Chiffres clés pour le tableau de bord "Nouvelles âmes" — même
+  // périmètre de visibilité que la liste (voir
+  // newSoulService.getStats / buildVisibilityFilter).
+  adminNewSouls.get(
+    "/stats",
+    asyncHandler(async (req, res) => {
+      const data = await newSoulService.getStats(req.actor);
+
+      sendSuccess(res, { data });
+    })
+  );
+
   adminNewSouls.post(
     "/",
     asyncHandler(async (req, res) => {

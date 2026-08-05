@@ -7,6 +7,7 @@ import {
   Calendar,
   CalendarPlus,
   Church,
+  Heart,
   Image,
   ImagePlus,
   Mail,
@@ -55,6 +56,12 @@ const SHORTCUTS = [
     label: "Relever les messages",
     hint: "Demandes reçues via le site",
     icon: MailOpen,
+  },
+  {
+    to: "/admin/nouvelles-ames",
+    label: "Nouvelles âmes",
+    hint: "Tableau de bord SOA & CANA",
+    icon: Heart,
   },
 ];
 

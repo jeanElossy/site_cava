@@ -65,6 +65,9 @@ const StepperShell = ({ steps, activeIndex, onStepChange, saveState = "idle", fo
               )}
               {activeStep?.label}
             </h3>
+            {activeStep?.description && (
+              <p className="stepper-shell__panel-description">{activeStep.description}</p>
+            )}
           </div>
 
           <AnimatePresence mode="wait">
@@ -106,6 +109,15 @@ const StepperShell = ({ steps, activeIndex, onStepChange, saveState = "idle", fo
             )}
           </div>
         </div>
+
+        {/* Sur mobile (≤640px, voir NewSouls.scss), la nav complète
+            ci-dessus se masque : le parcours devient linéaire
+            (Précédent/Suivant uniquement), avec ce simple compteur en
+            repère — pas de liste d'étapes cliquables à faire tenir sur
+            un écran de téléphone. */}
+        <p className="stepper-shell__mobile-progress">
+          {activeIndex + 1} / {steps.length}
+        </p>
       </div>
     </div>
   );

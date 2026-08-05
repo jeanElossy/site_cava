@@ -85,6 +85,16 @@
       flex-direction: row;
       flex-wrap: wrap;
     }
+
+    // En dessous de 640px, le parcours d'enregistrement (voir la
+    // maquette mobile fournie) devient linéaire : plus de liste
+    // d'étapes cliquables, seulement Précédent/Suivant dans le pied de
+    // page + le repère `&__mobile-progress` ("N / Y") plus bas. Avec
+    // jusqu'à 10 étapes côté CANA, une nav qui reste visible (même en
+    // défilement) prend trop de place sur un écran de téléphone.
+    @media (max-width: 640px) {
+      display: none;
+    }
   }
 
   &__step {
@@ -188,6 +198,10 @@
 
     background: $admin-surface;
     box-shadow: $admin-shadow-sm;
+
+    @media (max-width: 640px) {
+      padding: 16px;
+    }
   }
 
   &__panel-header {
@@ -233,10 +247,38 @@
     color: $admin-accent-strong;
   }
 
+  &__panel-description {
+    margin: 6px 0 0;
+
+    color: $admin-ink-soft;
+    font-size: 0.84rem;
+  }
+
+  // Repère "N / Y" affiché uniquement sur mobile, une fois la nav
+  // complète masquée (voir `&__nav` ci-dessus) — reprend la position
+  // et le style discret de la maquette mobile (texte gris centré sous
+  // les boutons Précédent/Suivant).
+  &__mobile-progress {
+    display: none;
+
+    margin: 12px 0 0;
+
+    color: $admin-ink-faint;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-align: center;
+
+    @media (max-width: 640px) {
+      display: block;
+    }
+  }
+
   &__footer {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
 
     margin-top: 20px;
     padding-top: 16px;
@@ -317,6 +359,131 @@
     color: $admin-ink-soft;
     font-size: 0.76rem;
     font-weight: 600;
+  }
+
+  // Purement décoratif : sur mobile, la maquette d'enregistrement ne
+  // le montre sur aucun des écrans d'étape (voir la maquette fournie)
+  // — masqué en dessous de 640px pour garder l'écran concentré sur le
+  // formulaire, plutôt que de forcer 5 blocs à défiler en plus du
+  // reste.
+  @media (max-width: 640px) {
+    display: none;
+  }
+}
+
+// Timeline réelle du parcours d'un dossier (JourneyTimeline.jsx),
+// affichée en haut de NewSoulDetailPage — à ne pas confondre avec
+// `.new-soul-process`, ci-dessus, qui reste purement illustratif.
+.new-soul-journey {
+  display: flex;
+
+  overflow-x: auto;
+
+  gap: 0;
+  padding: 18px 6px 8px;
+
+  margin-bottom: 20px;
+
+  border: 1px solid $admin-border;
+  border-radius: $admin-radius-lg;
+
+  background: $admin-surface;
+
+  &__step {
+    position: relative;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+
+    flex: 1;
+    min-width: 96px;
+
+    text-align: center;
+
+    &:not(:first-child)::before {
+      content: "";
+
+      position: absolute;
+      top: 13px;
+      right: 50%;
+
+      width: 100%;
+      height: 2px;
+
+      background: $admin-border;
+    }
+  }
+
+  &__step--done:not(:first-child)::before {
+    background: $admin-accent-strong;
+  }
+
+  &__dot {
+    position: relative;
+    z-index: 1;
+
+    display: grid;
+    place-items: center;
+
+    width: 26px;
+    height: 26px;
+
+    border: 2px solid $admin-border;
+    border-radius: 50%;
+
+    background: $admin-surface;
+    color: $admin-ink-faint;
+
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  &__step--done &__dot {
+    border-color: $admin-accent-strong;
+    background: $admin-accent-strong;
+    color: #fff;
+  }
+
+  &__step--current &__dot {
+    border-color: $admin-accent-strong;
+    color: $admin-accent-strong;
+    box-shadow: 0 0 0 4px $admin-accent-soft;
+  }
+
+  &__label {
+    max-width: 104px;
+
+    color: $admin-ink-faint;
+    font-size: 0.71rem;
+    font-weight: 600;
+  }
+
+  &__step--done &__label,
+  &__step--current &__label {
+    color: $admin-ink-soft;
+  }
+
+  &__step--current &__label {
+    color: $admin-ink;
+  }
+
+  &__date {
+    color: $admin-ink-faint;
+    font-size: 0.66rem;
+  }
+
+  @media (max-width: 700px) {
+    justify-content: flex-start;
+
+    &__step {
+      min-width: 82px;
+    }
+
+    &__label {
+      max-width: 82px;
+    }
   }
 }
 
@@ -466,5 +633,274 @@
   &__case {
     font-weight: 700;
     color: $admin-accent-strong;
+  }
+}
+
+// Onglets "Vue d'ensemble" / "Tous les dossiers" + contenu du
+// tableau de bord (chiffres clés, répartition par étape, suivis à
+// venir) — voir NewSoulsListPage.jsx. Repris du langage visuel de
+// Dashboard.scss (`.admin-dashboard`), mais namespacé séparément :
+// ce fichier compile dans la même feuille de style que tout le site,
+// aucune classe générique ne doit avoir deux propriétaires.
+.new-soul-dashboard {
+  &__tabs {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+
+    margin-bottom: 20px;
+    padding: 4px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius;
+
+    background: $admin-surface-muted;
+
+    width: fit-content;
+  }
+
+  &__tab {
+    padding: 8px 16px;
+
+    border: none;
+    border-radius: $admin-radius-sm;
+
+    background: none;
+
+    color: $admin-ink-soft;
+    font-size: 0.85rem;
+    font-weight: 600;
+
+    cursor: pointer;
+    transition: background $admin-ease, color $admin-ease;
+
+    &:hover {
+      color: $admin-ink;
+    }
+
+    &--active {
+      background: $admin-surface;
+      color: $admin-accent-strong;
+      box-shadow: $admin-shadow-sm;
+    }
+  }
+
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+    gap: 14px;
+
+    margin: 0 0 20px;
+    padding: 0;
+
+    list-style: none;
+  }
+
+  &__stat {
+    padding: 20px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius;
+
+    background: $admin-surface;
+  }
+
+  &__stat-icon {
+    display: grid;
+    place-items: center;
+
+    width: 38px;
+    height: 38px;
+
+    margin-bottom: 14px;
+
+    border-radius: 10px;
+
+    background: $admin-accent-soft;
+    color: $admin-accent;
+
+    svg {
+      width: 19px;
+      height: 19px;
+    }
+  }
+
+  &__stat-value {
+    display: block;
+
+    color: $admin-ink;
+    font-size: 1.85rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  &__stat-label {
+    display: block;
+
+    margin-top: 4px;
+
+    color: $admin-ink-soft;
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+
+  &__columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  &__panel {
+    padding: 20px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius;
+
+    background: $admin-surface;
+
+    h2 {
+      margin: 0 0 14px;
+
+      color: $admin-ink;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+  }
+
+  &__breakdown {
+    display: grid;
+    gap: 4px;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+
+    button {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+
+      padding: 8px 10px;
+
+      border: none;
+      border-radius: $admin-radius-sm;
+
+      background: none;
+
+      font-size: 0.83rem;
+      text-align: left;
+
+      cursor: pointer;
+      transition: background $admin-ease;
+
+      &:hover {
+        background: $admin-surface-hover;
+      }
+
+      span {
+        flex: 1;
+
+        min-width: 0;
+
+        color: $admin-ink-soft;
+
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      strong {
+        color: $admin-ink;
+        font-variant-numeric: tabular-nums;
+      }
+    }
+  }
+
+  &__followups {
+    display: grid;
+    gap: 4px;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+
+    button {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      width: 100%;
+
+      padding: 9px 10px;
+
+      border: none;
+      border-radius: $admin-radius-sm;
+
+      background: none;
+
+      text-align: left;
+
+      cursor: pointer;
+      transition: background $admin-ease;
+
+      &:hover {
+        background: $admin-surface-hover;
+      }
+    }
+  }
+
+  &__followup-date {
+    flex-shrink: 0;
+
+    padding: 3px 8px;
+
+    border-radius: 999px;
+
+    background: $admin-warning-bg;
+    color: $admin-warning;
+
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  &__followup-text {
+    display: block;
+
+    min-width: 0;
+
+    color: $admin-ink-soft;
+    font-size: 0.83rem;
+
+    strong {
+      display: block;
+
+      color: $admin-ink;
+      font-weight: 600;
+    }
+  }
+
+  @media (max-width: 860px) {
+    &__columns {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 560px) {
+    &__stats {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    &__stat {
+      padding: 14px;
+    }
+
+    &__stat-value {
+      font-size: 1.5rem;
+    }
   }
 }

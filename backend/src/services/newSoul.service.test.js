@@ -380,4 +380,62 @@ describe("newSoul.service (intégration MongoDB)", () => {
       await Member.deleteOne({ _id: presenceMember._id });
     }
   });
+
+  it("un statut explicite ne permet pas à la CANA de voir un dossier non transmis", async () => {
+    const notTransmitted = await create(
+      { firstName: "Jean", lastName: "Kouassi", phone: "0700000000" },
+      asUser(soaUser)
+    );
+
+    // Avant le correctif, `list({ status: "enregistre_soa" })` écrasait
+    // le `$nin` de visibilité de la CANA et renvoyait ce dossier.
+    await assert.rejects(
+      () => newSoulService.list(asUser(canaUser), { status: "enregistre_soa" }),
+      /non encore transmis/
+    );
+
+    // Un statut côté CANA reste, lui, autorisé et filtre correctement.
+    const transmitted = await create(
+      { firstName: "Awa", lastName: "Diallo", phone: "0711111111" },
+      asUser(soaUser)
+    );
+    await newSoulService.transmit(transmitted._id, asUser(soaUser));
+
+    const filtered = await newSoulService.list(asUser(canaUser), { status: "attente_cana" });
+    assert.ok(filtered.some((item) => String(item._id) === String(transmitted._id)));
+    assert.ok(!filtered.some((item) => String(item._id) === String(notTransmitted._id)));
+  });
+
+  it("getStats compte les dossiers par statut et liste les suivis mensuels à venir, dans le périmètre de visibilité de l'acteur", async () => {
+    const ownedBySoa = await create(
+      { firstName: "Jean", lastName: "Kouassi", phone: "0700000000" },
+      asUser(soaUser)
+    );
+
+    const transmitted = await create(
+      { firstName: "Awa", lastName: "Diallo", phone: "0711111111" },
+      asUser(soaUser)
+    );
+    await newSoulService.transmit(transmitted._id, asUser(soaUser));
+    await newSoulService.acknowledge(transmitted._id, asUser(canaUser));
+
+    const inOneWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await newSoulService.updateCana(
+      transmitted._id,
+      { monthlyFollowUps: [{ period: "mois_1", objective: "Accueil", reviewDate: inOneWeek }] },
+      asUser(canaUser)
+    );
+
+    const soaStats = await newSoulService.getStats(asUser(soaUser));
+    assert.ok(soaStats.byStatus.enregistre_soa >= 1);
+    // Le SOA voit ses propres dossiers, y compris déjà transmis : le
+    // suivi à venir qu'il a lui-même créé lui reste visible.
+    assert.ok(soaStats.upcomingFollowUps.some((item) => String(item.newSoulId) === String(transmitted._id)));
+
+    const canaStats = await newSoulService.getStats(asUser(canaUser));
+    assert.equal(canaStats.byStatus.enregistre_soa, 0, "la CANA ne compte pas les dossiers non transmis");
+    assert.ok(canaStats.canaActive >= 1);
+    assert.ok(canaStats.upcomingFollowUps.some((item) => String(item.newSoulId) === String(transmitted._id)));
+    assert.ok(!canaStats.upcomingFollowUps.some((item) => String(item.newSoulId) === String(ownedBySoa._id)));
+  });
 });

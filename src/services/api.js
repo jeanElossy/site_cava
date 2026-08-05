@@ -321,6 +321,8 @@ export const newSouls = {
     });
   },
 
+  stats: async (token) => request("/api/admin/new-souls/stats", { auth: true, token }),
+
   get: async (id, token) => request(`/api/admin/new-souls/${id}`, { auth: true, token }),
 
   create: async (payload, token) =>
