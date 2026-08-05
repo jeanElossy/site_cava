@@ -57,9 +57,21 @@ const MEMBER_ROLES = [
   { value: "membre", label: "Membre" },
   { value: "serviteur", label: "Serviteur" },
   { value: "responsable", label: "Responsable" },
-  { value: "pasteur", label: "Pasteur" },
+  { value: "pasteur", label: "Pasteur Principal" },
   { value: "chantre", label: "Chantre" },
   { value: "dirigeant", label: "Dirigeant" },
+  { value: "instrumentaliste", label: "Instrumentaliste" },
+  { value: "evangeliste", label: "Évangéliste" },
+  { value: "intercesseur", label: "Intercesseur" },
+  { value: "intercesseurse", label: "Intercesseurse" },
+  { value: "organisateur", label: "Organisateur" },
+  { value: "organisatrice", label: "Organisatrice" },
+  { value: "monitrice", label: "Monitrice" },
+  { value: "responsable de bergerie", label: "Responsable de bergerie" },
+  { value: "dirigeante", label: "Dirigeante" },
+  { value: "responsable chantre", label: "Responsable Chantre" },
+  { value: "communication", label: "Communication" },
+  { value: "responsable communication", label: "Responsable Communication" },
 ];
 
 const MEMBER_STATUSES = [
