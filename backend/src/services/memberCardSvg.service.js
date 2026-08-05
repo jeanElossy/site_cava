@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 
 import { DOMParser } from "linkedom";
 import { Resvg } from "@resvg/resvg-js";
@@ -44,6 +44,11 @@ import { formatRegistrationNumber } from "./registrationNumber.service.js";
 const CARDS_DIR = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   "../../../public/cards"
+);
+
+const SIGNATURES_DIR = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../../public/signatures"
 );
 
 // Résolus paresseusement (pas en constante au chargement du module) :
@@ -115,6 +120,38 @@ const rewriteFontFamilies = (svgSource) =>
 
     return `font-family: ${CARD_FONT_FAMILY}; font-weight: ${weight};`;
   });
+
+const IMAGE_MIME_TYPES = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+};
+
+// SUBSTITUTION TECHNIQUE VALIDÉE (même principe que les polices
+// ci-dessus) : un export Illustrator peut référencer une image bitmap
+// statique par son simple nom de fichier (ex.
+// xlink:href="signature-pasteur.png" pour le cachet/la signature du
+// pasteur), en s'attendant à ce qu'elle soit déposée à côté du SVG au
+// moment de l'impression — mais cette version de resvg-js n'a aucune
+// option "dossier de ressources" pour résoudre un chemin relatif de ce
+// type au rendu. On l'intègre donc en base64 avant rasterisation,
+// exactement comme la photo du membre ou le QR code, à partir de
+// public/signatures/ (seule convention attendue : un simple nom de
+// fichier, jamais un chemin). Aucune image déplacée ni modifiée ;
+// une référence introuvable est laissée telle quelle plutôt que de
+// faire échouer tout le rendu.
+const inlineLocalImageHrefs = (svgSource) =>
+  svgSource.replace(
+    /(xlink:href|href)="([^"/:]+\.(?:png|jpe?g))"/g,
+    (match, attr, fileName) => {
+      const mimeType = IMAGE_MIME_TYPES[path.extname(fileName).toLowerCase()];
+      const filePath = path.join(SIGNATURES_DIR, fileName);
+
+      if (!mimeType || !existsSync(filePath)) return match;
+
+      return `${attr}="${toDataUri(readFileSync(filePath), mimeType)}"`;
+    }
+  );
 
 // Lit une propriété CSS (`property`) pour une classe donnée dans le
 // bloc <style> du gabarit — les règles y sont souvent groupées par
@@ -345,7 +382,7 @@ const reflowMultiTspanText = (document, svgSource) => {
 let cachedRectoTemplateSource = null;
 
 const readSvgTemplate = (filePath) =>
-  rewriteFontFamilies(readFileSync(filePath, "utf8"));
+  inlineLocalImageHrefs(rewriteFontFamilies(readFileSync(filePath, "utf8")));
 
 // Le gabarit recto est relu et réinjecté à chaque carte (une par
 // membre), mais sa LECTURE DISQUE + réécriture des polices ne dépend
