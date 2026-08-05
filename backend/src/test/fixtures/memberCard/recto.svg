@@ -15,10 +15,10 @@
   <text x="10" y="20" font-family="AcuminConcept-Bold, 'Acumin Variable Concept'" font-size="10">NOM &amp; PRENOM(S)</text>
   <text id="field-nom" font-family="AcuminConcept-Regular, 'Acumin Variable Concept'" font-size="10" transform="translate(10 35)"><tspan x="0" y="0">-</tspan><tspan x="4" y="0">-</tspan></text>
   <text id="field-matricule" font-size="10" transform="translate(10 50)"><tspan x="0" y="0">-</tspan><tspan x="4" y="0">-</tspan></text>
-  <text id="field-annee-arrivee" x="10" y="65" font-size="10">-</text>
-  <text id="field-expiration" x="10" y="80" font-size="10">-</text>
-  <text id="field-bergerie" x="10" y="95" font-size="10">-</text>
-  <text id="field-assemblee" x="10" y="110" font-size="10">-</text>
+  <text id="field-role" x="10" y="65" font-size="10">-</text>
+  <text id="field-date-naissance" x="10" y="80" font-size="10">-</text>
+  <text id="field-contact" x="10" y="95" font-size="10">-</text>
+  <text id="field-quartier" x="10" y="110" font-size="10">-</text>
   <text id="field-ministere" x="10" y="125" font-size="10">-</text>
   <rect id="field-photo" x="200" y="10" width="50" height="50" rx="4" ry="4" fill="#ffffff" stroke="#f9b233" />
   <rect id="field-qr" x="200" y="70" width="50" height="50" fill="none" stroke="#063" />

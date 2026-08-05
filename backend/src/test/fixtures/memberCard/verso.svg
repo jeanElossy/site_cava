@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 315.36 225.36" width="315.36" height="225.36">
-  <!-- Gabarit de TEST uniquement — le verso réel n'a aucun champ
-       dynamique, ce gabarit vérifie seulement qu'il est rasterisé
-       tel quel. -->
+  <!-- Gabarit de TEST uniquement — le verso est entièrement statique
+       (aucun id field-*, voir memberCardSvg.service.js). -->
   <rect width="315.36" height="225.36" fill="#0d5b3e" />
   <text x="10" y="20" fill="#ffffff" font-size="8">SIGNATURE DU PASTEUR</text>
+  <text x="10" y="40" fill="#ffffff" font-size="8">ASSEMBLÉE : CAVA</text>
 </svg>

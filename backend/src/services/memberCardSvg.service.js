@@ -9,7 +9,6 @@ import QRCode from "qrcode";
 import PDFDocument from "pdfkit";
 
 import Member from "../models/Member.js";
-import Church from "../models/Church.js";
 // Import de pur enregistrement : jamais utilisé directement ici, mais
 // `.populate("ministries", ...)` plus bas exige que le modèle
 // "Ministry" soit connu de Mongoose avant le premier appel.
@@ -29,18 +28,19 @@ import { formatRegistrationNumber } from "./registrationNumber.service.js";
 // CONTRAT D'ID (à nommer sur les calques/objets concernés avant
 // export SVG depuis Illustrator, sous "IDs d'objet > Noms de
 // calque") :
+//
+//   Recto :
 //   field-nom             texte  — nom complet du membre
 //   field-matricule       texte  — matricule formaté
-//   field-annee-arrivee   texte  — année d'inscription
-//   field-expiration      texte  — date de validité (inscription + 1 an)
-//   field-bergerie        texte  — nom de la bergerie
-//   field-assemblee       texte  — nom de l'assemblée (église)
+//   field-role            texte  — fonction (rôle) du membre
+//   field-date-naissance  texte  — date de naissance
+//   field-contact         texte  — téléphone
+//   field-quartier        texte  — quartier/lieu de résidence
 //   field-ministere       texte  — ministère(s), facultatif
 //   field-photo           image  — photo du membre (repli : initiales)
 //   field-qr               image  — QR code (lien de mise à jour de fiche)
 //
-// Le verso n'a aucun champ dynamique : il est rasterisé tel quel et
-// mis en cache.
+//   Verso : entièrement statique, aucun id `field-*` — pas d'injection.
 const CARDS_DIR = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   "../../../public/cards"
@@ -336,7 +336,6 @@ const reflowMultiTspanText = (document, svgSource) => {
   }
 };
 
-let cachedVersoPng = null;
 let cachedRectoTemplateSource = null;
 
 const readSvgTemplate = (filePath) =>
@@ -541,7 +540,6 @@ const buildInitialsAvatarPng = (firstName, lastName, size = 240) => {
 
 const loadMemberForCard = async (memberId) => {
   const member = await Member.findById(memberId)
-    .populate("flock", "name")
     .populate("ministries", "name")
     .lean();
 
@@ -561,11 +559,7 @@ const loadMemberForCard = async (memberId) => {
     );
   }
 
-  const church = member.church
-    ? await Church.findOne({ number: member.church }).lean()
-    : null;
-
-  return { member, church };
+  return member;
 };
 
 const buildMemberPhotoDataUri = async (member) => {
@@ -619,7 +613,16 @@ const buildQrDataUri = async (member) => {
   return toDataUri(buffer, "image/png");
 };
 
-const injectRectoFields = async (document, member, church) => {
+const formatDate = (date) =>
+  date
+    ? date.toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    : "—";
+
+const injectRectoFields = async (document, member) => {
   const fullName = [
     toTitleCase(member.firstName ?? ""),
     member.lastName ? member.lastName.toUpperCase() : "",
@@ -627,29 +630,9 @@ const injectRectoFields = async (document, member, church) => {
     .filter(Boolean)
     .join(" ");
 
-  const joinedDate = member.joinedAt ? new Date(member.joinedAt) : null;
-  const joinedYear = joinedDate ? joinedDate.getFullYear() : null;
-
-  const expirationDate = joinedDate
-    ? new Date(
-        joinedDate.getFullYear() + 1,
-        joinedDate.getMonth(),
-        joinedDate.getDate()
-      )
-    : null;
-
-  const formatDate = (date) =>
-    date
-      ? date.toLocaleDateString("fr-FR", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        })
-      : "—";
-
-  const churchName = church?.name ?? `Église ${member.church}`;
-  const flockName = member.flock?.name ?? "—";
   const matricule = formatRegistrationNumber(member.registrationNumber);
+  const birthDate = member.dateOfBirth ? new Date(member.dateOfBirth) : null;
+  const contact = member.phone || member.whatsapp || "—";
 
   setElementText(
     requireElementById(document, "field-nom", "recto.svg"),
@@ -660,20 +643,20 @@ const injectRectoFields = async (document, member, church) => {
     matricule
   );
   setElementText(
-    requireElementById(document, "field-annee-arrivee", "recto.svg"),
-    joinedYear ? String(joinedYear) : "—"
+    requireElementById(document, "field-role", "recto.svg"),
+    (member.role ?? "membre").toUpperCase()
   );
   setElementText(
-    requireElementById(document, "field-expiration", "recto.svg"),
-    formatDate(expirationDate)
+    requireElementById(document, "field-date-naissance", "recto.svg"),
+    formatDate(birthDate)
   );
   setElementText(
-    requireElementById(document, "field-bergerie", "recto.svg"),
-    flockName
+    requireElementById(document, "field-contact", "recto.svg"),
+    contact
   );
   setElementText(
-    requireElementById(document, "field-assemblee", "recto.svg"),
-    churchName
+    requireElementById(document, "field-quartier", "recto.svg"),
+    member.area || "—"
   );
 
   // Champ facultatif : absent du gabarit actuel (voir contrat d'id en
@@ -705,25 +688,27 @@ const injectRectoFields = async (document, member, church) => {
   );
 };
 
-const buildRectoPng = async (memberId) => {
-  const { member, church } = await loadMemberForCard(memberId);
-
+const buildRectoPng = async (member) => {
   const source = getRectoTemplateSource();
   const document = parseSvgDocument(source);
 
-  await injectRectoFields(document, member, church);
+  await injectRectoFields(document, member);
   reflowMultiTspanText(document, source);
 
   return rasterizeSvgToPng(serializeSvg(document));
 };
 
+let cachedVersoPng = null;
+
+// Le verso est entièrement statique (aucun id `field-*`, voir contrat
+// d'id) : identique pour tous les membres, rasterisé une seule fois
+// puis réutilisé.
 const buildVersoPng = () => {
   if (!cachedVersoPng) {
     const source = readSvgTemplate(getVersoPath());
     const document = parseSvgDocument(source);
 
     reflowMultiTspanText(document, source);
-
     cachedVersoPng = rasterizeSvgToPng(serializeSvg(document));
   }
 
@@ -744,27 +729,27 @@ const pngToJpeg = async (pngBuffer) => {
 };
 
 // Carte numérique : recto seul, format le plus utile à l'écran (voir
-// design validé — le verso ne change jamais, inutile à afficher).
+// design validé).
 export const buildMemberCardJpeg = async (memberId) => {
-  const rectoPng = await buildRectoPng(memberId);
+  const member = await loadMemberForCard(memberId);
+  const rectoPng = await buildRectoPng(member);
 
   return pngToJpeg(rectoPng);
 };
 
 export const buildMemberCardVersoJpeg = async (memberId) => {
-  // Le verso ne dépend d'aucune donnée du membre, mais on vérifie
-  // quand même son existence/statut : pas de fuite d'un verso pour un
-  // membre introuvable ou désactivé.
   await loadMemberForCard(memberId);
+  const versoPng = buildVersoPng();
 
-  return pngToJpeg(buildVersoPng());
+  return pngToJpeg(versoPng);
 };
 
 // Carte imprimable : PDF 2 pages (recto, verso) aux dimensions
 // physiques du gabarit — une page par face, jamais fusionnées en une
 // seule image.
 export const buildMemberCardPdf = async (memberId) => {
-  const rectoPng = await buildRectoPng(memberId);
+  const member = await loadMemberForCard(memberId);
+  const rectoPng = await buildRectoPng(member);
   const versoPng = buildVersoPng();
 
   const rectoImage = await loadImage(rectoPng);
