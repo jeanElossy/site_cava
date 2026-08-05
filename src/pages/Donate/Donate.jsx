@@ -16,7 +16,7 @@ import VerseSection from "../../components/donate/VerseSection";
 
 import {
   useContribution,
-} from "../../context/ContributionContext";
+} from "../../context/useContribution";
 
 import usePageMeta from "../../hooks/usePageMeta";
 

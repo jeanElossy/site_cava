@@ -1,6 +1,6 @@
 import { FaArrowRight } from "react-icons/fa";
 
-import { useContribution } from "../../../context/ContributionContext";
+import { useContribution } from "../../../context/useContribution";
 
 import "./ProjectsProgress.scss";
 

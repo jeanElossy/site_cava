@@ -8,7 +8,7 @@ import {
 
 import {
   useContribution,
-} from "../../../context/ContributionContext";
+} from "../../../context/useContribution";
 
 import { steps, validateStep } from "./data";
 

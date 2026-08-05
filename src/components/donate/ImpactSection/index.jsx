@@ -7,7 +7,7 @@ import {
 
 import {
   useContribution,
-} from "../../../context/ContributionContext";
+} from "../../../context/useContribution";
 
 const ImpactCard = () => {
   const { state } =
