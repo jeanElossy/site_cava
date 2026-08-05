@@ -24,6 +24,7 @@ import * as receiptService from "../services/receipt.service.js";
 import * as submissionService from "../services/submission.service.js";
 import * as memberExportService from "../services/memberExport.service.js";
 import * as memberCardService from "../services/memberCardSvg.service.js";
+import * as guestBadgeService from "../services/guestBadgeSvg.service.js";
 import * as presenceQrService from "../services/presenceQr.service.js";
 import * as presenceService from "../services/presence.service.js";
 import * as presenceExportService from "../services/presenceExport.service.js";
@@ -945,6 +946,32 @@ export const buildRoutes = () => {
   );
 
   api.use("/admin/members", memberExportRouter);
+
+  // Badges invités pré-imprimés (5 homme + 5 femme) — voir
+  // guestBadgeSvg.service.js. Un seul document à télécharger et
+  // imprimer/découper, régénéré à chaque appel (pas de dépendance à
+  // un membre ou un dossier précis, contrairement à la carte de
+  // membre ci-dessus).
+  const guestBadgesRouter = Router();
+
+  guestBadgesRouter.use(requireAuth, requireRole("admin"));
+
+  guestBadgesRouter.get(
+    "/pdf",
+    asyncHandler(async (_req, res) => {
+      const buffer = await guestBadgeService.buildGuestBadgesPdf();
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="badges-invites-cava.pdf"'
+      );
+
+      res.send(buffer);
+    })
+  );
+
+  api.use("/admin/guest-badges", guestBadgesRouter);
 
   // Les membres portent des données personnelles : leur écriture est
   // réservée aux administrateurs, un éditeur n'y touche pas.

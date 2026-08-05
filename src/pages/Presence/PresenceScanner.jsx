@@ -220,8 +220,12 @@ const PresenceScanner = ({
     const registrationNumber = extractQrParam(decoded, "matricule");
 
     try {
+      // `result.kind` : un badge invité pré-imprimé (voir
+      // guestBadgeSvg.service.js) produit le même code de décodage
+      // qu'un matricule membre, mais le serveur y répond par un
+      // enregistrement "visitor" — jamais supposé "member" ici.
       const result = await scanMemberCard(registrationNumber, sessionToken);
-      applyResult(result, "member");
+      applyResult(result, result.kind ?? "member");
     } catch (error) {
       applyError(error);
     } finally {

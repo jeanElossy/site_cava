@@ -281,6 +281,75 @@ describe("presence.service (intégration MongoDB)", () => {
 
       assert.equal(marked.alreadyRecorded, true);
     });
+
+    it("scan() reconnaît un badge invité pré-imprimé (INV-HOMME-01) sans recherche de membre", async () => {
+      const first = await presenceService.scan(
+        { registrationNumber: "INV-HOMME-01" },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+
+      assert.equal(first.kind, "visitor");
+      assert.equal(first.alreadyRecorded, false);
+      assert.equal(first.visitor.firstName, "Invité");
+      assert.equal(first.visitor.lastName, "Homme 1");
+
+      // Le même badge scanné deux fois pendant le même service ne
+      // crée pas une deuxième présence (badge physique réutilisable,
+      // pas une identité de visiteur comme un nom saisi à la main).
+      const second = await presenceService.scan(
+        { registrationNumber: "INV-HOMME-01" },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+      assert.equal(second.alreadyRecorded, true);
+
+      const count = await Attendance.countDocuments({
+        "visitor.badgeCode": "INV-HOMME-01",
+        securityQr: qr._id,
+      });
+      assert.equal(count, 1);
+    });
+
+    it("scan() reconnaît un badge invité femme, distinct par genre/index", async () => {
+      const result = await presenceService.scan(
+        { registrationNumber: "INV-FEMME-03" },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+
+      assert.equal(result.kind, "visitor");
+      assert.equal(result.visitor.lastName, "Femme 3");
+    });
+
+    it("scan() traite un code qui RESSEMBLE à un badge invité mais hors motif comme un matricule (404)", async () => {
+      // "INV" seul, ou un index hors 01-05, ne doit jamais être
+      // confondu avec un vrai badge — repli sur la recherche membre
+      // habituelle, qui échoue proprement.
+      await assert.rejects(
+        presenceService.scan(
+          { registrationNumber: "INV-HOMME-09" },
+          { id: agent._id },
+          qr,
+          fakeReq
+        ),
+        (error) => error.status === 404
+      );
+    });
+
+    it("scan() renvoie kind: 'member' pour un vrai matricule (pas de régression)", async () => {
+      const result = await presenceService.scan(
+        { registrationNumber: memberToScan.registrationNumber },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+
+      assert.equal(result.kind, "member");
+    });
   });
 
   describe("search", () => {

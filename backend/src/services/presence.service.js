@@ -131,11 +131,90 @@ const recordMemberAttendance = async ({ member, securityQr, agentId, method, req
   }
 };
 
+// Badges invités pré-imprimés — voir guestBadgeSvg.service.js. Le QR
+// encode le même format d'URL que le matricule d'un membre
+// (`?matricule=INV-HOMME-01`), donc le même code de décodage/scan
+// frontend fonctionne sans modification ; seule la forme du code
+// (préfixe "INV", jamais produit par un vrai matricule membre —
+// voir registrationNumber.service.js) permet de le distinguer AVANT
+// toute recherche en base. Comparé après normalisation (espaces/tirets
+// retirés, majuscules), d'où l'absence de tiret dans le motif.
+const GUEST_BADGE_PATTERN = /^INV(HOMME|FEMME)(0[1-5])$/;
+const GUEST_BADGE_GENDER_LABELS = { HOMME: "Homme", FEMME: "Femme" };
+
+export const parseGuestBadgeCode = (normalized) => {
+  const match = GUEST_BADGE_PATTERN.exec(normalized ?? "");
+
+  if (!match) return null;
+
+  const [, genderCode, index] = match;
+
+  return {
+    code: `INV-${genderCode}-${index}`,
+    gender: genderCode.toLowerCase(),
+    index: Number(index),
+    label: `Invité ${GUEST_BADGE_GENDER_LABELS[genderCode]} ${Number(index)}`,
+  };
+};
+
+// Même principe que `recordMemberAttendance` (dédoublonnage par
+// l'erreur d'index plutôt qu'une lecture préalable), mais pour un
+// badge invité réutilisable : dédoublonné par `visitor.badgeCode`, pas
+// par une identité de membre.
+const recordGuestBadgeAttendance = async ({ badge, securityQr, agentId, req }) => {
+  try {
+    const attendance = await Attendance.create({
+      kind: "visitor",
+      visitor: {
+        firstName: "Invité",
+        lastName: `${GUEST_BADGE_GENDER_LABELS[badge.code.split("-")[1]]} ${badge.index}`,
+        badgeCode: badge.code,
+      },
+      securityQr,
+      agent: agentId,
+      method: "scan",
+      ip: req?.ip,
+      userAgent: req?.headers?.["user-agent"]?.slice(0, 300),
+    });
+
+    return { attendance, alreadyRecorded: false };
+  } catch (error) {
+    if (error.code === 11000) {
+      const existing = await Attendance.findOne({
+        "visitor.badgeCode": badge.code,
+        securityQr,
+      });
+
+      return { attendance: existing, alreadyRecorded: true };
+    }
+
+    throw error;
+  }
+};
+
 export const scan = async ({ registrationNumber }, presenceAgent, presenceQr, req) => {
   const normalized = normalizeRegistrationNumber(registrationNumber);
 
   if (!normalized) {
     throw ApiError.badRequest("Matricule invalide.");
+  }
+
+  const badge = parseGuestBadgeCode(normalized);
+
+  if (badge) {
+    const { attendance, alreadyRecorded } = await recordGuestBadgeAttendance({
+      badge,
+      securityQr: presenceQr._id,
+      agentId: presenceAgent.id,
+      req,
+    });
+
+    return {
+      kind: "visitor",
+      visitor: { firstName: attendance.visitor.firstName, lastName: attendance.visitor.lastName },
+      alreadyRecorded,
+      recordedAt: attendance.recordedAt,
+    };
   }
 
   const member = await Member.findOne({ registrationNumber: normalized });
@@ -156,6 +235,7 @@ export const scan = async ({ registrationNumber }, presenceAgent, presenceQr, re
   });
 
   return {
+    kind: "member",
     member: serializeMember(member),
     alreadyRecorded,
     recordedAt: attendance.recordedAt,

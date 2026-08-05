@@ -65,6 +65,15 @@ const attendanceSchema = new mongoose.Schema(
         ],
       },
       phone: { type: String, trim: true, maxlength: 40 },
+
+      // Posé UNIQUEMENT quand la présence vient du scan d'un badge
+      // invité pré-imprimé (ex. "INV-HOMME-01", voir
+      // guestBadgeSvg.service.js) — absent pour un visiteur saisi à la
+      // main. Sert à déduplique le même badge scanné deux fois pendant
+      // le même service (voir l'index partiel ci-dessous), le badge
+      // étant un objet physique réutilisé d'un service à l'autre, pas
+      // une identité de visiteur comme `firstName`/`lastName`.
+      badgeCode: { type: String, trim: true, uppercase: true, maxlength: 40 },
     },
 
     // Porte le libellé et la fenêtre horaire du service — voir
@@ -104,6 +113,18 @@ const attendanceSchema = new mongoose.Schema(
 attendanceSchema.index(
   { member: 1, securityQr: 1 },
   { unique: true, partialFilterExpression: { kind: "member" } }
+);
+// Même principe que l'index membre ci-dessus, mais pour un badge
+// invité : un même badge physique ne doit compter qu'UNE fois par
+// service, même scanné deux fois par erreur — index PARTIEL, restreint
+// aux visiteurs qui portent un `badgeCode` (un visiteur saisi à la
+// main n'en a pas, et reste volontairement sans contrainte d'unicité).
+attendanceSchema.index(
+  { "visitor.badgeCode": 1, securityQr: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { "visitor.badgeCode": { $exists: true } },
+  }
 );
 attendanceSchema.index({ securityQr: 1, recordedAt: -1 });
 
