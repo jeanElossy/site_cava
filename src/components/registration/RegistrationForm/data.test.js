@@ -113,7 +113,6 @@ describe("validateStep", () => {
       "phone",
       "whatsapp",
       "email",
-      "address",
       "area",
       "emergencyContactName",
       "emergencyContactPhone",
@@ -122,7 +121,6 @@ describe("validateStep", () => {
       phone: "0700000000",
       whatsapp: "0700000001",
       email: "jean@example.com",
-      address: "Angré 7e tranche",
       area: "Angré",
       emergencyContactName: "Marie Koffi",
       emergencyContactPhone: "0708000000",
@@ -134,7 +132,7 @@ describe("validateStep", () => {
     }
   };
 
-  it("étape 2 (Contact) : exige aussi WhatsApp, e-mail, adresse, quartier et le contact d'urgence", () => {
+  it("étape 2 (Contact) : exige aussi WhatsApp, e-mail, quartier et le contact d'urgence", () => {
     const withPhone = () => {
       const state = baseState();
       fillStep2UpTo(state, "whatsapp");

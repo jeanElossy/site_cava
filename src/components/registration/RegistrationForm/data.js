@@ -128,10 +128,6 @@ export const validateStep = (step, state) => {
       return "Merci d'indiquer une adresse e-mail.";
     }
 
-    if (!state.data.address.trim()) {
-      return "Merci d'indiquer votre adresse.";
-    }
-
     if (!state.data.area.trim()) {
       return "Merci d'indiquer votre quartier ou groupe de maison.";
     }
@@ -213,7 +209,6 @@ export const buildSubmissionPayload = (state) => ({
     phone: state.data.phone.trim(),
     whatsapp: state.data.whatsapp.trim(),
     email: state.data.email.trim(),
-    address: state.data.address.trim(),
     area: state.data.area.trim(),
     emergencyContact: {
       name: state.data.emergencyContactName.trim(),
@@ -278,7 +273,6 @@ export const memberToFormData = (member = {}) => {
   if (member.phone !== undefined) patch.phone = member.phone;
   if (member.whatsapp !== undefined) patch.whatsapp = member.whatsapp;
   if (member.email !== undefined) patch.email = member.email;
-  if (member.address !== undefined) patch.address = member.address;
   if (member.area !== undefined) patch.area = member.area;
 
   // `Member` ne porte que `joinedAt` (une date) ; le formulaire ne

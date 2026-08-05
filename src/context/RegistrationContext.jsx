@@ -29,7 +29,6 @@ export const initialState = {
     phone: "",
     whatsapp: "",
     email: "",
-    address: "",
     area: "",
     emergencyContactName: "",
     emergencyContactPhone: "",
