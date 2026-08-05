@@ -236,26 +236,31 @@ const layoutLine = (lineTspans, fontSizePx, bold) => {
   let cursorX = null;
   let previousOriginalX = null;
   let previousMeasuredWidth = 0;
+  let previousIsSingleChar = false;
 
   for (const tspan of lineTspans) {
     const originalX = parseFloat(tspan.getAttribute("x") ?? "0");
 
     if (cursorX === null) {
       cursorX = originalX;
-    } else {
-      // Avance d'AU MOINS la largeur réellement mesurée du tspan
-      // précédent (empêche tout chevauchement avec la police de
-      // substitution), mais jamais moins que l'écart voulu par le
-      // gabarit d'origine (`originalGap`) : certains tspans ne se
-      // suivent pas au pixel près par kerning fin, mais par un
-      // espacement délibérément généreux — ex. la lettre "Ç" du logo
-      // CAVA dans sa pastille colorée, suivie du mot "entre" bien plus
-      // loin que sa seule largeur de glyphe. Prendre le maximum des
-      // deux respecte les deux cas sans avoir à les distinguer
-      // explicitement.
+    } else if (previousIsSingleChar) {
+      // Le tspan précédent est un caractère ISOLÉ (une seule lettre) :
+      // l'écart d'origine (`originalGap`) peut refléter un espacement
+      // délibérément généreux plutôt qu'un simple kerning fin — ex. la
+      // lettre "Ç" du logo CAVA dans sa pastille colorée, suivie du mot
+      // "entre" bien plus loin que sa seule largeur de glyphe. On
+      // n'avance donc jamais MOINS que cet écart pour ce cas précis.
       const originalGap = originalX - previousOriginalX;
 
       cursorX += Math.max(previousMeasuredWidth, originalGap);
+    } else {
+      // Tspan précédent multi-caractères (un mot ou un groupe) : son
+      // `originalGap` n'est qu'un artefact de la largeur de la police
+      // D'ORIGINE (souvent plus large que Poppins), pas un espacement
+      // voulu — le prendre comme plancher ici étire visiblement le
+      // texte (ex. "JUSQU'AU" avec un grand vide avant l'apostrophe).
+      // Seule la largeur RÉELLEMENT mesurée avance le curseur.
+      cursorX += previousMeasuredWidth;
     }
 
     const measuredWidth = textMeasureContext.measureText(
@@ -266,6 +271,7 @@ const layoutLine = (lineTspans, fontSizePx, bold) => {
 
     previousOriginalX = originalX;
     previousMeasuredWidth = measuredWidth;
+    previousIsSingleChar = tspan.textContent.trim().length <= 1;
   }
 
   const first = positions[0];
@@ -622,6 +628,32 @@ const formatDate = (date) =>
       })
     : "—";
 
+// Libellés affichés sur la carte pour chaque valeur de `role` — DOIT
+// rester synchronisé avec MEMBER_ROLES dans
+// src/pages/admin/CommunityAdmin.jsx (la carte affiche le libellé
+// destiné à l'utilisateur, jamais la valeur brute stockée en base :
+// "pasteur" s'affiche "PASTEUR PRINCIPAL", pas "PASTEUR").
+const ROLE_LABELS = {
+  membre: "Membre",
+  serviteur: "Serviteur",
+  responsable: "Responsable",
+  pasteur: "Pasteur Principal",
+  chantre: "Chantre",
+  dirigeant: "Dirigeant",
+  instrumentaliste: "Instrumentaliste",
+  evangeliste: "Évangéliste",
+  intercesseur: "Intercesseur",
+  intercesseurse: "Intercesseurse",
+  organisateur: "Organisateur",
+  organisatrice: "Organisatrice",
+  monitrice: "Monitrice",
+  "responsable de bergerie": "Responsable de bergerie",
+  dirigeante: "Dirigeante",
+  "responsable chantre": "Responsable Chantre",
+  communication: "Communication",
+  "responsable communication": "Responsable Communication",
+};
+
 const injectRectoFields = async (document, member) => {
   const fullName = [
     toTitleCase(member.firstName ?? ""),
@@ -642,9 +674,11 @@ const injectRectoFields = async (document, member) => {
     requireElementById(document, "field-matricule", "recto.svg"),
     matricule
   );
+  const roleLabel = ROLE_LABELS[member.role] ?? ROLE_LABELS.membre;
+
   setElementText(
     requireElementById(document, "field-role", "recto.svg"),
-    (member.role ?? "membre").toUpperCase()
+    roleLabel.toUpperCase()
   );
   setElementText(
     requireElementById(document, "field-date-naissance", "recto.svg"),
