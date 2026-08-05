@@ -1,0 +1,301 @@
+@use "../../../styles/admin" as *;
+
+// PIÈGE PROJET : feuille de style unique pour tout le site. Tout ce
+// qui suit est nommé avec le préfixe `new-soul-`/`status-badge`/
+// `stepper-shell`, propriétaire unique de ces classes dans tout le
+// projet — aucun nom générique (.card, .options, .table...) ici.
+
+.new-soul-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  margin-top: 4px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 5px 12px;
+
+  border-radius: 999px;
+
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &--neutral {
+    background: $admin-surface-muted;
+    color: $admin-ink-soft;
+  }
+
+  &--info {
+    background: $admin-info-bg;
+    color: $admin-info;
+  }
+
+  &--warning {
+    background: $admin-warning-bg;
+    color: $admin-warning;
+  }
+
+  &--success {
+    background: $admin-success-bg;
+    color: $admin-success;
+  }
+
+  &--danger {
+    background: $admin-danger-bg;
+    color: $admin-danger;
+  }
+}
+
+.stepper-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 28px;
+
+  align-items: start;
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+  }
+
+  &__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    position: sticky;
+    top: 20px;
+
+    padding: 10px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius;
+
+    background: $admin-surface;
+
+    @media (max-width: 860px) {
+      position: static;
+
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+  }
+
+  &__step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 10px 12px;
+
+    border: none;
+    border-radius: $admin-radius-sm;
+
+    background: none;
+
+    color: $admin-ink-soft;
+    font-size: 0.86rem;
+    font-weight: 600;
+    text-align: left;
+
+    cursor: pointer;
+
+    transition: background $admin-ease, color $admin-ease;
+
+    &:hover {
+      background: $admin-surface-hover;
+    }
+
+    &--active {
+      background: $admin-accent-soft;
+      color: $admin-accent-strong;
+    }
+  }
+
+  &__step-index {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+
+    border-radius: 999px;
+
+    background: $admin-surface-muted;
+
+    font-size: 0.74rem;
+  }
+
+  &__step--active &__step-index {
+    background: $admin-accent-strong;
+    color: #fff;
+  }
+
+  &__step--done &__step-index {
+    background: $admin-success;
+    color: #fff;
+  }
+
+  &__panel {
+    padding: 22px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius;
+
+    background: $admin-surface;
+    box-shadow: $admin-shadow-sm;
+  }
+
+  &__panel-title {
+    margin: 0 0 18px;
+
+    color: $admin-ink;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-top: 22px;
+    padding-top: 18px;
+
+    border-top: 1px solid $admin-border;
+  }
+
+  &__save-state {
+    color: $admin-ink-faint;
+    font-size: 0.8rem;
+  }
+
+  &__footer-actions {
+    display: flex;
+    gap: 10px;
+  }
+}
+
+.new-soul-readonly {
+  display: grid;
+  gap: 14px;
+
+  margin-bottom: 24px;
+  padding: 18px;
+
+  border: 1px dashed $admin-border-strong;
+  border-radius: $admin-radius;
+
+  background: $admin-surface-muted;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  &__title {
+    margin: 0;
+
+    color: $admin-ink;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  &__label {
+    color: $admin-ink-faint;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__value {
+    color: $admin-ink;
+    font-size: 0.9rem;
+  }
+}
+
+.new-soul-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  margin-bottom: 12px;
+
+  th,
+  td {
+    padding: 9px 10px;
+
+    border: 1px solid $admin-border;
+
+    font-size: 0.84rem;
+    text-align: left;
+  }
+
+  th {
+    background: $admin-surface-muted;
+    color: $admin-ink-soft;
+    font-weight: 600;
+  }
+
+  td input,
+  td textarea {
+    width: 100%;
+    padding: 6px 8px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius-sm;
+
+    font-size: 0.84rem;
+  }
+
+  &__remove {
+    border: none;
+    background: none;
+
+    color: $admin-danger;
+    cursor: pointer;
+  }
+}
+
+.new-soul-list {
+  h1 {
+    margin: 0 0 4px;
+  }
+
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 18px;
+  }
+
+  &__case {
+    font-weight: 700;
+    color: $admin-accent-strong;
+  }
+}

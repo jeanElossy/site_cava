@@ -291,6 +291,89 @@ export const publish = async () =>
   });
 
 // ---------------------------------------------------------------
+// Nouvelles âmes (SOA / CANA)
+// ---------------------------------------------------------------
+// Pas de `collection()` générique : ce module a des actions métier
+// dédiées (transmit, acknowledge, close, status) en plus du CRUD de
+// base, et deux sous-ressources (`soa`/`cana`) à mettre à jour
+// séparément — voir newSoul.service.js côté serveur.
+// `token` : outrepasse `auth` (voir `request` dans services/http.js) —
+// permet à un agent de badgeage des présences (jeton de session
+// distinct, jamais dans `localStorage`) d'appeler les mêmes fonctions
+// que l'administration pour démarrer un dossier SOA depuis l'écran de
+// scan, sans dupliquer ce module. Omis, ces fonctions se comportent
+// exactement comme avant (jeton admin lu depuis `localStorage`).
+export const newSouls = {
+  // Liste minimale (id + nom) des comptes portant un rôle donné —
+  // pour peupler les sélecteurs "responsable"/"coordonnateur".
+  listStaff: async (role, token) =>
+    request(`/api/admin/new-souls/staff?role=${encodeURIComponent(role)}`, {
+      auth: true,
+      token,
+    }),
+
+  list: async (params = {}, token) => {
+    const query = new URLSearchParams(cleanParams(params)).toString();
+
+    return request(`/api/admin/new-souls${query ? `?${query}` : ""}`, {
+      auth: true,
+      token,
+    });
+  },
+
+  get: async (id, token) => request(`/api/admin/new-souls/${id}`, { auth: true, token }),
+
+  create: async (payload, token) =>
+    request("/api/admin/new-souls", {
+      method: "POST",
+      body: payload,
+      auth: true,
+      token,
+    }),
+
+  updateSoa: async (id, patch, token) =>
+    request(`/api/admin/new-souls/${id}/soa`, {
+      method: "PATCH",
+      body: patch,
+      auth: true,
+      token,
+    }),
+
+  updateCana: async (id, patch) =>
+    request(`/api/admin/new-souls/${id}/cana`, {
+      method: "PATCH",
+      body: patch,
+      auth: true,
+    }),
+
+  transmit: async (id, token) =>
+    request(`/api/admin/new-souls/${id}/transmit`, {
+      method: "POST",
+      auth: true,
+      token,
+    }),
+
+  acknowledge: async (id) =>
+    request(`/api/admin/new-souls/${id}/acknowledge`, {
+      method: "POST",
+      auth: true,
+    }),
+
+  setStatus: async (id, status, note) =>
+    request(`/api/admin/new-souls/${id}/status`, {
+      method: "POST",
+      body: { status, note },
+      auth: true,
+    }),
+
+  close: async (id) =>
+    request(`/api/admin/new-souls/${id}/close`, {
+      method: "POST",
+      auth: true,
+    }),
+};
+
+// ---------------------------------------------------------------
 // Tableau de bord
 // ---------------------------------------------------------------
 

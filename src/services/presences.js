@@ -66,15 +66,36 @@ export const markPresenceManually = (memberId, sessionToken) =>
     token: sessionToken,
   });
 
-export const markVisitorPresence = ({ firstName, lastName, phone }, sessionToken) =>
+export const markVisitorPresence = ({ firstName, lastName }, sessionToken) =>
   request("/api/presences/mark-visitor", {
     method: "POST",
-    body: { firstName, lastName, phone },
+    body: { firstName, lastName },
     token: sessionToken,
   });
 
 export const presenceStats = (sessionToken) =>
   request("/api/presences/stats", { token: sessionToken });
+
+export const listPresenceVisitors = (sessionToken) =>
+  request("/api/presences/visitors", { token: sessionToken });
+
+// Même raisonnement que `downloadAttendanceExport` plus bas : la route
+// exige un jeton (en-tête `Authorization`), qu'un simple lien
+// `<a href>` ne peut pas porter — récupéré en binaire puis transformé
+// en URL objet le temps du téléchargement/partage.
+export const downloadVisitorsPdf = async (sessionToken) => {
+  const response = await fetch(`${apiBaseUrl}/api/presences/visitors.pdf`, {
+    headers: { Authorization: `Bearer ${sessionToken ?? ""}` },
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+
+    throw new Error(payload?.message ?? "Le PDF n'a pas pu être généré.");
+  }
+
+  return { blob: await response.blob(), filename: "visiteurs.pdf" };
+};
 
 // ---- Administration --------------------------------------------------
 

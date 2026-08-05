@@ -10,6 +10,7 @@ import Settings from "../models/Settings.js";
 import Message from "../models/Message.js";
 import Flock from "../models/Flock.js";
 import Church from "../models/Church.js";
+import User from "../models/User.js";
 
 import { createCrudService } from "../services/crud.service.js";
 import * as authService from "../services/auth.service.js";
@@ -26,6 +27,7 @@ import * as memberCardService from "../services/memberCardSvg.service.js";
 import * as presenceQrService from "../services/presenceQr.service.js";
 import * as presenceService from "../services/presence.service.js";
 import * as presenceExportService from "../services/presenceExport.service.js";
+import * as newSoulService from "../services/newSoul.service.js";
 import {
   parseRegistrationNumber,
   releaseIfLastIssued,
@@ -34,6 +36,7 @@ import {
 import { resourceRouter } from "./resource.routes.js";
 
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
 import {
   sendSuccess,
   sendCreated,
@@ -44,6 +47,7 @@ import {
   requireRole,
 } from "../middlewares/auth.js";
 import { requirePresenceSession } from "../middlewares/presenceAuth.js";
+import { requireNewSoulActor } from "../middlewares/newSoulAuth.js";
 import { getEffectiveWindow } from "../utils/presenceQrWindow.js";
 import {
   loginLimiter,
@@ -587,6 +591,35 @@ export const buildRoutes = () => {
       );
 
       sendCreated(res, { data: result });
+    })
+  );
+
+  presencesPublic.get(
+    "/visitors",
+    requirePresenceSession,
+    asyncHandler(async (req, res) => {
+      const data = await presenceService.listVisitors(req.presenceQr._id);
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  presencesPublic.get(
+    "/visitors.pdf",
+    requirePresenceSession,
+    asyncHandler(async (req, res) => {
+      const buffer = await presenceService.buildVisitorsPdf(req.presenceQr);
+      const safeLabel = String(req.presenceQr.label ?? "service")
+        .replace(/[^a-zA-Z0-9-]+/g, "-")
+        .slice(0, 60);
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="visiteurs-${safeLabel}.pdf"`
+      );
+
+      res.send(buffer);
     })
   );
 
@@ -1487,6 +1520,186 @@ export const buildRoutes = () => {
       });
     })
   );
+
+  // ---- Nouvelles âmes (SOA / CANA) ----------------------------
+  //
+  // Pas de `requireRole(...)` au niveau du routeur : chaque rôle
+  // (soa, cana, coordinateur_bergeries, pasteur, admin) a des
+  // permissions différentes selon la RESSOURCE et son ÉTAT (un SOA ne
+  // voit que ses propres dossiers, la CANA ne voit que les dossiers
+  // transmis...) — cette logique vit dans newSoul.service.js, pas ici.
+  const adminNewSouls = Router();
+
+  // `requireNewSoulActor`, pas `requireAuth` : accepte à la fois un
+  // compte admin (User) et un agent de badgeage des présences (Member)
+  // — voir middlewares/newSoulAuth.js. Chaque route lit `req.actor`
+  // (jamais `req.user`, absent ici) et délègue le détail des
+  // permissions à newSoul.service.js.
+  adminNewSouls.use(requireNewSoulActor);
+
+  // Liste minimale (id + nom) des comptes portant un rôle donné —
+  // sert uniquement à peupler les sélecteurs "responsable CANA" /
+  // "coordonnateur des bergeries" du wizard, jamais d'e-mail ni
+  // d'autre donnée sensible.
+  adminNewSouls.get(
+    "/staff",
+    asyncHandler(async (req, res) => {
+      const role = req.query.role;
+      const allowedRoles = ["cana", "coordinateur_bergeries", "pasteur", "soa"];
+
+      if (!allowedRoles.includes(role)) {
+        throw ApiError.badRequest("Rôle demandé invalide.");
+      }
+
+      const data = await User.find({ role, isActive: true })
+        .select("name")
+        .sort({ name: 1 })
+        .lean();
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  adminNewSouls.get(
+    "/",
+    asyncHandler(async (req, res) => {
+      const data = await newSoulService.list(req.actor, {
+        status: req.query.status,
+        search: req.query.search,
+      });
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  adminNewSouls.post(
+    "/",
+    asyncHandler(async (req, res) => {
+      const data = await newSoulService.create(req.body ?? {}, req.actor);
+
+      await audit.record(req, {
+        action: "create",
+        resource: "newSoul",
+        resourceId: data._id,
+        actor: req.actor,
+      });
+
+      sendCreated(res, { data });
+    })
+  );
+
+  adminNewSouls.get(
+    "/:id",
+    asyncHandler(async (req, res) => {
+      const data = await newSoulService.getById(req.params.id, req.actor);
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  adminNewSouls.patch(
+    "/:id/soa",
+    asyncHandler(async (req, res) => {
+      const data = await newSoulService.updateSoa(
+        req.params.id,
+        req.body ?? {},
+        req.actor
+      );
+
+      await audit.record(req, {
+        action: "update",
+        resource: "newSoul",
+        resourceId: req.params.id,
+        actor: req.actor,
+      });
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  adminNewSouls.post(
+    "/:id/transmit",
+    asyncHandler(async (req, res) => {
+      const data = await newSoulService.transmit(req.params.id, req.actor);
+
+      await audit.record(req, {
+        action: "update",
+        resource: "newSoul",
+        resourceId: req.params.id,
+        actor: req.actor,
+      });
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  adminNewSouls.post(
+    "/:id/acknowledge",
+    asyncHandler(async (req, res) => {
+      const data = await newSoulService.acknowledge(req.params.id, req.actor);
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  adminNewSouls.patch(
+    "/:id/cana",
+    asyncHandler(async (req, res) => {
+      const data = await newSoulService.updateCana(
+        req.params.id,
+        req.body ?? {},
+        req.actor
+      );
+
+      await audit.record(req, {
+        action: "update",
+        resource: "newSoul",
+        resourceId: req.params.id,
+        actor: req.actor,
+      });
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  adminNewSouls.post(
+    "/:id/status",
+    asyncHandler(async (req, res) => {
+      const data = await newSoulService.updateStatus(
+        req.params.id,
+        req.body?.status,
+        req.actor,
+        req.body?.note
+      );
+
+      await audit.record(req, {
+        action: "update",
+        resource: "newSoul",
+        resourceId: req.params.id,
+        actor: req.actor,
+      });
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  adminNewSouls.post(
+    "/:id/close",
+    asyncHandler(async (req, res) => {
+      const data = await newSoulService.close(req.params.id, req.actor);
+
+      await audit.record(req, {
+        action: "update",
+        resource: "newSoul",
+        resourceId: req.params.id,
+        actor: req.actor,
+      });
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  api.use("/admin/new-souls", adminNewSouls);
 
   return api;
 };

@@ -1,3 +1,8 @@
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+import PDFDocument from "pdfkit";
+
 import Member from "../models/Member.js";
 import PresenceLogin from "../models/PresenceLogin.js";
 import Attendance from "../models/Attendance.js";
@@ -9,6 +14,11 @@ import {
   signPresenceSessionToken,
   PRESENCE_AGENT_ROLES,
 } from "../middlewares/presenceAuth.js";
+
+const LOGO_PATH = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../assets/logo-cava.png"
+);
 
 // Connexion, scan et recherche du badgeage des présences. Voir
 // docs/superpowers/specs/2026-08-04-badgeage-presences-design.md.
@@ -213,6 +223,68 @@ export const markVisitor = async ({ firstName, lastName, phone }, presenceAgent,
     alreadyRecorded: false,
     recordedAt: attendance.recordedAt,
   };
+};
+
+// Visiteurs enregistrés pour LE service en cours (un seul QR) —
+// utilisé par l'écran de scan lui-même pour afficher la liste à
+// l'agent (export PDF, démarrage d'un dossier SOA) : uniquement
+// nom/prénom, jamais le téléphone ni l'identité de l'agent qui a
+// badgé, non pertinents pour cet usage.
+export const listVisitors = async (securityQr) => {
+  const records = await Attendance.find({ securityQr, kind: "visitor" })
+    .sort({ recordedAt: -1 })
+    .lean();
+
+  return records.map((record) => ({
+    id: String(record._id),
+    firstName: record.visitor?.firstName,
+    lastName: record.visitor?.lastName,
+    recordedAt: record.recordedAt,
+  }));
+};
+
+// Liste imprimable des visiteurs d'un service — VOLONTAIREMENT réduite
+// au nom et prénom (voir décision produit) : ce document est destiné à
+// être partagé/affiché, pas à circuler avec des coordonnées
+// personnelles.
+export const buildVisitorsPdf = async (securityQr) => {
+  const visitors = await listVisitors(securityQr._id);
+
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: "A4", margin: 40 });
+    const chunks = [];
+
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+
+    doc.image(LOGO_PATH, { width: 56, align: "center" });
+    doc.moveDown(0.4);
+
+    doc
+      .fontSize(15)
+      .fillColor("#0d5b3e")
+      .text("Centre Apostolique Vie et Abondance", { align: "center" });
+
+    doc
+      .fontSize(11)
+      .fillColor("#1f2a25")
+      .text(`Visiteurs — ${securityQr.label}`, { align: "center" })
+      .moveDown(0.8);
+
+    if (visitors.length === 0) {
+      doc.fontSize(10).text("Aucun visiteur enregistré pour ce service.", { align: "center" });
+    } else {
+      visitors.forEach((visitor, index) => {
+        doc
+          .fontSize(11)
+          .fillColor("#1f2a25")
+          .text(`${index + 1}. ${visitor.lastName} ${visitor.firstName}`);
+      });
+    }
+
+    doc.end();
+  });
 };
 
 // Secours « carte oubliée » : nom, prénom, matricule ou téléphone.

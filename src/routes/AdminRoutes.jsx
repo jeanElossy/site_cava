@@ -15,6 +15,8 @@ import PresencesAdmin from "../pages/admin/PresencesAdmin";
 import TestimonialsAdmin from "../pages/admin/TestimonialsAdmin";
 import SubscribersAdmin from "../pages/admin/SubscribersAdmin";
 import SettingsAdmin from "../pages/admin/SettingsAdmin";
+import NewSoulsListPage from "../pages/admin/NewSouls/NewSoulsListPage";
+import NewSoulDetailPage from "../pages/admin/NewSouls/NewSoulDetailPage";
 
 /**
  * Toutes les routes de l'espace d'administration.
@@ -80,6 +82,16 @@ const AdminRoutes = () => {
         <Route
           path="presences"
           element={<PresencesAdmin />}
+        />
+
+        <Route
+          path="nouvelles-ames"
+          element={<NewSoulsListPage />}
+        />
+
+        <Route
+          path="nouvelles-ames/:id"
+          element={<NewSoulDetailPage />}
         />
 
         <Route

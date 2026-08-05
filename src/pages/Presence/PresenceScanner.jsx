@@ -24,6 +24,7 @@ import { extractQrParam } from "../../utils/qrLink";
 
 import QrCameraScanner from "../../components/presence/QrCameraScanner/QrCameraScanner";
 import ThemeToggle from "../../components/presence/ThemeToggle/ThemeToggle";
+import VisitorsPanel from "../../components/presence/VisitorsPanel";
 
 // Rôles habilités au badgeage (voir presenceAuth.js#PRESENCE_AGENT_ROLES
 // côté serveur) — libellés propres à cet écran plutôt qu'un import
@@ -117,7 +118,6 @@ const PresenceScanner = ({
   const [visitorFormOpen, setVisitorFormOpen] = useState(false);
   const [visitorFirstName, setVisitorFirstName] = useState("");
   const [visitorLastName, setVisitorLastName] = useState("");
-  const [visitorPhone, setVisitorPhone] = useState("");
 
   const resumeTimerRef = useRef(null);
   const toastTimerRef = useRef(null);
@@ -282,7 +282,6 @@ const PresenceScanner = ({
         {
           firstName: visitorFirstName.trim(),
           lastName: visitorLastName.trim(),
-          phone: visitorPhone.trim() || undefined,
         },
         sessionToken
       );
@@ -291,7 +290,6 @@ const PresenceScanner = ({
       setVisitorFormOpen(false);
       setVisitorFirstName("");
       setVisitorLastName("");
-      setVisitorPhone("");
     } catch (error) {
       applyError(error);
     } finally {
@@ -463,13 +461,6 @@ const PresenceScanner = ({
                   placeholder="Nom du visiteur"
                   disabled={busy}
                 />
-                <input
-                  type="tel"
-                  value={visitorPhone}
-                  onChange={(event) => setVisitorPhone(event.target.value)}
-                  placeholder="Téléphone (facultatif)"
-                  disabled={busy}
-                />
 
                 <div className="presence-scanner__visitor-form-actions">
                   <button
@@ -478,7 +469,6 @@ const PresenceScanner = ({
                       setVisitorFormOpen(false);
                       setVisitorFirstName("");
                       setVisitorLastName("");
-                      setVisitorPhone("");
                     }}
                     disabled={busy}
                   >
@@ -497,6 +487,8 @@ const PresenceScanner = ({
         </section>
 
       </div>
+
+      <VisitorsPanel sessionToken={sessionToken} />
 
       {/* Bulle flottante : apparaît par-dessus l'écran du scanner à
           chaque badgeage puis se referme toute seule (voir
@@ -576,7 +568,6 @@ const PresenceScanner = ({
               </strong>
 
               <span>Visiteur</span>
-              <p>{lastResult.visitor.phone || "Téléphone non renseigné"}</p>
             </div>
           </div>
         )}

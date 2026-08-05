@@ -355,6 +355,32 @@ describe("presence.service (intégration MongoDB)", () => {
     });
   });
 
+  describe("listVisitors / buildVisitorsPdf", () => {
+    it("liste uniquement nom/prénom, jamais le téléphone ni l'agent", async () => {
+      await presenceService.markVisitor(
+        { firstName: "Awa", lastName: "Traoré", phone: "0700000099" },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+
+      const visitors = await presenceService.listVisitors(qr._id);
+
+      assert.equal(visitors.length, 1);
+      assert.equal(visitors[0].firstName, "Awa");
+      assert.equal(visitors[0].lastName, "Traoré");
+      assert.equal("phone" in visitors[0], false);
+      assert.equal("agent" in visitors[0], false);
+    });
+
+    it("génère un PDF valide, même sans aucun visiteur", async () => {
+      const buffer = await presenceService.buildVisitorsPdf(qr);
+
+      assert.ok(Buffer.isBuffer(buffer));
+      assert.equal(buffer.subarray(0, 5).toString("latin1"), "%PDF-");
+    });
+  });
+
   describe("countAttendance", () => {
     it("répartit le total entre membres et visiteurs", async () => {
       await presenceService.scan(

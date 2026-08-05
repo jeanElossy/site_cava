@@ -39,9 +39,20 @@ const userSchema = new mongoose.Schema(
       select: false,
     },
 
+    // "soa"/"cana"/"coordinateur_bergeries"/"pasteur" : rôles du module
+    // Nouvelles Âmes (voir NewSoul.js). Chaque rôle a un jeu de
+    // permissions fixe, appliqué via requireRole et le filtrage dans
+    // newSoul.service.js — pas de permissions par ressource ici.
     role: {
       type: String,
-      enum: ["admin", "editor"],
+      enum: [
+        "admin",
+        "editor",
+        "soa",
+        "cana",
+        "coordinateur_bergeries",
+        "pasteur",
+      ],
       default: "editor",
     },
 
