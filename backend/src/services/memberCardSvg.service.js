@@ -94,10 +94,25 @@ const FONTS_DIR = path.join(
 );
 const POPPINS_REGULAR_PATH = path.join(FONTS_DIR, "Poppins-Regular.ttf");
 const POPPINS_BOLD_PATH = path.join(FONTS_DIR, "Poppins-Bold.ttf");
+// Certains textes du gabarit (ex. la légende sous le cachet/signature
+// du pasteur) utilisaient une police oblique dans l'original
+// (AcuminConcept-WideLightItalic) : sans un fichier Poppins Italic
+// enregistré, resvg simule un italique synthétique (cisaillement),
+// visuellement différent des vrais glyphes italiques dessinés à la
+// main. Les quatre fichiers partagent le même nom de famille interne
+// ("Poppins") : resvg les sélectionne automatiquement selon
+// `font-weight`/`font-style`, sans changement à `rewriteFontFamilies`.
+const POPPINS_ITALIC_PATH = path.join(FONTS_DIR, "Poppins-Italic.ttf");
+const POPPINS_BOLD_ITALIC_PATH = path.join(FONTS_DIR, "Poppins-BoldItalic.ttf");
 const CARD_FONT_FAMILY = "Poppins";
 
 const RESVG_FONT_OPTIONS = {
-  fontFiles: [POPPINS_REGULAR_PATH, POPPINS_BOLD_PATH],
+  fontFiles: [
+    POPPINS_REGULAR_PATH,
+    POPPINS_BOLD_PATH,
+    POPPINS_ITALIC_PATH,
+    POPPINS_BOLD_ITALIC_PATH,
+  ],
   loadSystemFonts: false,
   defaultFontFamily: CARD_FONT_FAMILY,
 };
