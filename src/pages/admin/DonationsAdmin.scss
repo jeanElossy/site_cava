@@ -318,24 +318,19 @@
 
     white-space: nowrap;
 
-    &--paid {
+    &--valide {
       background: $admin-success-bg;
       color: $admin-success;
     }
 
-    &--pending {
+    &--en_attente {
       background: $admin-warning-bg;
       color: $admin-warning;
     }
 
-    &--failed {
+    &--rejete {
       background: $admin-danger-bg;
       color: $admin-danger;
-    }
-
-    &--suspect {
-      background: $admin-warning-bg;
-      color: $admin-warning;
     }
   }
 
@@ -373,6 +368,231 @@
       outline: 2px solid $primary;
       outline-offset: 2px;
       border-radius: 3px;
+    }
+  }
+
+  &__transaction {
+    display: block;
+
+    color: $admin-ink;
+
+    font-size: 0.82rem;
+    font-weight: 600;
+
+    white-space: nowrap;
+  }
+
+  &__proof-link {
+    display: inline-block;
+
+    margin-top: 4px;
+
+    color: $primary;
+
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
+      border-radius: 3px;
+    }
+  }
+
+  &__actions-col {
+    text-align: right;
+  }
+
+  &__review-open {
+    padding: 8px 16px;
+
+    border: 1px solid $admin-border-strong;
+    border-radius: 9px;
+
+    background: $admin-surface;
+
+    color: $primary;
+
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: $transition;
+
+    &:hover {
+      border-color: $primary;
+
+      background: $admin-accent-soft;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
+    }
+  }
+
+  // ---- Fenêtre de vérification (validation / rejet) --------------
+
+  &__review {
+    display: grid;
+    gap: 18px;
+  }
+
+  &__review-details {
+    display: grid;
+    gap: 10px;
+
+    margin: 0;
+    padding: 16px 18px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius;
+
+    background: $admin-surface-muted;
+
+    div {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    dt {
+      color: $admin-ink-faint;
+
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    dd {
+      margin: 0;
+
+      color: $admin-ink;
+
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-align: right;
+    }
+  }
+
+  &__review-image {
+    width: 100%;
+    max-height: 320px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius;
+
+    object-fit: contain;
+
+    background: $admin-surface-muted;
+  }
+
+  &__review-note {
+    display: grid;
+    gap: 7px;
+
+    color: $admin-ink;
+
+    font-size: 0.85rem;
+    font-weight: 600;
+
+    textarea {
+      width: 100%;
+
+      padding: 11px 13px;
+
+      border: 1px solid $admin-border-strong;
+      border-radius: 9px;
+
+      background: $admin-surface;
+
+      color: $admin-ink;
+
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 400;
+
+      resize: vertical;
+
+      &:focus {
+        border-color: $primary;
+
+        outline: none;
+
+        box-shadow: 0 0 0 3px $admin-accent-soft;
+      }
+    }
+  }
+
+  &__review-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+
+    button {
+      padding: 11px 22px;
+
+      border: 1px solid $admin-border-strong;
+      border-radius: 9px;
+
+      background: $admin-surface;
+
+      color: $admin-danger;
+
+      font-family: inherit;
+      font-size: 0.86rem;
+      font-weight: 700;
+
+      cursor: pointer;
+
+      transition: $transition;
+
+      &:hover:not([disabled]) {
+        border-color: $admin-danger;
+
+        background: $admin-danger-bg;
+      }
+
+      &:focus-visible {
+        outline: 2px solid $admin-danger;
+        outline-offset: 2px;
+      }
+
+      &[disabled] {
+        opacity: 0.6;
+
+        cursor: not-allowed;
+      }
+    }
+
+    // Sélecteur combiné (au lieu de `!important`) pour l'emporter sur
+    // la règle générique `button` ci-dessus, dont la spécificité
+    // (classe + élément) dépasse celle d'une seule classe.
+    .admin-donations__review-validate {
+      border-color: transparent;
+
+      background: $primary;
+
+      color: #fff;
+
+      &:hover:not([disabled]) {
+        border-color: transparent;
+
+        background: $primary-dark;
+      }
+
+      &:focus-visible {
+        outline: 2px solid $primary-dark;
+      }
     }
   }
 

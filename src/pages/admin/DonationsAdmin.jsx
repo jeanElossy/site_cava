@@ -15,6 +15,7 @@ import {
   adminDonations,
   adminDonationQrCode,
   adminDonationSummary,
+  reviewDonation,
 } from "../../services/donations";
 
 import { apiBaseUrl } from "../../services/http";
@@ -33,23 +34,12 @@ import {
 import "./DonationsAdmin.scss";
 
 const STATUS = {
-  paid: { label: "Encaissé", icon: Check },
-  pending: { label: "En attente", icon: Clock },
-  failed: { label: "Échoué", icon: X },
-  suspect: { label: "À vérifier", icon: AlertTriangle },
+  valide: { label: "Validé", icon: Check },
+  en_attente: { label: "En attente", icon: Clock },
+  rejete: { label: "Rejeté", icon: X },
 };
 
-const TYPE_LABELS = {
-  dime: "Dîme",
-  offrande: "Offrande",
-  don: "Don",
-  grace: "Action de grâce",
-  projet: "Projet spécial",
-};
-
-// Les montants sont en francs CFA, sans décimales.
-const money = (value) =>
-  `${Number(value ?? 0).toLocaleString("fr-FR")} F`;
+const money = (value) => `${Number(value ?? 0).toLocaleString("fr-FR")} F`;
 
 const formatDate = (value) => {
   if (!value) return "—";
@@ -67,17 +57,8 @@ const formatDate = (value) => {
   });
 };
 
-// Nom affiché. Un don anonyme n'a rien à afficher : le modèle n'a même
-// pas enregistré d'identité, ce n'est pas qu'un masquage à l'écran.
-const donorName = (donation) => {
-  if (donation.donor?.anonymous) return "Anonyme";
-
-  const full = [donation.donor?.firstName, donation.donor?.lastName]
-    .filter(Boolean)
-    .join(" ");
-
-  return full || "—";
-};
+const donorName = (donation) =>
+  [donation.donor?.firstName, donation.donor?.lastName].filter(Boolean).join(" ") || "—";
 
 const DonationsAdmin = () => {
   usePageMeta({
@@ -88,6 +69,7 @@ const DonationsAdmin = () => {
 
   const [status, setStatus] = useState("");
   const [qrOpen, setQrOpen] = useState(false);
+  const [reviewing, setReviewing] = useState(null);
 
   const load = useCallback(
     () => adminDonations(status ? { status, limit: 100 } : { limit: 100 }),
@@ -97,10 +79,15 @@ const DonationsAdmin = () => {
   const { data, loading, error, reload } = useAsyncData(load);
 
   const summaryLoad = useCallback(() => adminDonationSummary(), []);
-
-  const { data: summary } = useAsyncData(summaryLoad);
+  const { data: summary, reload: reloadSummary } = useAsyncData(summaryLoad);
 
   const donations = data?.items ?? [];
+
+  const afterReview = () => {
+    setReviewing(null);
+    reload();
+    reloadSummary();
+  };
 
   return (
     <div className="admin-donations">
@@ -108,106 +95,58 @@ const DonationsAdmin = () => {
       <header className="admin-donations__header">
         <div>
           <h1>Dons</h1>
-
           <p>
-            Contributions reçues en ligne. Les montants encaissés sont
-            confirmés auprès du prestataire de paiement.
+            Contributions déclarées par Mobile Money. Chaque don reste « en attente » jusqu'à
+            vérification manuelle du numéro de transaction contre le relevé de l'église.
           </p>
         </div>
 
         <div className="admin-donations__header-actions">
-          <button
-            type="button"
-            className="admin-donations__qr-open"
-            onClick={() => setQrOpen(true)}
-          >
+          <button type="button" className="admin-donations__qr-open" onClick={() => setQrOpen(true)}>
             <QrCode size={17} aria-hidden="true" />
             QR code de don
           </button>
 
-          <button
-            type="button"
-            className="admin-donations__refresh"
-            onClick={reload}
-          >
+          <button type="button" className="admin-donations__refresh" onClick={reload}>
             <RefreshCw size={17} aria-hidden="true" />
             Actualiser
           </button>
         </div>
       </header>
 
-      {/* Le paiement n'est pas configuré : le dire ici, sinon la page
-          reste vide sans qu'on comprenne pourquoi. */}
-      {summary && summary.enabled === false && (
-        <div className="admin-donations__warning" role="status">
-          <AlertTriangle size={19} aria-hidden="true" />
-
-          <p>
-            Les dons en ligne ne sont pas activés : les clés CinetPay
-            sont absentes de la configuration du serveur. Le tunnel de
-            don affiche un message d'attente aux visiteurs.
-          </p>
-        </div>
-      )}
-
       {summary && (
         <ul className="admin-donations__stats">
           <li className="admin-donations__stat admin-donations__stat--paid">
-            <span className="admin-donations__stat-label">Encaissé ce mois</span>
+            <span className="admin-donations__stat-label">Validé ce mois</span>
             <strong>{money(summary.thisMonth?.total)}</strong>
-            <span className="admin-donations__stat-hint">
-              {summary.thisMonth?.count ?? 0} don(s)
-            </span>
+            <span className="admin-donations__stat-hint">{summary.thisMonth?.count ?? 0} don(s)</span>
           </li>
 
           <li className="admin-donations__stat">
-            <span className="admin-donations__stat-label">Total encaissé</span>
-            <strong>{money(summary.paid?.total)}</strong>
-            <span className="admin-donations__stat-hint">
-              {summary.paid?.count ?? 0} don(s)
-            </span>
+            <span className="admin-donations__stat-label">Total validé</span>
+            <strong>{money(summary.valide?.total)}</strong>
+            <span className="admin-donations__stat-hint">{summary.valide?.count ?? 0} don(s)</span>
           </li>
 
-          <li className="admin-donations__stat">
+          <li className="admin-donations__stat admin-donations__stat--suspect">
             <span className="admin-donations__stat-label">En attente</span>
-            <strong>{summary.pending?.count ?? 0}</strong>
-            <span className="admin-donations__stat-hint">
-              {summary.stale > 0
-                ? `dont ${summary.stale} de plus de 24 h`
-                : "guichets en cours"}
-            </span>
+            <strong>{summary.en_attente?.count ?? 0}</strong>
+            <span className="admin-donations__stat-hint">à vérifier</span>
           </li>
-
-          {/* Mis en avant seulement s'il y en a : une case « 0 à
-              vérifier » en permanence finit par ne plus être lue. */}
-          {summary.suspect?.count > 0 && (
-            <li className="admin-donations__stat admin-donations__stat--suspect">
-              <span className="admin-donations__stat-label">À vérifier</span>
-              <strong>{summary.suspect.count}</strong>
-              <span className="admin-donations__stat-hint">
-                écart de montant constaté
-              </span>
-            </li>
-          )}
         </ul>
       )}
 
       <div className="admin-donations__filters" role="group" aria-label="Filtrer par statut">
         {[
           ["", "Tous"],
-          ["paid", "Encaissés"],
-          ["pending", "En attente"],
-          ["suspect", "À vérifier"],
-          ["failed", "Échoués"],
+          ["en_attente", "En attente"],
+          ["valide", "Validés"],
+          ["rejete", "Rejetés"],
         ].map(([value, label]) => (
           <button
             key={value || "all"}
             type="button"
-            className={
-              status === value
-                ? "admin-donations__filter admin-donations__filter--active"
-                : "admin-donations__filter"
-            }
+            className={status === value ? "admin-donations__filter admin-donations__filter--active" : "admin-donations__filter"}
             aria-pressed={status === value}
             onClick={() => setStatus(value)}
           >
@@ -217,16 +156,11 @@ const DonationsAdmin = () => {
       </div>
 
       {loading && <AdminLoading />}
-
       {error && <AdminError message={error} onRetry={reload} />}
 
       {!loading && !error && donations.length === 0 && (
         <AdminEmpty
-          message={
-            status
-              ? "Aucun don ne correspond à ce filtre."
-              : "Aucun don pour l'instant. Les contributions reçues via le site apparaîtront ici."
-          }
+          message={status ? "Aucun don ne correspond à ce filtre." : "Aucun don pour l'instant."}
         />
       )}
 
@@ -240,59 +174,55 @@ const DonationsAdmin = () => {
                 <th scope="col">Type</th>
                 <th scope="col">Moyen</th>
                 <th scope="col">Montant</th>
+                <th scope="col">Preuve</th>
                 <th scope="col">Statut</th>
+                <th scope="col" className="admin-donations__actions-col">Actions</th>
               </tr>
             </thead>
 
             <tbody>
               {donations.map((donation) => {
-                const meta = STATUS[donation.status] ?? STATUS.pending;
+                const meta = STATUS[donation.status] ?? STATUS.en_attente;
                 const Icon = meta.icon;
 
                 return (
-                  <tr key={donation.reference}>
+                  <tr key={donation.id}>
                     <td>
-                      <span className="admin-donations__date">
-                        {formatDate(donation.createdAt)}
-                      </span>
-
-                      <span className="admin-donations__reference">
-                        {donation.reference}
-                      </span>
+                      <span className="admin-donations__date">{formatDate(donation.createdAt)}</span>
+                      <span className="admin-donations__reference">{donation.reference}</span>
                     </td>
 
                     <td>{donorName(donation)}</td>
+                    <td>{donation.donationType?.name ?? "—"}</td>
+                    <td className="admin-donations__method">{donation.paymentMethod?.name ?? "—"}</td>
+                    <td className="admin-donations__amount">{money(donation.amount)}</td>
 
                     <td>
-                      {TYPE_LABELS[donation.contributionType] ??
-                        donation.contributionType}
-                    </td>
+                      <span className="admin-donations__transaction">{donation.proof?.transactionId}</span>
 
-                    <td className="admin-donations__method">
-                      {donation.paidWith || donation.paymentMethod}
-                    </td>
-
-                    <td className="admin-donations__amount">
-                      {money(donation.amount)}
+                      {donation.proof?.imageUrl && (
+                        <a
+                          href={donation.proof.imageUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="admin-donations__proof-link"
+                        >
+                          Voir l'image
+                        </a>
+                      )}
                     </td>
 
                     <td>
-                      <span
-                        className={`admin-donations__status admin-donations__status--${donation.status}`}
-                      >
+                      <span className={`admin-donations__status admin-donations__status--${donation.status}`}>
                         <Icon size={13} aria-hidden="true" />
                         {meta.label}
                       </span>
 
-                      {donation.failureReason && (
-                        <span className="admin-donations__reason">
-                          {donation.failureReason}
-                        </span>
+                      {donation.adminNote && (
+                        <span className="admin-donations__reason">{donation.adminNote}</span>
                       )}
 
-                      {/* Permet de retrouver et renvoyer le reçu d'un
-                          donateur qui l'aurait perdu. */}
-                      {donation.status === "paid" && (
+                      {donation.status === "valide" && (
                         <a
                           className="admin-donations__receipt"
                           href={`${apiBaseUrl}/api/donations/${donation.reference}/recu`}
@@ -304,6 +234,18 @@ const DonationsAdmin = () => {
                         </a>
                       )}
                     </td>
+
+                    <td>
+                      {donation.status === "en_attente" && (
+                        <button
+                          type="button"
+                          className="admin-donations__review-open"
+                          onClick={() => setReviewing(donation)}
+                        >
+                          Vérifier
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
@@ -312,8 +254,10 @@ const DonationsAdmin = () => {
         </div>
       )}
 
-      {qrOpen && (
-        <QrCodeModal onClose={() => setQrOpen(false)} />
+      {qrOpen && <QrCodeModal onClose={() => setQrOpen(false)} />}
+
+      {reviewing && (
+        <ReviewModal donation={reviewing} onClose={() => setReviewing(null)} onDone={afterReview} />
       )}
 
     </div>
@@ -321,41 +265,94 @@ const DonationsAdmin = () => {
 };
 
 // ------------------------------------------------------------------
-// QR CODE À PROJETER
+// VALIDATION / REJET
 // ------------------------------------------------------------------
-// Le code est généré par le serveur, pas ici : l'URL encodée est ainsi
-// toujours construite à partir de l'adresse réelle du site. Un QR code
-// affiché sur l'écran d'un culte et menant à une page morte ne se
-// remarquerait qu'une fois trop tard.
-const QrCodeModal = ({ onClose }) => {
-  const [type, setType] = useState("don");
-  const [amount, setAmount] = useState("");
+const ReviewModal = ({ donation, onClose, onDone }) => {
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
 
-  // Les valeurs SAISIES et les valeurs GÉNÉRÉES sont deux états
-  // distincts.
-  //
-  // `useAsyncData` relance son chargement dès que la fonction passée
-  // change d'identité. Faire dépendre celle-ci directement de `amount`
-  // enverrait une requête à chaque frappe — soit huit appels réseau
-  // pour taper « 10000 ». Le QR n'est donc régénéré que sur demande
-  // explicite.
-  const [params, setParams] = useState({ type: "don" });
+  const decide = async (decision) => {
+    setBusy(decision);
+    setError("");
 
-  const load = useCallback(
-    () => adminDonationQrCode(params),
-    [params]
+    try {
+      await reviewDonation(donation.id, decision, note);
+      onDone();
+    } catch (caught) {
+      setError(caught.message ?? "La décision n'a pas pu être enregistrée.");
+      setBusy("");
+    }
+  };
+
+  return (
+    <AdminModal
+      title="Vérifier ce don"
+      description="Comparez le numéro de transaction avec le relevé Mobile Money de l'église avant de décider."
+      onClose={onClose}
+    >
+      <div className="admin-donations__review">
+        <dl className="admin-donations__review-details">
+          <div><dt>Donateur</dt><dd>{donorName(donation)}</dd></div>
+          <div><dt>Téléphone</dt><dd>{donation.donor?.phone}</dd></div>
+          <div><dt>Montant</dt><dd>{money(donation.amount)}</dd></div>
+          <div><dt>Moyen</dt><dd>{donation.paymentMethod?.name}</dd></div>
+          <div><dt>Transaction</dt><dd>{donation.proof?.transactionId}</dd></div>
+        </dl>
+
+        {donation.proof?.imageUrl && (
+          <img
+            src={donation.proof.imageUrl}
+            alt="Preuve envoyée par le donateur"
+            className="admin-donations__review-image"
+          />
+        )}
+
+        <label className="admin-donations__review-note">
+          <span>Remarque (obligatoire en cas de rejet)</span>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={3}
+            placeholder="Ex. : numéro introuvable sur le relevé du jour"
+          />
+        </label>
+
+        {error && <p className="step-error" role="alert">{error}</p>}
+
+        <div className="admin-donations__review-actions">
+          <button type="button" onClick={() => decide("rejete")} disabled={busy !== ""}>
+            {busy === "rejete" ? "Rejet en cours…" : "Rejeter"}
+          </button>
+
+          <button
+            type="button"
+            className="admin-donations__review-validate"
+            onClick={() => decide("valide")}
+            disabled={busy !== ""}
+          >
+            {busy === "valide" ? "Validation en cours…" : "Valider"}
+          </button>
+        </div>
+      </div>
+    </AdminModal>
   );
+};
 
+// ------------------------------------------------------------------
+// QR CODE À PROJETER (inchangé dans son fonctionnement)
+// ------------------------------------------------------------------
+const QrCodeModal = ({ onClose }) => {
+  const [type, setType] = useState("");
+  const [amount, setAmount] = useState("");
+  const [params, setParams] = useState({});
+
+  const load = useCallback(() => adminDonationQrCode(params), [params]);
   const { data, loading, error, reload } = useAsyncData(load);
 
   const generate = () => {
-    const next = {
-      ...(type ? { type } : {}),
-      ...(amount ? { amount } : {}),
-    };
+    const next = { ...(type ? { type } : {}), ...(amount ? { amount } : {}) };
 
-    // Paramètres inchangés : l'identité de `load` ne bougerait pas et
-    // rien ne se passerait. On force alors le rechargement.
     if (JSON.stringify(next) === JSON.stringify(params)) reload();
     else setParams(next);
   };
@@ -363,49 +360,35 @@ const QrCodeModal = ({ onClose }) => {
   return (
     <AdminModal
       title="QR code de don"
-      description="À projeter pendant un direct ou un culte : en le scannant, le visiteur arrive directement sur la page de don, avec le type de contribution déjà sélectionné."
+      description="À projeter pendant un direct ou un culte : en le scannant, le visiteur arrive directement sur la page de don."
       onClose={onClose}
     >
       <div className="admin-donations__qr">
-
         <div className="admin-donations__qr-fields">
           <label>
-            <span>Type de contribution</span>
-
-            <select
+            <span>Type de don (identifiant)</span>
+            <input
+              type="text"
               value={type}
-              onChange={(event) => setType(event.target.value)}
-            >
-              <option value="">Aucun (choix libre)</option>
-
-              {Object.entries(TYPE_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
+              placeholder="Laisser vide pour un choix libre"
+              onChange={(e) => setType(e.target.value)}
+            />
           </label>
 
           <label>
             <span>Montant suggéré (facultatif)</span>
-
             <input
               type="number"
               min="200"
               step="500"
               value={amount}
               placeholder="Laisser vide pour un montant libre"
-              onChange={(event) => setAmount(event.target.value)}
+              onChange={(e) => setAmount(e.target.value)}
             />
           </label>
         </div>
 
-        <button
-          type="button"
-          className="admin-donations__qr-generate"
-          onClick={generate}
-          disabled={loading}
-        >
+        <button type="button" className="admin-donations__qr-generate" onClick={generate} disabled={loading}>
           <RefreshCw size={16} aria-hidden="true" />
           {loading ? "Génération…" : "Générer le QR code"}
         </button>
@@ -415,7 +398,6 @@ const QrCodeModal = ({ onClose }) => {
         {data?.warning && (
           <div className="admin-donations__qr-warning" role="alert">
             <AlertTriangle size={18} aria-hidden="true" />
-
             <p>{data.warning}</p>
           </div>
         )}
@@ -423,20 +405,13 @@ const QrCodeModal = ({ onClose }) => {
         {data && (
           <div className="admin-donations__qr-result">
             <img src={data.dataUrl} alt="QR code menant à la page de don" />
-
             <p className="admin-donations__qr-url">{data.url}</p>
-
-            <a
-              className="admin-donations__qr-download"
-              href={data.dataUrl}
-              download="cava-qr-don.png"
-            >
+            <a className="admin-donations__qr-download" href={data.dataUrl} download="cava-qr-don.png">
               <Download size={16} aria-hidden="true" />
               Télécharger l'image
             </a>
           </div>
         )}
-
       </div>
     </AdminModal>
   );
