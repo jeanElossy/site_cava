@@ -251,12 +251,19 @@
       grid-template-columns: 1fr;
     }
 
+    // `&__button` NON scopé ici (juste `.admin-form__button { width: 100% }`
+    // global) cassait tout réemploi de ce bouton hors d'un `.admin-form`
+    // réel (ex. StepperShell : Précédent/Suivant se retrouvaient tous
+    // deux forcés à 100% dans une rangée flex sans passage à la ligne,
+    // débordant l'écran) — piège classe générique documenté en tête de
+    // NewSouls.scss. Restreint désormais aux boutons réellement dans
+    // `.admin-form__actions`.
     &__actions {
       flex-direction: column-reverse;
-    }
 
-    &__button {
-      width: 100%;
+      .admin-form__button {
+        width: 100%;
+      }
     }
   }
 
