@@ -11,6 +11,8 @@ import Message from "../models/Message.js";
 import Flock from "../models/Flock.js";
 import Church from "../models/Church.js";
 import User from "../models/User.js";
+import PaymentMethod from "../models/PaymentMethod.js";
+import DonationType from "../models/DonationType.js";
 
 import { createCrudService } from "../services/crud.service.js";
 import * as authService from "../services/auth.service.js";
@@ -156,6 +158,22 @@ const testimonials = createCrudService(Testimonial, {
   defaultSort: { placement: 1, order: 1, createdAt: -1 },
   publicSort: { order: 1, createdAt: -1 },
   searchableFields: ["name", "quote", "role"],
+});
+
+const paymentMethods = createCrudService(PaymentMethod, {
+  label: "Moyen de paiement",
+  defaultSort: { order: 1, name: 1 },
+  publicFilter: { active: true },
+  publicSort: { order: 1, name: 1 },
+  searchableFields: ["name"],
+});
+
+const donationTypes = createCrudService(DonationType, {
+  label: "Type de don",
+  defaultSort: { order: 1, name: 1 },
+  publicFilter: { active: true },
+  publicSort: { order: 1, name: 1 },
+  searchableFields: ["name"],
 });
 
 // ---------------------------------------------------------------
@@ -413,6 +431,20 @@ export const buildRoutes = () => {
     publicBySlug: false,
     publicFilters: ["placement"],
     auditResource: "testimonial",
+  });
+
+  mount("payment-methods", paymentMethods, {
+    publicBySlug: false,
+    writeRoles: ["admin"],
+    readRoles: ["admin", "editor"],
+    auditResource: "paymentMethod",
+  });
+
+  mount("donation-types", donationTypes, {
+    publicBySlug: false,
+    writeRoles: ["admin"],
+    readRoles: ["admin", "editor"],
+    auditResource: "donationType",
   });
 
   // ---- Inscriptions et mises à jour de fiche membre -------------
@@ -1087,34 +1119,23 @@ export const buildRoutes = () => {
 
   // ---- Dons -----------------------------------------------------
   //
-  // Trois routes publiques, aux natures très différentes :
-  //
-  //   POST /donations          le visiteur déclare son intention
-  //   POST /donations/webhook  le prestataire notifie le résultat
-  //   GET  /donations/:ref     la page de retour interroge l'état
-  //
-  // Aucune ne permet de marquer un don payé : c'est toujours un appel
-  // SORTANT vers le prestataire qui tranche (voir donation.service.js).
+  // Aucune route ne confirme automatiquement un paiement : le
+  // donateur déclare un numéro de transaction Mobile Money, un
+  // administrateur vérifie manuellement contre le relevé de l'église
+  // avant de valider (voir donation.service.js#review). Voir la spec
+  // pour le détail du parcours et des risques de fraude :
+  // docs/superpowers/specs/2026-08-06-dons-mobile-money-design.md
 
-  // Chiffres publics de la collecte.
-  //
-  // Agrégats uniquement : jamais un donateur, jamais un montant
-  // individuel. La page Don affichait jusqu'ici des chiffres inventés
-  // (« 18,5 M collectés », « 1 284 contributeurs ») qui se
-  // contredisaient d'une section à l'autre. Mieux vaut le vrai total,
-  // même modeste, ou rien.
-  api.get(
-    "/donations/stats",
-    asyncHandler(async (_req, res) =>
-      sendSuccess(res, { data: await donationService.publicStats() })
-    )
-  );
-
-  api.get(
-    "/donations/config",
+  // Signature Cloudinary pour la preuve de paiement — même principe
+  // que POST /uploads/signature (dossier "members") plus haut : le
+  // dossier est imposé côté serveur, jamais lu depuis le corps de la
+  // requête.
+  api.post(
+    "/donations/proof-signature",
+    publicUploadLimiter,
     asyncHandler(async (_req, res) =>
       sendSuccess(res, {
-        data: { enabled: donationService.paymentEnabled() },
+        data: uploadService.createSignature({ folder: "donations" }),
       })
     )
   );
@@ -1128,35 +1149,15 @@ export const buildRoutes = () => {
       });
 
       sendCreated(res, {
-        message: "Redirection vers le paiement.",
+        message: "Votre don est enregistré, en attente de vérification.",
         data,
       });
     })
   );
 
-  api.post(
-    "/donations/webhook",
-    asyncHandler(async (req, res) => {
-      await donationService.handleNotification(
-        req.body ?? {},
-        req.get("x-token")
-      );
-
-      // Le prestataire attend un 200 pour cesser de rejouer sa
-      // notification. Le corps n'est pas lu par lui.
-      sendSuccess(res, { message: "Notification traitée." });
-    })
-  );
-
-  // Reçu au format PDF.
-  //
-  // Déclarée AVANT `/donations/:reference` : Express retient la
-  // première route qui correspond, et `:reference` n'avalerait pas
-  // « /recu » ici, mais l'ordre reste la garantie la plus lisible.
-  //
-  // Pas d'authentification : la référence tient lieu de clé. Elle fait
-  // 64 bits d'aléa, elle n'est pas devinable, et c'est le seul moyen
-  // qu'un donateur non identifié récupère son propre reçu.
+  // Reçu au format PDF — uniquement pour un don validé (voir
+  // donation.service.js#receiptFor). Pas d'authentification : la
+  // référence, 64 bits d'aléa, tient lieu de clé.
   api.get(
     "/donations/:reference/recu",
     asyncHandler(async (req, res) => {
@@ -1168,32 +1169,13 @@ export const buildRoutes = () => {
 
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Length", pdf.length);
-
-      // `inline` : le navigateur affiche le reçu au lieu de le
-      // télécharger à l'aveugle. Le bouton de téléchargement du site
-      // force l'enregistrement de son côté.
       res.setHeader(
         "Content-Disposition",
         `inline; filename="${receiptService.receiptFilename(donation)}"`
       );
-
-      // Un reçu ne change jamais : inutile de le régénérer à chaque
-      // consultation. Privé, car il porte le nom du donateur et ne
-      // doit pas être mis en cache par un intermédiaire partagé.
       res.setHeader("Cache-Control", "private, max-age=3600");
 
       res.end(pdf);
-    })
-  );
-
-  api.get(
-    "/donations/:reference",
-    asyncHandler(async (req, res) => {
-      const data = await donationService.publicStatus(
-        String(req.params.reference).slice(0, 40)
-      );
-
-      sendSuccess(res, { data });
     })
   );
 
@@ -1209,43 +1191,56 @@ export const buildRoutes = () => {
     asyncHandler(async (req, res) => {
       const data = await donationService.adminList({
         status: req.query.status,
+        donationType: req.query.donationType,
+        paymentMethod: req.query.paymentMethod,
         limit: req.query.limit,
         page: req.query.page,
       });
 
-      sendSuccess(res, { data: data.items, meta: {
-        total: data.total,
-        page: data.page,
-        perPage: data.perPage,
-      } });
+      sendSuccess(res, {
+        data: data.items,
+        meta: { total: data.total, page: data.page, perPage: data.perPage },
+      });
     })
   );
 
   adminDonations.get(
     "/summary",
     asyncHandler(async (_req, res) => {
-      const [summary, stale] = await Promise.all([
-        donationService.adminSummary(),
-        donationService.staleCount(),
-      ]);
+      const summary = await donationService.adminSummary();
+
+      sendSuccess(res, { data: summary });
+    })
+  );
+
+  // Validation/rejet : réservé à `admin` strictement, un `editor` ne
+  // décide jamais d'une écriture financière (voir la spec).
+  adminDonations.post(
+    "/:id/review",
+    requireRole("admin"),
+    asyncHandler(async (req, res) => {
+      const data = await donationService.review(
+        req.params.id,
+        { decision: req.body?.decision, note: req.body?.note },
+        req.user
+      );
+
+      await audit.record(req, {
+        action: "update",
+        resource: "donation",
+        resourceId: req.params.id,
+      });
 
       sendSuccess(res, {
-        data: {
-          ...summary,
-          stale,
-          enabled: donationService.paymentEnabled(),
-        },
+        message:
+          data.status === "valide" ? "Don validé." : "Don rejeté.",
+        data,
       });
     })
   );
 
-  // QR code à projeter pendant un direct.
-  //
-  // Généré côté serveur plutôt que dans le navigateur : le lien encodé
-  // est ainsi toujours construit à partir de PUBLIC_SITE_URL, sans
-  // qu'un copier-coller approximatif puisse produire un QR code menant
-  // à une adresse morte — affiché sur un écran de culte, l'erreur ne se
-  // verrait qu'une fois trop tard.
+  // QR code à projeter pendant un direct — conservé tel quel,
+  // indépendant du prestataire de paiement.
   adminDonations.get(
     "/qrcode",
     asyncHandler(async (req, res) => {
@@ -1272,13 +1267,6 @@ export const buildRoutes = () => {
         color: { dark: "#0d5b3e", light: "#ffffff" },
       });
 
-      // Seconde barrière, en plus de la validation au démarrage.
-      //
-      // Un QR code menant à une adresse locale est parfaitement lisible
-      // et parfaitement inutile : le téléphone d'un fidèle n'atteindra
-      // jamais le `localhost` du serveur. Comme il est destiné à être
-      // projeté devant une assemblée, l'erreur doit se voir AVANT, pas
-      // pendant.
       const unreachable = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)/.test(
         url
       );
