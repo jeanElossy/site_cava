@@ -1,124 +1,52 @@
-// Données et libellés du tunnel de contribution.
+// src/components/donate/ContributionForm/data.js
 //
-// Extraits du composant pour qu'il ne porte plus que l'orchestration.
-// Quand le backend existera, `projects` et `paymentMethods` viendront
-// probablement de l'API : ce fichier sera alors le seul à changer.
+// Types de don et moyens de paiement viennent désormais de l'API
+// (voir services/donations.js) — ce fichier ne porte plus que les
+// montants suggérés, les libellés d'étapes et la validation.
 
-import OrangeMoneyLogo from "../../../assets/images/orange-money.png";
-import MTNMoneyLogo from "../../../assets/images/mtn-money.jpg";
-import MoovMoneyLogo from "../../../assets/images/moov-money.png";
-import WaveLogo from "../../../assets/images/wave.jpg";
-import VisaMastercardLogo from "../../../assets/images/visa.png";
+export const amounts = [5000, 10000, 20000, 50000, 100000];
 
-export const amounts = [
-  5000,
-  10000,
-  20000,
-  50000,
-  100000,
-];
-
-export const projects = [
-  {
-    value: "general",
-    label: "🏠 Œuvre Générale",
-  },
-  {
-    value: "evangelisation",
-    label: "🌍 Évangélisation",
-  },
-  {
-    value: "social",
-    label: "🤝 Action Sociale",
-  },
-  {
-    value: "formation",
-    label: "📖 Formation Biblique",
-  },
-  {
-    value: "media",
-    label: "🎤 Média & Streaming",
-  },
-  {
-    value: "construction",
-    label: "🏗 Construction",
-  },
-];
-
-export const paymentMethods = [
-  {
-    value: "orange",
-    label: "Orange Money",
-    logo: OrangeMoneyLogo,
-  },
-  {
-    value: "mtn",
-    label: "MTN Money",
-    logo: MTNMoneyLogo,
-  },
-  {
-    value: "moov",
-    label: "Moov Money",
-    logo: MoovMoneyLogo,
-  },
-  {
-    value: "wave",
-    label: "Wave",
-    logo: WaveLogo,
-  },
-  {
-    value: "card",
-    label: "Visa / Mastercard",
-    logo: VisaMastercardLogo,
-  },
-];
-
-// Le parcours est découpé en 3 étapes plutôt qu'un formulaire d'un seul
-// tenant : chaque étape reste courte sur mobile, et l'intégration future
-// d'un prestataire de paiement se branche naturellement sur la dernière.
+// Chaque étape correspond à une étape réelle de la démarche du
+// donateur (identité → moyen → paiement → preuve), pas à une
+// numérotation arbitraire — voir la section « Design visuel » de la
+// spec.
 export const steps = [
-  "Montant",
-  "Informations",
+  "Vos informations",
+  "Moyen de paiement",
   "Paiement",
+  "Preuve",
 ];
 
-// Le contexte ne stocke que l'identifiant du type ("grace", "dime"…).
-// Le résumé doit afficher le libellé lisible, pas l'identifiant brut.
-const contributionTypeLabels = {
-  dime: "Dîme",
-  offrande: "Offrande",
-  don: "Don",
-  grace: "Action de grâce",
-  projet: "Projet spécial",
-};
-
-export const contributionTypeLabel = (value) =>
-  contributionTypeLabels[value] ?? value;
-
-export const projectLabel = (value) =>
-  projects.find((p) => p.value === value)?.label ??
-  value;
-
-export const paymentLabel = (value) =>
-  paymentMethods.find((p) => p.value === value)
-    ?.label ?? value;
-
-// Validation par étape. Isolée ici pour être lisible et, plus tard,
-// testable sans monter le composant.
 export const validateStep = (step, state) => {
   if (step === 0) {
+    if (!state.donor.firstName.trim()) {
+      return "Merci d'indiquer votre prénom.";
+    }
+
+    if (!state.donor.lastName.trim()) {
+      return "Merci d'indiquer votre nom.";
+    }
+
+    if (!state.donor.phone.trim()) {
+      return "Merci d'indiquer un numéro de téléphone.";
+    }
+
+    if (!state.donationType.id) {
+      return "Merci de choisir un type de don.";
+    }
+
     if (!state.amount || state.amount <= 0) {
       return "Merci d'indiquer un montant supérieur à zéro.";
     }
   }
 
-  if (step === 1 && !state.donor.anonymous) {
-    if (!state.donor.firstName.trim()) {
-      return "Merci d'indiquer votre prénom, ou de cocher « Contribution anonyme ».";
-    }
+  if (step === 1 && !state.paymentMethod.id) {
+    return "Merci de choisir un moyen de paiement.";
+  }
 
-    if (!state.donor.phone.trim()) {
-      return "Merci d'indiquer un téléphone pour confirmer votre contribution.";
+  if (step === 3) {
+    if (!state.proof.transactionId.trim()) {
+      return "Merci de saisir le numéro de transaction reçu par SMS après votre paiement.";
     }
   }
 
