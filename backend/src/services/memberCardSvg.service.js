@@ -233,9 +233,12 @@ const ROLE_LABELS = {
 };
 
 const injectRectoFields = async (document, member) => {
+  // Nom-Prénom, comme le libellé du gabarit recto.svg (voir
+  // CommunityAdmin.jsx#memberColumns, aligné sur ce même ordre) — pas
+  // l'ordre inverse utilisé un temps ici.
   const fullName = [
-    toTitleCase(member.firstName ?? ""),
     member.lastName ? member.lastName.toUpperCase() : "",
+    toTitleCase(member.firstName ?? ""),
   ]
     .filter(Boolean)
     .join(" ");
