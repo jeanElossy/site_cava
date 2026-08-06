@@ -1,56 +1,46 @@
 import { createContext } from "react";
 
 // Séparé de ContributionContext.jsx et useContribution.js : aucun des
-// deux ne doit exporter autre chose qu'un composant (respectivement
-// `ContributionProvider` et `useContribution`), sous peine de
-// désactiver le Fast Refresh de Vite sur tout le fichier (règle ESLint
-// react-refresh/only-export-components).
+// deux ne doit exporter autre chose qu'un composant, sous peine de
+// désactiver le Fast Refresh de Vite sur tout le fichier (règle
+// ESLint react-refresh/only-export-components).
 export const ContributionContext = createContext();
 
 export const initialState = {
-  contributionType: "don",
-
-  recurring: false,
-
   amount: 10000,
 
-  project: "general",
+  // `{ id: "", name: "" }` tant que la liste n'a pas encore répondu
+  // (voir StepIdentity) — un id vide bloque la validation de l'étape,
+  // pas de valeur par défaut arbitraire comme dans l'ancien tunnel.
+  donationType: { id: "", name: "" },
 
-  paymentMethod: "orange",
+  paymentMethod: { id: "", name: "", image: "" },
 
   donor: {
     firstName: "",
     lastName: "",
     phone: "",
     email: "",
-    anonymous: false,
+  },
+
+  proof: {
+    transactionId: "",
+    imageUrl: "",
   },
 };
 
 export function contributionReducer(state, action) {
   switch (action.type) {
-    case "SET_TYPE":
-      return {
-        ...state,
-        contributionType: action.payload,
-      };
-
-    case "SET_RECURRING":
-      return {
-        ...state,
-        recurring: action.payload,
-      };
-
     case "SET_AMOUNT":
       return {
         ...state,
         amount: Number(action.payload),
       };
 
-    case "SET_PROJECT":
+    case "SET_DONATION_TYPE":
       return {
         ...state,
-        project: action.payload,
+        donationType: action.payload,
       };
 
     case "SET_PAYMENT_METHOD":
@@ -65,6 +55,24 @@ export function contributionReducer(state, action) {
         donor: {
           ...state.donor,
           ...action.payload,
+        },
+      };
+
+    case "SET_TRANSACTION_ID":
+      return {
+        ...state,
+        proof: {
+          ...state.proof,
+          transactionId: action.payload,
+        },
+      };
+
+    case "SET_PROOF_IMAGE":
+      return {
+        ...state,
+        proof: {
+          ...state.proof,
+          imageUrl: action.payload,
         },
       };
 
