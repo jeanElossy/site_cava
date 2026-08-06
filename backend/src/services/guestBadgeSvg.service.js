@@ -39,12 +39,19 @@ const GENDERS = [
 ];
 const BADGES_PER_GENDER = 5;
 
-// Échelle plus basse que RASTER_SCALE (carte de membre imprimée seule,
-// nécessite un rendu net) : le PDF des badges assemble 10 gabarits
-// d'un coup, un rendu net à l'impression n'exige pas une résolution
-// aussi élevée — vise un fichier téléchargeable/partageable en
-// quelques secondes plutôt que 50-60s / ~77 Mo.
-const BADGE_RASTER_SCALE = 3;
+// Le gabarit fait 327.6 x 442.34 (unités = points, 1/72 pouce) : à
+// cette échelle, 5 équivaut à 360 DPI (5 x 72), au-dessus du seuil
+// standard de 300 DPI pour une impression nette. La régression de
+// qualité constatée (texte/logo flous, voir capture d'écran) venait
+// surtout de la RÉENCODAGE EN JPEG ci-dessous (perte visible sur du
+// texte à bords nets, contrairement à une photo) — corrigé en gardant
+// le PNG jusque dans le PDF final (voir `buildGuestBadgesPdf`) — mais
+// l'échelle d'origine (3, ~216 DPI) restait aussi un peu juste : 5 est
+// le compromis retenu entre netteté et poids/temps de génération
+// (~4 Mo et quelques secondes par badge, dix fois plus léger que
+// l'échelle 8 utilisée pour la carte de membre, un objet imprimé
+// séparément et bien plus rarement).
+const BADGE_RASTER_SCALE = 5;
 
 // Même format que les liens de mise à jour de fiche membre
 // (memberCardSvg.service.js#buildQrDataUri) — reconnu par le même
@@ -113,6 +120,13 @@ export const buildGuestBadgeJpeg = async (genderCode, index) => {
 // Les 10 badges (5 homme + 5 femme), un par page, prêts à imprimer et
 // découper — chaque page a le format physique de son propre gabarit
 // (homme.svg et femme.svg n'ont pas exactement le même viewBox).
+//
+// PNG directement dans le PDF, jamais reconverti en JPEG (même
+// principe que memberCardSvg.service.js#buildMemberCardPdf) : ces
+// badges sont du texte/aplats de couleur à bords nets, exactement le
+// type de contenu que la compression JPEG dégrade le plus visiblement
+// (flou/artefacts en bordure de lettre) — sans bénéfice de poids
+// notable ici vu qu'aucune photo n'entre dans un badge invité.
 export const buildGuestBadgesPdf = async () => {
   const pages = [];
 
@@ -120,10 +134,9 @@ export const buildGuestBadgesPdf = async () => {
     for (let index = 1; index <= BADGES_PER_GENDER; index += 1) {
       const png = await buildBadgePng(genderDef, index);
       const image = await loadImage(png);
-      const jpeg = await pngToJpeg(png);
 
       pages.push({
-        jpeg,
+        png,
         width: image.width / BADGE_RASTER_SCALE,
         height: image.height / BADGE_RASTER_SCALE,
       });
@@ -140,7 +153,7 @@ export const buildGuestBadgesPdf = async () => {
 
     for (const page of pages) {
       doc.addPage({ size: [page.width, page.height], margin: 0 });
-      doc.image(page.jpeg, 0, 0, { width: page.width, height: page.height });
+      doc.image(page.png, 0, 0, { width: page.width, height: page.height });
     }
 
     doc.end();
