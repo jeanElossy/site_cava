@@ -18,6 +18,7 @@ import LegalNotice from "../pages/LegalNotice/LegalNotice";
 import PrivacyPolicy from "../pages/PrivacyPolicy/PrivacyPolicy";
 import Unsubscribe from "../pages/Unsubscribe/Unsubscribe";
 import NotFound from "../pages/NotFound/NotFound";
+import "./AdminFallback.scss";
 
 // INTERRUPTEUR DE DÉPLOIEMENT
 //
@@ -56,16 +57,18 @@ const Presence = ADMIN_ENABLED
   : null;
 
 const AdminFallback = () => (
-  <p
-    style={{
-      padding: "80px 20px",
-      textAlign: "center",
-      color: "#6a736e",
-    }}
+  <div
+    className="admin-route-fallback"
     role="status"
+    aria-live="polite"
   >
-    Chargement de l&apos;espace d&apos;administration…
-  </p>
+    <span
+      className="admin-route-fallback__spinner"
+      aria-hidden="true"
+    />
+
+    <p>Chargement de l&apos;espace d&apos;administration…</p>
+  </div>
 );
 
 const AppRoutes = () => {
