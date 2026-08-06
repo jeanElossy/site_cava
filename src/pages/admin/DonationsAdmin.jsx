@@ -294,7 +294,7 @@ const ReviewModal = ({ donation, onClose, onDone }) => {
       <div className="admin-donations__review">
         <dl className="admin-donations__review-details">
           <div><dt>Donateur</dt><dd>{donorName(donation)}</dd></div>
-          <div><dt>Téléphone</dt><dd>{donation.donor?.phone}</dd></div>
+          <div><dt>Téléphone</dt><dd>{donation.donor?.phone ?? "—"}</dd></div>
           <div><dt>Montant</dt><dd>{money(donation.amount)}</dd></div>
           <div><dt>Moyen</dt><dd>{donation.paymentMethod?.name}</dd></div>
           <div><dt>Transaction</dt><dd>{donation.proof?.transactionId}</dd></div>
@@ -318,10 +318,14 @@ const ReviewModal = ({ donation, onClose, onDone }) => {
           />
         </label>
 
-        {error && <p className="step-error" role="alert">{error}</p>}
+        {error && <p className="admin-donations__review-error" role="alert">{error}</p>}
 
         <div className="admin-donations__review-actions">
-          <button type="button" onClick={() => decide("rejete")} disabled={busy !== ""}>
+          <button
+            type="button"
+            onClick={() => decide("rejete")}
+            disabled={busy !== "" || !note.trim()}
+          >
             {busy === "rejete" ? "Rejet en cours…" : "Rejeter"}
           </button>
 

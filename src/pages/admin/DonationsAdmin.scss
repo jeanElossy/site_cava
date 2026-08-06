@@ -533,6 +533,26 @@
     }
   }
 
+  // Même langage visuel que `&__qr-warning` ci-dessous : fond et
+  // bordure teintés danger, plutôt qu'un texte nu — une décision
+  // refusée par le serveur (409 déjà décidé, 400 remarque manquante,
+  // panne réseau) doit se voir au premier coup d'œil.
+  &__review-error {
+    margin: 0;
+    padding: 12px 15px;
+
+    border: 1px solid $admin-border-strong;
+    border-radius: 10px;
+
+    background: $admin-danger-bg;
+
+    color: $admin-danger;
+
+    font-size: 0.83rem;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
   &__review-actions {
     display: flex;
     justify-content: flex-end;
