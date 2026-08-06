@@ -90,30 +90,6 @@ const money = (value) => {
   return `${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} F CFA`;
 };
 
-const TYPE_LABELS = {
-  dime: "Dîme",
-  offrande: "Offrande",
-  don: "Don",
-  grace: "Action de grâce",
-  projet: "Projet spécial",
-};
-
-const PROJECT_LABELS = {
-  general: "Œuvre générale",
-  evangelisation: "Évangélisation",
-  social: "Action sociale",
-  formation: "Formation biblique",
-  media: "Média & streaming",
-  construction: "Construction",
-};
-
-const METHOD_LABELS = {
-  orange: "Orange Money",
-  mtn: "MTN Money",
-  moov: "Moov Money",
-  wave: "Wave",
-  card: "Carte bancaire",
-};
 
 // Coordonnées de l'église. Lues dans les paramètres, avec repli : un
 // reçu sans en-tête serait inexploitable, et l'absence d'un réglage ne
@@ -133,8 +109,6 @@ const churchIdentity = async () => {
 };
 
 const donorLine = (donation) => {
-  if (donation.donor?.anonymous) return "Donateur anonyme";
-
   const full = [donation.donor?.firstName, donation.donor?.lastName]
     .filter(Boolean)
     .join(" ");
@@ -151,7 +125,7 @@ const donorLine = (donation) => {
 export const buildReceipt = async (donation) => {
   const church = await churchIdentity();
 
-  const verifyUrl = `${env.PUBLIC_SITE_URL}/donate/retour?ref=${donation.reference}`;
+  const verifyUrl = `${env.PUBLIC_API_URL}/api/donations/${donation.reference}/recu`;
 
   const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
     width: 300,
@@ -282,21 +256,9 @@ export const buildReceipt = async (donation) => {
   // ---- Détail -----------------------------------------------------
   const rows = [
     ["Reçu de", donorLine(donation)],
-    ["Date du versement", formatDate(donation.paidAt ?? donation.createdAt)],
-    [
-      "Nature",
-      TYPE_LABELS[donation.contributionType] ?? donation.contributionType,
-    ],
-    [
-      "Affectation",
-      PROJECT_LABELS[donation.project] ?? donation.project,
-    ],
-    [
-      "Moyen de paiement",
-      donation.paidWith ||
-        METHOD_LABELS[donation.paymentMethod] ||
-        donation.paymentMethod,
-    ],
+    ["Date du don", formatDate(donation.createdAt)],
+    ["Nature", donation.donationType?.name ?? "—"],
+    ["Moyen de paiement", donation.paymentMethod?.name ?? "—"],
   ];
 
   let y = boxTop + 128;
