@@ -238,8 +238,14 @@ const buildVisibilityFilter = (actor) => {
   throw ApiError.forbidden("Votre rôle ne permet pas de consulter ces dossiers.");
 };
 
-export const list = async (actor, { status, search } = {}) => {
+export const list = async (actor, { status, search, archived } = {}) => {
   const filter = buildVisibilityFilter(actor);
+
+  // Par défaut, jamais les dossiers archivés (mis en pause) : ils ne
+  // doivent pas encombrer la file de travail active. `archived=true`
+  // bascule sur la vue dédiée où l'agent va les reprendre.
+  filter.archivedAt =
+    archived === true || archived === "true" ? { $exists: true } : { $exists: false };
 
   if (status && NEW_SOUL_STATUSES.includes(status)) {
     // Un statut explicite ne doit jamais ÉLARGIR la visibilité : sans
@@ -295,6 +301,11 @@ const UPCOMING_FOLLOW_UP_WINDOW_DAYS = 14;
 // dossiers déjà transmis.
 export const getStats = async (actor) => {
   const filter = buildVisibilityFilter(actor);
+
+  // Un dossier archivé (mis en pause) ne doit pas peser sur les
+  // compteurs "à traiter" du tableau de bord/badge — voir `list` pour
+  // le même principe côté liste.
+  filter.archivedAt = { $exists: false };
 
   const items = await NewSoul.find(filter)
     .select(
@@ -663,6 +674,75 @@ export const close = async (id, actor) => {
   newSoul.cana.closedByCoordinateur = newSoul.cana.coordinateurBergeries;
 
   applyStatus(newSoul, "cloture", actor);
+
+  await newSoul.save();
+
+  return attachDisplayNames(stripConfidentialFields(newSoul, actor));
+};
+
+// Même règle "qui a le droit d'écrire sur ce dossier en ce moment" que
+// `updateSoa`/`updateCana` — l'archivage n'est jamais qu'une mise en
+// pause, pas une action distincte avec ses propres permissions : celui
+// qui peut modifier le dossier peut aussi le mettre de côté puis le
+// reprendre.
+const assertCanArchive = (newSoul, actor) => {
+  if (isAdminUser(actor)) return;
+
+  if (SOA_EDITABLE_STATUSES.includes(newSoul.status)) {
+    if (!isSoaCapable(actor)) {
+      throw ApiError.forbidden("Votre rôle ne permet pas d'archiver ce dossier.");
+    }
+
+    if (isPresenceAgent(actor) && !ownsRecord(newSoul, actor)) {
+      throw ApiError.forbidden("Vous ne pouvez archiver que vos propres dossiers.");
+    }
+
+    return;
+  }
+
+  if (!isCanaSideUser(actor) || actor.role === "pasteur") {
+    throw ApiError.forbidden("Votre rôle ne permet pas d'archiver ce dossier.");
+  }
+};
+
+export const archive = async (id, actor, reason) => {
+  const newSoul = await NewSoul.findById(id);
+
+  if (!newSoul) throw ApiError.notFound("Dossier introuvable.");
+
+  assertCanArchive(newSoul, actor);
+
+  if (newSoul.status === "cloture") {
+    throw ApiError.conflict("Ce dossier est déjà clôturé, inutile de l'archiver.");
+  }
+
+  if (newSoul.archivedAt) {
+    throw ApiError.conflict("Ce dossier est déjà archivé.");
+  }
+
+  newSoul.archivedAt = new Date();
+  newSoul.archivedBy = toAuthor(actor);
+  newSoul.archiveReason = reason ? String(reason).trim().slice(0, 300) : undefined;
+
+  await newSoul.save();
+
+  return attachDisplayNames(stripConfidentialFields(newSoul, actor));
+};
+
+export const unarchive = async (id, actor) => {
+  const newSoul = await NewSoul.findById(id);
+
+  if (!newSoul) throw ApiError.notFound("Dossier introuvable.");
+
+  assertCanArchive(newSoul, actor);
+
+  if (!newSoul.archivedAt) {
+    throw ApiError.conflict("Ce dossier n'est pas archivé.");
+  }
+
+  newSoul.archivedAt = undefined;
+  newSoul.archivedBy = undefined;
+  newSoul.archiveReason = undefined;
 
   await newSoul.save();
 

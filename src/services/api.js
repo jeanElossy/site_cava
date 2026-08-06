@@ -373,6 +373,19 @@ export const newSouls = {
       method: "POST",
       auth: true,
     }),
+
+  archive: async (id, reason) =>
+    request(`/api/admin/new-souls/${id}/archive`, {
+      method: "POST",
+      body: { reason },
+      auth: true,
+    }),
+
+  unarchive: async (id) =>
+    request(`/api/admin/new-souls/${id}/unarchive`, {
+      method: "POST",
+      auth: true,
+    }),
 };
 
 // Comptes agents (SOA, CANA, coordonnateur des bergeries, pasteur) —

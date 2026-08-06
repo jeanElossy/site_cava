@@ -634,6 +634,114 @@
     font-weight: 700;
     color: $admin-accent-strong;
   }
+
+  &__header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+
+    .admin-form__button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+
+      width: auto;
+      padding: 8px 14px;
+
+      font-size: 0.82rem;
+    }
+  }
+
+  &__archive-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+
+    margin-bottom: 16px;
+    padding: 12px 14px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius;
+
+    background: $admin-surface-muted;
+
+    input[type="text"] {
+      flex: 1;
+      min-width: 220px;
+
+      padding: 9px 12px;
+
+      border: 1px solid $admin-border;
+      border-radius: $admin-radius-sm;
+
+      background: $admin-surface;
+      color: $admin-ink;
+
+      font-family: inherit;
+      font-size: 0.85rem;
+    }
+
+    .admin-form__button {
+      width: auto;
+      padding: 9px 16px;
+      font-size: 0.82rem;
+    }
+  }
+
+  &__archived-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    margin-bottom: 16px;
+    padding: 10px 14px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius;
+
+    background: $admin-surface-muted;
+    color: $admin-ink-soft;
+
+    font-size: 0.85rem;
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+
+  &__archived-tag {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+
+    border-radius: 999px;
+
+    background: $admin-surface-muted;
+    color: $admin-ink-soft;
+
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-style: italic;
+  }
+
+  &__archived-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    color: $admin-ink-soft;
+    font-size: 0.85rem;
+
+    cursor: pointer;
+    user-select: none;
+
+    input {
+      width: 15px;
+      height: 15px;
+    }
+  }
 }
 
 // Onglets "Vue d'ensemble" / "Tous les dossiers" + contenu du

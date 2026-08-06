@@ -515,6 +515,17 @@ const newSoulSchema = new mongoose.Schema(
     },
     statusHistory: { type: [statusHistoryEntrySchema], default: [] },
 
+    // Mise en pause volontaire par l'agent (SOA ou CANA) quand la
+    // personne suivie n'a pas encore décidé d'abandonner mais ne
+    // répond plus pour l'instant — jamais un statut du parcours : le
+    // dossier garde son `status` exact (donc reprendre = juste effacer
+    // `archivedAt`, sans deviner où il en était) et reste modifiable
+    // par qui pouvait déjà le modifier avant l'archivage (voir
+    // newSoul.service.js#assertCanArchive).
+    archivedAt: Date,
+    archivedBy: authorSchema,
+    archiveReason: { type: String, trim: true, maxlength: 300 },
+
     soa: { type: soaSchema, default: () => ({}) },
     cana: { type: canaSchema, default: () => ({}) },
 

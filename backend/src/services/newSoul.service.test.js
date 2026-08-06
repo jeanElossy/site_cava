@@ -412,6 +412,120 @@ describe("newSoul.service (intégration MongoDB)", () => {
     await assert.rejects(() => newSoulService.close(newSoul._id, asUser(canaUser)), /déjà clôturé/);
   });
 
+  it("archive puis reprend un dossier côté SOA, sans changer son statut", async () => {
+    const newSoul = await create(
+      { firstName: "Jean", lastName: "Kouassi", phone: "0700000000" },
+      asUser(soaUser)
+    );
+
+    const archived = await newSoulService.archive(newSoul._id, asUser(soaUser), "Ne répond plus");
+
+    assert.ok(archived.archivedAt);
+    assert.equal(archived.archivedBy.name, soaUser.name);
+    assert.equal(archived.archiveReason, "Ne répond plus");
+    // Le statut du parcours ne bouge pas : archiver n'est qu'une pause.
+    assert.equal(archived.status, "enregistre_soa");
+
+    const resumed = await newSoulService.unarchive(newSoul._id, asUser(soaUser));
+
+    assert.equal(resumed.archivedAt, undefined);
+    assert.equal(resumed.archivedBy, undefined);
+    assert.equal(resumed.status, "enregistre_soa");
+  });
+
+  it("archive puis reprend un dossier côté CANA, réservé à qui pourrait déjà le modifier", async () => {
+    const newSoul = await create(
+      { firstName: "Jean", lastName: "Kouassi", phone: "0700000000" },
+      asUser(soaUser)
+    );
+    await newSoulService.transmit(newSoul._id, asUser(soaUser));
+
+    // Le SOA ne peut plus toucher ce dossier une fois transmis, y
+    // compris pour l'archiver.
+    await assert.rejects(
+      () => newSoulService.archive(newSoul._id, asUser(soaUser)),
+      /ne permet pas/
+    );
+
+    // Le pasteur reste en lecture seule sur le module CANA, y compris
+    // pour l'archivage.
+    await assert.rejects(
+      () => newSoulService.archive(newSoul._id, asUser(pasteurUser)),
+      /ne permet pas/
+    );
+
+    const archived = await newSoulService.archive(newSoul._id, asUser(canaUser));
+    assert.ok(archived.archivedAt);
+
+    await assert.rejects(
+      () => newSoulService.archive(newSoul._id, asUser(canaUser)),
+      /déjà archivé/
+    );
+
+    const resumed = await newSoulService.unarchive(newSoul._id, asUser(coordinateurUser));
+    assert.equal(resumed.archivedAt, undefined);
+
+    await assert.rejects(
+      () => newSoulService.unarchive(newSoul._id, asUser(coordinateurUser)),
+      /n'est pas archivé/
+    );
+  });
+
+  it("exclut un dossier archivé de la liste par défaut et des stats SOA en attente", async () => {
+    const newSoul = await create(
+      { firstName: "Jean", lastName: "Kouassi", phone: "0700000000" },
+      asUser(soaUser)
+    );
+
+    const statsWithDossier = await newSoulService.getStats(asUser(soaUser));
+
+    await newSoulService.archive(newSoul._id, asUser(soaUser));
+
+    const activeList = await newSoulService.list(asUser(soaUser));
+    assert.equal(
+      activeList.some((item) => String(item._id) === String(newSoul._id)),
+      false
+    );
+
+    const archivedList = await newSoulService.list(asUser(soaUser), { archived: true });
+    assert.equal(
+      archivedList.some((item) => String(item._id) === String(newSoul._id)),
+      true
+    );
+
+    const statsAfterArchive = await newSoulService.getStats(asUser(soaUser));
+
+    // Comparaison RELATIVE, pas une valeur absolue : la base de test
+    // est partagée entre fichiers exécutés en parallèle (voir le
+    // commentaire en tête de ce fichier) — seule la variation
+    // attribuable à CE dossier est fiable à vérifier ici.
+    assert.equal(statsAfterArchive.soaPending, statsWithDossier.soaPending - 1);
+  });
+
+  it("refuse d'archiver un dossier déjà clôturé", async () => {
+    const newSoul = await create(
+      {
+        firstName: "Jean",
+        lastName: "Kouassi",
+        phone: "0700000000",
+        gender: "homme",
+      },
+      asUser(soaUser)
+    );
+
+    await newSoulService.transmit(newSoul._id, asUser(soaUser));
+    await newSoulService.acknowledge(newSoul._id, asUser(canaUser));
+    await newSoulService.updateCana(newSoul._id, { flock: flock._id }, asUser(canaUser));
+
+    const closed = await newSoulService.close(newSoul._id, asUser(canaUser));
+    assert.equal(closed.status, "cloture");
+
+    await assert.rejects(
+      () => newSoulService.archive(newSoul._id, asUser(canaUser)),
+      /déjà clôturé/
+    );
+  });
+
   it("changement de statut : réservé au camp CANA, jamais vers un statut SOA", async () => {
     const newSoul = await create(
       { firstName: "Jean", lastName: "Kouassi", phone: "0700000000" },

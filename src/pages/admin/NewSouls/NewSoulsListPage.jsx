@@ -44,6 +44,7 @@ const NewSoulsListPage = () => {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [archived, setArchived] = useState(false);
   const [creating, setCreating] = useState(false);
 
   const load = async () => {
@@ -51,7 +52,7 @@ const NewSoulsListPage = () => {
     setError(null);
 
     try {
-      const data = await newSouls.list({ search, status });
+      const data = await newSouls.list({ search, status, archived });
       setItems(data);
     } catch (err) {
       setError(err.message ?? "Impossible de charger les dossiers.");
@@ -65,7 +66,7 @@ const NewSoulsListPage = () => {
 
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, status]);
+  }, [search, status, archived]);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -259,6 +260,15 @@ const NewSoulsListPage = () => {
               </select>
             </div>
 
+            <label className="new-soul-list__archived-toggle">
+              <input
+                type="checkbox"
+                checked={archived}
+                onChange={(event) => setArchived(event.target.checked)}
+              />
+              Dossiers archivés
+            </label>
+
             {canCreate && (
               <button
                 type="button"
@@ -301,6 +311,9 @@ const NewSoulsListPage = () => {
                     <td>{item.soa?.phone}</td>
                     <td>
                       <StatusBadge status={item.status} />
+                      {item.archivedAt && (
+                        <span className="new-soul-list__archived-tag">Archivé</span>
+                      )}
                     </td>
                     <td>
                       {item.soa?.openedAt

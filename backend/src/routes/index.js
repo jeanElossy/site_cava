@@ -1609,6 +1609,7 @@ export const buildRoutes = () => {
       const data = await newSoulService.list(req.actor, {
         status: req.query.status,
         search: req.query.search,
+        archived: req.query.archived,
       });
 
       sendSuccess(res, { data });
@@ -1742,6 +1743,38 @@ export const buildRoutes = () => {
     "/:id/close",
     asyncHandler(async (req, res) => {
       const data = await newSoulService.close(req.params.id, req.actor);
+
+      await audit.record(req, {
+        action: "update",
+        resource: "newSoul",
+        resourceId: req.params.id,
+        actor: req.actor,
+      });
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  adminNewSouls.post(
+    "/:id/archive",
+    asyncHandler(async (req, res) => {
+      const data = await newSoulService.archive(req.params.id, req.actor, req.body?.reason);
+
+      await audit.record(req, {
+        action: "update",
+        resource: "newSoul",
+        resourceId: req.params.id,
+        actor: req.actor,
+      });
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  adminNewSouls.post(
+    "/:id/unarchive",
+    asyncHandler(async (req, res) => {
+      const data = await newSoulService.unarchive(req.params.id, req.actor);
 
       await audit.record(req, {
         action: "update",

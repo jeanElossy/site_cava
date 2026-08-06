@@ -600,10 +600,13 @@ const memberColumns = [
     key: "name",
     label: "Membre",
     width: "27%",
+    // Nom-Prénom, comme le libellé de la carte de membre (voir
+    // memberCardSvg.service.js) — pas l'ordre inverse utilisé ailleurs
+    // dans ce fichier (ex. memberLabel des menus d'action).
     render: (item) => {
       const parts = [
-        item.firstName ? toTitleCase(item.firstName) : "",
         item.lastName ? item.lastName.toUpperCase() : "",
+        item.firstName ? toTitleCase(item.firstName) : "",
       ].filter(Boolean);
 
       return parts.join(" ") || "—";
