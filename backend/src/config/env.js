@@ -102,23 +102,6 @@ export const env = {
   // il reste côté serveur, jamais dans le bundle du front.
   VERCEL_DEPLOY_HOOK: read("VERCEL_DEPLOY_HOOK"),
 
-  // ---- Encaissement des dons (CinetPay) ------------------------
-  //
-  // `CINETPAY_SECRET_KEY` est la clé de vérification des notifications :
-  // elle ne quitte jamais le serveur. C'est elle qui distingue une
-  // notification authentique de n'importe quelle requête POST envoyée
-  // à la main sur notre URL de retour — sans elle, il suffirait de
-  // connaître l'adresse du webhook pour se déclarer donateur.
-  //
-  // Aucune de ces valeurs n'est préfixée `VITE_` : elles seraient
-  // sinon compilées dans le bundle et lisibles par tout visiteur.
-  CINETPAY_API_KEY: read("CINETPAY_API_KEY"),
-  CINETPAY_SITE_ID: read("CINETPAY_SITE_ID"),
-  CINETPAY_SECRET_KEY: read("CINETPAY_SECRET_KEY"),
-
-  CINETPAY_BASE_URL:
-    read("CINETPAY_BASE_URL") ?? "https://api-checkout.cinetpay.com/v2",
-
   // Voir le calcul et son explication plus haut.
   PUBLIC_SITE_URL: publicSiteUrl,
 
@@ -134,12 +117,12 @@ export const env = {
 
   // ---- Notifications push (agents SOA/CANA) ---------------------
   //
-  // Facultatif comme CinetPay ci-dessous : le serveur démarre sans,
-  // les agents n'ont simplement pas la proposition d'activer les
-  // notifications. `VAPID_PUBLIC_KEY` seule part aussi vers le front
-  // (voir routes/index.js, /api/push/vapid-public-key — une clé
-  // PUBLIQUE, son nom le dit) ; `VAPID_PRIVATE_KEY` ne quitte jamais
-  // le serveur, elle signe les envois.
+  // Facultatif : le serveur démarre sans, les agents n'ont simplement
+  // pas la proposition d'activer les notifications. `VAPID_PUBLIC_KEY`
+  // seule part aussi vers le front (voir routes/index.js,
+  // /api/push/vapid-public-key — une clé PUBLIQUE, son nom le dit) ;
+  // `VAPID_PRIVATE_KEY` ne quitte jamais le serveur, elle signe les
+  // envois.
   VAPID_PUBLIC_KEY: read("VAPID_PUBLIC_KEY"),
   VAPID_PRIVATE_KEY: read("VAPID_PRIVATE_KEY"),
   VAPID_SUBJECT: read("VAPID_SUBJECT"),
@@ -199,51 +182,7 @@ export function validateEnv({ requireSeedAdmin = false } = {}) {
     );
   }
 
-  // Encaissement des dons.
-  //
-  // Volontairement facultatif : le serveur doit démarrer sans, le temps
-  // que le compte marchand soit ouvert. En revanche une configuration
-  // À MOITIÉ renseignée est refusée — c'est le cas qui produirait des
-  // dons initiés mais jamais vérifiables, donc de l'argent encaissé
-  // sans trace exploitable.
-  const paymentKeys = [
-    "CINETPAY_API_KEY",
-    "CINETPAY_SITE_ID",
-    "CINETPAY_SECRET_KEY",
-  ];
-
-  const provided = paymentKeys.filter((key) => env[key]);
-
-  if (provided.length > 0 && provided.length < paymentKeys.length) {
-    const missing = paymentKeys.filter((key) => !env[key]);
-
-    problems.push(
-      "Configuration CinetPay incomplète. Manquant : " +
-        missing.join(", ") +
-        ". Renseignez les trois variables, ou aucune pour désactiver les dons en ligne."
-    );
-  }
-
-  if (provided.length === paymentKeys.length) {
-    if (!env.PUBLIC_API_URL) {
-      problems.push(
-        "PUBLIC_API_URL est absente alors que CinetPay est configuré. " +
-          "Sans elle, le prestataire ne sait pas où notifier le paiement et aucun don ne sera jamais confirmé."
-      );
-    } else if (env.isProduction && !env.PUBLIC_API_URL.startsWith("https://")) {
-      problems.push(
-        "PUBLIC_API_URL doit être en https en production : la notification de paiement y transite."
-      );
-    }
-
-    if (env.isProduction && !env.PUBLIC_SITE_URL.startsWith("https://")) {
-      problems.push(
-        "PUBLIC_SITE_URL doit être en https en production (URL de retour du donateur)."
-      );
-    }
-  }
-
-  // Notifications push : même principe que CinetPay ci-dessus — les
+  // Notifications push : même principe que les variables optionnelles — les
   // trois variables ensemble, ou aucune.
   const pushKeys = ["VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT"];
   const providedPushKeys = pushKeys.filter((key) => env[key]);
@@ -282,19 +221,6 @@ export function validateEnv({ requireSeedAdmin = false } = {}) {
 
   return env;
 }
-
-// Les dons en ligne sont-ils utilisables ?
-//
-// Interrogé par les routes plutôt que de laisser un appel partir vers
-// CinetPay avec des clés vides : le donateur recevrait une erreur
-// technique du prestataire au lieu d'un message clair de notre part.
-export const isPaymentConfigured = () =>
-  Boolean(
-    env.CINETPAY_API_KEY &&
-      env.CINETPAY_SITE_ID &&
-      env.CINETPAY_SECRET_KEY &&
-      env.PUBLIC_API_URL
-  );
 
 // Les notifications push sont-elles utilisables ?
 //
