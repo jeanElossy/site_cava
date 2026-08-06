@@ -35,6 +35,7 @@ import { currentUser, signOut } from "../../services/auth";
 import { STAFF_ROLES } from "../../routes/roleGroups";
 
 import usePendingSubmissionsCount from "../../hooks/usePendingSubmissionsCount";
+import useNewSoulsBadgeCount from "../../hooks/useNewSoulsBadgeCount";
 
 import ApiStatus from "../../components/admin/ApiStatus";
 
@@ -113,6 +114,7 @@ const NAV_GROUPS = [
         to: "/admin/nouvelles-ames",
         label: "Nouvelles âmes",
         icon: Heart,
+        badgeKey: "newSouls",
       },
     ],
   },
@@ -208,8 +210,12 @@ const AdminLayout = () => {
     .filter((group) => group.items.length > 0);
 
   const pendingSubmissionsCount = usePendingSubmissionsCount();
+  const newSoulsBadgeCount = useNewSoulsBadgeCount();
 
-  const badgeValues = { pendingSubmissions: pendingSubmissionsCount };
+  const badgeValues = {
+    pendingSubmissions: pendingSubmissionsCount,
+    newSouls: newSoulsBadgeCount,
+  };
 
   // Le tiroir se referme dès qu'on suit un lien : sinon, sur mobile, il
   // masque l'écran qu'on vient d'ouvrir. Géré dans le gestionnaire de

@@ -266,7 +266,9 @@ export const getStats = async (actor) => {
   const filter = buildVisibilityFilter(actor);
 
   const items = await NewSoul.find(filter)
-    .select("caseNumber status soa.firstName soa.lastName cana.monthlyFollowUps cana.closedAt")
+    .select(
+      "caseNumber status soa.firstName soa.lastName cana.monthlyFollowUps cana.closedAt cana.acknowledgedAt"
+    )
     .lean();
 
   const byStatus = Object.fromEntries(NEW_SOUL_STATUSES.map((status) => [status, 0]));
@@ -279,6 +281,11 @@ export const getStats = async (actor) => {
   let soaPending = 0;
   let canaActive = 0;
   let closedThisMonth = 0;
+  // Dossiers transmis que la CANA n'a pas encore ouverts une seule
+  // fois (voir `acknowledge` : premier appel, jamais ressaisi). Sert
+  // de repère "à traiter" pour le badge du menu, distinct de
+  // `canaActive` qui compte tout l'accompagnement en cours.
+  let awaitingAcknowledgement = 0;
   const upcomingFollowUps = [];
 
   for (const item of items) {
@@ -288,6 +295,8 @@ export const getStats = async (actor) => {
       soaPending += 1;
     } else if (item.status !== "cloture") {
       canaActive += 1;
+
+      if (!item.cana?.acknowledgedAt) awaitingAcknowledgement += 1;
     }
 
     if (item.status === "cloture" && item.cana?.closedAt >= startOfMonth) {
@@ -315,6 +324,7 @@ export const getStats = async (actor) => {
     soaPending,
     canaActive,
     closedThisMonth,
+    awaitingAcknowledgement,
     upcomingFollowUps: upcomingFollowUps.slice(0, 5),
   };
 };

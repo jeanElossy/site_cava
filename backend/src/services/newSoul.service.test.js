@@ -514,5 +514,25 @@ describe("newSoul.service (intégration MongoDB)", () => {
     assert.ok(canaStats.canaActive >= 1);
     assert.ok(canaStats.upcomingFollowUps.some((item) => String(item.newSoulId) === String(transmitted._id)));
     assert.ok(!canaStats.upcomingFollowUps.some((item) => String(item.newSoulId) === String(ownedBySoa._id)));
+
+    // `transmitted` est déjà accusé réception (ligne plus haut) : il
+    // ne doit pas compter dans "à traiter". Un second dossier,
+    // transmis mais jamais ouvert par la CANA, doit lui y figurer.
+    const notAcknowledged = await create(
+      { firstName: "Koffi", lastName: "N'Guessan", phone: "0722222222" },
+      asUser(soaUser)
+    );
+    await newSoulService.transmit(notAcknowledged._id, asUser(soaUser));
+
+    const canaStatsAfter = await newSoulService.getStats(asUser(canaUser));
+    assert.ok(canaStatsAfter.awaitingAcknowledgement >= 1);
+
+    await newSoulService.acknowledge(notAcknowledged._id, asUser(canaUser));
+
+    const canaStatsAcknowledged = await newSoulService.getStats(asUser(canaUser));
+    assert.equal(
+      canaStatsAcknowledged.awaitingAcknowledgement,
+      canaStatsAfter.awaitingAcknowledgement - 1
+    );
   });
 });
