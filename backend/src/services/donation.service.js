@@ -1,20 +1,17 @@
 import Donation from "../models/Donation.js";
+import PaymentMethod from "../models/PaymentMethod.js";
+import DonationType from "../models/DonationType.js";
 
 import { ApiError } from "../utils/ApiError.js";
-import { env, isPaymentConfigured } from "../config/env.js";
-
-import * as provider from "./payment/cinetpay.js";
+import { env } from "../config/env.js";
 
 // Logique métier des dons.
 //
-// Le fil conducteur : ce que le navigateur envoie ne sert qu'à CRÉER
-// l'intention de don. À partir de là, tout ce qui décide qu'un don est
-// payé vient d'un appel sortant vers le prestataire, jamais d'une
-// requête entrante.
-
-const ALLOWED_METHODS = ["orange", "mtn", "moov", "wave", "card"];
-
-const ALLOWED_TYPES = ["dime", "offrande", "don", "grace", "projet"];
+// Aucune confirmation automatique n'existe dans ce modèle : la seule
+// autorité sur le statut d'un don est `review()`, appelée par un
+// administrateur après vérification manuelle du relevé Mobile Money
+// de l'église. Voir la spec pour la discussion complète des risques
+// de fraude.
 
 const MIN_AMOUNT = 200;
 const MAX_AMOUNT = 10000000;
@@ -27,284 +24,95 @@ const asString = (value, max) =>
 // ------------------------------------------------------------------
 
 export const createDonation = async (input, { ip } = {}) => {
-  if (!isPaymentConfigured()) {
-    throw ApiError.badRequest(
-      "Les dons en ligne ne sont pas encore activés. Merci de nous contacter pour contribuer autrement."
-    );
-  }
-
   const amount = Number(input?.amount);
 
-  // Le montant est le champ le plus sensible du formulaire : c'est lui
-  // qui sera débité. On le valide strictement plutôt que de laisser
-  // Mongoose le faire, pour renvoyer un message utilisable dans le
-  // tunnel.
   if (!Number.isInteger(amount) || amount < MIN_AMOUNT || amount > MAX_AMOUNT) {
     throw ApiError.unprocessable("Le montant du don est invalide.", {
       amount: `Indiquez un montant entier entre ${MIN_AMOUNT} et ${MAX_AMOUNT} F CFA.`,
     });
   }
 
-  const paymentMethod = asString(input?.paymentMethod, 20);
+  const firstName = asString(input?.donor?.firstName, 60);
+  const lastName = asString(input?.donor?.lastName, 60);
+  const phone = asString(input?.donor?.phone, 30);
 
-  if (!ALLOWED_METHODS.includes(paymentMethod)) {
-    throw ApiError.unprocessable("Moyen de paiement inconnu.", {
-      paymentMethod: "Choisissez un moyen de paiement proposé.",
+  if (!firstName || !lastName || !phone) {
+    throw ApiError.unprocessable("Vos coordonnées sont incomplètes.", {
+      donor: "Prénom, nom et téléphone sont obligatoires.",
     });
   }
 
-  const contributionType = ALLOWED_TYPES.includes(input?.contributionType)
-    ? input.contributionType
-    : "don";
+  const transactionId = asString(input?.proof?.transactionId, 60);
 
-  const anonymous = input?.donor?.anonymous === true;
-
-  const donor = {
-    anonymous,
-    firstName: anonymous ? "" : asString(input?.donor?.firstName, 60),
-    lastName: anonymous ? "" : asString(input?.donor?.lastName, 60),
-    phone: anonymous ? "" : asString(input?.donor?.phone, 30),
-    email: anonymous ? "" : asString(input?.donor?.email, 160),
-  };
-
-  // Contrainte du prestataire, pas la nôtre : CinetPay refuse un
-  // paiement par carte sans identité ni téléphone. Mieux vaut le dire
-  // ici, dans la langue du donateur, que de le laisser découvrir un
-  // refus opaque sur le guichet.
-  if (paymentMethod === "card" && (anonymous || !donor.firstName || !donor.phone)) {
+  if (!transactionId) {
     throw ApiError.unprocessable(
-      "Le paiement par carte demande votre nom et votre téléphone.",
+      "Le numéro de transaction Mobile Money est obligatoire.",
       {
-        paymentMethod:
-          "Choisissez le mobile money pour donner anonymement, ou renseignez vos coordonnées.",
+        transactionId:
+          "Saisissez le numéro reçu par SMS après votre paiement.",
       }
     );
   }
 
+  // Le type et le moyen sont revalidés côté serveur — un navigateur
+  // pourrait envoyer un identifiant inactif ou inexistant, obtenu
+  // avant qu'un administrateur ne désactive l'entrée entre-temps.
+  const [type, method] = await Promise.all([
+    DonationType.findOne({ _id: input?.donationTypeId, active: true }),
+    PaymentMethod.findOne({ _id: input?.paymentMethodId, active: true }),
+  ]);
+
+  if (!type) {
+    throw ApiError.unprocessable("Type de don invalide.", {
+      donationTypeId: "Choisissez un type de don proposé.",
+    });
+  }
+
+  if (!method) {
+    throw ApiError.unprocessable("Moyen de paiement invalide.", {
+      paymentMethodId: "Choisissez un moyen de paiement proposé.",
+    });
+  }
+
   const donation = await Donation.create({
+    donor: {
+      firstName,
+      lastName,
+      phone,
+      email: asString(input?.donor?.email, 160),
+    },
     amount,
-    paymentMethod,
-    contributionType,
-    project: asString(input?.project, 60) || "general",
-    recurring: input?.recurring === true,
-    donor,
+    donationType: { ref: type._id, name: type.name },
+    paymentMethod: { ref: method._id, name: method.name },
+    proof: {
+      transactionId,
+      imageUrl: asString(input?.proof?.imageUrl, 400),
+    },
     ip,
   });
 
-  let payment;
-
-  try {
-    payment = await provider.initiatePayment(donation);
-  } catch (error) {
-    // L'intention existe en base mais n'ira nulle part : on la marque
-    // échouée tout de suite, sinon la liste de l'administration se
-    // remplirait de dons « en attente » qui ne se résoudront jamais.
-    donation.status = "failed";
-    donation.failureReason = "Initialisation refusée par le prestataire.";
-
-    await donation.save();
-
-    throw error;
-  }
-
-  if (payment.providerToken) {
-    donation.providerTransactionId = payment.providerToken;
-
-    await donation.save();
-  }
-
-  return {
-    reference: donation.reference,
-    amount: donation.amount,
-    paymentUrl: payment.paymentUrl,
-  };
+  return { reference: donation.reference, status: donation.status };
 };
 
 // ------------------------------------------------------------------
-// RÉSOLUTION DU STATUT
-// ------------------------------------------------------------------
-// Appelée par le webhook ET par la page de retour du donateur.
-//
-// Les deux chemins passent par la même fonction, et pour une bonne
-// raison : le donateur revient souvent AVANT que la notification du
-// prestataire n'arrive, et il arrive aussi qu'elle n'arrive jamais.
-// N'avoir qu'un seul chemin laisserait des dons réellement payés
-// bloqués en « en attente ».
-//
-// L'idempotence repose sur une mise à jour conditionnelle : seule la
-// première résolution d'un don « pending » écrit. Les notifications
-// répétées de CinetPay — il rejoue jusqu'à recevoir un 200 — et un
-// rafraîchissement simultané depuis la page de retour ne peuvent donc
-// pas compter le don deux fois.
-export const resolveDonation = async (reference) => {
-  const donation = await Donation.findOne({ reference });
-
-  if (!donation) {
-    throw ApiError.notFound("Don introuvable.");
-  }
-
-  // Déjà tranché : rien à revérifier.
-  if (donation.status !== "pending") return donation;
-
-  const result = await provider.verifyPayment(reference);
-
-  // L'opérateur n'a pas encore répondu. On ne conclut pas.
-  if (result.pending) return donation;
-
-  const update = result.accepted
-    ? {
-        status: "paid",
-        paidAt: new Date(),
-        paidWith: result.paidWith ?? undefined,
-        providerTransactionId:
-          result.providerTransactionId ?? donation.providerTransactionId,
-        providerPayload: result.raw,
-        confirmedAt: new Date(),
-      }
-    : {
-        status: "failed",
-        failureReason: String(result.reason ?? "Paiement refusé.").slice(0, 200),
-        providerPayload: result.raw,
-        confirmedAt: new Date(),
-      };
-
-  // Le prestataire dit « payé », mais pas du montant attendu.
-  //
-  // On refuse d'enregistrer le don comme réglé : le reçu porterait un
-  // montant que personne n'a versé. Le cas est signalé pour traitement
-  // manuel plutôt qu'écarté silencieusement.
-  if (
-    result.accepted &&
-    (result.amount !== donation.amount || result.currency !== donation.currency)
-  ) {
-    update.status = "suspect";
-    update.failureReason =
-      `Montant confirmé (${result.amount} ${result.currency}) ` +
-      `différent du montant attendu (${donation.amount} ${donation.currency}).`;
-  }
-
-  // `status: "pending"` dans le filtre : c'est la garde d'idempotence.
-  // Si un autre traitement a déjà résolu ce don, la mise à jour ne
-  // correspond à rien et n'écrit pas.
-  const updated = await Donation.findOneAndUpdate(
-    { reference, status: "pending" },
-    update,
-    { new: true }
-  );
-
-  return updated ?? (await Donation.findOne({ reference }));
-};
-
-// ------------------------------------------------------------------
-// NOTIFICATION DU PRESTATAIRE
+// ADMINISTRATION
 // ------------------------------------------------------------------
 
-export const handleNotification = async (body, token) => {
-  if (!provider.isAuthenticNotification(body, token)) {
-    // Signature absente ou fausse : la requête n'a pas été émise par
-    // le prestataire. On ne révèle pas pourquoi elle est rejetée.
-    throw ApiError.unauthorized("Notification refusée.");
-  }
-
-  const reference = provider.referenceFromNotification(body);
-
-  if (!reference) {
-    throw ApiError.badRequest("Notification incomplète.");
-  }
-
-  return resolveDonation(reference);
-};
-
-// ------------------------------------------------------------------
-// LECTURE PUBLIQUE
-// ------------------------------------------------------------------
-// Ce que la page de retour a le droit de savoir.
-//
-// Volontairement minimal : ni identité du donateur, ni réponse brute
-// du prestataire. La référence circule dans une URL, elle peut donc se
-// retrouver dans un historique de navigation ou un journal de serveur.
-export const publicStatus = async (reference) => {
-  const donation = await resolveDonation(reference);
-
-  return {
-    reference: donation.reference,
-    status: donation.status,
-    amount: donation.amount,
-    currency: donation.currency,
-    contributionType: donation.contributionType,
-    project: donation.project,
-    paidAt: donation.paidAt ?? null,
-  };
-};
-
-// ------------------------------------------------------------------
-// CHIFFRES PUBLICS DE LA COLLECTE
-// ------------------------------------------------------------------
-// Uniquement des agrégats sur les dons ENCAISSÉS. Ni identité, ni
-// montant individuel : un total ne dit rien de personne, alors qu'une
-// liste de dons trahirait qui donne et combien.
-//
-// Les dons en attente et échoués sont exclus : annoncer publiquement de
-// l'argent qui n'est pas arrivé serait faux.
-export const publicStats = async () => {
-  const [totals, projects] = await Promise.all([
-    Donation.aggregate([
-      { $match: { status: "paid" } },
-      { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } },
-    ]),
-
-    Donation.distinct("project", { status: "paid" }),
-  ]);
-
-  return {
-    collected: totals[0]?.total ?? 0,
-    contributions: totals[0]?.count ?? 0,
-    projects: projects.length,
-  };
-};
-
-// ------------------------------------------------------------------
-// STATISTIQUES POUR L'ADMINISTRATION
-// ------------------------------------------------------------------
-
-export const adminSummary = async () => {
-  const startOfMonth = new Date();
-
-  startOfMonth.setUTCDate(1);
-  startOfMonth.setUTCHours(0, 0, 0, 0);
-
-  const [totals, monthly] = await Promise.all([
-    Donation.aggregate([
-      { $group: { _id: "$status", count: { $sum: 1 }, total: { $sum: "$amount" } } },
-    ]),
-
-    Donation.aggregate([
-      { $match: { status: "paid", paidAt: { $gte: startOfMonth } } },
-      { $group: { _id: null, count: { $sum: 1 }, total: { $sum: "$amount" } } },
-    ]),
-  ]);
-
-  const byStatus = Object.fromEntries(
-    totals.map((row) => [row._id, { count: row.count, total: row.total }])
-  );
-
-  return {
-    paid: byStatus.paid ?? { count: 0, total: 0 },
-    pending: byStatus.pending ?? { count: 0, total: 0 },
-    failed: byStatus.failed ?? { count: 0, total: 0 },
-    suspect: byStatus.suspect ?? { count: 0, total: 0 },
-    thisMonth: monthly[0]
-      ? { count: monthly[0].count, total: monthly[0].total }
-      : { count: 0, total: 0 },
-  };
-};
-
-export const adminList = async ({ status, limit = 50, page = 1 } = {}) => {
+export const adminList = async ({
+  status,
+  donationType,
+  paymentMethod,
+  limit = 50,
+  page = 1,
+} = {}) => {
   const filter = {};
 
-  if (["pending", "paid", "failed", "suspect"].includes(status)) {
+  if (["en_attente", "valide", "rejete"].includes(status)) {
     filter.status = status;
   }
+
+  if (donationType) filter["donationType.ref"] = donationType;
+  if (paymentMethod) filter["paymentMethod.ref"] = paymentMethod;
 
   const perPage = Math.min(Math.max(Number(limit) || 50, 1), 100);
   const current = Math.max(Number(page) || 1, 1);
@@ -322,44 +130,99 @@ export const adminList = async ({ status, limit = 50, page = 1 } = {}) => {
   return { items, total, page: current, perPage };
 };
 
-// Nombre de dons encore en attente au-delà d'un délai raisonnable.
-//
-// Un guichet abandonné laisse un don « pending » pour toujours. Les
-// compter permet à l'administration de voir qu'il y a du ménage à
-// faire, plutôt que de laisser la liste se dégrader sans bruit.
-export const staleCount = async (hours = 24) => {
-  const before = new Date(Date.now() - hours * 3600 * 1000);
+export const adminSummary = async () => {
+  const startOfMonth = new Date();
 
-  return Donation.countDocuments({
-    status: "pending",
-    createdAt: { $lt: before },
-  });
+  startOfMonth.setUTCDate(1);
+  startOfMonth.setUTCHours(0, 0, 0, 0);
+
+  const [totals, monthly] = await Promise.all([
+    Donation.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 }, total: { $sum: "$amount" } } },
+    ]),
+
+    Donation.aggregate([
+      { $match: { status: "valide", reviewedAt: { $gte: startOfMonth } } },
+      { $group: { _id: null, count: { $sum: 1 }, total: { $sum: "$amount" } } },
+    ]),
+  ]);
+
+  const byStatus = Object.fromEntries(
+    totals.map((row) => [row._id, { count: row.count, total: row.total }])
+  );
+
+  return {
+    en_attente: byStatus.en_attente ?? { count: 0, total: 0 },
+    valide: byStatus.valide ?? { count: 0, total: 0 },
+    rejete: byStatus.rejete ?? { count: 0, total: 0 },
+    thisMonth: monthly[0]
+      ? { count: monthly[0].count, total: monthly[0].total }
+      : { count: 0, total: 0 },
+  };
 };
 
-// ------------------------------------------------------------------
-// REÇU
-// ------------------------------------------------------------------
-// Le don est d'abord résolu : le donateur clique souvent sur
-// « télécharger le reçu » à la seconde où sa page passe au vert, et
-// parfois avant que le statut n'ait été confirmé.
-//
-// Seul un don ENCAISSÉ donne lieu à un reçu. Un don « suspect » en est
-// explicitement exclu : son montant est contesté, un reçu porterait
-// une somme que personne ne peut garantir.
-export const receiptFor = async (reference) => {
-  const donation = await resolveDonation(reference);
+// Décision finale et irréversible : un don `en_attente` peut devenir
+// `valide` ou `rejete`, mais plus jamais rouvert. Un rejet exige une
+// remarque — c'est ce que verra le personnel qui recontacte le
+// donateur, et ce que l'admin relira en cas de contestation.
+export const review = async (id, { decision, note } = {}, user) => {
+  if (!["valide", "rejete"].includes(decision)) {
+    throw ApiError.badRequest("Décision invalide.");
+  }
 
-  if (donation.status !== "paid") {
-    throw ApiError.badRequest(
-      donation.status === "pending"
-        ? "Ce paiement n'est pas encore confirmé. Le reçu sera disponible dès sa validation."
-        : "Aucun reçu ne peut être émis pour cette contribution."
+  const trimmedNote = asString(note, 400);
+
+  if (decision === "rejete" && !trimmedNote) {
+    throw ApiError.unprocessable(
+      "Une remarque est obligatoire pour rejeter un don.",
+      { note: "Expliquez pourquoi ce don est rejeté." }
+    );
+  }
+
+  const donation = await Donation.findOneAndUpdate(
+    { _id: id, status: "en_attente" },
+    {
+      status: decision,
+      adminNote: trimmedNote,
+      reviewedBy: user?.id,
+      reviewedAt: new Date(),
+    },
+    { new: true }
+  );
+
+  if (!donation) {
+    const existing = await Donation.findById(id).lean();
+
+    if (!existing) throw ApiError.notFound("Don introuvable.");
+
+    throw ApiError.conflict(
+      `Ce don a déjà été ${existing.status === "valide" ? "validé" : "rejeté"}.`
     );
   }
 
   return donation;
 };
 
-export const paymentEnabled = () => isPaymentConfigured();
+// ------------------------------------------------------------------
+// REÇU
+// ------------------------------------------------------------------
+// Seul un don VALIDÉ donne lieu à un reçu — voir receipt.service.js.
+export const receiptFor = async (reference) => {
+  const donation = await Donation.findOne({ reference });
+
+  if (!donation) {
+    throw ApiError.notFound("Don introuvable.");
+  }
+
+  if (donation.status !== "valide") {
+    throw ApiError.badRequest(
+      donation.status === "en_attente"
+        ? "Ce don n'est pas encore vérifié. Le reçu sera disponible dès sa validation."
+        : "Aucun reçu ne peut être émis pour cette contribution."
+    );
+  }
+
+  return donation;
+};
 
 export const publicSiteUrl = () => env.PUBLIC_SITE_URL;
