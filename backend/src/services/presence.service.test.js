@@ -383,7 +383,7 @@ describe("presence.service (intégration MongoDB)", () => {
   describe("markVisitor", () => {
     it("enregistre un visiteur sans dossier Member, sans jamais le dédupliquer", async () => {
       const first = await presenceService.markVisitor(
-        { firstName: "Awa", lastName: "Traoré", phone: "0700000099" },
+        { firstName: "Awa", lastName: "Traoré", phone: "0700000099", gender: "femme" },
         { id: agent._id },
         qr,
         fakeReq
@@ -392,9 +392,10 @@ describe("presence.service (intégration MongoDB)", () => {
       assert.equal(first.alreadyRecorded, false);
       assert.equal(first.visitor.firstName, "Awa");
       assert.equal(first.visitor.phone, "0700000099");
+      assert.equal(first.visitor.gender, "femme");
 
       const second = await presenceService.markVisitor(
-        { firstName: "Awa", lastName: "Traoré" },
+        { firstName: "Awa", lastName: "Traoré", gender: "femme" },
         { id: agent._id },
         qr,
         fakeReq
@@ -414,7 +415,29 @@ describe("presence.service (intégration MongoDB)", () => {
     it("refuse un visiteur sans prénom ou sans nom", async () => {
       await assert.rejects(
         presenceService.markVisitor(
-          { firstName: "", lastName: "Traoré" },
+          { firstName: "", lastName: "Traoré", gender: "femme" },
+          { id: agent._id },
+          qr,
+          fakeReq
+        ),
+        (error) => error.status === 400
+      );
+    });
+
+    it("refuse un visiteur sans genre, ou avec un genre invalide", async () => {
+      await assert.rejects(
+        presenceService.markVisitor(
+          { firstName: "Awa", lastName: "Traoré" },
+          { id: agent._id },
+          qr,
+          fakeReq
+        ),
+        (error) => error.status === 400
+      );
+
+      await assert.rejects(
+        presenceService.markVisitor(
+          { firstName: "Awa", lastName: "Traoré", gender: "autre" },
           { id: agent._id },
           qr,
           fakeReq
@@ -427,7 +450,7 @@ describe("presence.service (intégration MongoDB)", () => {
   describe("listVisitors / buildVisitorsPdf", () => {
     it("liste uniquement nom/prénom, jamais le téléphone ni l'agent", async () => {
       await presenceService.markVisitor(
-        { firstName: "Awa", lastName: "Traoré", phone: "0700000099" },
+        { firstName: "Awa", lastName: "Traoré", phone: "0700000099", gender: "femme" },
         { id: agent._id },
         qr,
         fakeReq
@@ -442,7 +465,49 @@ describe("presence.service (intégration MongoDB)", () => {
       assert.equal("agent" in visitors[0], false);
     });
 
+    it("distingue un badge invité scanné (isBadge: true) d'un visiteur enregistré à la main (isBadge: false)", async () => {
+      await presenceService.scan(
+        { registrationNumber: "INV-HOMME-02" },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+      await presenceService.markVisitor(
+        { firstName: "Awa", lastName: "Traoré", gender: "femme" },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+
+      const visitors = await presenceService.listVisitors(qr._id);
+      const badge = visitors.find((visitor) => visitor.firstName === "Invité");
+      const manual = visitors.find((visitor) => visitor.firstName === "Awa");
+
+      assert.equal(badge.isBadge, true);
+      assert.equal(manual.isBadge, false);
+    });
+
     it("génère un PDF valide, même sans aucun visiteur", async () => {
+      const buffer = await presenceService.buildVisitorsPdf(qr);
+
+      assert.ok(Buffer.isBuffer(buffer));
+      assert.equal(buffer.subarray(0, 5).toString("latin1"), "%PDF-");
+    });
+
+    it("génère un PDF valide avec des visiteurs des deux genres (totaux femme/homme)", async () => {
+      await presenceService.markVisitor(
+        { firstName: "Awa", lastName: "Traoré", gender: "femme" },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+      await presenceService.scan(
+        { registrationNumber: "INV-HOMME-01" },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+
       const buffer = await presenceService.buildVisitorsPdf(qr);
 
       assert.ok(Buffer.isBuffer(buffer));
@@ -459,7 +524,7 @@ describe("presence.service (intégration MongoDB)", () => {
         fakeReq
       );
       await presenceService.markVisitor(
-        { firstName: "Koffi", lastName: "N'Guessan" },
+        { firstName: "Koffi", lastName: "N'Guessan", gender: "homme" },
         { id: agent._id },
         qr,
         fakeReq
@@ -493,7 +558,7 @@ describe("presence.service (intégration MongoDB)", () => {
 
     it("inclut les visiteurs, avec leur identité déclarée plutôt qu'un membre", async () => {
       await presenceService.markVisitor(
-        { firstName: "Koffi", lastName: "N'Guessan", phone: "0700000098" },
+        { firstName: "Koffi", lastName: "N'Guessan", phone: "0700000098", gender: "homme" },
         { id: agent._id },
         qr,
         fakeReq

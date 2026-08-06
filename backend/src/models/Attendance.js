@@ -74,6 +74,21 @@ const attendanceSchema = new mongoose.Schema(
       // étant un objet physique réutilisé d'un service à l'autre, pas
       // une identité de visiteur comme `firstName`/`lastName`.
       badgeCode: { type: String, trim: true, uppercase: true, maxlength: 40 },
+
+      // Déduit du badge scanné (voir presence.service.js#parseGuestBadgeCode)
+      // ou saisi explicitement pour un visiteur ajouté à la main — sert
+      // aux totaux femme/homme des exports (presenceExport.service.js,
+      // presence.service.js#buildVisitorsPdf).
+      gender: {
+        type: String,
+        enum: ["homme", "femme"],
+        required: [
+          function () {
+            return this.kind === "visitor";
+          },
+          "Le genre est obligatoire pour une présence de type « visiteur ».",
+        ],
+      },
     },
 
     // Porte le libellé et la fenêtre horaire du service — voir

@@ -118,6 +118,7 @@ const PresenceScanner = ({
   const [visitorFormOpen, setVisitorFormOpen] = useState(false);
   const [visitorFirstName, setVisitorFirstName] = useState("");
   const [visitorLastName, setVisitorLastName] = useState("");
+  const [visitorGender, setVisitorGender] = useState("");
 
   const resumeTimerRef = useRef(null);
   const toastTimerRef = useRef(null);
@@ -277,7 +278,7 @@ const PresenceScanner = ({
   const handleAddVisitor = async (event) => {
     event.preventDefault();
 
-    if (busy || !visitorFirstName.trim() || !visitorLastName.trim()) return;
+    if (busy || !visitorFirstName.trim() || !visitorLastName.trim() || !visitorGender) return;
 
     setBusy(true);
 
@@ -286,6 +287,7 @@ const PresenceScanner = ({
         {
           firstName: visitorFirstName.trim(),
           lastName: visitorLastName.trim(),
+          gender: visitorGender,
         },
         sessionToken
       );
@@ -294,6 +296,7 @@ const PresenceScanner = ({
       setVisitorFormOpen(false);
       setVisitorFirstName("");
       setVisitorLastName("");
+      setVisitorGender("");
     } catch (error) {
       applyError(error);
     } finally {
@@ -466,6 +469,27 @@ const PresenceScanner = ({
                   disabled={busy}
                 />
 
+                <div className="presence-scanner__visitor-gender" role="radiogroup" aria-label="Genre du visiteur">
+                  <button
+                    type="button"
+                    className={visitorGender === "femme" ? "is-active" : ""}
+                    aria-pressed={visitorGender === "femme"}
+                    onClick={() => setVisitorGender("femme")}
+                    disabled={busy}
+                  >
+                    Femme
+                  </button>
+                  <button
+                    type="button"
+                    className={visitorGender === "homme" ? "is-active" : ""}
+                    aria-pressed={visitorGender === "homme"}
+                    onClick={() => setVisitorGender("homme")}
+                    disabled={busy}
+                  >
+                    Homme
+                  </button>
+                </div>
+
                 <div className="presence-scanner__visitor-form-actions">
                   <button
                     type="button"
@@ -473,6 +497,7 @@ const PresenceScanner = ({
                       setVisitorFormOpen(false);
                       setVisitorFirstName("");
                       setVisitorLastName("");
+                      setVisitorGender("");
                     }}
                     disabled={busy}
                   >
@@ -480,7 +505,12 @@ const PresenceScanner = ({
                   </button>
                   <button
                     type="submit"
-                    disabled={busy || !visitorFirstName.trim() || !visitorLastName.trim()}
+                    disabled={
+                      busy ||
+                      !visitorFirstName.trim() ||
+                      !visitorLastName.trim() ||
+                      !visitorGender
+                    }
                   >
                     Enregistrer la présence
                   </button>

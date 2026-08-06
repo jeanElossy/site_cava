@@ -113,6 +113,23 @@
         font-size: 0.78rem;
         cursor: pointer;
       }
+
+      // Plus spécifique que `li span` ci-dessus (deux classes contre
+      // une), pour l'emporter sans dépendre de l'ordre des règles.
+      .visitors-panel__badge-tag {
+        flex-shrink: 0;
+
+        padding: 4px 10px;
+
+        border-radius: 999px;
+
+        background: var(--presence-surface);
+        color: var(--presence-ink-faint);
+
+        font-size: 0.72rem;
+        font-weight: 500;
+        font-style: italic;
+      }
     }
   }
 }

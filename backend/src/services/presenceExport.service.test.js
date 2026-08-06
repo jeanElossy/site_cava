@@ -39,6 +39,7 @@ describe("presenceExport.service (intégration MongoDB)", () => {
         role: "membre",
         status: "actif",
         registrationNumber: "1XE26001A",
+        gender: "homme",
       }),
       Member.create({
         firstName: "Agent",
@@ -75,7 +76,7 @@ describe("presenceExport.service (intégration MongoDB)", () => {
     });
     await Attendance.create({
       kind: "visitor",
-      visitor: { firstName: "Awa", lastName: "Traoré" },
+      visitor: { firstName: "Awa", lastName: "Traoré", gender: "femme" },
       securityQr: qr._id,
       agent: agent._id,
       method: "manual",
@@ -88,13 +89,48 @@ describe("presenceExport.service (intégration MongoDB)", () => {
     assert.equal(buffer.subarray(0, 2).toString("latin1"), "PK");
   });
 
+  it("répartit femme/homme dans le résumé, membre et visiteur confondus", async () => {
+    await Attendance.create({
+      kind: "member",
+      member: member._id, // gender: "homme"
+      securityQr: qr._id,
+      agent: agent._id,
+      method: "scan",
+    });
+    await Attendance.create({
+      kind: "visitor",
+      visitor: { firstName: "Awa", lastName: "Traoré", gender: "femme" },
+      securityQr: qr._id,
+      agent: agent._id,
+      method: "manual",
+    });
+
+    const buffer = await buildAttendanceXlsx(qr._id);
+
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+
+    const summary = workbook.getWorksheet("Résumé");
+    const rows = {};
+
+    summary.eachRow((row) => {
+      rows[row.getCell(1).value] = row.getCell(2).value;
+    });
+
+    assert.equal(rows["Total général"], 2);
+    assert.equal(rows["Dont membres"], 1);
+    assert.equal(rows["Dont visiteurs"], 1);
+    assert.equal(rows["Dont femmes"], 1);
+    assert.equal(rows["Dont hommes"], 1);
+  });
+
   it("neutralise une identité de visiteur piégée en formule Excel (injection CSV/formule)", async () => {
     await Attendance.create({
       kind: "visitor",
       // Charge utile classique d'injection de formule : Excel
       // exécuterait cette commande à l'ouverture si elle n'était pas
       // neutralisée (voir utils/excelSafeCell.js).
-      visitor: { firstName: "=cmd|'/c calc'!A1", lastName: "Traoré" },
+      visitor: { firstName: "=cmd|'/c calc'!A1", lastName: "Traoré", gender: "femme" },
       securityQr: qr._id,
       agent: agent._id,
       method: "manual",
@@ -129,7 +165,7 @@ describe("presenceExport.service (intégration MongoDB)", () => {
     });
     await Attendance.create({
       kind: "visitor",
-      visitor: { firstName: "Awa", lastName: "Traoré" },
+      visitor: { firstName: "Awa", lastName: "Traoré", gender: "femme" },
       securityQr: qr._id,
       agent: agent._id,
       method: "manual",

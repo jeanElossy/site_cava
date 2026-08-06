@@ -66,10 +66,10 @@ export const markPresenceManually = (memberId, sessionToken) =>
     token: sessionToken,
   });
 
-export const markVisitorPresence = ({ firstName, lastName }, sessionToken) =>
+export const markVisitorPresence = ({ firstName, lastName, gender }, sessionToken) =>
   request("/api/presences/mark-visitor", {
     method: "POST",
-    body: { firstName, lastName },
+    body: { firstName, lastName, gender },
     token: sessionToken,
   });
 

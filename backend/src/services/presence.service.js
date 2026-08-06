@@ -9,6 +9,7 @@ import Attendance from "../models/Attendance.js";
 import { ApiError } from "../utils/ApiError.js";
 import { normalizeRegistrationNumber } from "./registrationNumber.service.js";
 import { getEffectiveWindow } from "../utils/presenceQrWindow.js";
+import { drawCenteredImage } from "../utils/pdfLogo.js";
 import * as presenceQrService from "./presenceQr.service.js";
 import {
   signPresenceSessionToken,
@@ -169,6 +170,7 @@ const recordGuestBadgeAttendance = async ({ badge, securityQr, agentId, req }) =
         firstName: "Invité",
         lastName: `${GUEST_BADGE_GENDER_LABELS[badge.code.split("-")[1]]} ${badge.index}`,
         badgeCode: badge.code,
+        gender: badge.gender,
       },
       securityQr,
       agent: agentId,
@@ -268,16 +270,32 @@ export const mark = async ({ memberId }, presenceAgent, presenceQr, req) => {
   };
 };
 
+const VISITOR_GENDERS = ["homme", "femme"];
+
 // Présence d'un VISITEUR sans carte ni dossier `Member` — saisie
-// directe par l'agent (nom, prénom, téléphone facultatif). Aucune
-// déduplication possible (pas d'identité stable), donc toujours
+// directe par l'agent (nom, prénom, genre, téléphone facultatif).
+// Aucune déduplication possible (pas d'identité stable), donc toujours
 // `alreadyRecorded: false` : chaque appel crée une nouvelle ligne.
-export const markVisitor = async ({ firstName, lastName, phone }, presenceAgent, presenceQr, req) => {
+//
+// Le genre est exigé ici (pas seulement au niveau du schéma) pour
+// renvoyer un message clair à l'agent plutôt qu'une erreur de
+// validation Mongoose brute — sert aux totaux femme/homme des exports.
+export const markVisitor = async (
+  { firstName, lastName, phone, gender },
+  presenceAgent,
+  presenceQr,
+  req
+) => {
   const cleanFirstName = String(firstName ?? "").trim();
   const cleanLastName = String(lastName ?? "").trim();
+  const cleanGender = String(gender ?? "").trim().toLowerCase();
 
   if (!cleanFirstName || !cleanLastName) {
     throw ApiError.badRequest("Le prénom et le nom du visiteur sont obligatoires.");
+  }
+
+  if (!VISITOR_GENDERS.includes(cleanGender)) {
+    throw ApiError.badRequest("Le genre du visiteur est obligatoire (homme ou femme).");
   }
 
   const attendance = await Attendance.create({
@@ -286,6 +304,7 @@ export const markVisitor = async ({ firstName, lastName, phone }, presenceAgent,
       firstName: cleanFirstName,
       lastName: cleanLastName,
       phone: phone ? String(phone).trim() : undefined,
+      gender: cleanGender,
     },
     securityQr: presenceQr._id,
     agent: presenceAgent.id,
@@ -299,6 +318,7 @@ export const markVisitor = async ({ firstName, lastName, phone }, presenceAgent,
       firstName: cleanFirstName,
       lastName: cleanLastName,
       phone: attendance.visitor.phone,
+      gender: cleanGender,
     },
     alreadyRecorded: false,
     recordedAt: attendance.recordedAt,
@@ -310,6 +330,13 @@ export const markVisitor = async ({ firstName, lastName, phone }, presenceAgent,
 // l'agent (export PDF, démarrage d'un dossier SOA) : uniquement
 // nom/prénom, jamais le téléphone ni l'identité de l'agent qui a
 // badgé, non pertinents pour cet usage.
+//
+// `isBadge` distingue un badge invité pré-imprimé (identité fictive
+// "Invité Homme 1", scanné pour le seul comptage) d'un visiteur
+// réellement enregistré par l'agent avec son nom — SEUL ce dernier cas
+// doit proposer de démarrer un dossier SOA côté front (voir
+// VisitorsPanel : le même invité, une fois identifié, est ensuite
+// ré-enregistré à la main sous son vrai nom pour amorcer le suivi).
 export const listVisitors = async (securityQr) => {
   const records = await Attendance.find({ securityQr, kind: "visitor" })
     .sort({ recordedAt: -1 })
@@ -319,6 +346,8 @@ export const listVisitors = async (securityQr) => {
     id: String(record._id),
     firstName: record.visitor?.firstName,
     lastName: record.visitor?.lastName,
+    gender: record.visitor?.gender,
+    isBadge: Boolean(record.visitor?.badgeCode),
     recordedAt: record.recordedAt,
   }));
 };
@@ -345,6 +374,8 @@ const formatEventDateTime = (securityQr) => {
 
 export const buildVisitorsPdf = async (securityQr) => {
   const visitors = await listVisitors(securityQr._id);
+  const women = visitors.filter((visitor) => visitor.gender === "femme").length;
+  const men = visitors.filter((visitor) => visitor.gender === "homme").length;
 
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: "A4", margin: 40 });
@@ -354,7 +385,7 @@ export const buildVisitorsPdf = async (securityQr) => {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
-    doc.image(LOGO_PATH, { width: 56, align: "center" });
+    drawCenteredImage(doc, LOGO_PATH, 56);
     doc.moveDown(0.4);
 
     doc
@@ -371,7 +402,16 @@ export const buildVisitorsPdf = async (securityQr) => {
       .fontSize(9)
       .fillColor("#5a6862")
       .text(formatEventDateTime(securityQr), { align: "center" })
-      .moveDown(0.8);
+      .moveDown(0.4);
+
+    doc
+      .fontSize(10)
+      .fillColor("#1f2a25")
+      .text(
+        `Total visiteurs : ${visitors.length}   —   Femmes : ${women}   —   Hommes : ${men}`,
+        { align: "center" }
+      )
+      .moveDown(0.6);
 
     if (visitors.length === 0) {
       doc.fontSize(10).text("Aucun visiteur enregistré pour ce service.", { align: "center" });

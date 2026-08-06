@@ -9,6 +9,7 @@ import PresenceSecurityQr from "../models/PresenceSecurityQr.js";
 import { ApiError } from "../utils/ApiError.js";
 import { excelSafeCell } from "../utils/excelSafeCell.js";
 import { getEffectiveWindow } from "../utils/presenceQrWindow.js";
+import { drawCenteredImage } from "../utils/pdfLogo.js";
 
 // Export de la liste des présences d'un service, avec le décompte
 // membres/visiteurs — voir docs/superpowers/specs/2026-08-04-badgeage-
@@ -46,7 +47,7 @@ const fetchAttendanceReport = async (securityQrId) => {
 
   const records = await Attendance.find({ securityQr: securityQrId })
     .sort({ recordedAt: 1 })
-    .populate("member", "firstName lastName registrationNumber phone area")
+    .populate("member", "firstName lastName registrationNumber phone area gender")
     .populate("agent", "firstName lastName registrationNumber")
     .lean();
 
@@ -56,6 +57,20 @@ const fetchAttendanceReport = async (securityQrId) => {
   return { qr, records, members, visitors };
 };
 
+// Genre d'une présence, membre ou visiteur — `Member.gender` pour un
+// membre, `visitor.gender` pour un visiteur (posé au badgeage ou au
+// scan d'un badge invité, voir presence.service.js). Peut être absent
+// pour une présence antérieure à l'introduction de ce champ ; ces
+// présences comptent dans le total général mais pas dans la répartition
+// femme/homme, plutôt que de fausser l'un des deux totaux au hasard.
+const genderOf = (record) =>
+  record.kind === "member" ? record.member?.gender : record.visitor?.gender;
+
+const countByGender = (records) => ({
+  women: records.filter((record) => genderOf(record) === "femme").length,
+  men: records.filter((record) => genderOf(record) === "homme").length,
+});
+
 const displayName = (record) =>
   record.kind === "member"
     ? `${record.member?.lastName ?? "—"} ${record.member?.firstName ?? ""}`.trim()
@@ -63,6 +78,7 @@ const displayName = (record) =>
 
 export const buildAttendanceXlsx = async (securityQrId) => {
   const { qr, records, members, visitors } = await fetchAttendanceReport(securityQrId);
+  const { women, men } = countByGender(records);
 
   const workbook = new ExcelJS.Workbook();
 
@@ -82,9 +98,11 @@ export const buildAttendanceXlsx = async (securityQrId) => {
       label: "Fenêtre de validité",
       value: formatWindow(qr),
     },
-    { label: "Total présents", value: records.length },
+    { label: "Total général", value: records.length },
     { label: "Dont membres", value: members.length },
     { label: "Dont visiteurs", value: visitors.length },
+    { label: "Dont femmes", value: women },
+    { label: "Dont hommes", value: men },
   ]);
 
   summary.getColumn("label").font = { bold: true };
@@ -144,6 +162,7 @@ export const buildAttendanceXlsx = async (securityQrId) => {
 
 export const buildAttendancePdf = async (securityQrId) => {
   const { qr, records, members, visitors } = await fetchAttendanceReport(securityQrId);
+  const { women, men } = countByGender(records);
 
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: "A4", margin: 40 });
@@ -153,7 +172,7 @@ export const buildAttendancePdf = async (securityQrId) => {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
-    doc.image(LOGO_PATH, { width: 64, align: "center" });
+    drawCenteredImage(doc, LOGO_PATH, 64);
     doc.moveDown(0.4);
 
     doc
@@ -168,15 +187,16 @@ export const buildAttendancePdf = async (securityQrId) => {
       .fontSize(9)
       .fillColor(GREEN)
       .text(formatWindow(qr), { align: "center" })
-      .moveDown(0.6);
+      .moveDown(0.5);
 
     doc
       .fontSize(10)
       .fillColor(INK)
       .text(
-        `Total présents : ${records.length}   —   Membres : ${members.length}   —   Visiteurs : ${visitors.length}`,
+        `Total général : ${records.length}   —   Membres : ${members.length}   —   Visiteurs : ${visitors.length}`,
         { align: "center" }
       )
+      .text(`Femmes : ${women}   —   Hommes : ${men}`, { align: "center" })
       .moveDown(1);
 
     const columns = [

@@ -150,10 +150,19 @@ const VisitorsPanel = ({ sessionToken }) => {
               <span>
                 {visitor.lastName} {visitor.firstName}
               </span>
-              <button type="button" onClick={() => startSoaDossier(visitor)}>
-                <Heart aria-hidden="true" />
-                Enregistrer via SOA
-              </button>
+              {visitor.isBadge ? (
+                // Badge invité pré-imprimé : identité fictive
+                // ("Invité Homme 1"), utile pour le seul comptage.
+                // Aucun dossier SOA n'a de sens tant que la personne
+                // n'a pas été enregistrée sous son vrai nom (voir
+                // le bouton "Ajouter un visiteur (sans carte)").
+                <span className="visitors-panel__badge-tag">Badge invité</span>
+              ) : (
+                <button type="button" onClick={() => startSoaDossier(visitor)}>
+                  <Heart aria-hidden="true" />
+                  Enregistrer via SOA
+                </button>
+              )}
             </li>
           ))}
         </ul>

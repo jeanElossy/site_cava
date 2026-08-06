@@ -902,6 +902,39 @@
     }
   }
 
+  &__visitor-gender {
+    display: flex;
+    gap: 8px;
+
+    button {
+      flex: 1;
+
+      padding: 10px;
+
+      border: 1.5px solid var(--presence-border-strong);
+      border-radius: 10px;
+
+      background: var(--presence-surface-strong);
+
+      color: var(--presence-ink);
+
+      font-family: inherit;
+      font-size: 0.83rem;
+      font-weight: 600;
+
+      transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+
+      // Texte sombre fixe (pas `--presence-ink`, blanc en thème sombre) :
+      // le fond doré reste clair dans les deux thèmes, il faut donc un
+      // texte sombre constant pour rester lisible.
+      &.is-active {
+        border-color: var(--presence-gold);
+        background: var(--presence-gold);
+        color: #16241d;
+      }
+    }
+  }
+
   &__visitor-form-actions {
     display: flex;
     gap: 8px;

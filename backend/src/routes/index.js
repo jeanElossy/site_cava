@@ -587,6 +587,7 @@ export const buildRoutes = () => {
           firstName: req.body?.firstName,
           lastName: req.body?.lastName,
           phone: req.body?.phone,
+          gender: req.body?.gender,
         },
         req.presenceAgent,
         req.presenceQr,
