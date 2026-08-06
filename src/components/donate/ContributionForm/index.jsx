@@ -1,63 +1,37 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import {
-  FaArrowRight,
-  FaArrowLeft,
-  FaCheck,
-} from "react-icons/fa";
+import { ArrowLeft, ArrowRight, Check, Sprout, Leaf, Wheat, Send, Loader2 } from "lucide-react";
 
-import {
-  useContribution,
-} from "../../../context/useContribution";
+import { useContribution } from "../../../context/useContribution";
 
 import { steps, validateStep } from "./data";
+import { submitDonation } from "../../../services/donations";
 
-import {
-  paymentConfig,
-  startDonation,
-} from "../../../services/donations";
-
-import StepAmount from "./StepAmount";
-import StepDonor from "./StepDonor";
-import StepPayment from "./StepPayment";
+import StepIdentity from "./StepIdentity";
+import StepPaymentMethod from "./StepPaymentMethod";
+import StepQrTicket from "./StepQrTicket";
+import StepProof from "./StepProof";
 import SummaryCard from "./SummaryCard";
 
 import "./ContributionForm.scss";
 
-// Ce composant ne porte plus que l'orchestration du tunnel :
-// l'étape courante, la validation et la navigation. Les données et
-// les libellés sont dans `data.js`, chaque étape dans son fichier,
-// le récapitulatif dans `SummaryCard.jsx`.
+// Icônes de croissance associées à chaque étape — écho au nom « Vie
+// et Abondance » et à l'image biblique de la semence (voir la
+// section Design visuel de la spec), pas une simple numérotation.
+const STEP_ICONS = [Sprout, Leaf, Leaf, Wheat];
+
+// Ce composant ne porte plus que l'orchestration du tunnel à 4
+// étapes : identité/montant/type → moyen de paiement → QR à scanner
+// → preuve. Aucune redirection externe : le don est créé directement
+// depuis l'étape 4, avec la preuve déjà fournie.
 const ContributionForm = () => {
   const { state, dispatch } = useContribution();
 
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  // `null` tant que la réponse du serveur n'est pas arrivée : on
-  // n'affiche ni le bouton de paiement ni le message « pas encore
-  // actif » avant de savoir lequel des deux est vrai.
-  const [paymentEnabled, setPaymentEnabled] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    paymentConfig()
-      .then((config) => {
-        if (!cancelled) setPaymentEnabled(config?.enabled === true);
-      })
-      .catch(() => {
-        // API injoignable : on retombe sur le message de repli, qui
-        // oriente vers un canal humain. Bien préférable à un bouton
-        // qui ne mènerait nulle part.
-        if (!cancelled) setPaymentEnabled(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const [submitError, setSubmitError] = useState("");
+  const [reference, setReference] = useState("");
 
   const isLastStep = step === steps.length - 1;
 
@@ -66,11 +40,7 @@ const ContributionForm = () => {
   };
 
   const updateDonor = (field, value) => {
-    dispatch({
-      type: "UPDATE_DONOR",
-      payload: { [field]: value },
-    });
-
+    dispatch({ type: "UPDATE_DONOR", payload: { [field]: value } });
     clearError();
   };
 
@@ -79,14 +49,11 @@ const ContributionForm = () => {
 
     if (message) {
       setError(message);
-
       return;
     }
 
     setError("");
-    setStep((current) =>
-      Math.min(current + 1, steps.length - 1)
-    );
+    setStep((current) => Math.min(current + 1, steps.length - 1));
   };
 
   const goBack = () => {
@@ -94,54 +61,60 @@ const ContributionForm = () => {
     setStep((current) => Math.max(current - 1, 0));
   };
 
-  // Départ vers le guichet de paiement.
-  //
-  // Le serveur enregistre l'intention, fige le montant, puis renvoie
-  // l'URL du prestataire. On ne fait que suivre cette URL : le montant
-  // qui sera débité n'est plus modifiable côté navigateur à partir
-  // d'ici.
-  //
-  // `location.href` plutôt qu'une navigation React : la destination est
-  // un autre domaine, hors du routeur.
-  const handleSubmit = async () => {
-    if (submitting) return;
+  // Depuis l'étape « QR à scanner », le bouton « J'ai effectué le
+  // paiement » avance simplement vers l'étape preuve — aucun appel
+  // réseau ici, la création du don n'a lieu qu'à la soumission finale.
+  const handleProceedToProof = () => goNext();
 
-    setError("");
+  const handleSubmit = async () => {
+    const message = validateStep(step, state);
+
+    if (message) {
+      setError(message);
+      return;
+    }
+
+    setSubmitError("");
     setSubmitting(true);
 
     try {
-      const { paymentUrl } = await startDonation({
-        amount: state.amount,
-        contributionType: state.contributionType,
-        project: state.project,
-        recurring: state.recurring,
-        paymentMethod: state.paymentMethod,
+      const result = await submitDonation({
         donor: state.donor,
+        amount: state.amount,
+        donationTypeId: state.donationType.id,
+        paymentMethodId: state.paymentMethod.id,
+        proof: state.proof,
       });
 
-      window.location.href = paymentUrl;
-    } catch (submitError) {
-      // L'erreur peut porter un détail par champ (montant refusé,
-      // carte sans coordonnées…). On affiche le plus précis disponible.
-      const details = submitError.details
-        ? Object.values(submitError.details)[0]
-        : null;
+      setReference(result.reference);
+    } catch (caught) {
+      const details = caught.details ? Object.values(caught.details)[0] : null;
 
-      setError(
-        details ??
-          submitError.message ??
-          "Le paiement n'a pas pu être lancé. Merci de réessayer."
+      setSubmitError(
+        details ?? caught.message ?? "Votre don n'a pas pu être enregistré. Merci de réessayer."
       );
-
+    } finally {
       setSubmitting(false);
     }
   };
 
+  if (reference) {
+    return (
+      <section className="contribution-form contribution-form--done" id="contribution-form">
+        <div className="contribution-form__confirmation">
+          <Check size={40} aria-hidden="true" />
+          <h2>Merci pour votre don !</h2>
+          <p>
+            Votre contribution est enregistrée et en attente de vérification. Conservez votre
+            référence : <strong>{reference}</strong>
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section
-      className="contribution-form"
-      id="contribution-form"
-    >
+    <section className="contribution-form" id="contribution-form">
 
       <div className="contribution-form__container">
 
@@ -149,88 +122,77 @@ const ContributionForm = () => {
 
           <h2>Votre contribution</h2>
 
-          <ol
-            className="steps"
-            aria-label="Étapes de la contribution"
-          >
-            {steps.map((label, index) => (
-              <li
-                key={label}
-                className={
-                  index === step
-                    ? "steps__item steps__item--current"
-                    : index < step
-                      ? "steps__item steps__item--done"
-                      : "steps__item"
-                }
-                aria-current={
-                  index === step ? "step" : undefined
-                }
-              >
-                <span className="steps__bullet">
-                  {index < step ? (
-                    <FaCheck aria-hidden="true" />
-                  ) : (
-                    index + 1
-                  )}
-                </span>
+          <ol className="steps" aria-label="Étapes du don">
+            {steps.map((label, index) => {
+              const Icon = STEP_ICONS[index];
 
-                <span className="steps__label">
-                  {label}
-                </span>
-              </li>
-            ))}
+              return (
+                <li
+                  key={label}
+                  className={
+                    index === step
+                      ? "steps__item steps__item--current"
+                      : index < step
+                        ? "steps__item steps__item--done"
+                        : "steps__item"
+                  }
+                  aria-current={index === step ? "step" : undefined}
+                >
+                  <span className="steps__bullet">
+                    {index < step ? <Check aria-hidden="true" /> : <Icon size={16} aria-hidden="true" />}
+                  </span>
+
+                  <span className="steps__label">{label}</span>
+                </li>
+              );
+            })}
           </ol>
 
           {step === 0 && (
-            <StepAmount
-              state={state}
-              dispatch={dispatch}
-              onEdit={clearError}
-            />
+            <StepIdentity state={state} dispatch={dispatch} updateDonor={updateDonor} onEdit={clearError} />
           )}
 
-          {step === 1 && (
-            <StepDonor
-              state={state}
-              updateDonor={updateDonor}
-            />
-          )}
+          {step === 1 && <StepPaymentMethod state={state} dispatch={dispatch} />}
 
-          {step === 2 && (
-            <StepPayment
-              state={state}
-              dispatch={dispatch}
-            />
-          )}
+          {step === 2 && <StepQrTicket state={state} />}
+
+          {step === 3 && <StepProof state={state} dispatch={dispatch} />}
 
           {error && (
-            <p className="step-error" role="alert">
-              {error}
-            </p>
+            <p className="step-error" role="alert">{error}</p>
           )}
 
           <div className="step-nav">
 
             {step > 0 && (
-              <button
-                type="button"
-                className="step-nav__back"
-                onClick={goBack}
-              >
-                <FaArrowLeft aria-hidden="true" />
+              <button type="button" className="step-nav__back" onClick={goBack}>
+                <ArrowLeft aria-hidden="true" />
                 Retour
               </button>
             )}
 
-            {!isLastStep && (
+            {!isLastStep && step !== 2 && (
+              <button type="button" className="step-nav__next" onClick={goNext}>
+                Suivant
+                <ArrowRight aria-hidden="true" />
+              </button>
+            )}
+
+            {isLastStep && (
               <button
                 type="button"
                 className="step-nav__next"
-                onClick={goNext}
+                onClick={handleSubmit}
+                disabled={submitting}
               >
-                Suivant
-                <FaArrowRight aria-hidden="true" />
+                {submitting ? (
+                  <Loader2 aria-hidden="true" />
+                ) : (
+                  <>
+                    Envoyer
+                    <Send aria-hidden="true" />
+                  </>
+                )}
               </button>
             )}
 
@@ -240,15 +202,10 @@ const ContributionForm = () => {
 
         <SummaryCard
           state={state}
-          isLastStep={isLastStep}
-          onSubmit={handleSubmit}
+          step={step}
           submitting={submitting}
-          /* Trois états transmis tels quels : `null` tant que la
-             réponse du serveur n'est pas arrivée. Le convertir en
-             booléen ici — ce qui était le cas — faisait afficher le
-             message « paiement pas encore actif » pendant le
-             chargement, à des visiteurs pour qui il était faux. */
-          paymentEnabled={paymentEnabled}
+          submitError={submitError}
+          onProceedToProof={handleProceedToProof}
         />
 
       </div>
