@@ -1,12 +1,15 @@
-import { describe, it, before, after, afterEach } from "node:test";
+import { describe, it, before, after, afterEach, mock } from "node:test";
 import assert from "node:assert/strict";
+import webpush from "web-push";
 
 import { connectTestDb, disconnectTestDb } from "../test/db.js";
 import User from "../models/User.js";
 import Flock from "../models/Flock.js";
 import Member from "../models/Member.js";
 import NewSoul from "../models/NewSoul.js";
+import PushSubscription from "../models/PushSubscription.js";
 import * as newSoulService from "./newSoul.service.js";
+import * as pushService from "./push.service.js";
 
 const FLOCK_CODE = "AN"; // "Âmes Nouvelles" — code de test isolé
 const EMAIL_SUFFIX = "@example.invalid";
@@ -17,6 +20,22 @@ let coordinateurUser;
 let pasteurUser;
 let adminUser;
 let flock;
+
+// `create`/`transmit` déclenchent volontairement une notification push
+// SANS l'attendre (voir newSoul.service.js#notifyNewDossier — elle ne
+// doit jamais retarder la réponse HTTP) : dans les tests qui vérifient
+// cet envoi, il faut donc laisser une chance à la chaîne asynchrone en
+// arrière-plan de s'exécuter avant d'inspecter le mock, plutôt que de
+// l'observer juste après le `await` de l'action principale.
+const waitFor = async (predicate, { timeout = 1000, interval = 20 } = {}) => {
+  const deadline = Date.now() + timeout;
+
+  while (!predicate()) {
+    if (Date.now() >= deadline) return;
+
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+};
 
 const asUser = (user) => ({ kind: "user", id: String(user._id), name: user.name, role: user.role });
 const asMember = (member) => ({
@@ -91,6 +110,7 @@ describe("newSoul.service (intégration MongoDB)", () => {
     await NewSoul.deleteMany({ _id: { $in: createdIds } });
     createdIds = [];
     await Member.deleteMany({ flock: flock._id });
+    mock.restoreAll();
   });
 
   after(async () => {
@@ -534,5 +554,196 @@ describe("newSoul.service (intégration MongoDB)", () => {
       canaStatsAcknowledged.awaitingAcknowledgement,
       canaStatsAfter.awaitingAcknowledgement - 1
     );
+  });
+
+  // Les deux tests suivants mockent `webpush.sendNotification` (export
+  // CJS de la bibliothèque, donc reconfigurable) plutôt que les
+  // fonctions exportées de push.service.js : ce module natif ESM
+  // expose des liaisons non reconfigurables, que `mock.method` ne peut
+  // pas remplacer (`Cannot redefine property`). Passer par l'envoi réel
+  // vérifie en plus tout le chemin (acteur → rôles → abonnés → appel),
+  // pas seulement que la fonction est invoquée.
+  it("notifie l'équipe SOA quand un agent de présence crée un dossier, mais pas quand un compte SOA crée le sien", async () => {
+    const sendNotification = mock.method(webpush, "sendNotification", async () => {});
+    const endpoint = "https://push.example.invalid/newsoul-test-soa";
+
+    await pushService.subscribe(soaUser._id, {
+      endpoint,
+      keys: { p256dh: "p256dh", auth: "auth" },
+    });
+
+    const presenceMember = await Member.create({
+      firstName: "Agent",
+      lastName: "Présence Notif",
+      church: 1,
+      flock: flock._id,
+      registrationNumber: "1AN26101P",
+      role: "serviteur",
+      status: "actif",
+    });
+
+    try {
+      await create(
+        { firstName: "Aya", lastName: "Kone", phone: "0733333333" },
+        asMember(presenceMember)
+      );
+
+      await waitFor(() =>
+        sendNotification.mock.calls.some((call) => call.arguments[0].endpoint === endpoint)
+      );
+
+      // `sendToRoles` interroge tous les comptes "soa" actifs de toute
+      // la base, pas seulement ceux de ce test : sur la base de dev
+      // partagée, un autre fichier de test exécuté en parallèle peut
+      // ajouter d'autres appels au même instant (voir le commentaire
+      // équivalent dans push.service.test.js) — d'où une recherche du
+      // NOTRE appel plutôt qu'un `callCount()` exact.
+      const ourCall = sendNotification.mock.calls.find(
+        (call) => call.arguments[0].endpoint === endpoint
+      );
+      assert.ok(ourCall, "aucun envoi vers notre abonnement SOA");
+      assert.match(JSON.parse(ourCall.arguments[1]).title, /Nouveau dossier SOA/);
+
+      sendNotification.mock.resetCalls();
+
+      // Un compte SOA qui crée directement son propre dossier ne se
+      // notifie pas lui-même (aucun appel vers NOTRE abonnement).
+      await create({ firstName: "B", lastName: "C", phone: "03" }, asUser(soaUser));
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      assert.ok(
+        !sendNotification.mock.calls.some((call) => call.arguments[0].endpoint === endpoint)
+      );
+    } finally {
+      await Member.deleteOne({ _id: presenceMember._id });
+      await PushSubscription.deleteOne({ endpoint });
+    }
+  });
+
+  it("notifie la CANA et le coordonnateur des bergeries à la transmission d'un dossier", async () => {
+    const sendNotification = mock.method(webpush, "sendNotification", async () => {});
+    const canaEndpoint = "https://push.example.invalid/newsoul-test-cana";
+    const coordinateurEndpoint = "https://push.example.invalid/newsoul-test-coordinateur";
+
+    await pushService.subscribe(canaUser._id, {
+      endpoint: canaEndpoint,
+      keys: { p256dh: "p256dh", auth: "auth" },
+    });
+    await pushService.subscribe(coordinateurUser._id, {
+      endpoint: coordinateurEndpoint,
+      keys: { p256dh: "p256dh", auth: "auth" },
+    });
+
+    try {
+      const newSoul = await create(
+        { firstName: "Jean", lastName: "Kouassi", phone: "0700000000" },
+        asUser(soaUser)
+      );
+
+      await newSoulService.transmit(newSoul._id, asUser(soaUser));
+
+      const hasBothEndpoints = () => {
+        const notified = sendNotification.mock.calls.map((call) => call.arguments[0].endpoint);
+
+        return notified.includes(canaEndpoint) && notified.includes(coordinateurEndpoint);
+      };
+
+      await waitFor(hasBothEndpoints);
+
+      // `callCount()` exact évité pour la même raison qu'ailleurs dans
+      // ce fichier (base de dev partagée entre fichiers de test
+      // exécutés en parallèle) : on vérifie que NOS deux abonnements
+      // ont bien reçu l'appel, pas le total.
+      assert.ok(hasBothEndpoints());
+
+      const ourCall = sendNotification.mock.calls.find(
+        (call) => call.arguments[0].endpoint === canaEndpoint
+      );
+      assert.match(JSON.parse(ourCall.arguments[1]).title, /transmis à la CANA/);
+    } finally {
+      await PushSubscription.deleteMany({
+        endpoint: { $in: [canaEndpoint, coordinateurEndpoint] },
+      });
+    }
+  });
+
+  it("sendUpcomingFollowUpReminders envoie un rappel une seule fois, seulement dans la fenêtre", async () => {
+    const sendNotification = mock.method(webpush, "sendNotification", async () => {});
+    const endpoint = "https://push.example.invalid/newsoul-test-reminder";
+
+    await pushService.subscribe(canaUser._id, {
+      endpoint,
+      keys: { p256dh: "p256dh", auth: "auth" },
+    });
+
+    try {
+      const dueTomorrow = await create(
+        { firstName: "Rappel", lastName: "Demain", phone: "0744444444" },
+        asUser(soaUser)
+      );
+      await newSoulService.transmit(dueTomorrow._id, asUser(soaUser));
+      await newSoulService.acknowledge(dueTomorrow._id, asUser(canaUser));
+      await newSoulService.updateCana(
+        dueTomorrow._id,
+        {
+          monthlyFollowUps: [
+            {
+              period: "mois_1",
+              reviewDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+            },
+          ],
+        },
+        asUser(canaUser)
+      );
+
+      const dueInThreeWeeks = await create(
+        { firstName: "Rappel", lastName: "Lointain", phone: "0755555555" },
+        asUser(soaUser)
+      );
+      await newSoulService.transmit(dueInThreeWeeks._id, asUser(soaUser));
+      await newSoulService.acknowledge(dueInThreeWeeks._id, asUser(canaUser));
+      await newSoulService.updateCana(
+        dueInThreeWeeks._id,
+        {
+          monthlyFollowUps: [
+            {
+              period: "mois_1",
+              reviewDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
+            },
+          ],
+        },
+        asUser(canaUser)
+      );
+
+      sendNotification.mock.resetCalls();
+
+      // `sendUpcomingFollowUpReminders` balaie TOUTE la collection,
+      // sans filtre par test : sur la base de dev partagée, un autre
+      // dossier proche de son échéance (créé par un test exécuté en
+      // parallèle) peut faire monter `firstSweep` au-delà de 1 — d'où
+      // `>= 1` et une vérification ciblée sur NOTRE abonnement plutôt
+      // qu'un `callCount()` exact.
+      const firstSweep = await newSoulService.sendUpcomingFollowUpReminders();
+      assert.ok(firstSweep >= 1);
+
+      const ourFirstCall = sendNotification.mock.calls.find(
+        (call) => call.arguments[0].endpoint === endpoint
+      );
+      assert.ok(ourFirstCall, "aucun envoi vers notre abonnement de suivi");
+      assert.match(JSON.parse(ourFirstCall.arguments[1]).title, /Suivi mensuel à venir/);
+
+      // Un second balayage ne renvoie pas le même rappel à NOTRE
+      // abonnement (peu importe ce qu'un autre test aurait pu, entre
+      // temps, ajouter ailleurs).
+      sendNotification.mock.resetCalls();
+      await newSoulService.sendUpcomingFollowUpReminders();
+      assert.ok(
+        !sendNotification.mock.calls.some((call) => call.arguments[0].endpoint === endpoint)
+      );
+
+      const stored = await NewSoul.findById(dueTomorrow._id).lean();
+      assert.ok(stored.cana.monthlyFollowUps[0].reminderSentAt);
+    } finally {
+      await PushSubscription.deleteOne({ endpoint });
+    }
   });
 });

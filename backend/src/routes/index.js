@@ -30,6 +30,7 @@ import * as presenceService from "../services/presence.service.js";
 import * as presenceExportService from "../services/presenceExport.service.js";
 import * as newSoulService from "../services/newSoul.service.js";
 import * as agentService from "../services/agent.service.js";
+import * as pushService from "../services/push.service.js";
 import {
   parseRegistrationNumber,
   releaseIfLastIssued,
@@ -1854,6 +1855,45 @@ export const buildRoutes = () => {
   );
 
   api.use("/admin/agents", adminAgents);
+
+  // ---- Notifications push ----------------------------------------
+  //
+  // Clé publique en dehors du groupe /admin : ce n'est pas un secret
+  // (le nom le dit), et il faut pouvoir la lire pour proposer
+  // l'abonnement avant même que le navigateur sache si son porteur
+  // aura le droit de recevoir quoi que ce soit — la vraie décision
+  // ("qui reçoit quoi") reste entièrement côté serveur, au moment de
+  // l'envoi (voir push.service.js#sendToRoles).
+  api.get(
+    "/push/vapid-public-key",
+    asyncHandler(async (_req, res) => {
+      sendSuccess(res, { data: { publicKey: pushService.vapidPublicKey() } });
+    })
+  );
+
+  const adminPush = Router();
+
+  adminPush.use(requireAuth);
+
+  adminPush.post(
+    "/subscribe",
+    asyncHandler(async (req, res) => {
+      await pushService.subscribe(req.user.id, req.body ?? {});
+
+      sendSuccess(res, { message: "Notifications activées." });
+    })
+  );
+
+  adminPush.post(
+    "/unsubscribe",
+    asyncHandler(async (req, res) => {
+      await pushService.unsubscribe(req.user.id, req.body?.endpoint);
+
+      sendSuccess(res, { message: "Notifications désactivées." });
+    })
+  );
+
+  api.use("/admin/push", adminPush);
 
   return api;
 };

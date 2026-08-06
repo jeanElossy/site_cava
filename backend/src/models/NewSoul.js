@@ -194,6 +194,13 @@ const monthlyFollowUpSchema = new mongoose.Schema(
     reviewDate: Date,
     observedSituation: { type: String, trim: true, maxlength: 1000 },
     decision: { type: String, trim: true, maxlength: 500 },
+
+    // Posé par le balayage quotidien des rappels (voir
+    // newSoul.service.js#sendUpcomingFollowUpReminders /
+    // jobs/followUpReminders.js) — jamais ressaisi manuellement.
+    // Empêche de renvoyer la même notification chaque jour tant que la
+    // date de suivi reste dans la fenêtre de rappel.
+    reminderSentAt: Date,
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );

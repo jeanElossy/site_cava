@@ -8,6 +8,7 @@ import User from "../models/User.js";
 import { ApiError } from "../utils/ApiError.js";
 import { nextCaseNumber } from "./newSoulNumber.service.js";
 import { nextRegistrationNumber } from "./registrationNumber.service.js";
+import * as pushService from "./push.service.js";
 
 // Rôles ADMIN (jamais un agent de présence) habilités à voir TOUS les
 // dossiers déjà transmis (jamais ceux encore en cours de saisie par
@@ -96,6 +97,29 @@ const withConfidentialSelect = (query, actor) =>
     ? query.select("+cana.deliveranceConfidentialNotes")
     : query;
 
+const dossierDisplayName = (newSoul) =>
+  `${newSoul.soa?.firstName ?? ""} ${newSoul.soa?.lastName ?? ""}`.trim() || newSoul.caseNumber;
+
+// Volontairement non attendues (pas de `await`) aux deux points
+// d'appel ci-dessous : une notification push ne doit jamais retarder
+// la réponse HTTP de l'action métier, et push.service.js garantit de
+// son côté ne jamais lever — voir la règle en tête de ce fichier.
+const notifyNewDossier = (newSoul) => {
+  pushService.sendToRoles(["soa"], {
+    title: "Nouveau dossier SOA à traiter",
+    body: dossierDisplayName(newSoul),
+    url: `/admin/nouvelles-ames/${newSoul._id}`,
+  });
+};
+
+const notifyTransmission = (newSoul) => {
+  pushService.sendToRoles(["cana", "coordinateur_bergeries"], {
+    title: "Dossier transmis à la CANA",
+    body: dossierDisplayName(newSoul),
+    url: `/admin/nouvelles-ames/${newSoul._id}`,
+  });
+};
+
 export const create = async (data, actor) => {
   const caseNumber = await nextCaseNumber();
   const author = toAuthor(actor);
@@ -113,6 +137,13 @@ export const create = async (data, actor) => {
   newSoul.statusHistory.push({ status: "enregistre_soa", changedBy: author });
 
   await newSoul.save();
+
+  // Seul le cas qui compte pour l'équipe SOA : un agent de présence
+  // vient de démarrer un dossier à l'accueil, que personne n'a encore
+  // en charge (voir VisitorsPanel → porte d'entrée vers la connexion
+  // admin). Un compte SOA/admin qui crée directement son propre
+  // dossier n'a pas besoin de se notifier lui-même.
+  if (isPresenceAgent(actor)) notifyNewDossier(newSoul);
 
   return attachDisplayNames(stripConfidentialFields(newSoul, actor));
 };
@@ -329,6 +360,66 @@ export const getStats = async (actor) => {
   };
 };
 
+// Fenêtre du RAPPEL POUSSÉ (push) — bien plus courte que les 14 jours
+// affichés dans le badge/tableau de bord (`getStats`, ci-dessus) : un
+// rappel poussé n'a de sens que tout près de l'échéance, pas deux
+// semaines à l'avance. `graceStart` (24h dans le passé) rattrape un
+// suivi dont la date est passée depuis la veille, au cas où le
+// balayage précédent aurait manqué de justesse la fenêtre.
+const FOLLOW_UP_REMINDER_LEAD_DAYS = 2;
+
+// Balayage quotidien (voir jobs/followUpReminders.js) : pousse un
+// rappel une seule fois par suivi mensuel (marqué via
+// `reminderSentAt`), à la CANA et au coordonnateur des bergeries — pas
+// à un acteur précis, contrairement au reste de ce fichier, puisque
+// c'est un job d'arrière-plan, pas une action d'un utilisateur.
+export const sendUpcomingFollowUpReminders = async () => {
+  const now = new Date();
+  const deadline = new Date(now.getTime() + FOLLOW_UP_REMINDER_LEAD_DAYS * 24 * 60 * 60 * 1000);
+  const graceStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+  const candidates = await NewSoul.find({
+    status: { $nin: SOA_EDITABLE_STATUSES },
+    "cana.monthlyFollowUps": {
+      $elemMatch: {
+        reviewDate: { $gte: graceStart, $lte: deadline },
+        reminderSentAt: { $exists: false },
+      },
+    },
+  }).select("caseNumber soa.firstName soa.lastName cana.monthlyFollowUps");
+
+  let sent = 0;
+
+  for (const newSoul of candidates) {
+    let changed = false;
+
+    for (const followUp of newSoul.cana.monthlyFollowUps) {
+      if (followUp.reminderSentAt) continue;
+      if (!followUp.reviewDate) continue;
+      if (followUp.reviewDate < graceStart || followUp.reviewDate > deadline) continue;
+
+      // Attendu (pas de fire-and-forget) : ceci est un job
+      // d'arrière-plan, pas une requête HTTP à faire répondre vite —
+      // autant s'assurer que l'envoi a été tenté avant de marquer
+      // `reminderSentAt`, plutôt que de risquer un rappel jamais parti
+      // mais jamais reproposé non plus.
+      await pushService.sendToRoles(["cana", "coordinateur_bergeries"], {
+        title: "Suivi mensuel à venir",
+        body: `${dossierDisplayName(newSoul)} — ${followUp.period}`,
+        url: `/admin/nouvelles-ames/${newSoul._id}`,
+      });
+
+      followUp.reminderSentAt = now;
+      changed = true;
+      sent += 1;
+    }
+
+    if (changed) await newSoul.save();
+  }
+
+  return sent;
+};
+
 export const updateSoa = async (id, patch, actor) => {
   const newSoul = await NewSoul.findById(id);
 
@@ -396,6 +487,8 @@ export const transmit = async (id, actor) => {
   applyStatus(newSoul, "attente_cana", actor);
 
   await newSoul.save();
+
+  notifyTransmission(newSoul);
 
   return attachDisplayNames(stripConfidentialFields(newSoul, actor));
 };

@@ -8,6 +8,8 @@ import {
 } from "react-router-dom";
 
 import {
+  Bell,
+  BellOff,
   Calendar,
   ChevronRight,
   Church,
@@ -36,6 +38,7 @@ import { STAFF_ROLES } from "../../routes/roleGroups";
 
 import usePendingSubmissionsCount from "../../hooks/usePendingSubmissionsCount";
 import useNewSoulsBadgeCount from "../../hooks/useNewSoulsBadgeCount";
+import usePushNotifications from "../../hooks/usePushNotifications";
 
 import ApiStatus from "../../components/admin/ApiStatus";
 
@@ -215,6 +218,16 @@ const AdminLayout = () => {
   const badgeValues = {
     pendingSubmissions: pendingSubmissionsCount,
     newSouls: newSoulsBadgeCount,
+  };
+
+  const pushNotifications = usePushNotifications();
+
+  const togglePushNotifications = () => {
+    if (pushNotifications.subscribed) {
+      pushNotifications.disable();
+    } else {
+      pushNotifications.enable();
+    }
   };
 
   // Le tiroir se referme dès qu'on suit un lien : sinon, sur mobile, il
@@ -470,6 +483,33 @@ const AdminLayout = () => {
               <span>{user?.email ?? ""}</span>
             </span>
           </div>
+
+          {pushNotifications.supported && (
+            <button
+              type="button"
+              className="admin-shell__theme-toggle"
+              onClick={togglePushNotifications}
+              disabled={pushNotifications.loading}
+              aria-pressed={pushNotifications.subscribed}
+              aria-label={
+                pushNotifications.subscribed
+                  ? "Désactiver les notifications"
+                  : "Activer les notifications"
+              }
+              title={
+                pushNotifications.error ||
+                (pushNotifications.subscribed
+                  ? "Désactiver les notifications"
+                  : "Activer les notifications")
+              }
+            >
+              {pushNotifications.subscribed ? (
+                <Bell aria-hidden="true" />
+              ) : (
+                <BellOff aria-hidden="true" />
+              )}
+            </button>
+          )}
 
           <button
             type="button"

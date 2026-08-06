@@ -131,6 +131,18 @@ export const env = {
   SEED_ADMIN_NAME: read("SEED_ADMIN_NAME"),
   SEED_ADMIN_EMAIL: read("SEED_ADMIN_EMAIL"),
   SEED_ADMIN_PASSWORD: read("SEED_ADMIN_PASSWORD"),
+
+  // ---- Notifications push (agents SOA/CANA) ---------------------
+  //
+  // Facultatif comme CinetPay ci-dessous : le serveur démarre sans,
+  // les agents n'ont simplement pas la proposition d'activer les
+  // notifications. `VAPID_PUBLIC_KEY` seule part aussi vers le front
+  // (voir routes/index.js, /api/push/vapid-public-key — une clé
+  // PUBLIQUE, son nom le dit) ; `VAPID_PRIVATE_KEY` ne quitte jamais
+  // le serveur, elle signe les envois.
+  VAPID_PUBLIC_KEY: read("VAPID_PUBLIC_KEY"),
+  VAPID_PRIVATE_KEY: read("VAPID_PRIVATE_KEY"),
+  VAPID_SUBJECT: read("VAPID_SUBJECT"),
 };
 
 // Longueur minimale du secret JWT. 32 caractères correspondent à la
@@ -231,6 +243,21 @@ export function validateEnv({ requireSeedAdmin = false } = {}) {
     }
   }
 
+  // Notifications push : même principe que CinetPay ci-dessus — les
+  // trois variables ensemble, ou aucune.
+  const pushKeys = ["VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT"];
+  const providedPushKeys = pushKeys.filter((key) => env[key]);
+
+  if (providedPushKeys.length > 0 && providedPushKeys.length < pushKeys.length) {
+    const missing = pushKeys.filter((key) => !env[key]);
+
+    problems.push(
+      "Configuration des notifications push incomplète. Manquant : " +
+        missing.join(", ") +
+        ". Renseignez les trois variables (voir README pour générer une paire VAPID), ou aucune pour désactiver les notifications push."
+    );
+  }
+
   if (requireSeedAdmin) {
     if (!env.SEED_ADMIN_EMAIL) {
       problems.push("SEED_ADMIN_EMAIL est absente (requise par le script d'amorçage).");
@@ -268,6 +295,13 @@ export const isPaymentConfigured = () =>
       env.CINETPAY_SECRET_KEY &&
       env.PUBLIC_API_URL
   );
+
+// Les notifications push sont-elles utilisables ?
+//
+// Interrogé par push.service.js avant tout envoi, plutôt que de
+// laisser `web-push` échouer avec des clés vides.
+export const isPushConfigured = () =>
+  Boolean(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && env.VAPID_SUBJECT);
 
 // Origines autorisées en développement quand CORS_ORIGIN n'est pas
 // renseignée. Volontairement limité au serveur de dev Vite : ce repli

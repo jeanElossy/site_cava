@@ -428,3 +428,28 @@ export const agents = {
 
 export const stats = async () =>
   request("/api/admin/stats", { auth: true });
+
+// ---------------------------------------------------------------
+// Notifications push
+// ---------------------------------------------------------------
+
+export const push = {
+  // Clé PUBLIQUE (voir push.service.js) — pas d'authentification
+  // nécessaire pour la lire, elle ne l'exige pas côté serveur non
+  // plus.
+  vapidPublicKey: async () => request("/api/push/vapid-public-key"),
+
+  subscribe: async (subscription) =>
+    request("/api/admin/push/subscribe", {
+      method: "POST",
+      body: subscription,
+      auth: true,
+    }),
+
+  unsubscribe: async (endpoint) =>
+    request("/api/admin/push/unsubscribe", {
+      method: "POST",
+      body: { endpoint },
+      auth: true,
+    }),
+};
