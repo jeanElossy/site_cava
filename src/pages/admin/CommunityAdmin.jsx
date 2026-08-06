@@ -616,14 +616,14 @@ const memberColumns = [
   {
     key: "role",
     label: "Rôle",
-    width: "10%",
+    width: "16%",
     render: (item) => (
       <span className="admin-crud__pill">
         {ROLE_LABELS[item.role] ?? "—"}
       </span>
     ),
   },
-  { key: "phone", label: "Téléphone", width: "17%" },
+  { key: "phone", label: "Téléphone", width: "11%" },
   {
     key: "status",
     label: "Statut",
