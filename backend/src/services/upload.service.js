@@ -41,6 +41,11 @@ const FOLDERS = {
   events: "cava/events",
   ministries: "cava/ministries",
   members: "cava/members",
+  // Preuves de don (public, non authentifié — voir la route dédiée
+  // POST /api/donations/proof-signature) et QR des moyens de
+  // paiement (admin, via /api/admin/uploads/signature).
+  donations: "cava/donations",
+  paymentMethods: "cava/payment-methods",
   divers: "cava/divers",
 };
 
