@@ -58,6 +58,12 @@ const ContributionForm = () => {
 
   const goBack = () => {
     setError("");
+    // Une erreur de soumission (`submitError`) n'a de sens qu'au regard
+    // du bouton « Envoyer » de la dernière étape : la laisser vivante en
+    // quittant cette étape la ferait réapparaître, sans rapport, à côté
+    // du bouton « J'ai effectué le paiement » de l'étape QR (step === 2,
+    // voir SummaryCard).
+    setSubmitError("");
     setStep((current) => Math.max(current - 1, 0));
   };
 
@@ -74,6 +80,10 @@ const ContributionForm = () => {
       return;
     }
 
+    // Une validation réussie efface toute ancienne erreur de validation
+    // (`error`) qui pourrait sinon rester affichée aux côtés de l'état
+    // d'envoi, en plus de repartir sur une tentative d'envoi propre.
+    setError("");
     setSubmitError("");
     setSubmitting(true);
 
@@ -162,6 +172,16 @@ const ContributionForm = () => {
             <p className="step-error" role="alert">{error}</p>
           )}
 
+          {/* `submitError` ne vient que de `handleSubmit`, déclenché
+              uniquement par le bouton « Envoyer » de la dernière étape :
+              l'afficher ici, à côté de ce bouton, plutôt que dans
+              `SummaryCard` (qui restait monté à l'étape 2 avec un
+              message obsolète, sans rapport avec le bouton qui y est
+              affiché). */}
+          {isLastStep && submitError && (
+            <p className="step-error" role="alert">{submitError}</p>
+          )}
+
           <div className="step-nav">
 
             {step > 0 && (
@@ -204,7 +224,6 @@ const ContributionForm = () => {
           state={state}
           step={step}
           submitting={submitting}
-          submitError={submitError}
           onProceedToProof={handleProceedToProof}
         />
 

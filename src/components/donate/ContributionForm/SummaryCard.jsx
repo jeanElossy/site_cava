@@ -4,7 +4,13 @@ import ImpactCard from "../ImpactSection";
 
 // Récapitulatif collant, visible à toutes les étapes. Le bouton final
 // ("J'ai effectué le paiement") n'apparaît qu'à l'étape du billet.
-const SummaryCard = ({ state, step, submitting, submitError, onProceedToProof }) => {
+//
+// Ne porte plus d'erreur d'envoi : `submitError` ne vient que du
+// bouton « Envoyer » de la dernière étape (voir `index.jsx`), sans
+// rapport avec le bouton affiché ici à l'étape du billet — l'afficher
+// ici l'aurait fait réapparaître, obsolète, en quittant l'étape
+// d'envoi vers l'étape du billet (voir `goBack` dans `index.jsx`).
+const SummaryCard = ({ state, step, submitting, onProceedToProof }) => {
   const amount = Number(state.amount || 0).toLocaleString("fr-FR");
   const showTicketAction = step === 2;
 
@@ -31,27 +37,21 @@ const SummaryCard = ({ state, step, submitting, submitError, onProceedToProof })
       <ImpactCard />
 
       {showTicketAction && (
-        <>
-          <button
-            type="button"
-            className="pay-btn"
-            onClick={onProceedToProof}
-            disabled={submitting}
-          >
-            {submitting ? (
-              <Loader2 className="pay-btn__spinner" aria-hidden="true" />
-            ) : (
-              <>
-                J'ai effectué le paiement
-                <ArrowRight aria-hidden="true" />
-              </>
-            )}
-          </button>
-
-          {submitError && (
-            <p className="step-error" role="alert">{submitError}</p>
+        <button
+          type="button"
+          className="pay-btn"
+          onClick={onProceedToProof}
+          disabled={submitting}
+        >
+          {submitting ? (
+            <Loader2 className="pay-btn__spinner" aria-hidden="true" />
+          ) : (
+            <>
+              J'ai effectué le paiement
+              <ArrowRight aria-hidden="true" />
+            </>
           )}
-        </>
+        </button>
       )}
 
     </aside>
