@@ -24,8 +24,8 @@ describe("guestBadgeSvg.service", () => {
     await assert.rejects(() => buildGuestBadgeJpeg("HOMME", 0));
   });
 
-  it("génère un PDF de 10 pages (5 homme + 5 femme)", async () => {
-    const buffer = await buildGuestBadgesPdf();
+  it("génère un PDF de 5 pages pour le genre homme", async () => {
+    const buffer = await buildGuestBadgesPdf("HOMME");
 
     assert.ok(Buffer.isBuffer(buffer));
     assert.equal(buffer.subarray(0, 5).toString("latin1"), "%PDF-");
@@ -33,6 +33,22 @@ describe("guestBadgeSvg.service", () => {
     const pageCount = (
       buffer.toString("latin1").match(/\/Type\s*\/Page[^s]/g) ?? []
     ).length;
-    assert.equal(pageCount, 10);
+    assert.equal(pageCount, 5);
+  });
+
+  it("génère un PDF de 5 pages pour le genre femme, insensible à la casse", async () => {
+    const buffer = await buildGuestBadgesPdf("femme");
+
+    assert.ok(Buffer.isBuffer(buffer));
+
+    const pageCount = (
+      buffer.toString("latin1").match(/\/Type\s*\/Page[^s]/g) ?? []
+    ).length;
+    assert.equal(pageCount, 5);
+  });
+
+  it("refuse un genre absent ou inconnu", async () => {
+    await assert.rejects(() => buildGuestBadgesPdf(), /Genre .* inconnu/);
+    await assert.rejects(() => buildGuestBadgesPdf("AUTRE"), /Genre .* inconnu/);
   });
 });

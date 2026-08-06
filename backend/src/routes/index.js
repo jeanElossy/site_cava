@@ -950,24 +950,26 @@ export const buildRoutes = () => {
 
   api.use("/admin/members", memberExportRouter);
 
-  // Badges invités pré-imprimés (5 homme + 5 femme) — voir
-  // guestBadgeSvg.service.js. Un seul document à télécharger et
+  // Badges invités pré-imprimés (5 par genre) — voir
+  // guestBadgeSvg.service.js. Un document par genre à télécharger et
   // imprimer/découper, régénéré à chaque appel (pas de dépendance à
   // un membre ou un dossier précis, contrairement à la carte de
-  // membre ci-dessus).
+  // membre ci-dessus) — jamais les deux genres d'un coup : voir
+  // BADGE_RASTER_SCALE côté service pour la raison (poids/temps de
+  // génération sur l'instance d'hébergement).
   const guestBadgesRouter = Router();
 
   guestBadgesRouter.use(requireAuth, requireRole("admin"));
 
   guestBadgesRouter.get(
-    "/pdf",
-    asyncHandler(async (_req, res) => {
-      const buffer = await guestBadgeService.buildGuestBadgesPdf();
+    "/pdf/:gender",
+    asyncHandler(async (req, res) => {
+      const buffer = await guestBadgeService.buildGuestBadgesPdf(req.params.gender);
 
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader(
         "Content-Disposition",
-        'attachment; filename="badges-invites-cava.pdf"'
+        `attachment; filename="badges-invites-cava-${req.params.gender.toLowerCase()}.pdf"`
       );
 
       res.send(buffer);

@@ -716,21 +716,30 @@ const announcementColumns = [
   },
 ];
 
-// Les 10 badges invités (5 homme + 5 femme, voir
-// guestBadgeSvg.service.js) — pas liés à un membre ni filtrable par
-// église/bergerie, contrairement à l'export ci-dessous : un bouton
-// autonome, pas une variante de `MemberExportButtons`.
+// Les badges invités (5 par genre, voir guestBadgeSvg.service.js) —
+// pas liés à un membre ni filtrable par église/bergerie, contrairement
+// à l'export ci-dessous : un bouton autonome par genre, pas une
+// variante de `MemberExportButtons`. Deux PDF séparés plutôt qu'un
+// seul de 10 pages : à haute résolution (impression nette), un PDF de
+// 10 pages dépassait le temps/la mémoire tolérés par l'hébergement
+// ("Failed to fetch" côté navigateur) — voir BADGE_RASTER_SCALE côté
+// service pour le détail.
+const GUEST_BADGE_GENDERS = [
+  { code: "homme", label: "Télécharger les 5 cartes invités homme" },
+  { code: "femme", label: "Télécharger les 5 cartes invités femme" },
+];
+
 const GuestBadgesDownloadButton = () => {
-  const [busy, setBusy] = useState(false);
+  const [busyGender, setBusyGender] = useState("");
   const [error, setError] = useState("");
 
-  const download = async () => {
-    setBusy(true);
+  const download = async (genderCode) => {
+    setBusyGender(genderCode);
     setError("");
 
     try {
       const response = await fetch(
-        `${apiBaseUrl}/api/admin/guest-badges/pdf`,
+        `${apiBaseUrl}/api/admin/guest-badges/pdf/${genderCode}`,
         { headers: { Authorization: `Bearer ${getToken()}` } }
       );
 
@@ -743,23 +752,30 @@ const GuestBadgesDownloadButton = () => {
       const link = document.createElement("a");
 
       link.href = url;
-      link.download = "badges-invites-cava.pdf";
+      link.download = `badges-invites-cava-${genderCode}.pdf`;
       link.click();
 
       URL.revokeObjectURL(url);
     } catch (caught) {
       setError(caught?.message ?? "La génération a échoué.");
     } finally {
-      setBusy(false);
+      setBusyGender("");
     }
   };
 
   return (
     <div className="admin-community__export">
-      <button type="button" onClick={download} disabled={busy}>
-        <Download aria-hidden="true" />
-        {busy ? "Génération…" : "Télécharger les 10 cartes invités"}
-      </button>
+      {GUEST_BADGE_GENDERS.map((gender) => (
+        <button
+          key={gender.code}
+          type="button"
+          onClick={() => download(gender.code)}
+          disabled={busyGender !== ""}
+        >
+          <Download aria-hidden="true" />
+          {busyGender === gender.code ? "Génération…" : gender.label}
+        </button>
+      ))}
 
       {error && (
         <p className="admin-community__alert" role="alert">

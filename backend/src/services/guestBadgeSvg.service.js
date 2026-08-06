@@ -7,6 +7,7 @@ import QRCode from "qrcode";
 import PDFDocument from "pdfkit";
 
 import { env } from "../config/env.js";
+import { ApiError } from "../utils/ApiError.js";
 import {
   rewriteFontFamilies,
   reflowMultiTspanText,
@@ -39,18 +40,20 @@ const GENDERS = [
 ];
 const BADGES_PER_GENDER = 5;
 
-// Le gabarit fait 327.6 x 442.34 (unités = points, 1/72 pouce) : à
-// cette échelle, 5 équivaut à 360 DPI (5 x 72), au-dessus du seuil
-// standard de 300 DPI pour une impression nette. La régression de
-// qualité constatée (texte/logo flous, voir capture d'écran) venait
-// surtout de la RÉENCODAGE EN JPEG ci-dessous (perte visible sur du
-// texte à bords nets, contrairement à une photo) — corrigé en gardant
-// le PNG jusque dans le PDF final (voir `buildGuestBadgesPdf`) — mais
-// l'échelle d'origine (3, ~216 DPI) restait aussi un peu juste : 5 est
-// le compromis retenu entre netteté et poids/temps de génération
-// (~4 Mo et quelques secondes par badge, dix fois plus léger que
-// l'échelle 8 utilisée pour la carte de membre, un objet imprimé
-// séparément et bien plus rarement).
+// La régression de qualité constatée (texte/logo flous) venait de la
+// RÉENCODAGE EN JPEG ci-dessous, pas de l'échelle : sur du texte à
+// bords nets (contrairement à une photo), la compression JPEG écrasait
+// visiblement le détail — corrigé en gardant le PNG jusque dans le PDF
+// final (voir `buildGuestBadgesPdf`).
+//
+// 5 équivaut à 360 DPI (5 x 72, le gabarit étant en points), au-dessus
+// du seuil standard de 300 DPI pour une impression nette. Tenable ici
+// (contrairement à un essai précédent à cette échelle sur les 10
+// badges d'un coup, qui avait fait grimper le PDF à ~31 Mo / ~20s de
+// génération — assez pour un "Failed to fetch" côté navigateur sur
+// l'instance d'hébergement) parce que `buildGuestBadgesPdf` ne génère
+// plus qu'UN SEUL genre à la fois (5 pages, voir le bouton dédié par
+// genre côté admin) : ~15 Mo / ~10s, dans une plage sûre.
 const BADGE_RASTER_SCALE = 5;
 
 // Même format que les liens de mise à jour de fiche membre
@@ -117,9 +120,10 @@ export const buildGuestBadgeJpeg = async (genderCode, index) => {
   return pngToJpeg(png);
 };
 
-// Les 10 badges (5 homme + 5 femme), un par page, prêts à imprimer et
-// découper — chaque page a le format physique de son propre gabarit
-// (homme.svg et femme.svg n'ont pas exactement le même viewBox).
+// Les 5 badges d'UN SEUL genre, un par page, prêts à imprimer et
+// découper — deux boutons séparés côté admin (un par genre) plutôt
+// qu'un unique PDF de 10 pages : voir BADGE_RASTER_SCALE ci-dessus
+// pour la raison (poids/temps de génération).
 //
 // PNG directement dans le PDF, jamais reconverti en JPEG (même
 // principe que memberCardSvg.service.js#buildMemberCardPdf) : ces
@@ -127,20 +131,24 @@ export const buildGuestBadgeJpeg = async (genderCode, index) => {
 // type de contenu que la compression JPEG dégrade le plus visiblement
 // (flou/artefacts en bordure de lettre) — sans bénéfice de poids
 // notable ici vu qu'aucune photo n'entre dans un badge invité.
-export const buildGuestBadgesPdf = async () => {
+export const buildGuestBadgesPdf = async (genderCode) => {
+  const genderDef = GENDERS.find((item) => item.code === genderCode?.toUpperCase());
+
+  if (!genderDef) {
+    throw ApiError.badRequest("Genre de badge invité inconnu (attendu : homme ou femme).");
+  }
+
   const pages = [];
 
-  for (const genderDef of GENDERS) {
-    for (let index = 1; index <= BADGES_PER_GENDER; index += 1) {
-      const png = await buildBadgePng(genderDef, index);
-      const image = await loadImage(png);
+  for (let index = 1; index <= BADGES_PER_GENDER; index += 1) {
+    const png = await buildBadgePng(genderDef, index);
+    const image = await loadImage(png);
 
-      pages.push({
-        png,
-        width: image.width / BADGE_RASTER_SCALE,
-        height: image.height / BADGE_RASTER_SCALE,
-      });
-    }
+    pages.push({
+      png,
+      width: image.width / BADGE_RASTER_SCALE,
+      height: image.height / BADGE_RASTER_SCALE,
+    });
   }
 
   return new Promise((resolve, reject) => {
