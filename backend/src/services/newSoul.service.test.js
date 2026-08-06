@@ -616,6 +616,17 @@ describe("newSoul.service (intégration MongoDB)", () => {
     assert.ok(!filtered.some((item) => String(item._id) === String(notTransmitted._id)));
   });
 
+  it("un compte admin peut filtrer par un statut SOA, contrairement à la CANA (isCanaSideUser inclut admin)", async () => {
+    const newSoul = await create(
+      { firstName: "Jean", lastName: "Kouassi", phone: "0700000000" },
+      asUser(soaUser)
+    );
+
+    const filtered = await newSoulService.list(asUser(adminUser), { status: "enregistre_soa" });
+
+    assert.ok(filtered.some((item) => String(item._id) === String(newSoul._id)));
+  });
+
   it("getStats compte les dossiers par statut et liste les suivis mensuels à venir, dans le périmètre de visibilité de l'acteur", async () => {
     const ownedBySoa = await create(
       { firstName: "Jean", lastName: "Kouassi", phone: "0700000000" },

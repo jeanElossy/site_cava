@@ -254,7 +254,11 @@ export const list = async (actor, { status, search, archived } = {}) => {
     // la CANA voir un dossier "nouveau" (pas encore transmis) ou un
     // agent SOA voir un dossier déjà transmis, en passant juste ce
     // statut en paramètre.
-    if (isCanaSideUser(actor) && SOA_EDITABLE_STATUSES.includes(status)) {
+    // `isCanaSideUser` inclut "admin" (voir CANA_SIDE_ROLES) : sans ce
+    // `!isAdminUser`, un compte admin se voyait refuser les statuts
+    // côté SOA alors que `buildVisibilityFilter` lui laisse déjà voir
+    // absolument tous les dossiers sans restriction.
+    if (!isAdminUser(actor) && isCanaSideUser(actor) && SOA_EDITABLE_STATUSES.includes(status)) {
       throw ApiError.forbidden(
         "Ce statut concerne des dossiers non encore transmis à la CANA."
       );

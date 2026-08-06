@@ -11,6 +11,12 @@ export const STATUS_LABELS = {
   cloture: "Clôturé",
 };
 
+// Même liste que SOA_EDITABLE_STATUSES côté serveur (NewSoul.js) —
+// utilisée pour ne proposer, dans les filtres, que les statuts que le
+// rôle courant a le droit d'interroger (voir NewSoulsListPage.jsx),
+// plutôt que de laisser l'API renvoyer un refus après coup.
+export const SOA_EDITABLE_STATUSES = ["nouveau", "enregistre_soa"];
+
 export const STATUS_TONES = {
   nouveau: "neutral",
   enregistre_soa: "neutral",

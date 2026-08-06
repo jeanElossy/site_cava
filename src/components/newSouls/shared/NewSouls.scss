@@ -635,6 +635,20 @@
     color: $admin-accent-strong;
   }
 
+  // Le tableau défile DANS son cadre : sans cela, sur un écran étroit,
+  // il pousse toute la page en largeur (y compris le menu admin) au
+  // lieu de faire apparaître sa propre barre de défilement — même
+  // principe que .admin-crud__table-wrapper.
+  &__table-wrapper {
+    overflow-x: auto;
+
+    margin-bottom: 12px;
+
+    .new-soul-table {
+      margin-bottom: 0;
+    }
+  }
+
   &__header-actions {
     display: flex;
     flex-wrap: wrap;

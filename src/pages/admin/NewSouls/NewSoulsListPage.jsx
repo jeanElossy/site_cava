@@ -13,13 +13,22 @@ import usePageMeta from "../../../hooks/usePageMeta";
 import useAsyncData from "../../../hooks/useAsyncData";
 import { AdminEmpty, AdminError, AdminLoading } from "../../../components/admin/AdminFeedback";
 import StatusBadge from "../../../components/newSouls/shared/StatusBadge";
-import { STATUS_LABELS } from "../../../components/newSouls/shared/statusLabels";
+import {
+  STATUS_LABELS,
+  SOA_EDITABLE_STATUSES,
+} from "../../../components/newSouls/shared/statusLabels";
 import "../../../components/newSouls/shared/NewSouls.scss";
 
 const TABS = [
   { id: "overview", label: "Vue d'ensemble" },
   { id: "list", label: "Tous les dossiers" },
 ];
+
+// Rôles CANA (hors admin, qui voit tout) réservés aux dossiers déjà
+// transmis — même liste que CANA_SIDE_ROLES côté serveur, moins
+// "admin" : lui seul n'a aucune restriction de statut (voir
+// newSoul.service.js#list, exemption ajoutée pour ce même motif).
+const CANA_SIDE_ROLES = ["cana", "coordinateur_bergeries", "pasteur"];
 
 const formatDate = (value) => (value ? new Date(value).toLocaleDateString("fr-FR") : "—");
 
@@ -32,6 +41,19 @@ const NewSoulsListPage = () => {
   const navigate = useNavigate();
   const role = currentUser()?.role;
   const canCreate = ["soa", "admin"].includes(role);
+
+  // Ne propose, dans les filtres, que les statuts que ce rôle a le
+  // droit d'interroger (voir newSoul.service.js#list) — un agent SOA
+  // ne peut filtrer QUE sur "nouveau"/"enregistre_soa", un rôle CANA
+  // ne peut PAS filtrer sur ceux-là ; sans ce filtrage, choisir un
+  // statut hors périmètre renvoyait un refus de l'API à la place de la
+  // liste attendue.
+  const visibleStatusEntries = Object.entries(STATUS_LABELS).filter(([value]) => {
+    if (role === "soa") return SOA_EDITABLE_STATUSES.includes(value);
+    if (CANA_SIDE_ROLES.includes(role)) return !SOA_EDITABLE_STATUSES.includes(value);
+
+    return true;
+  });
 
   const [tab, setTab] = useState("overview");
 
@@ -184,7 +206,7 @@ const NewSoulsListPage = () => {
                   <h2>Répartition par étape</h2>
 
                   <ul className="new-soul-dashboard__breakdown">
-                    {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                    {visibleStatusEntries.map(([value, label]) => (
                       <li key={value}>
                         <button type="button" onClick={() => goToStatus(value)}>
                           <StatusBadge status={value} />
@@ -252,7 +274,7 @@ const NewSoulsListPage = () => {
             <div className="admin-form__field">
               <select value={status} onChange={(event) => setStatus(event.target.value)}>
                 <option value="">Tous les statuts</option>
-                {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                {visibleStatusEntries.map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
@@ -287,43 +309,45 @@ const NewSoulsListPage = () => {
           {!loading && items.length === 0 && <p>Aucun dossier pour le moment.</p>}
 
           {!loading && items.length > 0 && (
-            <table className="new-soul-table">
-              <thead>
-                <tr>
-                  <th>Dossier</th>
-                  <th>Nom</th>
-                  <th>Téléphone</th>
-                  <th>Statut</th>
-                  <th>Ouvert le</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr
-                    key={item.id}
-                    onClick={() => navigate(`/admin/nouvelles-ames/${item.id}`)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <td className="new-soul-list__case">{item.caseNumber}</td>
-                    <td>
-                      {item.soa?.lastName} {item.soa?.firstName}
-                    </td>
-                    <td>{item.soa?.phone}</td>
-                    <td>
-                      <StatusBadge status={item.status} />
-                      {item.archivedAt && (
-                        <span className="new-soul-list__archived-tag">Archivé</span>
-                      )}
-                    </td>
-                    <td>
-                      {item.soa?.openedAt
-                        ? new Date(item.soa.openedAt).toLocaleDateString("fr-FR")
-                        : "—"}
-                    </td>
+            <div className="new-soul-list__table-wrapper">
+              <table className="new-soul-table">
+                <thead>
+                  <tr>
+                    <th>Dossier</th>
+                    <th>Nom</th>
+                    <th>Téléphone</th>
+                    <th>Statut</th>
+                    <th>Ouvert le</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {items.map((item) => (
+                    <tr
+                      key={item.id}
+                      onClick={() => navigate(`/admin/nouvelles-ames/${item.id}`)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <td className="new-soul-list__case">{item.caseNumber}</td>
+                      <td>
+                        {item.soa?.lastName} {item.soa?.firstName}
+                      </td>
+                      <td>{item.soa?.phone}</td>
+                      <td>
+                        <StatusBadge status={item.status} />
+                        {item.archivedAt && (
+                          <span className="new-soul-list__archived-tag">Archivé</span>
+                        )}
+                      </td>
+                      <td>
+                        {item.soa?.openedAt
+                          ? new Date(item.soa.openedAt).toLocaleDateString("fr-FR")
+                          : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
