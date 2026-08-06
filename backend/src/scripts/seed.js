@@ -6,11 +6,15 @@ import Event from "../models/Event.js";
 import Ministry from "../models/Ministry.js";
 import Media from "../models/Media.js";
 import Settings from "../models/Settings.js";
+import PaymentMethod from "../models/PaymentMethod.js";
+import DonationType from "../models/DonationType.js";
 
 import {
   seedEvents,
   seedMinistries,
   seedMedias,
+  seedPaymentMethods,
+  seedDonationTypes,
 } from "./seed-data.js";
 
 // Amorçage de la base.
@@ -98,6 +102,18 @@ const run = async () => {
     ["title", "category"],
     seedMedias,
     "médias"
+  );
+  await upsert(
+    PaymentMethod,
+    ["name"],
+    seedPaymentMethods,
+    "moyens de paiement"
+  );
+  await upsert(
+    DonationType,
+    ["name"],
+    seedDonationTypes,
+    "types de don"
   );
 
   // ---- Paramètres --------------------------------------------

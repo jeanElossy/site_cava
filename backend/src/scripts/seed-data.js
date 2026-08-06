@@ -198,3 +198,24 @@ export const seedMedias = [
   media("Une restauration familiale", "Sarah N'Guessan", "temoignage", "10:12", "/images/media/temoignage3.jpg", "2025-04-27"),
   media("De l'échec à la victoire", "Koffi Emmanuel", "temoignage", "07:45", "/images/media/temoignage4.jpg", "2025-04-20"),
 ];
+
+// ---- Moyens de paiement --------------------------------------------
+// `active: false` volontairement : sans image QR ni numéro réels,
+// aucun de ces moyens ne doit apparaître aux fidèles avant que
+// l'administration ne les complète et ne les active.
+export const seedPaymentMethods = [
+  { name: "Orange Money", order: 1 },
+  { name: "MTN Money", order: 2 },
+  { name: "Moov Money", order: 3 },
+  { name: "Wave", order: 4 },
+];
+
+// ---- Types de don ---------------------------------------------------
+export const seedDonationTypes = [
+  { name: "Dîme", order: 1 },
+  { name: "Offrande", order: 2 },
+  { name: "Action de grâce", order: 3 },
+  { name: "Construction", order: 4 },
+  { name: "Mission", order: 5 },
+  { name: "Don libre", order: 6 },
+];
