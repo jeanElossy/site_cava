@@ -29,6 +29,7 @@ import * as presenceQrService from "../services/presenceQr.service.js";
 import * as presenceService from "../services/presence.service.js";
 import * as presenceExportService from "../services/presenceExport.service.js";
 import * as newSoulService from "../services/newSoul.service.js";
+import * as agentService from "../services/agent.service.js";
 import {
   parseRegistrationNumber,
   releaseIfLastIssued,
@@ -979,6 +980,12 @@ export const buildRoutes = () => {
     publicBySlug: false,
     auditResource: "member",
     writeRoles: ["admin"],
+    // Les membres portent des données personnelles : même en LECTURE,
+    // restreint à admin/editor (voir resource.routes.js) — inchangé
+    // pour ces deux rôles, mais un compte agent (soa, cana,
+    // coordinateur_bergeries, pasteur), conçu pour ne voir que le
+    // module Nouvelles Âmes, n'a pas à parcourir l'annuaire complet.
+    readRoles: ["admin", "editor"],
     adminFilters: ["church", "flock"],
   });
 
@@ -1000,7 +1007,10 @@ export const buildRoutes = () => {
 
   const adminMessages = Router();
 
-  adminMessages.use(requireAuth);
+  // Sans rapport avec le module Nouvelles Âmes : un compte agent
+  // (soa/cana/coordinateur_bergeries/pasteur) n'a aucune raison d'y
+  // accéder, même en lecture.
+  adminMessages.use(requireAuth, requireRole("admin", "editor"));
 
   adminMessages.get(
     "/",
@@ -1186,7 +1196,9 @@ export const buildRoutes = () => {
   // ---- Dons : administration ------------------------------------
   const adminDonations = Router();
 
-  adminDonations.use(requireAuth);
+  // Données financières : un compte agent (soa/cana/coordinateur_
+  // bergeries/pasteur) n'a rien à y faire.
+  adminDonations.use(requireAuth, requireRole("admin", "editor"));
 
   adminDonations.get(
     "/",
@@ -1371,7 +1383,9 @@ export const buildRoutes = () => {
 
   const adminNewsletter = Router();
 
-  adminNewsletter.use(requireAuth);
+  // Adresses e-mail des abonnés : un compte agent (soa/cana/
+  // coordinateur_bergeries/pasteur) n'a rien à y faire.
+  adminNewsletter.use(requireAuth, requireRole("admin", "editor"));
 
   adminNewsletter.get(
     "/",
@@ -1739,6 +1753,107 @@ export const buildRoutes = () => {
   );
 
   api.use("/admin/new-souls", adminNewSouls);
+
+  // ---- Gestion des agents (SOA, CANA, coordonnateur, pasteur) -----
+  //
+  // Réservé aux administrateurs : ce module crée/modifie des comptes
+  // avec mot de passe, il n'a rien à voir avec la simple lecture des
+  // dossiers "nouvelles âmes" ci-dessus (`requireNewSoulActor`).
+  const adminAgents = Router();
+
+  adminAgents.use(requireAuth, requireRole("admin"));
+
+  adminAgents.get(
+    "/",
+    asyncHandler(async (req, res) => {
+      const data = await agentService.list({
+        role: req.query.role,
+        search: req.query.search,
+      });
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  adminAgents.post(
+    "/",
+    asyncHandler(async (req, res) => {
+      const data = await agentService.create(req.body ?? {});
+
+      await audit.record(req, {
+        action: "create",
+        resource: "agent",
+        resourceId: data.id,
+      });
+
+      sendCreated(res, { message: "Agent créé avec succès.", data });
+    })
+  );
+
+  adminAgents.patch(
+    "/:id",
+    asyncHandler(async (req, res) => {
+      const data = await agentService.update(req.params.id, req.body ?? {});
+
+      await audit.record(req, {
+        action: "update",
+        resource: "agent",
+        resourceId: req.params.id,
+      });
+
+      sendSuccess(res, { message: "Agent mis à jour.", data });
+    })
+  );
+
+  adminAgents.patch(
+    "/:id/status",
+    asyncHandler(async (req, res) => {
+      const data = await agentService.setActive(req.params.id, req.body?.isActive);
+
+      await audit.record(req, {
+        action: "update",
+        resource: "agent",
+        resourceId: req.params.id,
+      });
+
+      sendSuccess(res, {
+        message: data.isActive ? "Agent réactivé." : "Agent désactivé.",
+        data,
+      });
+    })
+  );
+
+  adminAgents.post(
+    "/:id/reset-password",
+    asyncHandler(async (req, res) => {
+      const data = await agentService.resetPassword(req.params.id, req.body?.password);
+
+      await audit.record(req, {
+        action: "update",
+        resource: "agent",
+        resourceId: req.params.id,
+      });
+
+      sendSuccess(res, { message: "Mot de passe réinitialisé.", data });
+    })
+  );
+
+  adminAgents.delete(
+    "/:id",
+    asyncHandler(async (req, res) => {
+      await agentService.remove(req.params.id, req.user.id);
+
+      await audit.record(req, {
+        action: "delete",
+        resource: "agent",
+        resourceId: req.params.id,
+      });
+
+      sendNoContent(res);
+    })
+  );
+
+  api.use("/admin/agents", adminAgents);
 
   return api;
 };

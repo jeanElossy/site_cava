@@ -6,19 +6,23 @@ import {
   ArrowRight,
   Calendar,
   CalendarPlus,
+  CheckCircle2,
   Church,
   Heart,
+  HeartHandshake,
   Image,
   ImagePlus,
   Mail,
   MailOpen,
   Megaphone,
+  UserPlus,
   Users,
 } from "lucide-react";
 
-import { inbox, stats } from "../../services/api";
+import { inbox, newSouls, stats } from "../../services/api";
 
 import { currentUser } from "../../services/auth";
+import { AGENT_ROLES } from "../../routes/roleGroups";
 
 import useAsyncData from "../../hooks/useAsyncData";
 import PublishButton from "../../components/admin/PublishButton";
@@ -100,13 +104,105 @@ const initials = (name) =>
     .map((part) => part[0].toUpperCase())
     .join("") || "?";
 
-const Dashboard = () => {
-  usePageMeta({
-    title: "Tableau de bord",
-    description:
-      "Vue d'ensemble de l'espace d'administration du site CAVA.",
-  });
+// Tableau de bord allégé pour les comptes agents (soa, cana,
+// coordinateur_bergeries, pasteur) : ils n'ont accès à aucune des
+// sections que montre `StaffDashboard` (voir AdminLayout.jsx et
+// AdminRoutes.jsx) — leur charger `stats`/`inbox.list` échouerait de
+// toute façon (403, voir routes/index.js) en plus d'être hors sujet.
+// Réutilise les chiffres déjà construits pour l'onglet "Vue d'ensemble"
+// de Nouvelles Âmes plutôt que de les dupliquer.
+const AgentDashboard = () => {
+  const statsQuery = useAsyncData(newSouls.stats);
 
+  const user = currentUser();
+  const firstName = String(user?.name ?? "").trim().split(/\s+/)[0];
+  const counters = statsQuery.data;
+
+  const cards = [
+    { key: "total", label: "Dossiers suivis", value: counters?.total, icon: Heart },
+    { key: "soaPending", label: "En attente SOA", value: counters?.soaPending, icon: UserPlus },
+    { key: "canaActive", label: "En accompagnement CANA", value: counters?.canaActive, icon: HeartHandshake },
+    { key: "closedThisMonth", label: "Clôturés ce mois-ci", value: counters?.closedThisMonth, icon: CheckCircle2 },
+  ];
+
+  return (
+    <div className="admin-dashboard">
+      <header className="admin-dashboard__header">
+        <div>
+          <h1>
+            {greeting()}
+            {firstName ? `, ${firstName}` : ""}
+          </h1>
+
+          <p>Voici l&apos;état des dossiers Nouvelles Âmes.</p>
+        </div>
+      </header>
+
+      <section
+        aria-labelledby="admin-dashboard-stats"
+        className="admin-dashboard__section"
+      >
+        <div aria-busy={statsQuery.loading}>
+          {statsQuery.loading && (
+            <AdminLoading label="Chargement des statistiques…" />
+          )}
+
+          {!statsQuery.loading && statsQuery.error && (
+            <AdminError message={statsQuery.error} onRetry={statsQuery.reload} />
+          )}
+
+          {!statsQuery.loading && !statsQuery.error && (
+            <ul className="admin-dashboard__stats">
+              {cards.map((card) => {
+                const Icon = card.icon;
+
+                return (
+                  <li key={card.key}>
+                    <Link to="/admin/nouvelles-ames" className="admin-dashboard__stat">
+                      <span className="admin-dashboard__stat-icon">
+                        <Icon aria-hidden="true" />
+                      </span>
+
+                      <span className="admin-dashboard__stat-value">{card.value ?? 0}</span>
+
+                      <span className="admin-dashboard__stat-label">{card.label}</span>
+
+                      <ArrowRight className="admin-dashboard__stat-arrow" aria-hidden="true" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </section>
+
+      <section
+        aria-labelledby="admin-dashboard-shortcuts"
+        className="admin-dashboard__section admin-dashboard__panel"
+      >
+        <ul className="admin-dashboard__shortcuts">
+          <li>
+            <Link to="/admin/nouvelles-ames">
+              <span className="admin-dashboard__shortcut-icon">
+                <Heart aria-hidden="true" />
+              </span>
+
+              <span className="admin-dashboard__shortcut-text">
+                <strong>Nouvelles âmes</strong>
+                <span>Voir tous les dossiers et le tableau de bord SOA &amp; CANA</span>
+              </span>
+
+              <ArrowRight aria-hidden="true" />
+            </Link>
+          </li>
+        </ul>
+      </section>
+    </div>
+  );
+};
+
+const StaffDashboard = () => {
   // Références stables de `services/api.js` : pas de `useCallback` requis.
   const statsQuery = useAsyncData(stats);
   const inboxQuery = useAsyncData(inbox.list);
@@ -398,6 +494,25 @@ const Dashboard = () => {
       </div>
     </div>
   );
+};
+
+const Dashboard = () => {
+  const role = currentUser()?.role;
+  const isAgent = AGENT_ROLES.includes(role);
+
+  usePageMeta(
+    isAgent
+      ? {
+          title: "Nouvelles âmes — Tableau de bord",
+          description: "Suivi des dossiers SOA et CANA.",
+        }
+      : {
+          title: "Tableau de bord",
+          description: "Vue d'ensemble de l'espace d'administration du site CAVA.",
+        }
+  );
+
+  return isAgent ? <AgentDashboard /> : <StaffDashboard />;
 };
 
 export default Dashboard;

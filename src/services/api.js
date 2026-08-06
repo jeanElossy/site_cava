@@ -375,6 +375,53 @@ export const newSouls = {
     }),
 };
 
+// Comptes agents (SOA, CANA, coordonnateur des bergeries, pasteur) —
+// réservé aux administrateurs (voir agent.service.js). Ne touche
+// jamais un compte admin/editor, par construction côté serveur.
+export const agents = {
+  list: async (params = {}) => {
+    const query = new URLSearchParams(cleanParams(params)).toString();
+
+    return request(`/api/admin/agents${query ? `?${query}` : ""}`, {
+      auth: true,
+    });
+  },
+
+  create: async (payload) =>
+    request("/api/admin/agents", {
+      method: "POST",
+      body: payload,
+      auth: true,
+    }),
+
+  update: async (id, patch) =>
+    request(`/api/admin/agents/${id}`, {
+      method: "PATCH",
+      body: patch,
+      auth: true,
+    }),
+
+  setActive: async (id, isActive) =>
+    request(`/api/admin/agents/${id}/status`, {
+      method: "PATCH",
+      body: { isActive },
+      auth: true,
+    }),
+
+  resetPassword: async (id, password) =>
+    request(`/api/admin/agents/${id}/reset-password`, {
+      method: "POST",
+      body: { password },
+      auth: true,
+    }),
+
+  remove: async (id) =>
+    request(`/api/admin/agents/${id}`, {
+      method: "DELETE",
+      auth: true,
+    }),
+};
+
 // ---------------------------------------------------------------
 // Tableau de bord
 // ---------------------------------------------------------------

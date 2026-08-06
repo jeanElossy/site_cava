@@ -1,0 +1,165 @@
+@use "../../styles/admin" as *;
+
+// PIÈGE PROJET : feuille de style unique pour tout le site. Tout ce
+// qui suit est imbriqué sous `.admin-agents`, aucun nom générique
+// (`.table`, `.badge`, `.danger`…) n'apparaît à la racine du fichier.
+.admin-agents {
+  h1 {
+    margin: 0 0 4px;
+  }
+
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 18px;
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+      padding: 9px 10px;
+
+      border: 1px solid $admin-border;
+
+      font-size: 0.84rem;
+      text-align: left;
+    }
+
+    th {
+      background: $admin-surface-muted;
+      color: $admin-ink-soft;
+      font-weight: 600;
+    }
+  }
+
+  &__row--inactive td {
+    color: $admin-ink-faint;
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 3px 10px;
+
+    border-radius: 999px;
+
+    background: $admin-surface-muted;
+    color: $admin-ink-faint;
+
+    font-size: 0.74rem;
+    font-weight: 600;
+
+    &--active {
+      background: $admin-success-bg;
+      color: $admin-success;
+    }
+  }
+
+  &__row-actions {
+    display: flex;
+    gap: 6px;
+
+    button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      width: 30px;
+      height: 30px;
+
+      border: 1px solid $admin-border;
+      border-radius: $admin-radius-sm;
+
+      background: $admin-surface;
+      color: $admin-ink-soft;
+
+      cursor: pointer;
+
+      transition: background $admin-ease, color $admin-ease;
+
+      svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      &:hover:not([disabled]) {
+        background: $admin-surface-hover;
+        color: $admin-ink;
+      }
+
+      &[disabled] {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  &__danger:hover:not([disabled]) {
+    background: $admin-danger-bg;
+    color: $admin-danger;
+  }
+
+  // Style complet plutôt qu'une variante de `.admin-form__button` : les
+  // deux classes combinées auraient la même spécificité CSS, l'ordre
+  // de la feuille de style unique du projet aurait alors décidé
+  // laquelle des deux couleurs de fond l'emporte.
+  &__danger-button {
+    padding: 11px 22px;
+
+    border: 1px solid transparent;
+    border-radius: $admin-radius-sm;
+
+    background: $admin-danger;
+    color: #fff;
+
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: transform $admin-ease, box-shadow $admin-ease;
+
+    &:hover:not([disabled]) {
+      transform: translateY(-1px);
+
+      box-shadow: 0 8px 20px rgba(180, 35, 24, 0.26);
+    }
+
+    &[disabled] {
+      opacity: 0.55;
+
+      cursor: not-allowed;
+    }
+  }
+
+  &__confirm {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    margin: 0 0 4px;
+
+    color: $admin-ink;
+    font-size: 0.9rem;
+    line-height: 1.5;
+
+    svg {
+      flex-shrink: 0;
+
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+
+      color: $admin-warning;
+    }
+  }
+}

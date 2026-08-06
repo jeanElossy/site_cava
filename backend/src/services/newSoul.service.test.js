@@ -116,7 +116,7 @@ describe("newSoul.service (intégration MongoDB)", () => {
     assert.equal(newSoul.soa.agentName, soaUser.name);
   });
 
-  it("un agent SOA ne voit que ses propres dossiers", async () => {
+  it("tous les comptes SOA partagent la même file de dossiers non transmis", async () => {
     const own = await create(
       { firstName: "A", lastName: "B", phone: "01" },
       asUser(soaUser)
@@ -130,21 +130,98 @@ describe("newSoul.service (intégration MongoDB)", () => {
     });
 
     try {
-      const notOwned = await create(
+      const createdByOther = await create(
         { firstName: "C", lastName: "D", phone: "02" },
         asUser(otherSoa)
       );
 
-      const ownList = await newSoulService.list(asUser(soaUser));
-      assert.ok(ownList.some((item) => String(item._id) === String(own._id)));
-      assert.ok(!ownList.some((item) => String(item._id) === String(notOwned._id)));
+      // Un compte SOA voit la file complète des dossiers non transmis,
+      // y compris ceux ouverts par un autre agent SOA — pas seulement
+      // les siens : c'est ce qui permet à n'importe quel agent SOA de
+      // reprendre un dossier démarré par quelqu'un d'autre (ex. un
+      // agent de badgeage des présences, voir le test suivant).
+      const list = await newSoulService.list(asUser(soaUser));
+      assert.ok(list.some((item) => String(item._id) === String(own._id)));
+      assert.ok(list.some((item) => String(item._id) === String(createdByOther._id)));
+
+      const fetched = await newSoulService.getById(createdByOther._id, asUser(soaUser));
+      assert.equal(String(fetched._id), String(createdByOther._id));
+
+      // Transmis, le dossier sort de la file SOA (repris par la CANA) :
+      // un compte SOA ne le voit plus, même s'il l'a créé.
+      const transmitted = await newSoulService.transmit(createdByOther._id, asUser(otherSoa));
+      assert.equal(transmitted.status, "attente_cana");
+
+      const listAfterTransmit = await newSoulService.list(asUser(soaUser));
+      assert.ok(!listAfterTransmit.some((item) => String(item._id) === String(createdByOther._id)));
 
       await assert.rejects(
-        () => newSoulService.getById(notOwned._id, asUser(soaUser)),
-        /propres dossiers/
+        () => newSoulService.getById(createdByOther._id, asUser(soaUser)),
+        /déjà été transmis/
       );
     } finally {
       await User.deleteOne({ _id: otherSoa._id });
+    }
+  });
+
+  it("un agent de badgeage des présences ne voit que les dossiers qu'il a lui-même créés, même si un compte SOA voit tout", async () => {
+    const presenceMember = await Member.create({
+      firstName: "Agent",
+      lastName: "Présence Visibilité",
+      church: 1,
+      flock: flock._id,
+      registrationNumber: "1AN26099P",
+      role: "serviteur",
+      status: "actif",
+    });
+
+    try {
+      const actor = asMember(presenceMember);
+      const createdByMember = await create(
+        { firstName: "Koffi", lastName: "Yao", phone: "0709090910" },
+        actor
+      );
+
+      const otherMember = await Member.create({
+        firstName: "Autre",
+        lastName: "Agent Présence",
+        church: 1,
+        flock: flock._id,
+        registrationNumber: "1AN26100P",
+        role: "serviteur",
+        status: "actif",
+      });
+
+      try {
+        await assert.rejects(
+          () => newSoulService.getById(createdByMember._id, asMember(otherMember)),
+          /propres dossiers/
+        );
+
+        const otherMemberList = await newSoulService.list(asMember(otherMember));
+        assert.ok(!otherMemberList.some((item) => String(item._id) === String(createdByMember._id)));
+      } finally {
+        await Member.deleteOne({ _id: otherMember._id });
+      }
+
+      // Contrairement à un autre agent de présence, N'IMPORTE QUEL
+      // compte SOA voit et peut compléter ce dossier — c'est la "porte
+      // d'entrée" attendue : l'agent de présence démarre le dossier,
+      // un agent SOA se connecte ensuite pour le reprendre.
+      const seenBySoa = await newSoulService.getById(createdByMember._id, asUser(soaUser));
+      assert.equal(String(seenBySoa._id), String(createdByMember._id));
+
+      const soaList = await newSoulService.list(asUser(soaUser));
+      assert.ok(soaList.some((item) => String(item._id) === String(createdByMember._id)));
+
+      const updated = await newSoulService.updateSoa(
+        createdByMember._id,
+        { phone: "0709090999" },
+        asUser(soaUser)
+      );
+      assert.equal(updated.soa.phone, "0709090999");
+    } finally {
+      await Member.deleteOne({ _id: presenceMember._id });
     }
   });
 
@@ -364,12 +441,11 @@ describe("newSoul.service (intégration MongoDB)", () => {
       assert.equal(newSoul.createdBy.kind, "member");
       assert.equal(newSoul.soa.agentName, actor.name);
 
-      // Un compte admin User ne peut pas se faire passer pour ce
-      // dossier via l'ancienne comparaison (kind différent).
-      await assert.rejects(
-        () => newSoulService.getById(newSoul._id, asUser(soaUser)),
-        /propres dossiers/
-      );
+      // Un compte SOA (kind différent du créateur) fait bien partie de
+      // la file partagée : il voit ce dossier malgré tout (voir le
+      // test dédié plus haut sur le partage de file SOA/présence).
+      const seenBySoa = await newSoulService.getById(newSoul._id, asUser(soaUser));
+      assert.equal(String(seenBySoa._id), String(newSoul._id));
 
       const transmitted = await newSoulService.transmit(newSoul._id, actor);
       assert.equal(transmitted.status, "attente_cana");
@@ -428,9 +504,10 @@ describe("newSoul.service (intégration MongoDB)", () => {
 
     const soaStats = await newSoulService.getStats(asUser(soaUser));
     assert.ok(soaStats.byStatus.enregistre_soa >= 1);
-    // Le SOA voit ses propres dossiers, y compris déjà transmis : le
-    // suivi à venir qu'il a lui-même créé lui reste visible.
-    assert.ok(soaStats.upcomingFollowUps.some((item) => String(item.newSoulId) === String(transmitted._id)));
+    // Une fois transmis, un dossier sort de la file SOA (repris par la
+    // CANA) : son suivi mensuel n'apparaît plus dans les stats SOA,
+    // même pour l'agent qui l'a lui-même transmis.
+    assert.ok(!soaStats.upcomingFollowUps.some((item) => String(item.newSoulId) === String(transmitted._id)));
 
     const canaStats = await newSoulService.getStats(asUser(canaUser));
     assert.equal(canaStats.byStatus.enregistre_soa, 0, "la CANA ne compte pas les dossiers non transmis");

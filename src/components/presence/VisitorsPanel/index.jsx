@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { FileText, Heart, Share2, UserPlus, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { FileText, Heart, Share2, UserPlus } from "lucide-react";
 
 import { listPresenceVisitors, downloadVisitorsPdf } from "../../../services/presences";
 import { newSouls } from "../../../services/api";
-import SOAWizard from "../../newSouls/SOAWizard/SOAWizard";
 
 import "./VisitorsPanel.scss";
 
@@ -14,16 +14,23 @@ const canShareFiles = () =>
 
 // Liste des visiteurs enregistrés pendant CE service (voir
 // `mark-visitor`), avec deux actions : exporter/partager un PDF
-// portant uniquement leurs noms & prénoms, et démarrer sur place le
-// dossier SOA de l'un d'eux — le formulaire s'ouvre déjà préparé par
-// l'API (§A à §G, voir newSoul.service.js), l'agent n'a plus qu'à le
-// compléter avec ce que la personne lui confie après le culte.
+// portant uniquement leurs noms & prénoms, et amorcer le dossier SOA
+// de l'un d'eux (nom/prénom déjà posés, voir newSoul.service.js).
+//
+// "Enregistrer via SOA" n'ouvre plus le formulaire ici : c'est une
+// porte d'entrée vers /admin/connexion (voir RequireAuth.jsx et
+// Login.jsx, qui gèrent déjà `state.from`) — l'agent de badgeage n'est
+// pas forcément l'agent SOA qui traitera le dossier, celui-ci doit se
+// connecter avec SON PROPRE compte pour le reprendre et "commencer le
+// suivi". Voir newSoul.service.js#isSoaUser : un compte SOA voit tous
+// les dossiers non transmis, pas seulement ceux qu'il a créés.
 const VisitorsPanel = ({ sessionToken }) => {
+  const navigate = useNavigate();
+
   const [visitors, setVisitors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
-  const [activeDossier, setActiveDossier] = useState(null);
 
   const load = async () => {
     try {
@@ -99,7 +106,9 @@ const VisitorsPanel = ({ sessionToken }) => {
         sessionToken
       );
 
-      setActiveDossier(created);
+      navigate("/admin/connexion", {
+        state: { from: `/admin/nouvelles-ames/${created.id}` },
+      });
     } catch (caught) {
       setError(caught?.message ?? "Impossible de démarrer ce dossier.");
     }
@@ -148,27 +157,6 @@ const VisitorsPanel = ({ sessionToken }) => {
             </li>
           ))}
         </ul>
-      )}
-
-      {activeDossier && (
-        <div className="visitors-panel__overlay" role="dialog" aria-modal="true">
-          <div className="visitors-panel__overlay-panel">
-            <button
-              type="button"
-              className="visitors-panel__overlay-close"
-              onClick={() => setActiveDossier(null)}
-              aria-label="Fermer"
-            >
-              <X aria-hidden="true" />
-            </button>
-
-            <SOAWizard
-              newSoul={activeDossier}
-              sessionToken={sessionToken}
-              onTransmitted={() => setActiveDossier(null)}
-            />
-          </div>
-        </div>
       )}
     </section>
   );

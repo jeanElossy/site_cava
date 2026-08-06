@@ -5,8 +5,20 @@
 // champ ici doit être rendu à l'intérieur d'un conteneur portant la
 // classe `admin-form` pour hériter de ce style, sans dupliquer une
 // seule règle CSS.
+//
+// L'import direct ci-dessous (plutôt que de compter sur le fait que
+// `<AdminForm>` charge déjà ces styles ailleurs) est nécessaire car
+// Vite découpe le JS par route (`/admin` et `/presence` sont deux
+// morceaux de bundle séparés, voir AdminLayout.jsx et
+// PresenceScanner.jsx) : les deux wizards sont aussi ouverts depuis
+// VisitorsPanel, sur la route `/presence`, qui ne charge jamais le
+// composant `<AdminForm>` autrement. Sans cet import, les champs y
+// perdent tout style (bordure, fond, espacement) — repéré via des
+// captures d'écran montrant les libellés et valeurs collés les uns
+// aux autres.
 import { OUI_NON } from "./constants";
 
+import "../../admin/AdminForm/AdminForm.scss";
 import "./NewSouls.scss";
 
 const optionId = (name, value) => `${name}-${value}`;

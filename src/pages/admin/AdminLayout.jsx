@@ -25,12 +25,14 @@ import {
   ScanLine,
   Send,
   Settings,
+  ShieldCheck,
   Sun,
   Users,
   X,
 } from "lucide-react";
 
 import { currentUser, signOut } from "../../services/auth";
+import { STAFF_ROLES } from "../../routes/roleGroups";
 
 import usePendingSubmissionsCount from "../../hooks/usePendingSubmissionsCount";
 
@@ -42,6 +44,12 @@ import "./AdminLayout.scss";
 
 // Navigation groupée. Sept liens à plat forment un mur indifférencié ;
 // regroupés, ils se parcourent d'un coup d'œil.
+// `roles` (facultatif) restreint l'entrée à certains rôles — voir
+// RequireRole.jsx pour la garde de route correspondante, sur laquelle
+// ce filtrage s'aligne. Sans `roles`, l'entrée reste visible à tout
+// compte authentifié (c'est le cas de "Nouvelles âmes" : le seul
+// module que voient les comptes soa/cana/coordinateur_bergeries/
+// pasteur une fois connectés).
 const NAV_GROUPS = [
   {
     title: null,
@@ -52,17 +60,19 @@ const NAV_GROUPS = [
         icon: LayoutDashboard,
         end: true,
       },
-      { to: "/admin/messages", label: "Messages", icon: Mail },
-      { to: "/admin/dons", label: "Dons", icon: HandCoins },
+      { to: "/admin/messages", label: "Messages", icon: Mail, roles: STAFF_ROLES },
+      { to: "/admin/dons", label: "Dons", icon: HandCoins, roles: STAFF_ROLES },
       {
         to: "/admin/newsletter",
         label: "Lettre d'information",
         icon: Send,
+        roles: STAFF_ROLES,
       },
     ],
   },
   {
     title: "Contenu du site",
+    roles: STAFF_ROLES,
     items: [
       { to: "/admin/medias", label: "Médias", icon: Image },
       {
@@ -85,16 +95,19 @@ const NAV_GROUPS = [
         label: "Membres et annonces",
         icon: Users,
         badgeKey: "pendingSubmissions",
+        roles: STAFF_ROLES,
       },
       {
         to: "/admin/temoignages",
         label: "Témoignages",
         icon: MessageSquareQuote,
+        roles: STAFF_ROLES,
       },
       {
         to: "/admin/presences",
         label: "Badgeage des présences",
         icon: ScanLine,
+        roles: STAFF_ROLES,
       },
       {
         to: "/admin/nouvelles-ames",
@@ -105,11 +118,21 @@ const NAV_GROUPS = [
   },
   {
     title: "Configuration",
+    roles: STAFF_ROLES,
     items: [
       {
         to: "/admin/parametres",
         label: "Paramètres",
         icon: Settings,
+      },
+      {
+        // Réservé à l'admin, même parmi les rôles "staff" — voir
+        // agent.service.js. D'où un `roles` propre à cette entrée,
+        // plus strict que celui du groupe.
+        to: "/admin/agents",
+        label: "Agents",
+        icon: ShieldCheck,
+        roles: ["admin"],
       },
     ],
   },
@@ -169,6 +192,20 @@ const AdminLayout = () => {
   const closeButtonRef = useRef(null);
 
   const user = currentUser();
+
+  // Filtrage par rôle : un groupe/item sans `roles` reste visible à
+  // tous, sinon il faut y figurer explicitement (voir NAV_GROUPS et
+  // RequireRole.jsx, qui protège les routes correspondantes).
+  const visibleNavGroups = NAV_GROUPS.filter(
+    (group) => !group.roles || group.roles.includes(user?.role)
+  )
+    .map((group) => ({
+      ...group,
+      items: group.items.filter(
+        (item) => !item.roles || item.roles.includes(user?.role)
+      ),
+    }))
+    .filter((group) => group.items.length > 0);
 
   const pendingSubmissionsCount = usePendingSubmissionsCount();
 
@@ -258,7 +295,15 @@ const AdminLayout = () => {
       <aside
         className={`admin-shell__rail${
           menuOpen ? " admin-shell__rail--open" : ""
-        }${collapsed ? " admin-shell__rail--collapsed" : ""}`}
+        }${
+          // La préférence "réduit" (persistée, voir SIDEBAR_COLLAPSED_KEY)
+          // ne concerne que la barre ancrée au bureau : appliquée telle
+          // quelle au tiroir mobile, elle masquait aussi les libellés
+          // alors que le tiroir reste pleine largeur (voir la règle
+          // `&--collapsed` sous `@media (max-width: 1024px)` dans
+          // AdminLayout.scss) — un tiroir plein écran sans aucun texte.
+          collapsed && !menuOpen ? " admin-shell__rail--collapsed" : ""
+        }`}
         id="admin-sidebar"
       >
         <div className="admin-shell__brand">
@@ -313,7 +358,7 @@ const AdminLayout = () => {
           className="admin-shell__nav"
           aria-label="Navigation de l'administration"
         >
-          {NAV_GROUPS.map((group, index) => (
+          {visibleNavGroups.map((group, index) => (
             <div
               key={group.title ?? `group-${index}`}
               className="admin-shell__group"
@@ -341,8 +386,11 @@ const AdminLayout = () => {
                         // Repliée, la barre ne montre plus que
                         // l'icône : ce titre fournit l'équivalent du
                         // libellé au survol, plutôt que de le faire
-                        // disparaître purement et simplement.
-                        title={collapsed ? item.label : undefined}
+                        // disparaître purement et simplement. Non
+                        // pertinent dans le tiroir mobile, où le
+                        // libellé reste toujours visible (voir la
+                        // classe `--collapsed` juste au-dessus).
+                        title={collapsed && !menuOpen ? item.label : undefined}
                         className={({ isActive }) =>
                           isActive
                             ? "admin-shell__link admin-shell__link--active"

@@ -40,6 +40,14 @@ export const resourceRouter = (service, options = {}) => {
     // `search` restent gérés séparément : ce sont les seuls filtres
     // communs à toutes les ressources.
     adminFilters = [],
+    // Rôle minimal pour LIRE. `null` par défaut : n'importe quel
+    // compte authentifié peut consulter (contenu du site, peu
+    // sensible). Une ressource portant des données personnelles
+    // (membres) doit le restreindre explicitement — sans quoi un
+    // compte "agent" (soa/cana/coordinateur_bergeries/pasteur), conçu
+    // pour ne voir que le module Nouvelles Âmes, pourrait quand même
+    // lire la liste complète des membres via l'API.
+    readRoles = null,
   } = options;
 
   const publicRouter = Router();
@@ -84,8 +92,11 @@ export const resourceRouter = (service, options = {}) => {
   // ---- Administration ----------------------------------------
   adminRouter.use(requireAuth);
 
+  const readGate = readRoles ? [requireRole(...readRoles)] : [];
+
   adminRouter.get(
     "/",
+    ...readGate,
     asyncHandler(async (req, res) => {
       // Chaque valeur est forcée en chaîne, comme pour `publicFilters` :
       // un paramètre objet deviendrait un opérateur MongoDB une fois
@@ -112,6 +123,7 @@ export const resourceRouter = (service, options = {}) => {
 
   adminRouter.get(
     "/:id",
+    ...readGate,
     asyncHandler(async (req, res) => {
       const data = await service.getById(req.params.id);
 

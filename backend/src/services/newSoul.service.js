@@ -44,16 +44,27 @@ const SOA_SYSTEM_FIELDS = new Set(["transmittedAt", "transmittedBy", "lockedAt"]
 
 // --- Identité de l'auteur (`actor`, voir middlewares/newSoulAuth.js) -
 //
-// Deux origines possibles : un compte admin (`kind: "user"`, rôles
-// soa/cana/coordinateur_bergeries/pasteur/admin) ou un agent de
-// badgeage des présences (`kind: "member"`, n'importe quel rôle
-// habilité à scanner — voir PRESENCE_AGENT_ROLES). Un agent de
-// présence a exactement les mêmes droits qu'un compte "soa" : créer,
-// compléter et transmettre SES PROPRES dossiers, jamais ceux des
-// autres, jamais le côté CANA.
+// Deux origines possibles, avec des périmètres différents :
+//
+//   - un agent de badgeage des présences (`kind: "member"`) démarre un
+//     dossier à l'accueil, sur SA session de scan — il ne voit que les
+//     dossiers qu'il a lui-même créés pendant cette session, jamais
+//     ceux d'un autre agent de présence.
+//   - un compte admin `role: "soa"` (`kind: "user"`) est un membre de
+//     l'équipe SOA qui se connecte ensuite pour reprendre CE dossier
+//     et "commencer le suivi" (voir VisitorsPanel → porte d'entrée
+//     vers /admin/connexion) : il voit TOUS les dossiers pas encore
+//     transmis, comme une file partagée — pas seulement ceux qu'il a
+//     personnellement créés, à l'image de la CANA qui partage déjà les
+//     dossiers transmis entre ses membres.
+//
+// `isSoaCapable` reste le test "a le droit de toucher au côté SOA" au
+// sens large ; `isPresenceAgent`/`isSoaUser` distinguent ensuite quelle
+// règle de VISIBILITÉ s'applique à chacun.
 const isAdminUser = (actor) => actor.kind === "user" && actor.role === "admin";
-const isSoaCapable = (actor) =>
-  actor.kind === "member" || (actor.kind === "user" && actor.role === "soa");
+const isPresenceAgent = (actor) => actor.kind === "member";
+const isSoaUser = (actor) => actor.kind === "user" && actor.role === "soa";
+const isSoaCapable = (actor) => isPresenceAgent(actor) || isSoaUser(actor);
 const isCanaSideUser = (actor) => actor.kind === "user" && CANA_SIDE_ROLES.includes(actor.role);
 
 const toAuthor = (actor) => ({ kind: actor.kind, id: actor.id, name: actor.name });
@@ -109,7 +120,15 @@ export const create = async (data, actor) => {
 const assertCanView = (newSoul, actor) => {
   if (isAdminUser(actor)) return;
 
-  if (isSoaCapable(actor)) {
+  if (isSoaUser(actor)) {
+    if (!SOA_EDITABLE_STATUSES.includes(newSoul.status)) {
+      throw ApiError.forbidden("Ce dossier a déjà été transmis à la CANA.");
+    }
+
+    return;
+  }
+
+  if (isPresenceAgent(actor)) {
     if (!ownsRecord(newSoul, actor)) {
       throw ApiError.forbidden("Vous ne pouvez consulter que vos propres dossiers.");
     }
@@ -173,7 +192,11 @@ export const getById = async (id, actor) => {
 const buildVisibilityFilter = (actor) => {
   if (isAdminUser(actor)) return {};
 
-  if (isSoaCapable(actor)) {
+  if (isSoaUser(actor)) {
+    return { status: { $in: SOA_EDITABLE_STATUSES } };
+  }
+
+  if (isPresenceAgent(actor)) {
     return { "createdBy.kind": actor.kind, "createdBy.id": actor.id };
   }
 
@@ -190,12 +213,19 @@ export const list = async (actor, { status, search } = {}) => {
   if (status && NEW_SOUL_STATUSES.includes(status)) {
     // Un statut explicite ne doit jamais ÉLARGIR la visibilité : sans
     // ce garde-fou, `filter.status = status` écrasait purement et
-    // simplement le `$nin` posé ci-dessus pour la CANA, lui laissant
-    // voir n'importe quel dossier "nouveau"/"enregistre_soa" — donc
-    // pas encore transmis — en passant juste ce statut en paramètre.
+    // simplement le `$nin`/`$in` posé ci-dessus, laissant par exemple
+    // la CANA voir un dossier "nouveau" (pas encore transmis) ou un
+    // agent SOA voir un dossier déjà transmis, en passant juste ce
+    // statut en paramètre.
     if (isCanaSideUser(actor) && SOA_EDITABLE_STATUSES.includes(status)) {
       throw ApiError.forbidden(
         "Ce statut concerne des dossiers non encore transmis à la CANA."
+      );
+    }
+
+    if (isSoaUser(actor) && !SOA_EDITABLE_STATUSES.includes(status)) {
+      throw ApiError.forbidden(
+        "Ce statut concerne des dossiers déjà transmis à la CANA."
       );
     }
 
@@ -299,7 +329,10 @@ export const updateSoa = async (id, patch, actor) => {
       throw ApiError.forbidden("Votre rôle ne permet pas de modifier ce dossier.");
     }
 
-    if (!ownsRecord(newSoul, actor)) {
+    // Un agent de présence ne complète que SES dossiers ; un compte
+    // SOA reprend n'importe quel dossier de la file partagée (voir
+    // `isSoaUser` plus haut).
+    if (isPresenceAgent(actor) && !ownsRecord(newSoul, actor)) {
       throw ApiError.forbidden("Vous ne pouvez modifier que vos propres dossiers.");
     }
   }
@@ -330,7 +363,7 @@ export const transmit = async (id, actor) => {
     throw ApiError.forbidden("Votre rôle ne permet pas de transmettre ce dossier.");
   }
 
-  if (!isAdminUser(actor) && !ownsRecord(newSoul, actor)) {
+  if (isPresenceAgent(actor) && !ownsRecord(newSoul, actor)) {
     throw ApiError.forbidden("Vous ne pouvez transmettre que vos propres dossiers.");
   }
 

@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import RequireAuth from "./RequireAuth";
+import RequireRole from "./RequireRole";
+import { STAFF_ROLES } from "./roleGroups";
 
 import AdminLayout from "../pages/admin/AdminLayout";
 import Login from "../pages/admin/Login";
@@ -15,6 +17,7 @@ import PresencesAdmin from "../pages/admin/PresencesAdmin";
 import TestimonialsAdmin from "../pages/admin/TestimonialsAdmin";
 import SubscribersAdmin from "../pages/admin/SubscribersAdmin";
 import SettingsAdmin from "../pages/admin/SettingsAdmin";
+import AgentsAdmin from "../pages/admin/AgentsAdmin";
 import NewSoulsListPage from "../pages/admin/NewSouls/NewSoulsListPage";
 import NewSoulDetailPage from "../pages/admin/NewSouls/NewSoulDetailPage";
 
@@ -51,39 +54,70 @@ const AdminRoutes = () => {
 
         <Route
           path="medias"
-          element={<MediasAdmin />}
+          element={
+            <RequireRole allow={STAFF_ROLES}>
+              <MediasAdmin />
+            </RequireRole>
+          }
         />
 
         <Route
           path="evenements"
-          element={<EventsAdmin />}
+          element={
+            <RequireRole allow={STAFF_ROLES}>
+              <EventsAdmin />
+            </RequireRole>
+          }
         />
 
         <Route
           path="ministeres"
-          element={<MinistriesAdmin />}
+          element={
+            <RequireRole allow={STAFF_ROLES}>
+              <MinistriesAdmin />
+            </RequireRole>
+          }
         />
 
         <Route
           path="messages"
-          element={<MessagesAdmin />}
+          element={
+            <RequireRole allow={STAFF_ROLES}>
+              <MessagesAdmin />
+            </RequireRole>
+          }
         />
 
         <Route
           path="dons"
-          element={<DonationsAdmin />}
+          element={
+            <RequireRole allow={STAFF_ROLES}>
+              <DonationsAdmin />
+            </RequireRole>
+          }
         />
 
         <Route
           path="communaute"
-          element={<CommunityAdmin />}
+          element={
+            <RequireRole allow={STAFF_ROLES}>
+              <CommunityAdmin />
+            </RequireRole>
+          }
         />
 
         <Route
           path="presences"
-          element={<PresencesAdmin />}
+          element={
+            <RequireRole allow={STAFF_ROLES}>
+              <PresencesAdmin />
+            </RequireRole>
+          }
         />
 
+        {/* Ouvertes à tous les rôles authentifiés : c'est le seul
+            module que soa/cana/coordinateur_bergeries/pasteur voient
+            une fois connectés (voir RequireRole.jsx). */}
         <Route
           path="nouvelles-ames"
           element={<NewSoulsListPage />}
@@ -96,17 +130,40 @@ const AdminRoutes = () => {
 
         <Route
           path="temoignages"
-          element={<TestimonialsAdmin />}
+          element={
+            <RequireRole allow={STAFF_ROLES}>
+              <TestimonialsAdmin />
+            </RequireRole>
+          }
         />
 
         <Route
           path="newsletter"
-          element={<SubscribersAdmin />}
+          element={
+            <RequireRole allow={STAFF_ROLES}>
+              <SubscribersAdmin />
+            </RequireRole>
+          }
         />
 
         <Route
           path="parametres"
-          element={<SettingsAdmin />}
+          element={
+            <RequireRole allow={STAFF_ROLES}>
+              <SettingsAdmin />
+            </RequireRole>
+          }
+        />
+
+        {/* Gestion des comptes agents : réservée à l'admin, même
+            editor n'y accède pas (voir agent.service.js). */}
+        <Route
+          path="agents"
+          element={
+            <RequireRole allow={["admin"]}>
+              <AgentsAdmin />
+            </RequireRole>
+          }
         />
       </Route>
 
