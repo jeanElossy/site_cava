@@ -13,7 +13,6 @@ import Communaute from "../pages/Communaute/Communaute";
 import Contact from "../pages/Contact/Contact";
 import Donate from "../pages/Donate/Donate";
 import Registration from "../pages/Registration/Registration";
-import DonationReturn from "../pages/DonationReturn/DonationReturn";
 import LegalNotice from "../pages/LegalNotice/LegalNotice";
 import PrivacyPolicy from "../pages/PrivacyPolicy/PrivacyPolicy";
 import Unsubscribe from "../pages/Unsubscribe/Unsubscribe";
@@ -129,15 +128,6 @@ const AppRoutes = () => {
       <Route
         path="/inscription"
         element={<Registration />}
-      />
-
-      {/* Retour du donateur depuis le guichet de paiement. L'adresse
-          est celle déclarée au prestataire (`return_url`) : la changer
-          ici sans la changer côté serveur enverrait les donateurs sur
-          une page introuvable après avoir payé. */}
-      <Route
-        path="/donate/retour"
-        element={<DonationReturn />}
       />
 
       <Route
