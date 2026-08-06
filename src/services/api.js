@@ -102,6 +102,8 @@ export const announcements = collection("announcements");
 export const testimonials = collection("testimonials");
 export const flocks = collection("flocks");
 export const churches = collection("churches");
+export const paymentMethods = collection("payment-methods");
+export const donationTypes = collection("donation-types");
 
 // ---------------------------------------------------------------
 // Inscriptions et mises à jour de fiche membre

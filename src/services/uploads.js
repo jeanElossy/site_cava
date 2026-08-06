@@ -212,6 +212,21 @@ export const uploadMemberPhoto = (file, { onProgress, signal } = {}) =>
     auth: false,
   });
 
+/**
+ * Envoi de la capture/photo de preuve depuis le formulaire PUBLIC de
+ * don — même principe que `uploadMemberPhoto` : route de signature
+ * dédiée et sans authentification, dossier imposé côté serveur.
+ */
+export const uploadDonationProof = (file, { onProgress, signal } = {}) =>
+  uploadFile(file, {
+    folder: "donations",
+    accept: "image",
+    onProgress,
+    signal,
+    signaturePath: "/api/donations/proof-signature",
+    auth: false,
+  });
+
 // Miniature Cloudinary générée à la volée par transformation d'URL.
 //
 // Évite de charger une photo de 4 Mo pour l'afficher dans une vignette
