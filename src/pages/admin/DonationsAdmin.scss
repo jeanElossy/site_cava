@@ -382,6 +382,24 @@
     white-space: nowrap;
   }
 
+  // Un même numéro de transaction sur plusieurs dons : le seul signal
+  // de fraude que le système sache produire, donc visible dès la
+  // liste, pas seulement dans la fenêtre de vérification.
+  &__duplicate {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    margin-top: 4px;
+
+    color: $admin-danger;
+
+    font-size: 0.72rem;
+    font-weight: 700;
+
+    white-space: nowrap;
+  }
+
   &__proof-link {
     display: inline-block;
 
@@ -443,6 +461,34 @@
   &__review {
     display: grid;
     gap: 18px;
+  }
+
+  // Avertissement de doublon, en tête de la fenêtre de vérification :
+  // il doit être lu AVANT la décision, pas découvert après.
+  &__review-duplicate {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    margin: 0;
+    padding: 13px 16px;
+
+    border: 1px solid $admin-danger;
+    border-radius: $admin-radius;
+
+    background: $admin-danger-bg;
+
+    color: $admin-danger;
+
+    font-size: 0.84rem;
+    font-weight: 600;
+    line-height: 1.5;
+
+    svg {
+      flex-shrink: 0;
+
+      margin-top: 1px;
+    }
   }
 
   &__review-details {

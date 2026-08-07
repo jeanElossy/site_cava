@@ -72,7 +72,11 @@ const PaymentMethodsAdmin = () => {
       })}
       toPayload={(values) => ({
         name: values.name.trim(),
-        image: values.image ? { url: values.image } : undefined,
+        // `undefined` n'aurait pas survécu à `JSON.stringify` : la clé
+        // disparaissait du corps de la requête, et vider le champ dans
+        // le formulaire ne retirait donc JAMAIS le QR côté serveur.
+        // Une forme explicitement vide, elle, écrase la précédente.
+        image: values.image ? { url: values.image } : { url: "", publicId: "" },
         accountNumber: values.accountNumber.trim(),
         holderName: values.holderName.trim(),
         order: Number(values.order) || 0,

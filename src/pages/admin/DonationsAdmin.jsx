@@ -15,6 +15,7 @@ import {
   adminDonations,
   adminDonationQrCode,
   adminDonationSummary,
+  fetchDonationTypes,
   reviewDonation,
 } from "../../services/donations";
 
@@ -59,6 +60,17 @@ const formatDate = (value) => {
 
 const donorName = (donation) =>
   [donation.donor?.firstName, donation.donor?.lastName].filter(Boolean).join(" ") || "—";
+
+// L'URL de la preuve vient d'un formulaire public. Elle est produite
+// par notre propre signature Cloudinary (voir POST
+// /api/donations/proof-signature), donc une adresse d'un autre hôte
+// n'a rien à faire ici : elle signalerait une valeur fabriquée, et un
+// lien ouvert d'un clic par un administrateur est une cible de choix.
+// Défense en profondeur — la valeur n'est simplement pas affichée.
+const CLOUDINARY_PREFIX = "https://res.cloudinary.com/";
+
+const safeProofUrl = (value) =>
+  typeof value === "string" && value.startsWith(CLOUDINARY_PREFIX) ? value : "";
 
 const DonationsAdmin = () => {
   usePageMeta({
@@ -200,14 +212,21 @@ const DonationsAdmin = () => {
                     <td>
                       <span className="admin-donations__transaction">{donation.proof?.transactionId}</span>
 
-                      {donation.proof?.imageUrl && (
+                      {donation.duplicateTransactionCount > 0 && (
+                        <span className="admin-donations__duplicate">
+                          <AlertTriangle size={12} aria-hidden="true" />
+                          {donation.duplicateTransactionCount} autre(s) don(s)
+                        </span>
+                      )}
+
+                      {safeProofUrl(donation.proof?.imageUrl) && (
                         <a
-                          href={donation.proof.imageUrl}
+                          href={safeProofUrl(donation.proof.imageUrl)}
                           target="_blank"
                           rel="noreferrer"
                           className="admin-donations__proof-link"
                         >
-                          Voir l'image
+                          Voir l&apos;image
                         </a>
                       )}
                     </td>
@@ -292,6 +311,19 @@ const ReviewModal = ({ donation, onClose, onDone }) => {
       onClose={onClose}
     >
       <div className="admin-donations__review">
+        {/* Le numéro de transaction est le SEUL garde-fou contre une
+            déclaration fabriquée : le voir apparaître sur plusieurs
+            dons doit sauter aux yeux AVANT la décision, pas après. */}
+        {donation.duplicateTransactionCount > 0 && (
+          <p className="admin-donations__review-duplicate" role="alert">
+            <AlertTriangle size={17} aria-hidden="true" />
+            Ce numéro de transaction a été déclaré sur{" "}
+            {donation.duplicateTransactionCount} autre(s) don(s). Vérifiez le
+            relevé avant de valider : un même versement ne peut compter
+            qu&apos;une fois.
+          </p>
+        )}
+
         <dl className="admin-donations__review-details">
           <div><dt>Donateur</dt><dd>{donorName(donation)}</dd></div>
           <div><dt>Téléphone</dt><dd>{donation.donor?.phone ?? "—"}</dd></div>
@@ -300,9 +332,9 @@ const ReviewModal = ({ donation, onClose, onDone }) => {
           <div><dt>Transaction</dt><dd>{donation.proof?.transactionId}</dd></div>
         </dl>
 
-        {donation.proof?.imageUrl && (
+        {safeProofUrl(donation.proof?.imageUrl) && (
           <img
-            src={donation.proof.imageUrl}
+            src={safeProofUrl(donation.proof.imageUrl)}
             alt="Preuve envoyée par le donateur"
             className="admin-donations__review-image"
           />
@@ -354,6 +386,16 @@ const QrCodeModal = ({ onClose }) => {
   const load = useCallback(() => adminDonationQrCode(params), [params]);
   const { data, loading, error, reload } = useAsyncData(load);
 
+  // Liste des types de don réels, plutôt qu'un champ libre.
+  //
+  // Le QR encode `/donate?type=<nom>`, et la page de don rapproche ce
+  // nom des types renvoyés par l'API. Un nom saisi à la main
+  // (« dîmes », « Dime », « construction du temple ») ne correspondait
+  // à rien : le QR menait bien à la page de don, mais sans rien
+  // présélectionner — une panne silencieuse, découverte en plein
+  // culte.
+  const { data: types } = useAsyncData(fetchDonationTypes);
+
   const generate = () => {
     const next = { ...(type ? { type } : {}), ...(amount ? { amount } : {}) };
 
@@ -370,13 +412,16 @@ const QrCodeModal = ({ onClose }) => {
       <div className="admin-donations__qr">
         <div className="admin-donations__qr-fields">
           <label>
-            <span>Type de don (identifiant)</span>
-            <input
-              type="text"
-              value={type}
-              placeholder="Laisser vide pour un choix libre"
-              onChange={(e) => setType(e.target.value)}
-            />
+            <span>Type de don présélectionné</span>
+            <select value={type} onChange={(e) => setType(e.target.value)}>
+              <option value="">Laisser le visiteur choisir</option>
+
+              {(types ?? []).map((item) => (
+                <option key={item.id} value={item.name}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label>
