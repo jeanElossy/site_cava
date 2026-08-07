@@ -6,47 +6,74 @@ import "./FaqSection.scss";
 
 // Questions fréquentes.
 //
-// Les réponses ont été reprises pour décrire ce que le site fait
-// RÉELLEMENT depuis la mise en place du paiement. Deux d'entre elles
-// promettaient autre chose :
+// ------------------------------------------------------------------
+// CES RÉPONSES DÉCRIVENT LE PARCOURS RÉEL, PAS L'ANCIEN
+// ------------------------------------------------------------------
+// Elles décrivaient encore le guichet de paiement en ligne qui a été
+// retiré : « prestataire agréé », cartes Visa et Mastercard, reçu
+// disponible « dès la confirmation du paiement », case « contribution
+// anonyme », don depuis l'étranger par carte. Plus rien de tout cela
+// n'existe.
 //
-//   - « une confirmation est envoyée » laissait entendre un e-mail.
-//     Aucun envoi n'existe : la confirmation s'affiche à l'écran et le
-//     reçu se télécharge. Un donateur qui attend un courriel qui ne
-//     viendra jamais finit par appeler l'église, persuadé que son
-//     paiement a échoué.
-//   - « dans plusieurs devises » était faux : les paiements sont
-//     encaissés en francs CFA.
+// Le parcours d'aujourd'hui : le donateur règle LUI-MÊME, dans son
+// application Mobile Money, sur le QR code (ou le numéro) de
+// l'église, puis déclare ici le numéro de transaction reçu par SMS.
+// Un administrateur le rapproche du relevé Mobile Money réel avant de
+// valider. Le reçu n'existe qu'après cette validation.
+//
+// Une FAQ qui promet un reçu immédiat ou l'anonymat produit des
+// appels à l'église et des donateurs déçus : chaque réponse ci-dessous
+// doit rester vérifiable en donnant.
 const faqs = [
+  {
+    question: "Comment se passe un don, concrètement ?",
+    answer:
+      "En quatre étapes. Vous indiquez vos coordonnées, le type de don et le montant ; vous choisissez l'opérateur Mobile Money de l'église ; vous réglez depuis votre propre application Mobile Money, en scannant le QR code affiché ou en composant le numéro indiqué ; vous revenez saisir le numéro de transaction reçu par SMS. Votre don est alors enregistré, en attente de vérification.",
+  },
   {
     question: "Mes contributions sont-elles sécurisées ?",
     answer:
-      "Oui. Le paiement se déroule entièrement sur la plateforme de notre prestataire agréé : vos coordonnées bancaires ou de mobile money ne transitent jamais par notre site et n'y sont jamais enregistrées.",
+      "Le paiement a lieu entièrement dans votre application Mobile Money, entre votre opérateur et le compte de l'église : aucun code secret, aucune coordonnée bancaire ne transite par ce site, qui n'en demande d'ailleurs aucun. Nous n'enregistrons que vos coordonnées, le montant déclaré et le numéro de transaction.",
   },
   {
     question: "Quels moyens de paiement puis-je utiliser ?",
     answer:
-      "Orange Money, MTN Money, Moov Money, Wave, ainsi que les cartes Visa et Mastercard. Les contributions sont encaissées en francs CFA.",
+      "Les comptes Mobile Money de l'église : Orange Money, MTN Money, Moov Money et Wave, selon ceux qui sont actifs au moment de votre don. Il n'y a pas de paiement par carte bancaire. Les contributions sont réglées en francs CFA.",
+  },
+  {
+    question: "Pourquoi dois-je saisir un numéro de transaction ?",
+    answer:
+      "Parce que le paiement se fait en dehors du site : rien ici ne peut constater qu'il a eu lieu. Le numéro de transaction, reçu par SMS et propre à votre opération, est ce qui permet à un responsable de la retrouver sur le relevé Mobile Money de l'église. Vous pouvez y joindre une capture d'écran de la confirmation, mais elle ne remplace pas le numéro.",
+  },
+  {
+    question: "Quand mon don est-il confirmé ?",
+    answer:
+      "Après vérification manuelle. Votre don reste « en attente » le temps qu'un responsable rapproche votre numéro de transaction du relevé de l'église. Ce n'est donc pas instantané : comptez généralement quelques jours. Conservez la référence affichée à la fin du formulaire, elle identifie votre don.",
   },
   {
     question: "Recevrai-je un reçu ?",
     answer:
-      "Oui. Dès la confirmation du paiement, un reçu au format PDF est disponible : vous pouvez le télécharger ou le partager directement. Il porte un QR code permettant d'en vérifier l'authenticité à tout moment.",
+      "Oui, une fois votre don vérifié et validé. Le reçu au format PDF n'est délivré qu'à ce moment-là — pas dès l'envoi du formulaire —, car l'église ne peut attester que d'un versement qu'elle a réellement constaté sur son relevé.",
   },
   {
     question: "Puis-je contribuer de manière anonyme ?",
     answer:
-      "Oui, en cochant « contribution anonyme ». Aucune donnée personnelle n'est alors enregistrée. À noter : le paiement par carte reste indissociable de votre nom, exigé par le prestataire ; pour donner sans laisser d'identité, choisissez le mobile money.",
+      "Non. Prénom, nom et téléphone sont indispensables : sans eux, un responsable ne pourrait ni rapprocher votre déclaration du relevé, ni vous joindre si le numéro de transaction reste introuvable. Ces informations servent uniquement au suivi de votre don.",
   },
   {
     question: "Puis-je contribuer depuis l'étranger ?",
     answer:
-      "Oui, par carte bancaire. Les paiements par mobile money nécessitent en revanche un compte auprès d'un opérateur ivoirien.",
+      "Seulement si vous disposez d'un compte Mobile Money permettant d'envoyer de l'argent vers un compte ivoirien. Aucun paiement par carte bancaire n'est proposé. Depuis l'étranger, le plus simple reste de contacter directement l'église.",
   },
   {
     question: "Comment les fonds sont-ils utilisés ?",
     answer:
-      "Vous choisissez l'affectation de votre contribution au moment du don : œuvre générale, évangélisation, action sociale, formation biblique, média ou construction.",
+      "Vous choisissez l'affectation de votre contribution au moment du don, parmi les types proposés dans le formulaire : dîme, offrande, action de grâce, construction, mission ou don libre.",
+  },
+  {
+    question: "Je me suis trompé de montant ou de numéro de transaction.",
+    answer:
+      "Contactez l'église sans attendre, avec la référence affichée à la fin du formulaire. Un don ne peut pas être modifié depuis le site : un responsable le rejettera, avec une remarque explicative, et vous pourrez le déclarer à nouveau correctement.",
   },
 ];
 

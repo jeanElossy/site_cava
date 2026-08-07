@@ -3,10 +3,10 @@ import {
   FaChartPie,
   FaChurch,
   FaFileInvoiceDollar,
-  FaLock,
-  FaReceipt,
+  FaMobileAlt,
+  FaSearch,
   FaBullseye,
-  FaUserSecret,
+  FaReceipt,
 } from "react-icons/fa";
 
 import "./TransparencySection.scss";
@@ -32,9 +32,9 @@ const items = [
   },
   {
     icon: <FaShieldAlt />,
-    title: "Paiement sécurisé",
+    title: "Paiement chez votre opérateur",
     description:
-      "Les paiements sont traités par un prestataire agréé, sur sa propre plateforme.",
+      "Vous réglez depuis votre propre application Mobile Money, vers le compte de l'église.",
   },
 ];
 
@@ -52,26 +52,33 @@ const items = [
 // Ils sont remplacés par quatre garanties VÉRIFIABLES, qui décrivent
 // exactement ce que fait le système de don : chacune est vraie, et
 // chacune se constate en donnant.
+//
+// Deux d'entre elles ont dû être réécrites avec le retrait du guichet
+// de paiement en ligne. « Reçu immédiat » et « Anonymat possible »
+// étaient devenues fausses : le reçu n'existe qu'après vérification
+// manuelle, et le don exige désormais une identité pour pouvoir être
+// rapproché du relevé Mobile Money de l'église. Une promesse fausse
+// sur une page de don coûte plus cher qu'une promesse absente.
 const guarantees = [
   {
-    icon: <FaLock />,
-    title: "Paiement hébergé",
-    text: "Vos coordonnées bancaires ne transitent jamais par notre site.",
+    icon: <FaMobileAlt />,
+    title: "Paiement chez vous",
+    text: "Rien à saisir ici : vous payez dans votre application Mobile Money.",
   },
   {
-    icon: <FaReceipt />,
-    title: "Reçu immédiat",
-    text: "Un reçu vérifiable est disponible dès la confirmation du paiement.",
+    icon: <FaSearch />,
+    title: "Vérification humaine",
+    text: "Chaque don est rapproché du relevé de l'église avant d'être validé.",
   },
   {
     icon: <FaBullseye />,
     title: "Affectation au choix",
-    text: "Vous décidez du projet auquel votre contribution est destinée.",
+    text: "Vous décidez du type de don auquel votre contribution est destinée.",
   },
   {
-    icon: <FaUserSecret />,
-    title: "Anonymat possible",
-    text: "Vous pouvez donner sans laisser aucune donnée personnelle.",
+    icon: <FaReceipt />,
+    title: "Reçu après validation",
+    text: "Une fois votre don vérifié, un reçu vérifiable vous est délivré.",
   },
 ];
 
