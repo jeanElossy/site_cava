@@ -240,6 +240,18 @@ const DonationsAdmin = () => {
                       {donation.adminNote && (
                         <span className="admin-donations__reason">{donation.adminNote}</span>
                       )}
+                    </td>
+
+                    <td className="admin-donations__actions-col">
+                      {donation.status === "en_attente" && (
+                        <button
+                          type="button"
+                          className="admin-donations__review-open"
+                          onClick={() => setReviewing(donation)}
+                        >
+                          Vérifier
+                        </button>
+                      )}
 
                       {donation.status === "valide" && (
                         <a
@@ -251,18 +263,6 @@ const DonationsAdmin = () => {
                           <FileText size={12} aria-hidden="true" />
                           Reçu
                         </a>
-                      )}
-                    </td>
-
-                    <td>
-                      {donation.status === "en_attente" && (
-                        <button
-                          type="button"
-                          className="admin-donations__review-open"
-                          onClick={() => setReviewing(donation)}
-                        >
-                          Vérifier
-                        </button>
                       )}
                     </td>
                   </tr>
