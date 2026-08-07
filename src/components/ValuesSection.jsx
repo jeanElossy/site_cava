@@ -60,7 +60,7 @@ const values = [
   {
     icon: <FaShieldAlt />,
     title: "L’unité",
-    text: "Nous nous s’engage à préserver l’unité de l’Église en: Cultivant l’amour fraternel et le respect mutuel.",
+    text: "Nous nous engageons à préserver l’unité de l’Église en cultivant l’amour fraternel et le respect mutuel.",
     color: "green",
   },
   {
