@@ -100,7 +100,7 @@ export const legalNotice = {
           items: [
             "Render Services, Inc. (États-Unis) — hébergement de l'interface d'administration et du service applicatif.",
             "MongoDB, Inc. (États-Unis) — base de données, via le service MongoDB Atlas.",
-            "Cloudinary Ltd. (Israël / États-Unis) — stockage et diffusion des images et fichiers publiés depuis l'administration.",
+            "Cloudinary Ltd. (Israël / États-Unis) — stockage et diffusion des images et fichiers publiés depuis l'administration, ainsi que des preuves de paiement (captures d'écran) transmises par les donateurs sur la page Don.",
           ],
         },
         {
@@ -247,9 +247,9 @@ export const privacyPolicy = {
         {
           type: "list",
           items: [
-            "Formulaire de contact — seul formulaire qui transmet et conserve réellement des données. Champs enregistrés : nom, adresse e-mail, sujet, message, et accord de recontact.",
+            "Formulaire de contact — Champs enregistrés : nom, adresse e-mail, sujet, message, et accord de recontact.",
             "Formulaire d'inscription à la lettre d'information (pied de page) — n'est pas encore relié à un service d'envoi : aucune adresse n'est actuellement transmise ni conservée.",
-            "Formulaire de contribution (page Don) — aucun paiement en ligne n'est traité à ce jour, et aucune coordonnée bancaire n'est collectée ni transmise.",
+            "Formulaire de contribution (page Don) — enregistre nom, prénom, téléphone, adresse e-mail (facultative), montant déclaré, type de don, moyen de paiement choisi et numéro de transaction Mobile Money (avec, en complément facultatif, une capture d'écran du paiement). Le paiement lui-même s'effectue directement dans l'application Mobile Money du donateur, hors du site : aucune coordonnée bancaire n'est collectée ni transmise.",
           ],
         },
       ],
@@ -316,7 +316,7 @@ export const privacyPolicy = {
         },
         {
           type: "paragraph",
-          text: "Informations liées aux contributions et aux dons : aucune conservation à ce jour, aucun paiement en ligne n'étant traité. Les dons se font par les moyens indiqués sur la page dédiée, hors du site.",
+          text: "Informations liées aux contributions et aux dons (nom, prénom, téléphone, e-mail facultatif, montant, type de don, moyen de paiement, numéro de transaction Mobile Money et capture d'écran facultative) : conservées pour la durée nécessaire à la vérification du don par l'administration et à l'établissement du reçu, à des fins de comptabilité et de traçabilité des contributions. Le paiement s'effectue directement dans l'application Mobile Money du donateur, hors du site : aucune coordonnée bancaire n'est collectée.",
         },
         {
           type: "paragraph",
@@ -349,7 +349,7 @@ export const privacyPolicy = {
             "Vercel Inc. — hébergement du site public.",
             "Render Services, Inc. — hébergement du service applicatif et de l'espace d'administration.",
             "MongoDB, Inc. — base de données hébergée (messages du formulaire de contact, contenus du site).",
-            "Cloudinary Ltd. — stockage des images et fichiers publiés depuis l'administration.",
+            "Cloudinary Ltd. — stockage des images et fichiers publiés depuis l'administration, ainsi que des preuves de paiement transmises par les donateurs sur la page Don.",
           ],
         },
         {
