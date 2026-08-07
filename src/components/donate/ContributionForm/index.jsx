@@ -97,6 +97,13 @@ const ContributionForm = () => {
       });
 
       setReference(result.reference);
+
+      // Le don est parti : le tunnel repart de zéro. Sans ce `RESET`,
+      // le numéro de transaction, les coordonnées et le moyen choisi
+      // restaient dans le contexte — un visiteur qui revient sur
+      // /donate dans la même session retrouvait le formulaire déjà
+      // rempli avec la preuve du don précédent, prêt à être renvoyé.
+      dispatch({ type: "RESET" });
     } catch (caught) {
       const details = caught.details ? Object.values(caught.details)[0] : null;
 

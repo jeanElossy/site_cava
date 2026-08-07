@@ -50,11 +50,37 @@ const StepQrTicket = ({ state }) => {
           </div>
         </dl>
 
+        {/* Numéro et titulaire en clair, pas seulement le QR.
+            Beaucoup de donateurs scannent le QR projeté pendant le
+            culte avec leur téléphone et atterrissent sur cette page
+            AVEC CE MÊME téléphone : ils ne peuvent pas en scanner un
+            second à l'écran. Le numéro composé à la main est leur
+            seule issue. */}
+        {state.paymentMethod.accountNumber && (
+          <div className="offering-ticket__manual">
+            <p className="offering-ticket__manual-label">
+              Ou payez au numéro
+            </p>
+
+            <p className="offering-ticket__manual-number">
+              {state.paymentMethod.accountNumber}
+            </p>
+
+            {state.paymentMethod.holderName && (
+              <p className="offering-ticket__manual-holder">
+                {state.paymentMethod.holderName}
+              </p>
+            )}
+          </div>
+        )}
+
       </div>
 
       <p className="step-panel__hint">
         Ouvrez votre application {state.paymentMethod.name || "Mobile Money"}, scannez ce code
-        et réglez le montant ci-dessus. Une fois le paiement effectué, passez à l'étape suivante.
+        et réglez le montant ci-dessus. Si vous lisez cette page depuis le téléphone qui a
+        scanné le QR code, composez plutôt le numéro indiqué sur le billet. Une fois le
+        paiement effectué, passez à l&apos;étape suivante.
       </p>
 
     </div>

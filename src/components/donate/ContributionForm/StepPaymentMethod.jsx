@@ -35,17 +35,25 @@ const StepPaymentMethod = ({ state, dispatch }) => {
                       id: method.id,
                       name: method.name,
                       image: method.image?.url ?? "",
+                      // Repris jusqu'au billet d'offrande : c'est le
+                      // recours du donateur qui ne peut pas scanner le
+                      // QR (voir StepQrTicket).
+                      accountNumber: method.accountNumber ?? "",
+                      holderName: method.holderName ?? "",
                     },
                   })
                 }
               >
-                <div className="payment-logo-wrapper">
-                  {method.image?.url && (
-                    <img src={method.image.url} alt="" aria-hidden="true" className="payment-logo" />
-                  )}
-                </div>
-
+                {/* Aucune vignette ici : `image` n'est pas un logo de
+                    marque mais le QR code Mobile Money lui-même.
+                    Réduit à 24 px, il ne donnait qu'un damier
+                    illisible. Sa place est à l'étape du billet, à une
+                    taille scannable. */}
                 <span>{method.name}</span>
+
+                {method.accountNumber && (
+                  <span className="payment-account">{method.accountNumber}</span>
+                )}
               </button>
             ))}
           </div>

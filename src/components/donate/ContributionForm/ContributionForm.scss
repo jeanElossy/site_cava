@@ -26,6 +26,12 @@
   }
 }
 
+@keyframes contribution-proof-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ===========================
    SECTION
 =========================== */
@@ -385,7 +391,7 @@
   button {
     min-height: 72px;
 
-    padding: 12px;
+    padding: 12px 18px;
 
     border: 2px solid #eef1ef;
 
@@ -394,10 +400,11 @@
     background: white;
 
     display: flex;
-    align-items: center;
-    justify-content: flex-start;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
 
-    gap: 14px;
+    gap: 4px;
 
     text-align: left;
 
@@ -435,43 +442,25 @@
   }
 }
 
-/* Cercle du logo */
+/* Le sélecteur ne portait pas un logo de marque mais l'image `image`
+   du moyen de paiement — c'est-à-dire le QR code Mobile Money
+   lui-même, réduit à 24 px : un damier illisible. Les règles
+   `.payment-logo` / `.payment-logo-wrapper` sont parties avec lui. Le
+   QR ne s'affiche plus qu'à l'étape du billet, à taille scannable. */
 
-.contribution-form .payment-logo-wrapper {
-  width: 42px;
-  height: 42px;
+/* Numéro Mobile Money rappelé sous le nom du moyen. */
 
-  min-width: 42px;
+.contribution-form .payment-account {
+  color: #6b7280;
 
-  border-radius: 50%;
+  font-size: .8rem;
+  font-weight: 500;
 
-  background: white;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  box-shadow:
-    0 4px 12px rgba(0,0,0,.08);
+  letter-spacing: .02em;
 }
 
-/* Logo */
-
-.contribution-form .payment-logo {
-  width: 24px;
-  height: 24px;
-
-  object-fit: contain;
-
-  transition: .3s ease;
-}
-
-.contribution-form .payment-grid button:hover .payment-logo {
-  transform: scale(1.08);
-}
-
-.contribution-form .payment-grid button.active .payment-logo-wrapper {
-  background: rgba(255,255,255,.15);
+.contribution-form .payment-grid button.active .payment-account {
+  color: rgba(255,255,255,.8);
 }
 
 
@@ -1099,6 +1088,309 @@
       dt { color: rgba(255, 255, 255, 0.7); }
       dd { margin: 0; font-weight: 600; }
     }
+
+    // Recours pour le donateur qui a scanné le QR projeté avec le
+    // téléphone où s'affiche cette page : il compose le numéro à la
+    // main. Mis en avant comme une seconde offre, pas comme une note
+    // de bas de page.
+    &__manual {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.35);
+    }
+
+    &__manual-label {
+      margin: 0 0 6px;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    &__manual-number {
+      margin: 0;
+      color: var(--harvest-gold);
+      font-family: "Fraunces", serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.04em;
+      // Le numéro se recopie chiffre par chiffre : il doit pouvoir se
+      // sélectionner, et ne jamais être coupé par un retour à la ligne.
+      white-space: nowrap;
+      user-select: all;
+    }
+
+    &__manual-holder {
+      margin: 4px 0 0;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 0.82rem;
+    }
+  }
+
+  /* ---------- Messages d'étape : chargement, erreur, encouragement ---------- */
+
+  .step-panel__hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+
+    margin: 10px 0 0;
+
+    color: #5c6a63;
+
+    font-size: 0.85rem;
+    line-height: 1.6;
+
+    svg {
+      flex-shrink: 0;
+      margin-top: 3px;
+      color: var(--sowing-green);
+    }
+
+    // Même code couleur que `.step-error` : une erreur se lit comme une
+    // erreur, à quelque endroit du tunnel qu'elle apparaisse.
+    &--error {
+      padding: 10px 13px;
+
+      border-left: 3px solid #c0392b;
+      border-radius: 8px;
+
+      background: rgba(192, 57, 43, 0.07);
+
+      color: #c0392b;
+
+      font-weight: 600;
+    }
+  }
+
+  // Fil conducteur végétal du tunnel (semence → pousse → épi) : ce
+  // n'est pas une consigne mais un encouragement, d'où le fond tiède
+  // et l'italique plutôt qu'un bandeau d'information.
+  .step-panel__growth-hint {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    margin: 26px 0 22px;
+    padding: 13px 16px;
+
+    border-left: 3px solid var(--harvest-gold);
+    border-radius: 0 12px 12px 0;
+
+    background: var(--sage-mist);
+
+    color: var(--deep-canopy);
+
+    font-size: 0.86rem;
+    font-style: italic;
+    line-height: 1.55;
+
+    svg {
+      flex-shrink: 0;
+      color: var(--sowing-green);
+    }
+  }
+
+  /* ---------- Preuve de paiement : dépôt et aperçu ---------- */
+
+  .proof-upload {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 10px;
+
+    padding: 15px 22px;
+
+    border: 2px dashed rgba(13, 126, 88, 0.4);
+    border-radius: 16px;
+
+    background: var(--linen);
+
+    color: var(--sowing-green);
+
+    font-size: 0.9rem;
+    font-weight: 600 !important;
+
+    cursor: pointer;
+
+    transition: 0.3s ease;
+
+    &:hover {
+      border-color: var(--sowing-green);
+      background: var(--sage-mist);
+    }
+
+    // Le champ natif est masqué : c'est le libellé qui sert de zone
+    // de dépôt. Il reste focusable au clavier via le label.
+    input[type="file"] {
+      position: absolute;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    &__spin {
+      animation: contribution-proof-spin 1s linear infinite;
+    }
+  }
+
+  .proof-preview {
+    position: relative;
+
+    display: inline-block;
+
+    max-width: 240px;
+
+    border-radius: 16px;
+
+    overflow: hidden;
+
+    box-shadow: 0 10px 26px rgba(8, 50, 31, 0.18);
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    &__remove {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+
+      padding: 6px 11px;
+
+      border: none;
+      border-radius: 50px;
+
+      background: rgba(8, 50, 31, 0.82);
+
+      color: #fff;
+
+      font-family: inherit;
+      font-size: 0.74rem;
+      font-weight: 600;
+
+      cursor: pointer;
+
+      transition: 0.25s ease;
+
+      &:hover {
+        background: #c0392b;
+      }
+
+      &:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  /* ---------- Confirmation ---------- */
+
+  // Conclusion du parcours, dans la même langue visuelle que le billet
+  // d'offrande : fond profond, or de récolte, et la référence donnée
+  // comme la valeur à conserver.
+  //
+  // Écrit sous `.contribution-form` (donc `&--done`) et non à la
+  // racine du fichier : tous les SCSS du projet sont fusionnés en une
+  // feuille unique, une règle de racine devient globale (voir
+  // CLAUDE.md).
+  &--done {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 60vh;
+
+    .contribution-form__confirmation {
+      position: relative;
+
+      z-index: 2;
+
+      max-width: 620px;
+
+      margin: 0 auto;
+      padding: 54px 44px;
+
+      border: 1px dashed rgba(255, 255, 255, 0.35);
+      border-radius: 32px;
+
+      background: linear-gradient(155deg, var(--deep-canopy), var(--sowing-green));
+
+      color: #fff;
+
+      text-align: center;
+
+      box-shadow:
+        0 2px 6px rgba(8, 50, 31, 0.25),
+        0 26px 60px rgba(8, 50, 31, 0.35);
+
+      animation: fadeUp 0.8s ease;
+
+      // Le sceau de validation : grand, doré, posé au-dessus du texte.
+      > svg {
+        display: block;
+
+        width: 76px;
+        height: 76px;
+
+        margin: 0 auto 22px;
+        padding: 16px;
+
+        border-radius: 50%;
+
+        background: rgba(244, 198, 29, 0.16);
+
+        color: var(--harvest-gold);
+      }
+
+      h2 {
+        margin: 0 0 14px;
+
+        color: #fff;
+
+        font-family: "Fraunces", serif;
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.15;
+      }
+
+      p {
+        margin: 0;
+
+        color: rgba(255, 255, 255, 0.82);
+
+        font-size: 0.98rem;
+        line-height: 1.7;
+      }
+
+      // La référence est ce que le donateur doit garder : elle se
+      // détache du reste et se sélectionne d'un seul geste.
+      strong {
+        display: inline-block;
+
+        margin-top: 14px;
+        padding: 9px 18px;
+
+        border-radius: 12px;
+
+        background: rgba(255, 255, 255, 0.1);
+
+        color: var(--harvest-gold);
+
+        font-family: "Fraunces", serif;
+        font-size: 1.25rem;
+        letter-spacing: 0.06em;
+
+        user-select: all;
+      }
+    }
   }
 }
 
@@ -1169,6 +1461,18 @@
 
   .contribution-form .summary-total strong {
     font-size: 1.5rem;
+  }
+
+  .contribution-form--done .contribution-form__confirmation {
+    padding: 38px 24px;
+
+    h2 {
+      font-size: 1.55rem;
+    }
+
+    strong {
+      font-size: 1.05rem;
+    }
   }
 }
 

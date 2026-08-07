@@ -22,16 +22,24 @@ describe("contributionReducer", () => {
     expect(state.donationType).toEqual({ id: "abc", name: "Dîme" });
   });
 
-  it("enregistre le moyen de paiement choisi (id + nom + image)", () => {
+  it("enregistre le moyen de paiement choisi (id + nom + QR + numéro)", () => {
     const state = contributionReducer(initialState, {
       type: "SET_PAYMENT_METHOD",
-      payload: { id: "xyz", name: "Orange Money", image: "https://x/y.png" },
+      payload: {
+        id: "xyz",
+        name: "Orange Money",
+        image: "https://x/y.png",
+        accountNumber: "07 00 00 00 00",
+        holderName: "CAVA",
+      },
     });
 
     expect(state.paymentMethod).toEqual({
       id: "xyz",
       name: "Orange Money",
       image: "https://x/y.png",
+      accountNumber: "07 00 00 00 00",
+      holderName: "CAVA",
     });
   });
 

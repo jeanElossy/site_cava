@@ -14,7 +14,19 @@ export const initialState = {
   // pas de valeur par défaut arbitraire comme dans l'ancien tunnel.
   donationType: { id: "", name: "" },
 
-  paymentMethod: { id: "", name: "", image: "" },
+  // `image` est le QR Mobile Money officiel de l'église pour ce moyen.
+  // `accountNumber` / `holderName` l'accompagnent sur le billet
+  // d'offrande : le donateur qui a scanné le QR projeté pendant le
+  // culte arrive sur /donate avec CE MÊME téléphone, et ne peut donc
+  // pas en scanner un second à l'écran — il lui faut le numéro en
+  // clair pour le composer à la main.
+  paymentMethod: {
+    id: "",
+    name: "",
+    image: "",
+    accountNumber: "",
+    holderName: "",
+  },
 
   donor: {
     firstName: "",
