@@ -8,24 +8,36 @@ Site vitrine du **Centre Apostolique Vie et Abondance (CAVA)**, une église. Con
 
 ## Commandes
 
+Frontend (racine du dépôt) :
+
 ```bash
 npm run dev       # serveur de dev Vite (HMR)
 npm run build     # build de production vers dist/
 npm run preview   # sert le build de production localement
 npm run lint      # ESLint sur tout le projet
+npm test          # Vitest — logique pure (utils, data.js des tunnels) et quelques rendus de composants clés
 ```
 
-Aucune infrastructure de test n'est configurée. Ne pas inventer de commande `npm test`.
+Backend ([backend/](backend/)) :
+
+```bash
+cd backend
+npm run dev       # API Express en local, avec rechargement (--watch) — http://localhost:4000
+npm run seed      # amorce la base : admin, contenu par défaut, moyens de paiement, types de don (idempotent)
+npm test          # exécuteur de test intégré à Node (`node --test`), pas Jest ni Vitest
+```
 
 ## Stack
 
 React 19 + Vite 8, JavaScript/JSX uniquement (**ne jamais convertir en TypeScript sans autorisation explicite**), SCSS, React Router v7, Framer Motion pour les animations.
 
-Note : `axios`, `react-hook-form`, `swiper` et `react-player` sont dans `package.json` mais **actuellement inutilisés** — le site est entièrement statique, sans backend ni appel API. Avant d'ajouter une dépendance, vérifier si le besoin est déjà couvert et demander validation.
+Note : `axios`, `react-hook-form`, `swiper` et `react-player` sont dans `package.json` mais **actuellement inutilisés** — le frontend appelle l'API backend via `fetch` natif (voir [src/services/http.js](src/services/http.js)), pas axios. Avant d'ajouter une dépendance, vérifier si le besoin est déjà couvert et demander validation.
+
+Backend séparé : Node.js + Express 5 + MongoDB/Mongoose, dans [backend/](backend/) — voir la section **Backend** ci-dessous. Ce n'est plus un site 100 % statique.
 
 ## Architecture
 
-Application 100 % côté client, sans état serveur.
+Le **frontend** est une SPA React côté client ; l'état applicatif persistant (contenu géré depuis `/admin`, membres, dons…) vit dans le **backend** décrit plus bas, pas dans le frontend.
 
 - [src/main.jsx](src/main.jsx) — monte l'app, importe `styles/main.scss`, enveloppe le tout dans `ContributionProvider`.
 - [src/App.jsx](src/App.jsx) — `BrowserRouter` seul.
@@ -56,6 +68,26 @@ Le contenu est en dur dans le code. Les données des ministères vivent dans [sr
 ### État global
 
 Un seul contexte : [ContributionContext](src/context/ContributionContext.jsx), un `useReducer` pour le formulaire de don (type, montant, projet, moyen de paiement Orange/MTN/Moov/Wave, coordonnées du donateur). Les composants consomment via `useContribution()` et dispatchent des actions typées (`SET_TYPE`, `SET_AMOUNT`, …). La page Donate lit `?type=` dans l'URL pour préremplir le type de contribution.
+
+## Backend
+
+Un backend Node.js + Express 5 + MongoDB/Mongoose vit dans [backend/](backend/), déployé séparément sur **Render** (voir [backend/DEPLOIEMENT.md](backend/DEPLOIEMENT.md)). Le frontend l'appelle via `fetch` (voir [src/services/http.js](src/services/http.js)), à l'URL définie par `VITE_API_URL` (`.env` racine, ignoré par Git — **par défaut pointé sur l'API de production**, pas sur `localhost:4000` ; lire le commentaire du fichier avant de travailler sur `/admin` en local).
+
+- [backend/src/server.js](backend/src/server.js) / [backend/src/app.js](backend/src/app.js) — démarrage et configuration Express (Helmet, CORS, rate limiting).
+- [backend/src/routes/index.js](backend/src/routes/index.js) — **toutes** les routes API, montées directement sur les services : pas de couche `controllers` séparée. `resource.routes.js` fournit un CRUD générique (`createCrudService`) réutilisé par plusieurs ressources admin (médias, ministères, moyens de paiement, types de don…).
+- `backend/src/models/` — schémas Mongoose. `backend/src/services/` — logique métier, indépendante d'Express.
+- `backend/src/middlewares/`, `backend/src/jobs/`, `backend/src/config/`, `backend/src/utils/` — auth/rôles, tâches planifiées, configuration (`config/env.js` valide les variables au démarrage via `validateEnv()`), utilitaires.
+- `backend/src/scripts/seed.js` — amorçage **idempotent** (admin, contenu par défaut, moyens de paiement, types de don) : ne supprime jamais rien, donc réutilisable sans risque sur une base déjà peuplée.
+
+**Pas de base de test dédiée** : [backend/src/test/db.js](backend/src/test/db.js) connecte les tests d'intégration à la **même** base que le développement (`MONGODB_URI`), y compris en local. Les tests doivent donc nettoyer scrupuleusement ce qu'ils créent (identifiants improbables en production, ex. e-mails `*.testsuite.*@example.invalid`). Ne jamais interrompre `cd backend && npm test` en cours de route (Ctrl+C ou kill du process) : les hooks `after()` de nettoyage n'ont alors pas l'occasion de s'exécuter et laissent des données de test résiduelles dans la base partagée — vécu concrètement lors de la vérification finale de la fonctionnalité de dons (Task 24), où un processus de test interrompu a laissé une bergerie de test fantôme qui a fait échouer la suite `newSoul.service` d'une session ultérieure avec une erreur de clé dupliquée, le temps d'être identifiée et nettoyée à la main.
+
+### Dons — parcours Mobile Money manuel
+
+Le paiement en ligne a été remplacé par un parcours **Mobile Money déclaratif**, sans intégration de paiement tierce (l'ancienne intégration CinetPay a été retirée) :
+
+1. **Public**, page `/donate` (composant [src/components/donate/ContributionForm/](src/components/donate/ContributionForm/)) : tunnel à 4 étapes — identité/montant/type (`StepIdentity`) → moyen de paiement (`StepPaymentMethod`) → billet QR à scanner (`StepQrTicket`) → preuve (numéro de transaction Mobile Money obligatoire, capture d'écran optionnelle — `StepProof`). Le don n'est créé en base qu'à l'étape finale (« Envoyer »), avec le statut `en_attente`.
+2. **Admin** : `/admin/dons` (`DonationsAdmin.jsx`) liste les dons et permet de les **valider** ou **rejeter** — le rejet est bloqué côté serveur sans remarque ; `/admin/dons/moyens-de-paiement` gère les QR Mobile Money proposés dans le tunnel (Orange Money, MTN, Moov, Wave…) ; `/admin/dons/types` gère les types de don (Dîme, Offrande, Action de grâce…). Un moyen de paiement sans QR/numéro renseigné ne doit jamais être activé (`active: true`) : le tunnel l'affiche alors aux donateurs tel quel.
+3. Un don validé expose un reçu PDF public, non authentifié, à `GET /api/donations/:reference/recu` (lien « Reçu » dans `DonationsAdmin`). Aucune vérification n'est automatique : la mise en correspondance du numéro de transaction avec le relevé Mobile Money réel de l'église reste un geste manuel de l'administrateur.
 
 ## Styles
 
@@ -102,8 +134,11 @@ Deux emplacements distincts, ne pas les confondre :
 
 ## Déploiement
 
-Vercel. [vercel.json](vercel.json) fait un rewrite SPA de toutes les routes vers `index.html` et impose des en-têtes de sécurité, dont une **CSP stricte** : `script-src 'self'`, `img-src 'self' data:`, `connect-src 'self'`. Conséquence : toute intégration tierce (iframe YouTube, carte externe, appel API vers un autre domaine, script analytics) sera bloquée tant que la CSP n'est pas mise à jour en conséquence.
+Deux déploiements distincts :
+
+- **Frontend** sur Vercel. [vercel.json](vercel.json) fait un rewrite SPA de toutes les routes vers `index.html` et impose des en-têtes de sécurité, dont une **CSP stricte**. `connect-src` n'autorise que `'self'`, l'API de production (`https://site-cava.onrender.com`) et Cloudinary (`https://api.cloudinary.com`) ; `img-src`/`media-src` autorisent Cloudinary et `i.ytimg.com`. Toute nouvelle intégration tierce (autre domaine d'API, iframe, script analytics) sera bloquée tant que `vercel.json` n'est pas mis à jour en conséquence.
+- **Backend** sur Render, connecté à MongoDB Atlas — voir [backend/DEPLOIEMENT.md](backend/DEPLOIEMENT.md) pour la procédure et ses compromis (notamment l'absence d'IP fixe côté Render, qui oblige à autoriser `0.0.0.0/0` dans Atlas Network Access).
 
 ## Conventions du dépôt
 
-Le dossier `.claude/` contient des agents, skills et docs de standards partagés entre projets ; ils décrivent aussi une stack backend Node/Express/MongoDB qui **n'existe pas dans ce dépôt** — ignorer ces parties ici. `.claude/memory/` (decisions, known-issues, roadmap) est prévu pour consigner les décisions importantes au fil du projet.
+Le dossier `.claude/` contient des agents, skills et docs de standards partagés entre projets ; ils décrivent une stack backend Node/Express/MongoDB — qui, depuis l'ajout du backend documenté ci-dessus, correspond bien à ce dépôt (auparavant ce n'était pas le cas, et cette note l'excluait explicitement : si un document plus ancien du projet affirme encore l'inverse, il est obsolète). `.claude/memory/` (decisions, known-issues, roadmap) est prévu pour consigner les décisions importantes au fil du projet.
