@@ -12,6 +12,8 @@ import EventsAdmin from "../pages/admin/EventsAdmin";
 import MinistriesAdmin from "../pages/admin/MinistriesAdmin";
 import MessagesAdmin from "../pages/admin/MessagesAdmin";
 import DonationsAdmin from "../pages/admin/DonationsAdmin";
+import PaymentMethodsAdmin from "../pages/admin/PaymentMethodsAdmin";
+import DonationTypesAdmin from "../pages/admin/DonationTypesAdmin";
 import CommunityAdmin from "../pages/admin/CommunityAdmin";
 import PresencesAdmin from "../pages/admin/PresencesAdmin";
 import TestimonialsAdmin from "../pages/admin/TestimonialsAdmin";
@@ -93,6 +95,24 @@ const AdminRoutes = () => {
           element={
             <RequireRole allow={STAFF_ROLES}>
               <DonationsAdmin />
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="dons/moyens-de-paiement"
+          element={
+            <RequireRole allow={["admin"]}>
+              <PaymentMethodsAdmin />
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="dons/types"
+          element={
+            <RequireRole allow={["admin"]}>
+              <DonationTypesAdmin />
             </RequireRole>
           }
         />

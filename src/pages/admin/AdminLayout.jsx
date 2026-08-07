@@ -29,7 +29,9 @@ import {
   Settings,
   ShieldCheck,
   Sun,
+  Tag,
   Users,
+  Wallet,
   X,
 } from "lucide-react";
 
@@ -66,6 +68,18 @@ const NAV_GROUPS = [
       },
       { to: "/admin/messages", label: "Messages", icon: Mail, roles: STAFF_ROLES },
       { to: "/admin/dons", label: "Dons", icon: HandCoins, roles: STAFF_ROLES },
+      {
+        to: "/admin/dons/moyens-de-paiement",
+        label: "Moyens de paiement",
+        icon: Wallet,
+        roles: ["admin"],
+      },
+      {
+        to: "/admin/dons/types",
+        label: "Types de don",
+        icon: Tag,
+        roles: ["admin"],
+      },
       {
         to: "/admin/newsletter",
         label: "Lettre d'information",
