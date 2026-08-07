@@ -16,9 +16,25 @@
     @include donate-section-header;
   }
 
+  &__hint {
+    margin: 0;
+
+    color: $donate-ink-faint;
+
+    font-size: 0.9rem;
+    text-align: center;
+
+    &--error {
+      color: #c0392b;
+      font-weight: 600;
+    }
+  }
+
+  // Le nombre de types est administrable : la grille s'adapte au lieu
+  // de figer cinq colonnes comme du temps de la liste écrite en dur.
   &__grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
     gap: 18px;
   }
 
@@ -38,6 +54,7 @@
 
     font-family: inherit;
     text-align: center;
+    text-decoration: none;
 
     cursor: pointer;
 
@@ -58,65 +75,15 @@
       outline-offset: 3px;
     }
 
-    // État sélectionné : le fond vert et la pastille cochée disent la
-    // même chose de deux façons. La couleur seule ne suffit pas — elle
-    // n'est pas perçue par tout le monde.
-    &--active {
-      border-color: $primary;
+    // Plus d'état « sélectionné » : ces cartes ne portent plus de
+    // choix, elles amènent au tunnel avec le type déjà passé dans
+    // l'URL. La sélection, elle, se voit dans le formulaire.
+    &:hover .contribution-types__icon,
+    &:focus-visible .contribution-types__icon {
+      background: $primary;
 
-      background: linear-gradient(
-        160deg,
-        rgba(13, 91, 62, 0.06),
-        rgba(13, 91, 62, 0.02)
-      );
-
-      box-shadow: 0 14px 34px rgba(13, 91, 62, 0.12);
-
-      .contribution-types__icon {
-        background: $primary;
-
-        color: #fff;
-      }
-
-      .contribution-types__check {
-        transform: scale(1);
-
-        opacity: 1;
-      }
-
-      .contribution-types__title {
-        color: $primary;
-      }
+      color: #fff;
     }
-  }
-
-  &__check {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    width: 22px;
-    height: 22px;
-
-    border-radius: 50%;
-
-    background: $primary;
-
-    color: #fff;
-
-    font-size: 0.6rem;
-
-    // Présente mais escamotée : l'apparition se fait par une échelle,
-    // sans décaler la mise en page de la carte.
-    transform: scale(0.4);
-
-    opacity: 0;
-
-    transition: transform $donate-transition, opacity $donate-transition;
   }
 
   &__icon {

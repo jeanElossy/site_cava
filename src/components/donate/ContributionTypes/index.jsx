@@ -1,51 +1,61 @@
+import { Link } from "react-router-dom";
+
 import {
-  FaCheck,
   FaChurch,
+  FaHammer,
   FaHandHoldingHeart,
-  FaHeart,
+  FaGlobeAfrica,
   FaPrayingHands,
-  FaTools,
+  FaHeart,
 } from "react-icons/fa";
 
-import { useContribution } from "../../../context/useContribution";
+import useAsyncData from "../../../hooks/useAsyncData";
+import { fetchDonationTypes } from "../../../services/donations";
 
 import "./ContributionTypes.scss";
 
-const contributionTypes = [
-  {
-    id: "dime",
-    title: "Dîme",
-    description: "Exprimez votre fidélité",
-    icon: <FaChurch />,
-  },
-  {
-    id: "offrande",
-    title: "Offrande",
-    description: "Un acte d'adoration",
-    icon: <FaPrayingHands />,
-  },
-  {
-    id: "don",
-    title: "Don",
-    description: "Soutien libre",
-    icon: <FaHeart />,
-  },
-  {
-    id: "grace",
-    title: "Action de grâce",
-    description: "Remerciez Dieu",
-    icon: <FaHandHoldingHeart />,
-  },
-  {
-    id: "projet",
-    title: "Projet spécial",
-    description: "Construction & équipements",
-    icon: <FaTools />,
-  },
-];
+// Raccourcis vers le tunnel de don, un par TYPE DE DON RÉEL.
+//
+// ------------------------------------------------------------------
+// POURQUOI LA LISTE VIENT DE L'API
+// ------------------------------------------------------------------
+// Ces cartes portaient une liste écrite en dur (« Dîme », « Don »,
+// « Projet spécial »…) et sélectionnaient un type dans un état qui
+// n'existe plus. Deux problèmes : le clic ne faisait plus rien, et
+// les libellés ne correspondaient plus à ceux que l'administration
+// gère réellement (DonationType).
+//
+// La liste est donc celle de l'API, la même que le sélecteur de
+// l'étape 1 du tunnel. Chaque carte est un LIEN vers
+// `/donate?type=<nom>#contribution-form` : exactement l'URL que
+// produit le QR code projeté pendant un culte
+// (GET /admin/donations/qrcode), donc un seul mécanisme de
+// préremplissage à maintenir — celui de `StepIdentity`.
+const ICONS = {
+  "dîme": <FaChurch />,
+  "dime": <FaChurch />,
+  offrande: <FaPrayingHands />,
+  "action de grâce": <FaHandHoldingHeart />,
+  "action de grace": <FaHandHoldingHeart />,
+  construction: <FaHammer />,
+  mission: <FaGlobeAfrica />,
+};
+
+const iconFor = (name) =>
+  ICONS[String(name ?? "").trim().toLowerCase()] ?? <FaHeart />;
 
 const ContributionTypes = () => {
-  const { state, dispatch } = useContribution();
+  const { data: types, loading, error } = useAsyncData(fetchDonationTypes);
+
+  // Le tunnel est sur la même page : le lien met le `?type=` dans
+  // l'URL (c'est lui que lit `StepIdentity`) et le défilement amène
+  // le visiteur au formulaire. React Router ne fait rien du `#` tout
+  // seul, d'où le `scrollIntoView` explicite.
+  const scrollToForm = () => {
+    document
+      .getElementById("contribution-form")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <section className="contribution-types" id="types">
@@ -57,63 +67,59 @@ const ContributionTypes = () => {
           <h2>Choisissez votre contribution</h2>
 
           <p>
-            Chaque forme de contribution a son sens. Sélectionnez celle
-            qui correspond à votre démarche.
+            Chaque forme de contribution a son sens. Choisissez celle
+            qui correspond à votre démarche : le formulaire s&apos;ouvre
+            avec ce type déjà sélectionné.
           </p>
         </header>
 
-        {/* `radiogroup` plutôt qu'une simple rangée de boutons : ces
-            cartes forment un choix unique, et un lecteur d'écran doit
-            l'annoncer comme tel — « 2 sur 5 », et non cinq boutons
-            indépendants dont on ne saurait lequel est actif. */}
-        <div
-          className="contribution-types__grid"
-          role="radiogroup"
-          aria-label="Type de contribution"
-        >
-          {contributionTypes.map((type) => {
-            const active = state.contributionType === type.id;
+        {loading && (
+          <p className="contribution-types__hint">
+            Chargement des types de don…
+          </p>
+        )}
 
-            return (
-              <button
+        {error && (
+          <p className="contribution-types__hint contribution-types__hint--error">
+            {error}
+          </p>
+        )}
+
+        {types && types.length === 0 && (
+          <p className="contribution-types__hint">
+            Aucun type de don n&apos;est proposé pour le moment.
+          </p>
+        )}
+
+        {types && types.length > 0 && (
+          <div className="contribution-types__grid">
+            {types.map((type) => (
+              <Link
                 key={type.id}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                className={
-                  active
-                    ? "contribution-types__card contribution-types__card--active"
-                    : "contribution-types__card"
-                }
-                onClick={() =>
-                  dispatch({ type: "SET_TYPE", payload: type.id })
-                }
+                to={`/donate?type=${encodeURIComponent(type.name)}#contribution-form`}
+                className="contribution-types__card"
+                onClick={scrollToForm}
               >
-                <span
-                  className="contribution-types__check"
-                  aria-hidden="true"
-                >
-                  <FaCheck />
-                </span>
-
                 <span
                   className="contribution-types__icon"
                   aria-hidden="true"
                 >
-                  {type.icon}
+                  {iconFor(type.name)}
                 </span>
 
                 <span className="contribution-types__title">
-                  {type.title}
+                  {type.name}
                 </span>
 
-                <span className="contribution-types__desc">
-                  {type.description}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                {type.description && (
+                  <span className="contribution-types__desc">
+                    {type.description}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
 
       </div>
     </section>

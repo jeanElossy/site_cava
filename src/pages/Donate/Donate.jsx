@@ -35,16 +35,23 @@ const Donate = () => {
   const { dispatch } =
     useContribution();
 
-  // Préremplissage depuis l'URL — c'est ce qui donne son intérêt au QR
-  // code projeté pendant un culte : le visiteur arrive avec le type et
-  // le montant déjà choisis.
+  // Préremplissage du MONTANT depuis l'URL — l'autre moitié de ce que
+  // porte le QR code projeté pendant un culte
+  // (`/donate?type=<nom>&amount=<montant>`).
+  //
+  // Le `?type=` est traité ailleurs, dans `StepIdentity` : il faut
+  // d'abord la liste des types renvoyée par l'API pour rapprocher le
+  // nom de l'URL d'un type réel. Le montant, lui, n'a besoin de
+  // personne — et il est lu ICI, dans un composant monté pendant
+  // toute la vie de la page : le placer dans une étape du tunnel, qui
+  // se démonte à chaque changement d'étape, réimposerait le montant de
+  // l'URL par-dessus celui que le visiteur vient de saisir dès qu'il
+  // reviendrait en arrière.
+  //
+  // `?project=` n'est plus lu : la notion de projet a disparu de
+  // l'état (voir contributionReducer). Les types de don administrables
+  // — « Construction », « Mission »… — jouent désormais ce rôle.
   useEffect(() => {
-    const type = searchParams.get("type");
-
-    if (type) {
-      dispatch({ type: "SET_TYPE", payload: type });
-    }
-
     const amount = Number(searchParams.get("amount"));
 
     // Validé avant d'être appliqué : la valeur vient de l'URL, donc de
@@ -53,12 +60,6 @@ const Donate = () => {
     // façon, mais le visiteur verrait d'abord une somme absurde.
     if (Number.isInteger(amount) && amount >= 200 && amount <= 10000000) {
       dispatch({ type: "SET_AMOUNT", payload: amount });
-    }
-
-    const project = searchParams.get("project");
-
-    if (project) {
-      dispatch({ type: "SET_PROJECT", payload: project });
     }
   }, [searchParams, dispatch]);
 

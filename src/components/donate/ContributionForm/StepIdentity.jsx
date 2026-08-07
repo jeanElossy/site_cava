@@ -1,4 +1,7 @@
+import { useEffect, useRef } from "react";
+
 import { Sprout } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 import useAsyncData from "../../../hooks/useAsyncData";
 import { fetchDonationTypes } from "../../../services/donations";
@@ -16,6 +19,52 @@ const fields = [
 // parcours (voir la section Design visuel de la spec).
 const StepIdentity = ({ state, dispatch, updateDonor, onEdit }) => {
   const { data: types, loading, error } = useAsyncData(fetchDonationTypes);
+
+  const [searchParams] = useSearchParams();
+
+  // Préremplissage depuis l'URL — c'est tout l'intérêt du QR code
+  // projeté pendant un culte (GET /admin/donations/qrcode encode
+  // `/donate?type=<nom>`) : le visiteur arrive avec son type déjà
+  // choisi.
+  //
+  // Le rapprochement se fait sur le NOM du type, pas sur son
+  // identifiant Mongo : c'est le nom qu'un administrateur choisit dans
+  // la fenêtre de génération du QR, et c'est lui qui reste lisible
+  // dans l'URL. La comparaison ignore la casse et les espaces de
+  // bordure — une URL recopiée à la main n'a pas à être exacte au
+  // caractère près.
+  //
+  // Le rapprochement n'est possible qu'APRÈS la réponse de l'API :
+  // c'est elle qui fait autorité sur les types existants (ils sont
+  // administrables), pas une liste écrite en dur ici.
+  const pendingTypeName = searchParams.get("type");
+
+  // Une seule application par montage : sans ce garde, revenir sur
+  // cette étape après avoir changé de type dans le sélecteur
+  // réimposerait celui de l'URL.
+  const prefillDone = useRef(false);
+
+  useEffect(() => {
+    if (prefillDone.current) return;
+    if (!types || !pendingTypeName) return;
+
+    // Un choix déjà fait par le visiteur prime toujours sur l'URL.
+    if (state.donationType.id) return;
+
+    const wanted = pendingTypeName.trim().toLowerCase();
+    const match = types.find(
+      (type) => String(type.name ?? "").trim().toLowerCase() === wanted
+    );
+
+    prefillDone.current = true;
+
+    if (!match) return;
+
+    dispatch({
+      type: "SET_DONATION_TYPE",
+      payload: { id: match.id, name: match.name },
+    });
+  }, [types, pendingTypeName, state.donationType.id, dispatch]);
 
   return (
     <div className="step-panel">

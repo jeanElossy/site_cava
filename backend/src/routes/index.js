@@ -1249,7 +1249,14 @@ export const buildRoutes = () => {
       const type = String(req.query.type ?? "").trim();
       const amount = Number(req.query.amount);
 
-      if (type) params.set("type", type.slice(0, 20));
+      // 60 : la longueur maximale du champ `name` de DonationType.
+      // `?type=` porte le NOM du type de don, que la page /donate
+      // rapproche de la liste renvoyée par l'API (voir StepIdentity).
+      // Tronquer à 20 caractères comme auparavant coupait « Campagne
+      // de construction » en « Campagne de constru », qui ne
+      // correspondait plus à aucun type : le QR menait à la page sans
+      // rien présélectionner.
+      if (type) params.set("type", type.slice(0, 60));
       if (Number.isInteger(amount) && amount > 0) {
         params.set("amount", String(amount));
       }

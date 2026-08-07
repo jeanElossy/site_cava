@@ -13,13 +13,28 @@ const ImpactCard = () => {
   const { state } =
     useContribution();
 
+  // La carte commente le TYPE DE DON réellement choisi dans le
+  // tunnel. Elle s'appuyait sur `state.contributionType`, un champ
+  // supprimé de l'état : le `switch` tombait donc toujours dans son
+  // cas par défaut, quel que soit le choix du visiteur.
+  //
+  // Les types de don sont administrables : le rapprochement se fait
+  // sur le NOM, normalisé (casse et espaces de bordure ignorés). Un
+  // type ajouté par l'administration et inconnu d'ici retombe sur le
+  // texte générique — qui reste juste, contrairement à un libellé
+  // inventé.
   const getImpact = () => {
     const amount =
       Number(state.amount);
 
-    switch (
-      state.contributionType
-    ) {
+    const type = String(
+      state.donationType?.name ?? ""
+    )
+      .trim()
+      .toLowerCase();
+
+    switch (type) {
+      case "dîme":
       case "dime":
         return {
           title:
@@ -39,6 +54,7 @@ const ImpactCard = () => {
         };
 
       case "offrande":
+      case "don libre":
         return {
           title:
             "Impact de votre offrande",
@@ -56,7 +72,8 @@ const ImpactCard = () => {
                 ],
         };
 
-      case "grace":
+      case "action de grâce":
+      case "action de grace":
         return {
           title:
             "Action de grâce",
@@ -67,21 +84,39 @@ const ImpactCard = () => {
           ],
         };
 
-      case "projet":
+      case "construction":
         return {
           title:
-            "Impact du projet",
+            "Impact sur la construction",
           items:
             amount >= 100000
               ? [
-                  "Contribution majeure au projet",
+                  "Contribution majeure au chantier",
                   "Accélération de sa réalisation",
                   "Impact durable sur la communauté",
                 ]
               : [
-                  "Participation au financement",
-                  "Soutien à l'avancement du projet",
+                  "Participation au financement du chantier",
+                  "Soutien à l'avancement des travaux",
                   "Contribution à la vision de l'église",
+                ],
+        };
+
+      case "mission":
+        return {
+          title:
+            "Impact de votre don missionnaire",
+          items:
+            amount >= 100000
+              ? [
+                  "Soutien appuyé aux campagnes d'évangélisation",
+                  "Envoi et accompagnement sur le terrain",
+                  "Implantation durable au-delà d'Abidjan",
+                ]
+              : [
+                  "Participation aux sorties d'évangélisation",
+                  "Soutien aux équipes envoyées",
+                  "Contribution à l'annonce de la Parole",
                 ],
         };
 

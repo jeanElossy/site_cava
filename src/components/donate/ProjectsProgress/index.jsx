@@ -1,6 +1,6 @@
-import { FaArrowRight } from "react-icons/fa";
+import { Link } from "react-router-dom";
 
-import { useContribution } from "../../../context/useContribution";
+import { FaArrowRight } from "react-icons/fa";
 
 import "./ProjectsProgress.scss";
 
@@ -25,12 +25,24 @@ import "./ProjectsProgress.scss";
 // réels. En attendant, la carte fait ce qu'elle sait faire
 // honnêtement : présenter le projet et proposer de le soutenir.
 //
-// `project` correspond aux identifiants d'affectation du formulaire
-// (voir ContributionForm/data.js) : cliquer préremplit le tunnel.
+// ------------------------------------------------------------------
+// L'AFFECTATION PASSE PAR LE TYPE DE DON, PLUS PAR UN « PROJET »
+// ------------------------------------------------------------------
+// Chaque carte préremplissait un champ `project` de l'état du tunnel.
+// Ce champ n'existe plus : les types de don administrables
+// (« Construction », « Mission »…) jouent ce rôle, et c'est la seule
+// affectation que le serveur enregistre sur un don.
+//
+// `donationType` porte donc le NOM d'un type de don tel qu'il est
+// saisi dans l'administration — c'est lui qui part dans
+// `/donate?type=<nom>`, exactement comme le QR code projeté pendant un
+// culte. Un projet sans type correspondant se contente d'amener au
+// formulaire : mieux vaut aucun préremplissage qu'un `?type=` qui ne
+// désigne rien.
 const projects = [
   {
     id: "temple",
-    project: "construction",
+    donationType: "Construction",
     title: "Construction du nouveau temple",
     image: "/images/project-church.jpg",
     description:
@@ -38,7 +50,6 @@ const projects = [
   },
   {
     id: "media",
-    project: "media",
     title: "Équipement média & streaming",
     image: "/images/project-media.jpg",
     description:
@@ -46,7 +57,6 @@ const projects = [
   },
   {
     id: "social",
-    project: "social",
     title: "Action sociale",
     image: "/images/project-social.jpg",
     description:
@@ -54,17 +64,16 @@ const projects = [
   },
 ];
 
+const donateLink = (donationType) =>
+  donationType
+    ? `/donate?type=${encodeURIComponent(donationType)}#contribution-form`
+    : "/donate#contribution-form";
+
 const ProjectsProgress = () => {
-  const { dispatch } = useContribution();
-
-  // Prérempli le tunnel puis y ramène le visiteur.
-  //
-  // Le formulaire est sur la même page : une navigation ferait perdre
-  // le contexte, un simple ancrage n'aurait rien sélectionné.
-  const support = (project) => {
-    dispatch({ type: "SET_TYPE", payload: "projet" });
-    dispatch({ type: "SET_PROJECT", payload: project });
-
+  // Le tunnel est sur la même page : le lien met le `?type=` dans
+  // l'URL (lu par `StepIdentity`), le défilement amène le visiteur au
+  // formulaire. React Router ne défile pas de lui-même sur un `#`.
+  const scrollToForm = () => {
     document
       .getElementById("contribution-form")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -80,8 +89,9 @@ const ProjectsProgress = () => {
           <h2>Projets en cours</h2>
 
           <p>
-            Voici ce que les contributions de l'église rendent possible
-            aujourd'hui. Vous pouvez affecter votre don à l'un d'eux.
+            Voici ce que les contributions de l&apos;église rendent
+            possible aujourd&apos;hui. Vous pouvez soutenir l&apos;un
+            d&apos;eux en choisissant le type de don correspondant.
           </p>
         </header>
 
@@ -104,14 +114,14 @@ const ProjectsProgress = () => {
 
                 <p>{project.description}</p>
 
-                <button
-                  type="button"
+                <Link
                   className="projects-progress__button"
-                  onClick={() => support(project.project)}
+                  to={donateLink(project.donationType)}
+                  onClick={scrollToForm}
                 >
                   Soutenir ce projet
                   <FaArrowRight aria-hidden="true" />
-                </button>
+                </Link>
               </div>
             </article>
           ))}
