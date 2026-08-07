@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 import Donation from "../models/Donation.js";
 import PaymentMethod from "../models/PaymentMethod.js";
 import DonationType from "../models/DonationType.js";
@@ -57,9 +59,29 @@ export const createDonation = async (input, { ip } = {}) => {
   // Le type et le moyen sont revalidés côté serveur — un navigateur
   // pourrait envoyer un identifiant inactif ou inexistant, obtenu
   // avant qu'un administrateur ne désactive l'entrée entre-temps.
+  //
+  // La forme de l'identifiant est vérifiée AVANT la requête, et pas
+  // seulement par l'absence de résultat : Mongoose retire d'un filtre
+  // les clés dont la valeur est `undefined`. Un corps de requête sans
+  // `donationTypeId` transformait donc `findOne({ _id: undefined,
+  // active: true })` en `findOne({ active: true })` — c'est-à-dire le
+  // PREMIER type actif venu, silencieusement affecté au don. Même
+  // piège pour le moyen de paiement.
+  if (!mongoose.isValidObjectId(input?.donationTypeId)) {
+    throw ApiError.unprocessable("Type de don invalide.", {
+      donationTypeId: "Choisissez un type de don proposé.",
+    });
+  }
+
+  if (!mongoose.isValidObjectId(input?.paymentMethodId)) {
+    throw ApiError.unprocessable("Moyen de paiement invalide.", {
+      paymentMethodId: "Choisissez un moyen de paiement proposé.",
+    });
+  }
+
   const [type, method] = await Promise.all([
-    DonationType.findOne({ _id: input?.donationTypeId, active: true }),
-    PaymentMethod.findOne({ _id: input?.paymentMethodId, active: true }),
+    DonationType.findOne({ _id: input.donationTypeId, active: true }),
+    PaymentMethod.findOne({ _id: input.paymentMethodId, active: true }),
   ]);
 
   if (!type) {
@@ -127,7 +149,47 @@ export const adminList = async ({
     Donation.countDocuments(filter),
   ]);
 
-  return { items, total, page: current, perPage };
+  return {
+    items: await withDuplicateFlags(items),
+    total,
+    page: current,
+    perPage,
+  };
+};
+
+// Le numéro de transaction Mobile Money est le SEUL garde-fou contre
+// une déclaration fabriquée : rien, dans le parcours, ne prouve qu'un
+// paiement a eu lieu. Un même numéro déclaré sur plusieurs dons est
+// donc le signal de fraude le plus simple et le plus parlant — soit
+// un donateur rejoue une ancienne transaction, soit il a soumis le
+// formulaire deux fois par erreur.
+//
+// Le comptage se fait en UNE agrégation pour toute la page affichée,
+// pas une requête par ligne. `duplicateTransactionCount` vaut le
+// nombre d'AUTRES dons portant le même numéro (0 = rien à signaler).
+const withDuplicateFlags = async (items) => {
+  const transactionIds = [
+    ...new Set(
+      items.map((item) => item.proof?.transactionId).filter(Boolean)
+    ),
+  ];
+
+  if (transactionIds.length === 0) return items;
+
+  const rows = await Donation.aggregate([
+    { $match: { "proof.transactionId": { $in: transactionIds } } },
+    { $group: { _id: "$proof.transactionId", count: { $sum: 1 } } },
+  ]);
+
+  const counts = new Map(rows.map((row) => [row._id, row.count]));
+
+  return items.map((item) => ({
+    ...item,
+    duplicateTransactionCount: Math.max(
+      (counts.get(item.proof?.transactionId) ?? 1) - 1,
+      0
+    ),
+  }));
 };
 
 export const adminSummary = async () => {

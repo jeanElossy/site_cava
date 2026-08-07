@@ -101,6 +101,93 @@ describe("donation.service (intégration MongoDB)", () => {
     await PaymentMethod.deleteOne({ _id: inactive._id });
   });
 
+  // Régression : Mongoose retire d'un filtre les clés valant
+  // `undefined`. `findOne({ _id: undefined, active: true })` devenait
+  // donc `findOne({ active: true })`, qui renvoie le PREMIER type (ou
+  // moyen) actif venu — un don sans `donationTypeId` était accepté et
+  // se voyait attribuer un type arbitraire, en silence.
+  it("refuse un don sans identifiant de type de don", async () => {
+    const payload = basePayload();
+    delete payload.donationTypeId;
+
+    await assert.rejects(() => donationService.createDonation(payload, {}), {
+      message: "Type de don invalide.",
+    });
+  });
+
+  it("refuse un don sans identifiant de moyen de paiement", async () => {
+    const payload = basePayload();
+    delete payload.paymentMethodId;
+
+    await assert.rejects(() => donationService.createDonation(payload, {}), {
+      message: "Moyen de paiement invalide.",
+    });
+  });
+
+  // Le cas réellement exploitable du même défaut : un corps JSON peut
+  // porter un OPÉRATEUR Mongo à la place d'un identifiant.
+  // `findOne({ _id: { $ne: null }, active: true })` renvoyait le
+  // premier type actif venu — un don au type arbitraire, accepté sans
+  // que rien ne le signale.
+  it("refuse un opérateur Mongo à la place d'un identifiant", async () => {
+    await assert.rejects(() =>
+      donationService.createDonation(
+        { ...basePayload(), donationTypeId: { $ne: null } },
+        {}
+      )
+    );
+
+    await assert.rejects(() =>
+      donationService.createDonation(
+        { ...basePayload(), paymentMethodId: { $ne: null } },
+        {}
+      )
+    );
+
+    assert.equal(
+      await Donation.countDocuments({ "donor.phone": TEST_PHONE }),
+      0
+    );
+  });
+
+  it("refuse un identifiant de type de don qui n'est pas un ObjectId", async () => {
+    await assert.rejects(() =>
+      donationService.createDonation(
+        { ...basePayload(), donationTypeId: "pas-un-objectid" },
+        {}
+      )
+    );
+  });
+
+  it("n'enregistre aucun don quand le type est absent", async () => {
+    const payload = basePayload();
+    delete payload.donationTypeId;
+
+    await assert.rejects(() => donationService.createDonation(payload, {}));
+
+    const stored = await Donation.countDocuments({ "donor.phone": TEST_PHONE });
+
+    assert.equal(stored, 0);
+  });
+
+  it("signale un numéro de transaction déclaré sur plusieurs dons", async () => {
+    await donationService.createDonation(basePayload(), {});
+    await donationService.createDonation(basePayload(), {});
+
+    const { items } = await donationService.adminList({ limit: 100 });
+
+    const mine = items.filter((item) => item.donor?.phone === TEST_PHONE);
+
+    assert.equal(mine.length, 2);
+
+    for (const item of mine) {
+      assert.ok(
+        item.duplicateTransactionCount >= 1,
+        "le doublon de numéro de transaction doit être signalé"
+      );
+    }
+  });
+
   it("valide un don en attente et enregistre qui a décidé", async () => {
     const created = await donationService.createDonation(basePayload(), {});
     const stored = await Donation.findOne({ reference: created.reference });
