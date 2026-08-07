@@ -67,7 +67,15 @@ Le contenu est en dur dans le code. Les données des ministères vivent dans [sr
 
 ### État global
 
-Un seul contexte : [ContributionContext](src/context/ContributionContext.jsx), un `useReducer` pour le formulaire de don (type, montant, projet, moyen de paiement Orange/MTN/Moov/Wave, coordonnées du donateur). Les composants consomment via `useContribution()` et dispatchent des actions typées (`SET_TYPE`, `SET_AMOUNT`, …). La page Donate lit `?type=` dans l'URL pour préremplir le type de contribution.
+Un seul contexte : [ContributionContext](src/context/ContributionContext.jsx), un `useReducer` (voir [contributionReducer.js](src/context/contributionReducer.js)) pour le tunnel de don en 4 étapes. L'état porte `amount`, `donationType: { id, name }`, `paymentMethod: { id, name, image, accountNumber, holderName }`, `donor: { firstName, lastName, phone, email }` et `proof: { transactionId, imageUrl }`. Les composants consomment via `useContribution()` et dispatchent `SET_AMOUNT`, `SET_DONATION_TYPE`, `SET_PAYMENT_METHOD`, `UPDATE_DONOR`, `SET_TRANSACTION_ID`, `SET_PROOF_IMAGE` et `RESET` (dispatché après un envoi réussi, pour ne pas laisser traîner la preuve du don précédent).
+
+Types de don et moyens de paiement ne sont **plus écrits en dur** : ils viennent de l'API (`fetchDonationTypes` / `fetchPaymentMethods`, voir [src/services/donations.js](src/services/donations.js)) et sont administrables. Il n'y a plus de notion de « projet » — les types de don (« Construction », « Mission »…) jouent ce rôle.
+
+**Préremplissage par l'URL** (c'est ce qui rend utile le QR code projeté pendant un culte, généré par `GET /api/admin/donations/qrcode`, qui encode `/donate?type=<nom>&amount=<montant>`) :
+
+- `?type=` porte le **nom** du type de don, pas son identifiant Mongo. Il est lu par [StepIdentity.jsx](src/components/donate/ContributionForm/StepIdentity.jsx), qui le rapproche (casse et espaces ignorés) de la liste renvoyée par l'API dès qu'elle a répondu — le rapprochement ne peut pas se faire avant. Un choix déjà fait par le visiteur prime toujours.
+- `?amount=` est lu par [Donate.jsx](src/pages/Donate/Donate.jsx), monté pendant toute la vie de la page (le placer dans une étape du tunnel, qui se démonte à chaque changement d'étape, réimposerait le montant de l'URL par-dessus celui que le visiteur vient de saisir).
+- `ContributionTypes` et `ProjectsProgress` ne dispatchent rien : ce sont des **liens** vers `/donate?type=<nom>#contribution-form`, donc un seul mécanisme de préremplissage à maintenir.
 
 ## Backend
 
