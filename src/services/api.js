@@ -105,6 +105,11 @@ export const churches = collection("churches");
 export const paymentMethods = collection("payment-methods");
 export const donationTypes = collection("donation-types");
 
+// Types d'aide sociale (Service Social, Phase 2) — même contrat CRUD
+// que donationTypes, géré par AdminCrud (voir SocialAidTypesAdmin.jsx).
+// Route réelle : /api/admin/social/aid-types.
+export const socialAidTypes = collection("social/aid-types");
+
 // ---------------------------------------------------------------
 // Inscriptions et mises à jour de fiche membre
 // ---------------------------------------------------------------

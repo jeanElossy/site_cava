@@ -16,6 +16,7 @@ import {
   Church,
   ExternalLink,
   HandCoins,
+  HandHelping,
   HeartHandshake,
   Heart,
   Image,
@@ -147,6 +148,13 @@ const NAV_GROUPS = [
       { to: "/admin/social/cotisations", label: "Cotisations", icon: Banknote },
       { to: "/admin/social/membres", label: "Membres", icon: Search },
       { to: "/admin/social/caisse", label: "Caisse", icon: PiggyBank },
+      { to: "/admin/social/aides", label: "Aides sociales", icon: HandHelping },
+      {
+        to: "/admin/social/aides/types",
+        label: "Types d'aide",
+        icon: Tag,
+        roles: ["admin", "social_admin"],
+      },
     ],
   },
   {

@@ -1,13 +1,13 @@
 import mongoose from "mongoose";
 
 // Mouvement de caisse du Service Social, écrit automatiquement par le
-// service métier — jamais saisi manuellement en Phase 1 (pas de saisie
-// libre d'écriture de caisse, pas de sortie).
+// service métier — jamais saisi manuellement (pas de saisie libre
+// d'écriture de caisse).
 //
 // Le solde de caisse d'une église à un instant T se recalcule TOUJOURS
 // côté backend par agrégation Mongo (openingBalance + somme des
 // entrées de cette église) — jamais mis en cache comme source de
-// vérité. Voir socialContribution.service.js#caisse().
+// vérité. Voir socialContribution.service.js#computeCashBalance().
 const socialLedgerEntrySchema = new mongoose.Schema(
   {
     church: {
@@ -17,17 +17,18 @@ const socialLedgerEntrySchema = new mongoose.Schema(
       max: 5,
     },
 
-    // Enum délibérément restreint à une seule valeur en Phase 1
-    // (aucune sortie de caisse, pas d'aide sociale) — sera étendu en
-    // Phase 2 (ex. "aide").
+    // Étendu en Phase 2 : "aide" (décaissement) et "aide_annulation"
+    // (écriture de compensation d'une aide annulée), en plus de
+    // "cotisation" (Phase 1).
     type: {
       type: String,
-      enum: ["cotisation"],
+      enum: ["cotisation", "aide", "aide_annulation"],
       required: true,
     },
 
     // Reprend la référence de l'opération source (la `reference` de la
-    // `SocialContribution` qui a généré ce mouvement).
+    // `SocialContribution` ou de la `SocialAid` qui a généré ce
+    // mouvement).
     reference: {
       type: String,
       trim: true,
@@ -40,12 +41,15 @@ const socialLedgerEntrySchema = new mongoose.Schema(
       maxlength: 200,
     },
 
-    // Toujours positif en Phase 1 (aucune sortie) ; deviendra signé en
-    // Phase 2.
+    // Signé depuis la Phase 2 : positif pour une entrée (cotisation,
+    // compensation d'annulation d'aide), négatif pour une sortie
+    // (décaissement d'une aide). Le calcul de solde (openingBalance +
+    // somme(amount), voir computeCashBalance()) n'a besoin d'aucune
+    // modification : c'était déjà une simple somme signée, seul le
+    // signe des nouvelles écritures change.
     amount: {
       type: Number,
       required: true,
-      min: 0,
     },
 
     recordedBy: {

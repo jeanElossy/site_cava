@@ -46,6 +46,9 @@ const FOLDERS = {
   // paiement (admin, via /api/admin/uploads/signature).
   donations: "cava/donations",
   paymentMethods: "cava/payment-methods",
+  // Pièces justificatives des aides sociales (admin, via
+  // /api/admin/uploads/signature) — Service Social Phase 2.
+  socialAids: "cava/social-aids",
   divers: "cava/divers",
 };
 

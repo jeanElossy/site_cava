@@ -107,3 +107,44 @@ export const fetchSocialLedger = (params = {}) =>
 
 export const fetchSocialDashboard = (params = {}) =>
   request(`/api/admin/social/dashboard?${qs(params)}`, { auth: true });
+
+// ---- Aides sociales (Phase 2) ---------------------------------------
+//
+// Les types d'aide (CRUD simple) n'ont pas de wrapper dédié ici : la
+// page `SocialAidTypesAdmin.jsx` consomme directement la ressource
+// `socialAidTypes` de `services/api.js` (fabrique `collection()`),
+// exactement comme `DonationTypesAdmin.jsx` consomme `donationTypes`.
+
+export const fetchSocialAids = (params = {}) =>
+  requestWithMeta(`/api/admin/social/aids?${qs(params)}`, { auth: true });
+
+export const createSocialAid = (payload) =>
+  request("/api/admin/social/aids", {
+    method: "POST",
+    body: payload,
+    auth: true,
+  });
+
+// Décaisse immédiatement (workflow simplifié à 2 étapes — voir le
+// document de conception Phase 2) : peut échouer avec un message
+// explicite si le solde de la caisse de l'église du bénéficiaire est
+// insuffisant, recalculé côté serveur.
+export const validateSocialAid = (id) =>
+  request(`/api/admin/social/aids/${id}/valider`, {
+    method: "PATCH",
+    auth: true,
+  });
+
+export const refuseSocialAid = (id, motif) =>
+  request(`/api/admin/social/aids/${id}/refuser`, {
+    method: "PATCH",
+    body: { motif },
+    auth: true,
+  });
+
+export const cancelSocialAid = (id, motif) =>
+  request(`/api/admin/social/aids/${id}/annuler`, {
+    method: "PATCH",
+    body: { motif },
+    auth: true,
+  });

@@ -223,6 +223,10 @@
     color: $admin-success;
 
     font-weight: 700;
+
+    &--out {
+      color: $admin-danger;
+    }
   }
 
   &__pagination {

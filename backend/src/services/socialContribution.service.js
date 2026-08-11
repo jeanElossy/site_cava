@@ -4,6 +4,7 @@ import SocialFundSettings from "../models/SocialFundSettings.js";
 import SocialContribution from "../models/SocialContribution.js";
 import SocialLedgerEntry from "../models/SocialLedgerEntry.js";
 import SocialCounter from "../models/SocialCounter.js";
+import SocialAid from "../models/SocialAid.js";
 import Member from "../models/Member.js";
 
 import { ApiError } from "../utils/ApiError.js";
@@ -632,6 +633,57 @@ const churchesInScope = async (church) => {
   return all.map((s) => s.church);
 };
 
+// ------------------------------------------------------------------
+// SOLDE DE CAISSE — SOURCE UNIQUE DE CALCUL
+// ------------------------------------------------------------------
+// `caisse()`, `dashboard()` et le service Aides sociales
+// (socialAid.service.js#validateAid, qui doit bloquer un décaissement
+// dépassant le solde disponible) ont tous besoin du même calcul :
+// openingBalance + somme signée des SocialLedgerEntry. Une seule
+// fonction interne fait cette agrégation ; `computeCashBalance` en est
+// la version publique, à une seule église, exportée pour être
+// réutilisée par socialAid.service.js — jamais dupliquée.
+const cashSummaryForChurches = async (churches) => {
+  if (churches.length === 0) {
+    return { openingBalance: 0, ledgerTotal: 0, currentBalance: 0 };
+  }
+
+  const [settingsList, ledgerAgg] = await Promise.all([
+    SocialFundSettings.find({ church: { $in: churches } })
+      .select("openingBalance")
+      .lean(),
+    SocialLedgerEntry.aggregate([
+      { $match: { church: { $in: churches } } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]),
+  ]);
+
+  const openingBalance = settingsList.reduce(
+    (sum, s) => sum + (s.openingBalance || 0),
+    0
+  );
+  const ledgerTotal = ledgerAgg[0]?.total ?? 0;
+
+  return {
+    openingBalance,
+    ledgerTotal,
+    currentBalance: openingBalance + ledgerTotal,
+  };
+};
+
+// Solde actuel d'UNE église, recalculé côté serveur — jamais reçu du
+// client. Utilisé par socialAid.service.js#validateAid pour bloquer
+// (409) un décaissement qui dépasserait ce solde.
+export const computeCashBalance = async (church) => {
+  const churchNumber = Number(church);
+
+  if (!isChurch(churchNumber)) return 0;
+
+  const summary = await cashSummaryForChurches([churchNumber]);
+
+  return summary.currentBalance;
+};
+
 export const dashboard = async ({ church } = {}) => {
   const hasChurch = isChurch(Number(church));
   const { year, month } = currentPeriod();
@@ -652,12 +704,17 @@ export const dashboard = async ({ church } = {}) => {
     };
   }
 
+  // Bornes du mois courant, UTC — cohérent avec `currentPeriod()`
+  // ci-dessus, jamais l'heure/le fuseau du navigateur.
+  const monthStart = new Date(Date.UTC(year, month - 1, 1));
+  const monthEnd = new Date(Date.UTC(year, month, 1));
+
   const [
     activeMembers,
     contributionsAgg,
     lateMemberIds,
-    ledgerAgg,
-    settingsList,
+    cashSummary,
+    aidAgg,
   ] = await Promise.all([
     Member.countDocuments({ status: "actif", church: { $in: churches } }),
 
@@ -679,14 +736,26 @@ export const dashboard = async ({ church } = {}) => {
       $or: [{ year: { $lt: year } }, { year, month: { $lt: month } }],
     }),
 
-    SocialLedgerEntry.aggregate([
-      { $match: { church: { $in: churches } } },
-      { $group: { _id: null, total: { $sum: "$amount" } } },
-    ]),
+    cashSummaryForChurches(churches),
 
-    SocialFundSettings.find({ church: { $in: churches } })
-      .select("openingBalance")
-      .lean(),
+    // Aides décaissées ("payee") ce mois-ci, dans le périmètre — voir
+    // socialAid.service.js pour le workflow qui pose `paidAt`.
+    SocialAid.aggregate([
+      {
+        $match: {
+          church: { $in: churches },
+          status: "payee",
+          paidAt: { $gte: monthStart, $lt: monthEnd },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          amount: { $sum: "$amount" },
+          count: { $sum: 1 },
+        },
+      },
+    ]),
   ]);
 
   const contributions = contributionsAgg[0] ?? {
@@ -695,11 +764,7 @@ export const dashboard = async ({ church } = {}) => {
     amountCollected: 0,
   };
 
-  const openingBalanceTotal = settingsList.reduce(
-    (sum, s) => sum + (s.openingBalance || 0),
-    0
-  );
-  const ledgerTotal = ledgerAgg[0]?.total ?? 0;
+  const aid = aidAgg[0] ?? { amount: 0, count: 0 };
 
   return {
     church: hasChurch ? Number(church) : null,
@@ -710,9 +775,9 @@ export const dashboard = async ({ church } = {}) => {
     },
     amountCollectedThisMonth: contributions.amountCollected,
     lateContributions: lateMemberIds.length,
-    cashBalance: openingBalanceTotal + ledgerTotal,
-    aidAmountThisMonth: 0,
-    aidCount: 0,
+    cashBalance: cashSummary.currentBalance,
+    aidAmountThisMonth: aid.amount,
+    aidCount: aid.count,
     paymentRate:
       contributions.totalMembers > 0
         ? Math.round((contributions.paidCount / contributions.totalMembers) * 1000) / 10
@@ -724,21 +789,8 @@ export const caisse = async ({ church } = {}) => {
   const hasChurch = isChurch(Number(church));
   const churches = await churchesInScope(church);
 
-  const [settingsList, ledgerAgg] = await Promise.all([
-    SocialFundSettings.find({ church: { $in: churches } })
-      .select("openingBalance")
-      .lean(),
-    SocialLedgerEntry.aggregate([
-      { $match: { church: { $in: churches } } },
-      { $group: { _id: null, total: { $sum: "$amount" } } },
-    ]),
-  ]);
-
-  const openingBalance = settingsList.reduce(
-    (sum, s) => sum + (s.openingBalance || 0),
-    0
-  );
-  const totalCotisations = ledgerAgg[0]?.total ?? 0;
+  const { openingBalance, ledgerTotal: totalCotisations } =
+    await cashSummaryForChurches(churches);
 
   return {
     church: hasChurch ? Number(church) : null,

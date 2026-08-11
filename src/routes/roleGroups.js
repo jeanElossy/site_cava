@@ -27,3 +27,21 @@ export const SOCIAL_ROLES = ["admin", "social_admin", "social_agent", "social_ap
 // ou une exonération (social_viewer et social_approver restent en
 // lecture seule en Phase 1).
 export const SOCIAL_WRITE_ROLES = ["admin", "social_admin", "social_agent"];
+
+// Sous-ensemble de SOCIAL_ROLES autorisé à valider/refuser une demande
+// d'aide sociale (Phase 2) — `social_approver` prend ici son premier
+// usage concret, aux côtés de social_admin/admin. L'annulation d'une
+// aide déjà payée reste réservée à social_admin/admin (voir
+// SocialAidsAdmin.jsx), un sous-ensemble encore plus étroit géré
+// directement dans la page plutôt que par un quatrième groupe ici.
+export const SOCIAL_DECISION_ROLES = ["admin", "social_admin", "social_approver"];
+
+// Comptes dont le Service Social est le SEUL espace (à l'exclusion de
+// `admin`, qui garde l'accès complet à tout le reste) — même principe
+// qu'AGENT_ROLES pour Nouvelles Âmes : ces comptes se connectent
+// depuis leur téléphone comme un agent soa/cana, et doivent atterrir
+// directement dans leur module plutôt que sur le tableau de bord
+// général (voir Dashboard.jsx et RequireRole.jsx, qui redirigent ces
+// rôles vers /admin/social exactement comme AGENT_ROLES est redirigé
+// vers /admin/nouvelles-ames).
+export const SOCIAL_ONLY_ROLES = ["social_admin", "social_agent", "social_approver", "social_viewer"];

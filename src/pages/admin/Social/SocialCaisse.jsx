@@ -204,11 +204,21 @@ const SocialCaisse = () => {
                     <td className="admin-social-caisse__type">{movement.type}</td>
                     <td>{movement.reference ?? "—"}</td>
                     <td>{movement.description ?? "—"}</td>
-                    <td className="admin-social-caisse__amount">
-                      {/* Toujours une entrée en Phase 1 (aucune sortie de
-                          caisse modélisée) — signe et couleur positifs
-                          systématiquement. */}
-                      +{money(movement.amount)}
+                    <td
+                      className={
+                        Number(movement.amount) < 0
+                          ? "admin-social-caisse__amount admin-social-caisse__amount--out"
+                          : "admin-social-caisse__amount"
+                      }
+                    >
+                      {/* Depuis la Phase 2, une aide sociale décaissée
+                          journalise une écriture négative (sortie) —
+                          voir SocialLedgerEntry, `amount` désormais
+                          signé. Une cotisation ou une compensation
+                          d'annulation restent positives. */}
+                      {Number(movement.amount) < 0
+                        ? `-${money(Math.abs(movement.amount))}`
+                        : `+${money(movement.amount)}`}
                     </td>
                     <td>
                       {(movement.recordedBy && typeof movement.recordedBy === "object"

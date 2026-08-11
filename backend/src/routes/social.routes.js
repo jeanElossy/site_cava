@@ -2,16 +2,18 @@ import { Router } from "express";
 
 import * as socialContributionService from "../services/socialContribution.service.js";
 import * as socialReceiptService from "../services/socialReceipt.service.js";
+import * as socialAidService from "../services/socialAid.service.js";
 import * as audit from "../services/audit.service.js";
 
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { sendSuccess, sendCreated } from "../utils/respond.js";
+import { sendSuccess, sendCreated, sendNoContent } from "../utils/respond.js";
 import { requireAuth, requireRole } from "../middlewares/auth.js";
 
 // Routes du module Service Social (cotisations, dashboard, caisse en
-// lecture — Phase 1). Routeur sur-mesure, comme le module Dons : la
-// logique (montants figés, génération de référence, calcul de solde)
-// est trop spécifique pour le CRUD générique `resourceRouter`.
+// lecture — Phase 1 ; aides sociales/décaissements — Phase 2).
+// Routeur sur-mesure, comme le module Dons : la logique (montants
+// figés, génération de référence, calcul de solde) est trop
+// spécifique pour le CRUD générique `resourceRouter`.
 
 const SOCIAL_READ_ROLES = [
   "admin",
@@ -24,6 +26,14 @@ const SOCIAL_READ_ROLES = [
 const SOCIAL_WRITE_ROLES = ["admin", "social_admin", "social_agent"];
 
 const SOCIAL_ADMIN_ROLES = ["admin", "social_admin"];
+
+// Décision sur une aide (validation = décaissement, refus) : réservé à
+// l'administrateur du module et à l'approbateur — PAS l'agent qui se
+// contente de créer des demandes (`social_agent`, dans
+// SOCIAL_WRITE_ROLES mais pas ici). L'annulation d'une aide payée est
+// plus restrictive encore : réservée à SOCIAL_ADMIN_ROLES, voir plus
+// bas.
+const SOCIAL_DECISION_ROLES = ["admin", "social_admin", "social_approver"];
 
 // Un `church`/`page`/`limit` hors plage ou non numérique doit être
 // traité comme absent (pas de filtre), pas planter — voir le cahier
@@ -267,6 +277,208 @@ export const buildSocialRouter = () => {
       });
 
       sendSuccess(res, { data });
+    })
+  );
+
+  // ---- Types d'aide (Phase 2) -----------------------------------
+  //
+  // CRUD écrit à la main, PAS via `resourceRouter` générique : celui-ci
+  // réserve la suppression au rôle littéral "admin", ce qui exclurait
+  // "social_admin" — incohérent avec le reste du module.
+
+  router.get(
+    "/aid-types",
+    requireRole(...SOCIAL_READ_ROLES),
+    asyncHandler(async (_req, res) => {
+      const data = await socialAidService.getAidTypes();
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  router.post(
+    "/aid-types",
+    requireRole(...SOCIAL_ADMIN_ROLES),
+    asyncHandler(async (req, res) => {
+      const data = await socialAidService.createAidType(
+        {
+          name: req.body?.name,
+          description: req.body?.description,
+          active: req.body?.active,
+          order: req.body?.order,
+        },
+        req.user
+      );
+
+      await audit.record(req, {
+        action: "create",
+        resource: "socialAidType",
+        resourceId: data._id,
+      });
+
+      sendCreated(res, { message: "Type d'aide créé.", data });
+    })
+  );
+
+  router.patch(
+    "/aid-types/:id",
+    requireRole(...SOCIAL_ADMIN_ROLES),
+    asyncHandler(async (req, res) => {
+      const data = await socialAidService.updateAidType(req.params.id, {
+        name: req.body?.name,
+        description: req.body?.description,
+        active: req.body?.active,
+        order: req.body?.order,
+      });
+
+      await audit.record(req, {
+        action: "update",
+        resource: "socialAidType",
+        resourceId: req.params.id,
+      });
+
+      sendSuccess(res, { message: "Type d'aide mis à jour.", data });
+    })
+  );
+
+  router.delete(
+    "/aid-types/:id",
+    requireRole(...SOCIAL_ADMIN_ROLES),
+    asyncHandler(async (req, res) => {
+      await socialAidService.removeAidType(req.params.id);
+
+      await audit.record(req, {
+        action: "delete",
+        resource: "socialAidType",
+        resourceId: req.params.id,
+      });
+
+      sendNoContent(res);
+    })
+  );
+
+  // ---- Aides sociales (Phase 2) -----------------------------------
+
+  router.get(
+    "/aids",
+    requireRole(...SOCIAL_READ_ROLES),
+    asyncHandler(async (req, res) => {
+      const data = await socialAidService.listAids({
+        church: parseChurch(req.query.church),
+        status: req.query.status,
+        search: req.query.search,
+        page: parsePositiveInt(req.query.page),
+        limit: parsePositiveInt(req.query.limit),
+      });
+
+      sendSuccess(res, {
+        data: data.items,
+        meta: { total: data.total, page: data.page, perPage: data.perPage },
+      });
+    })
+  );
+
+  router.get(
+    "/aids/:id",
+    requireRole(...SOCIAL_READ_ROLES),
+    asyncHandler(async (req, res) => {
+      const data = await socialAidService.getAidById(req.params.id);
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  router.post(
+    "/aids",
+    requireRole(...SOCIAL_WRITE_ROLES),
+    asyncHandler(async (req, res) => {
+      const data = await socialAidService.createAid(
+        {
+          memberId: req.body?.memberId,
+          aidTypeId: req.body?.aidTypeId,
+          amount: req.body?.amount,
+          motif: req.body?.motif,
+          description: req.body?.description,
+          proofUrl: req.body?.proofUrl,
+        },
+        req.user
+      );
+
+      await audit.record(req, {
+        action: "create",
+        resource: "socialAid",
+        resourceId: data._id,
+      });
+
+      sendCreated(res, { message: "Demande d'aide enregistrée.", data });
+    })
+  );
+
+  router.patch(
+    "/aids/:id/valider",
+    requireRole(...SOCIAL_DECISION_ROLES),
+    asyncHandler(async (req, res) => {
+      const data = await socialAidService.validateAid(req.params.id, req.user);
+
+      await audit.record(req, {
+        action: "update",
+        resource: "socialAid",
+        resourceId: req.params.id,
+      });
+
+      // Décision assumée de ne pas bloquer un compte qui valide sa
+      // propre demande (voir la spec Phase 2) — mais l'audit note
+      // explicitement ce cas dans un second événement dédié, pour
+      // rester repérable si l'équipe grandit.
+      if (data.selfApproved) {
+        await audit.record(req, {
+          action: "update",
+          resource: "socialAid_selfApproved",
+          resourceId: req.params.id,
+        });
+      }
+
+      sendSuccess(res, { message: "Aide validée et décaissée.", data });
+    })
+  );
+
+  router.patch(
+    "/aids/:id/refuser",
+    requireRole(...SOCIAL_DECISION_ROLES),
+    asyncHandler(async (req, res) => {
+      const data = await socialAidService.refuseAid(
+        req.params.id,
+        { motif: req.body?.motif },
+        req.user
+      );
+
+      await audit.record(req, {
+        action: "update",
+        resource: "socialAid",
+        resourceId: req.params.id,
+      });
+
+      sendSuccess(res, { message: "Aide refusée.", data });
+    })
+  );
+
+  router.patch(
+    "/aids/:id/annuler",
+    requireRole(...SOCIAL_ADMIN_ROLES),
+    asyncHandler(async (req, res) => {
+      const data = await socialAidService.cancelAid(
+        req.params.id,
+        { motif: req.body?.motif },
+        req.user
+      );
+
+      await audit.record(req, {
+        action: "update",
+        resource: "socialAid",
+        resourceId: req.params.id,
+      });
+
+      sendSuccess(res, { message: "Aide annulée.", data });
     })
   );
 

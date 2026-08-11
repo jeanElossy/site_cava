@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom";
 
 import { currentUser } from "../services/auth";
-import { AGENT_ROLES } from "./roleGroups";
+import { AGENT_ROLES, SOCIAL_ONLY_ROLES } from "./roleGroups";
 
 /**
  * Garde de route par rôle, complémentaire à `RequireAuth` (qui ne
@@ -17,7 +17,11 @@ const RequireRole = ({ allow, children }) => {
 
   if (allow.includes(role)) return children;
 
-  const fallback = AGENT_ROLES.includes(role) ? "/admin/nouvelles-ames" : "/admin";
+  const fallback = AGENT_ROLES.includes(role)
+    ? "/admin/nouvelles-ames"
+    : SOCIAL_ONLY_ROLES.includes(role)
+      ? "/admin/social"
+      : "/admin";
 
   return (
     <Navigate

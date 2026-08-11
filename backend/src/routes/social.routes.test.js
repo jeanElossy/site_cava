@@ -8,6 +8,8 @@ import User from "../models/User.js";
 import SocialFundSettings from "../models/SocialFundSettings.js";
 import SocialContribution from "../models/SocialContribution.js";
 import SocialLedgerEntry from "../models/SocialLedgerEntry.js";
+import SocialAid from "../models/SocialAid.js";
+import SocialAidType from "../models/SocialAidType.js";
 import Member from "../models/Member.js";
 
 const { createApp } = await import("../app.js");
@@ -20,6 +22,7 @@ const TEST_CHURCH = 5;
 
 const EMAIL_SUFFIX = "@example.invalid";
 const EMAIL_PREFIX = "social.testsuite.routes";
+const AID_TYPE_NAME_PREFIX = "Test Route Aide Sociale";
 
 let server;
 let baseUrl;
@@ -28,6 +31,9 @@ let viewerUser;
 let viewerToken;
 let agentUser;
 let agentToken;
+let approverUser;
+let approverToken;
+let aidType;
 
 const json = async (res) => res.json();
 
@@ -50,7 +56,13 @@ describe("Routes du Service Social (intégration HTTP)", () => {
     await SocialFundSettings.deleteMany({ church: TEST_CHURCH });
     await SocialContribution.deleteMany({ church: TEST_CHURCH });
     await SocialLedgerEntry.deleteMany({ church: TEST_CHURCH });
+    await SocialAid.deleteMany({ church: TEST_CHURCH });
     await Member.deleteMany({ church: TEST_CHURCH });
+    // SocialAidType est global (pas de champ church) : nettoyage par
+    // préfixe de nom, comme dans socialAid.service.test.js.
+    await SocialAidType.deleteMany({
+      name: { $regex: `^${AID_TYPE_NAME_PREFIX}` },
+    });
 
     viewerUser = await User.create({
       name: "Viewer Test Service Social",
@@ -68,10 +80,33 @@ describe("Routes du Service Social (intégration HTTP)", () => {
     });
     agentToken = signToken({ _id: agentUser._id, role: "social_agent" });
 
+    approverUser = await User.create({
+      name: "Approver Test Service Social",
+      email: `${EMAIL_PREFIX}.approver${EMAIL_SUFFIX}`,
+      password: "MotDePasseTemporaire123!",
+      role: "social_approver",
+    });
+    approverToken = signToken({ _id: approverUser._id, role: "social_approver" });
+
+    // openingBalance: 0, comme en Phase 1 — INCHANGÉ volontairement.
+    // socialContribution.service.test.js (fichier `node --test` séparé,
+    // donc processus concurrent — voir test/db.js) affirme
+    // `caisse.openingBalance === 0` sur cette même église 5 : une
+    // valeur différente ici casserait cette assertion en cas de course
+    // entre les deux `before()`. Le test de validation d'aide plus bas
+    // se contente donc du solde déjà apporté par le test de paiement
+    // de cotisation qui le précède dans ce même fichier (1000, ajouté
+    // séquentiellement puisque les tests d'un même describe s'exécutent
+    // dans l'ordre — voir la note plus bas sur le montant choisi).
     await SocialFundSettings.create({
       church: TEST_CHURCH,
       monthlyContributionAmount: 1000,
       openingBalance: 0,
+    });
+
+    aidType = await SocialAidType.create({
+      name: `${AID_TYPE_NAME_PREFIX} ${Math.random().toString(36).slice(2, 8)}`,
+      active: true,
     });
 
     const app = createApp();
@@ -84,9 +119,13 @@ describe("Routes du Service Social (intégration HTTP)", () => {
     await SocialFundSettings.deleteMany({ church: TEST_CHURCH });
     await SocialContribution.deleteMany({ church: TEST_CHURCH });
     await SocialLedgerEntry.deleteMany({ church: TEST_CHURCH });
+    await SocialAid.deleteMany({ church: TEST_CHURCH });
     await Member.deleteMany({ church: TEST_CHURCH });
+    await SocialAidType.deleteMany({
+      name: { $regex: `^${AID_TYPE_NAME_PREFIX}` },
+    });
     await User.deleteMany({
-      _id: { $in: [viewerUser._id, agentUser._id] },
+      _id: { $in: [viewerUser._id, agentUser._id, approverUser._id] },
     });
     await new Promise((resolve) => server.close(resolve));
     await disconnectTestDb();
@@ -176,5 +215,124 @@ describe("Routes du Service Social (intégration HTTP)", () => {
     const body = await json(res);
     assert.equal(body.data.results[0].ok, true);
     assert.equal(body.data.results[0].status, "paye");
+  });
+
+  // ---- Aides sociales (Phase 2) -----------------------------------
+
+  it("social_viewer reçoit 403 sur POST /aids", async () => {
+    const member = await Member.create({
+      firstName: "Route",
+      lastName: "AideViewer",
+      church: TEST_CHURCH,
+      status: "actif",
+    });
+
+    const res = await fetch(`${baseUrl}/api/admin/social/aids`, authed(viewerToken, {
+      method: "POST",
+      body: JSON.stringify({
+        memberId: String(member._id),
+        aidTypeId: String(aidType._id),
+        amount: 1000,
+        motif: "Test",
+      }),
+    }));
+
+    assert.equal(res.status, 403);
+  });
+
+  it("social_viewer reçoit 403 sur PATCH .../valider", async () => {
+    const fakeId = new mongoose.Types.ObjectId().toString();
+
+    const res = await fetch(
+      `${baseUrl}/api/admin/social/aids/${fakeId}/valider`,
+      authed(viewerToken, { method: "PATCH" })
+    );
+
+    assert.equal(res.status, 403);
+  });
+
+  it("social_agent peut créer une demande d'aide", async () => {
+    const member = await Member.create({
+      firstName: "Route",
+      lastName: "AideAgent",
+      church: TEST_CHURCH,
+      status: "actif",
+    });
+
+    const res = await fetch(`${baseUrl}/api/admin/social/aids`, authed(agentToken, {
+      method: "POST",
+      body: JSON.stringify({
+        memberId: String(member._id),
+        aidTypeId: String(aidType._id),
+        amount: 1000,
+        motif: "Frais médicaux",
+      }),
+    }));
+
+    assert.equal(res.status, 201);
+
+    const body = await json(res);
+    assert.equal(body.data.status, "en_attente");
+  });
+
+  it("social_agent reçoit 403 sur PATCH .../valider (pas dans SOCIAL_DECISION_ROLES)", async () => {
+    const fakeId = new mongoose.Types.ObjectId().toString();
+
+    const res = await fetch(
+      `${baseUrl}/api/admin/social/aids/${fakeId}/valider`,
+      authed(agentToken, { method: "PATCH" })
+    );
+
+    assert.equal(res.status, 403);
+  });
+
+  it("social_agent reçoit 403 sur PATCH .../annuler", async () => {
+    const fakeId = new mongoose.Types.ObjectId().toString();
+
+    const res = await fetch(
+      `${baseUrl}/api/admin/social/aids/${fakeId}/annuler`,
+      authed(agentToken, {
+        method: "PATCH",
+        body: JSON.stringify({ motif: "Test" }),
+      })
+    );
+
+    assert.equal(res.status, 403);
+  });
+
+  it("social_approver peut valider une aide en attente (décision, pas d'écriture)", async () => {
+    const member = await Member.create({
+      firstName: "Route",
+      lastName: "AideApprover",
+      church: TEST_CHURCH,
+      status: "actif",
+    });
+
+    // Montant volontairement modeste (200) : la caisse de l'église 5
+    // n'a été alimentée que par le test de paiement de cotisation
+    // ci-dessus (1000, openingBalance restant à 0 — voir la note sur
+    // ce choix dans le `before()`), et cette église est partagée avec
+    // socialContribution.service.test.js dans un processus concurrent.
+    const createRes = await fetch(`${baseUrl}/api/admin/social/aids`, authed(agentToken, {
+      method: "POST",
+      body: JSON.stringify({
+        memberId: String(member._id),
+        aidTypeId: String(aidType._id),
+        amount: 200,
+        motif: "À valider",
+      }),
+    }));
+    const created = await json(createRes);
+
+    const validateRes = await fetch(
+      `${baseUrl}/api/admin/social/aids/${created.data._id}/valider`,
+      authed(approverToken, { method: "PATCH" })
+    );
+
+    assert.equal(validateRes.status, 200);
+
+    const validated = await json(validateRes);
+    assert.equal(validated.data.status, "payee");
+    assert.match(validated.data.reference, /^AIDE-\d{4}-\d{5}$/);
   });
 });

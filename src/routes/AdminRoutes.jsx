@@ -26,6 +26,8 @@ import SocialDashboard from "../pages/admin/Social/SocialDashboard";
 import SocialContributionsAdmin from "../pages/admin/Social/SocialContributionsAdmin";
 import SocialMemberSearch from "../pages/admin/Social/SocialMemberSearch";
 import SocialCaisse from "../pages/admin/Social/SocialCaisse";
+import SocialAidsAdmin from "../pages/admin/Social/SocialAidsAdmin";
+import SocialAidTypesAdmin from "../pages/admin/Social/SocialAidTypesAdmin";
 
 /**
  * Toutes les routes de l'espace d'administration.
@@ -228,6 +230,31 @@ const AdminRoutes = () => {
           element={
             <RequireRole allow={SOCIAL_ROLES}>
               <SocialCaisse />
+            </RequireRole>
+          }
+        />
+
+        {/* Aides sociales (Phase 2) : lecture ET écriture ouvertes à
+            SOCIAL_ROLES, comme les autres écrans du module — la
+            distinction par action (création, validation, annulation)
+            se fait à l'intérieur de la page via currentUser()?.role,
+            SOCIAL_WRITE_ROLES et SOCIAL_DECISION_ROLES. */}
+        <Route
+          path="social/aides"
+          element={
+            <RequireRole allow={SOCIAL_ROLES}>
+              <SocialAidsAdmin />
+            </RequireRole>
+          }
+        />
+
+        {/* Types d'aide : plus restreint que le reste du module, comme
+            "Moyens de paiement"/"Types de don" le sont déjà pour /dons. */}
+        <Route
+          path="social/aides/types"
+          element={
+            <RequireRole allow={["admin", "social_admin"]}>
+              <SocialAidTypesAdmin />
             </RequireRole>
           }
         />

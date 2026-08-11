@@ -20,9 +20,11 @@ import {
 } from "lucide-react";
 
 import { inbox, newSouls, stats } from "../../services/api";
+import { fetchSocialDashboard } from "../../services/social";
 
 import { currentUser } from "../../services/auth";
-import { AGENT_ROLES } from "../../routes/roleGroups";
+import { AGENT_ROLES, SOCIAL_ONLY_ROLES } from "../../routes/roleGroups";
+import { money } from "./Social/socialShared";
 
 import useAsyncData from "../../hooks/useAsyncData";
 import PublishButton from "../../components/admin/PublishButton";
@@ -191,6 +193,123 @@ const AgentDashboard = () => {
               <span className="admin-dashboard__shortcut-text">
                 <strong>Nouvelles âmes</strong>
                 <span>Voir tous les dossiers et le tableau de bord SOA &amp; CANA</span>
+              </span>
+
+              <ArrowRight aria-hidden="true" />
+            </Link>
+          </li>
+        </ul>
+      </section>
+    </div>
+  );
+};
+
+// Tableau de bord allégé pour les comptes exclusivement Service Social
+// (social_admin/social_agent/social_approver/social_viewer) — même
+// principe qu'AgentDashboard ci-dessus : ces comptes n'ont accès à
+// aucune section de `StaffDashboard`, la charger échouerait (403).
+// Réutilise les chiffres déjà construits pour le tableau de bord
+// Service Social plutôt que de les dupliquer.
+const SocialOnlyDashboard = () => {
+  const statsQuery = useAsyncData(fetchSocialDashboard);
+
+  const user = currentUser();
+  const firstName = String(user?.name ?? "").trim().split(/\s+/)[0];
+  const data = statsQuery.data;
+
+  const cards = [
+    {
+      key: "contributions",
+      label: "Cotisations du mois",
+      value: `${data?.contributionsThisMonth?.paidCount ?? 0} / ${data?.contributionsThisMonth?.totalMembers ?? 0}`,
+      icon: HeartHandshake,
+    },
+    {
+      key: "collected",
+      label: "Collecté ce mois-ci",
+      value: money(data?.amountCollectedThisMonth ?? 0),
+      icon: CheckCircle2,
+    },
+    {
+      key: "late",
+      label: "Cotisations en retard",
+      value: data?.lateContributions ?? 0,
+      icon: UserPlus,
+    },
+    {
+      key: "cashBalance",
+      label: "Caisse sociale",
+      value: money(data?.cashBalance ?? 0),
+      icon: Heart,
+    },
+  ];
+
+  return (
+    <div className="admin-dashboard">
+      <header className="admin-dashboard__header">
+        <div>
+          <h1>
+            {greeting()}
+            {firstName ? `, ${firstName}` : ""}
+          </h1>
+
+          <p>Voici l&apos;état du Service Social.</p>
+        </div>
+      </header>
+
+      <section
+        aria-labelledby="admin-dashboard-stats"
+        className="admin-dashboard__section"
+      >
+        <div aria-busy={statsQuery.loading}>
+          {statsQuery.loading && (
+            <AdminLoading label="Chargement des statistiques…" />
+          )}
+
+          {!statsQuery.loading && statsQuery.error && (
+            <AdminError message={statsQuery.error} onRetry={statsQuery.reload} />
+          )}
+
+          {!statsQuery.loading && !statsQuery.error && (
+            <ul className="admin-dashboard__stats">
+              {cards.map((card) => {
+                const Icon = card.icon;
+
+                return (
+                  <li key={card.key}>
+                    <Link to="/admin/social" className="admin-dashboard__stat">
+                      <span className="admin-dashboard__stat-icon">
+                        <Icon aria-hidden="true" />
+                      </span>
+
+                      <span className="admin-dashboard__stat-value">{card.value}</span>
+
+                      <span className="admin-dashboard__stat-label">{card.label}</span>
+
+                      <ArrowRight className="admin-dashboard__stat-arrow" aria-hidden="true" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </section>
+
+      <section
+        aria-labelledby="admin-dashboard-shortcuts"
+        className="admin-dashboard__section admin-dashboard__panel"
+      >
+        <ul className="admin-dashboard__shortcuts">
+          <li>
+            <Link to="/admin/social">
+              <span className="admin-dashboard__shortcut-icon">
+                <Heart aria-hidden="true" />
+              </span>
+
+              <span className="admin-dashboard__shortcut-text">
+                <strong>Service Social</strong>
+                <span>Voir le tableau de bord, les cotisations, les aides et la caisse</span>
               </span>
 
               <ArrowRight aria-hidden="true" />
@@ -499,6 +618,7 @@ const StaffDashboard = () => {
 const Dashboard = () => {
   const role = currentUser()?.role;
   const isAgent = AGENT_ROLES.includes(role);
+  const isSocialOnly = !isAgent && SOCIAL_ONLY_ROLES.includes(role);
 
   usePageMeta(
     isAgent
@@ -506,13 +626,21 @@ const Dashboard = () => {
           title: "Nouvelles âmes — Tableau de bord",
           description: "Suivi des dossiers SOA et CANA.",
         }
-      : {
-          title: "Tableau de bord",
-          description: "Vue d'ensemble de l'espace d'administration du site CAVA.",
-        }
+      : isSocialOnly
+        ? {
+            title: "Service Social — Tableau de bord",
+            description: "Cotisations, aides et caisse de solidarité.",
+          }
+        : {
+            title: "Tableau de bord",
+            description: "Vue d'ensemble de l'espace d'administration du site CAVA.",
+          }
   );
 
-  return isAgent ? <AgentDashboard /> : <StaffDashboard />;
+  if (isAgent) return <AgentDashboard />;
+  if (isSocialOnly) return <SocialOnlyDashboard />;
+
+  return <StaffDashboard />;
 };
 
 export default Dashboard;

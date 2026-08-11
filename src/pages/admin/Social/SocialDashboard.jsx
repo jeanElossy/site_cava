@@ -118,27 +118,20 @@ const SocialDashboard = () => {
             <span className="admin-social-dashboard__stat-hint">solde actuel</span>
           </li>
 
-          {/* Aides sociales : hors périmètre Phase 1 (workflow de
-              décaissement à venir). La carte reste affichée, atténuée,
-              plutôt que masquée — pour que le tableau de bord du
-              cahier des charges reste visuellement complet dès
-              maintenant. */}
-          <li className="admin-social-dashboard__stat admin-social-dashboard__stat--muted">
+          <li className="admin-social-dashboard__stat admin-social-dashboard__stat--accent">
             <Gift aria-hidden="true" />
             <span className="admin-social-dashboard__stat-label">
               Aides sociales du mois
             </span>
             <strong>{money(data.aidAmountThisMonth ?? 0)}</strong>
-            <span className="admin-social-dashboard__stat-hint">Phase 2</span>
           </li>
 
-          <li className="admin-social-dashboard__stat admin-social-dashboard__stat--muted">
+          <li className="admin-social-dashboard__stat">
             <HandHeart aria-hidden="true" />
             <span className="admin-social-dashboard__stat-label">
               Nombre d&apos;aides
             </span>
             <strong>{data.aidCount ?? 0}</strong>
-            <span className="admin-social-dashboard__stat-hint">Phase 2</span>
           </li>
 
           <li className="admin-social-dashboard__stat">
