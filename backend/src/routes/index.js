@@ -35,7 +35,7 @@ import * as agentService from "../services/agent.service.js";
 import * as pushService from "../services/push.service.js";
 import {
   parseRegistrationNumber,
-  releaseIfLastIssued,
+  advancePastManualNumber,
 } from "../services/registrationNumber.service.js";
 
 import { resourceRouter } from "./resource.routes.js";
@@ -104,33 +104,40 @@ const members = createCrudService(Member, {
   searchableFields: ["firstName", "lastName", "registrationNumber"],
 });
 
-// Supprimer un membre ne doit pas laisser un trou permanent dans la
-// numérotation quand son matricule était le tout dernier émis pour
-// son église — cas fréquent en test (inscription puis suppression
-// immédiate). Enveloppe le `remove` générique plutôt que de dupliquer
-// la route DELETE (rôle admin, journal d'audit, réponse 204 déjà
-// gérés par resourceRouter) juste pour ce petit ajout.
-const removeMember = members.remove;
+// Un matricule saisi à la main depuis cette administration (ajout d'un
+// membre historique, correction d'un matricule) ne passe jamais par
+// `nextRegistrationNumber` : sans synchronisation, le compteur de
+// l'église resterait en retard et la prochaine inscription en ligne
+// pourrait recevoir un numéro inférieur à un numéro déjà attribué à la
+// main, désordonnant la liste des membres (voir
+// `advancePastManualNumber`, qui documente le mécanisme).
+const createMember = members.create;
+const updateMember = members.update;
 
-members.remove = async (id) => {
-  const existing = await Member.findById(id)
-    .select("registrationNumber church")
-    .lean();
+const syncCounterWithMember = async (doc) => {
+  const parsed = doc?.registrationNumber
+    ? parseRegistrationNumber(doc.registrationNumber)
+    : null;
 
-  const result = await removeMember(id);
-
-  if (existing?.registrationNumber && existing.church) {
-    const parsed = parseRegistrationNumber(existing.registrationNumber);
-
-    if (parsed) {
-      await releaseIfLastIssued({
-        church: existing.church,
-        number: parsed.number,
-      });
-    }
+  if (parsed && doc.church) {
+    await advancePastManualNumber({ church: doc.church, number: parsed.number });
   }
+};
 
-  return result;
+members.create = async (payload, user) => {
+  const doc = await createMember(payload, user);
+
+  await syncCounterWithMember(doc);
+
+  return doc;
+};
+
+members.update = async (id, payload) => {
+  const doc = await updateMember(id, payload);
+
+  await syncCounterWithMember(doc);
+
+  return doc;
 };
 
 const flocks = createCrudService(Flock, {

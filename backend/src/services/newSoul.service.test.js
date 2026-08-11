@@ -8,11 +8,20 @@ import Flock from "../models/Flock.js";
 import Member from "../models/Member.js";
 import NewSoul from "../models/NewSoul.js";
 import PushSubscription from "../models/PushSubscription.js";
+import RegistrationCounter from "../models/RegistrationCounter.js";
 import * as newSoulService from "./newSoul.service.js";
 import * as pushService from "./push.service.js";
 
 const FLOCK_CODE = "AN"; // "Âmes Nouvelles" — code de test isolé
 const EMAIL_SUFFIX = "@example.invalid";
+// Église FICTIVE (jamais l'église réelle 1) : la clôture d'un dossier
+// crée un Member via `nextRegistrationNumber`, qui incrémente le
+// compteur RÉEL de l'église concernée. Utiliser l'église 1 ici a fait
+// dériver le compteur réel de +3 à chaque exécution de la suite
+// (aucune libération en `afterEach`/`after`), gonflant en production le
+// numéro de plusieurs membres réels bien au-delà du dernier matricule
+// réellement attribué. Voir le nettoyage du compteur en fin de fichier.
+const TEST_CHURCH = 4;
 
 let soaUser;
 let canaUser;
@@ -102,7 +111,7 @@ describe("newSoul.service (intégration MongoDB)", () => {
     flock = await Flock.create({
       code: FLOCK_CODE,
       name: "Bergerie Test Nouvelles Âmes",
-      church: 1,
+      church: TEST_CHURCH,
     });
   });
 
@@ -118,6 +127,9 @@ describe("newSoul.service (intégration MongoDB)", () => {
     await User.deleteMany({
       _id: { $in: [soaUser._id, canaUser._id, coordinateurUser._id, pasteurUser._id] },
     });
+    // Église fictive, jamais réelle : purge sans condition, aucune
+    // valeur "d'avant le test" à préserver.
+    await RegistrationCounter.deleteOne({ church: TEST_CHURCH });
     await disconnectTestDb();
   });
 
@@ -188,7 +200,7 @@ describe("newSoul.service (intégration MongoDB)", () => {
     const presenceMember = await Member.create({
       firstName: "Agent",
       lastName: "Présence Visibilité",
-      church: 1,
+      church: TEST_CHURCH,
       flock: flock._id,
       registrationNumber: "1AN26099P",
       role: "serviteur",
@@ -205,7 +217,7 @@ describe("newSoul.service (intégration MongoDB)", () => {
       const otherMember = await Member.create({
         firstName: "Autre",
         lastName: "Agent Présence",
-        church: 1,
+        church: TEST_CHURCH,
         flock: flock._id,
         registrationNumber: "1AN26100P",
         role: "serviteur",
@@ -404,12 +416,37 @@ describe("newSoul.service (intégration MongoDB)", () => {
     assert.equal(member.lastName, "Kouassi");
     assert.equal(member.church, flock.church);
     assert.equal(String(member.flock), String(flock._id));
-    assert.match(member.registrationNumber, /^1AN\d{5}[A-Z]$/);
+    assert.match(member.registrationNumber, new RegExp(`^${TEST_CHURCH}AN\\d{5}[A-Z]$`));
     assert.equal(member.baptism.water, true);
     assert.equal(member.baptism.waterYear, 2010);
 
     // Clôturer deux fois échoue.
     await assert.rejects(() => newSoulService.close(newSoul._id, asUser(canaUser)), /déjà clôturé/);
+  });
+
+  it("le millésime du matricule et joinedAt suivent la première visite (§A), pas la date de clôture", async () => {
+    const newSoul = await create(
+      {
+        firstName: "Awa",
+        lastName: "Traoré",
+        phone: "0700000001",
+        gender: "femme",
+        // Premier contact il y a plusieurs années : un dossier peut être
+        // clôturé bien après, la clôture ne doit pas dater le matricule
+        // ni `joinedAt` du jour du traitement.
+        firstVisitAt: new Date(Date.UTC(2022, 5, 15)),
+      },
+      asUser(soaUser)
+    );
+    await newSoulService.transmit(newSoul._id, asUser(soaUser));
+    await newSoulService.acknowledge(newSoul._id, asUser(canaUser));
+    await newSoulService.updateCana(newSoul._id, { flock: flock._id }, asUser(canaUser));
+
+    const closed = await newSoulService.close(newSoul._id, asUser(canaUser));
+    const member = await Member.findById(closed.createdMemberId).lean();
+
+    assert.match(member.registrationNumber, new RegExp(`^${TEST_CHURCH}AN22\\d{3}[A-Z]$`));
+    assert.equal(new Date(member.joinedAt).getUTCFullYear(), 2022);
   });
 
   it("archive puis reprend un dossier côté SOA, sans changer son statut", async () => {
@@ -557,7 +594,7 @@ describe("newSoul.service (intégration MongoDB)", () => {
     const presenceMember = await Member.create({
       firstName: "Agent",
       lastName: "Présence Test",
-      church: 1,
+      church: TEST_CHURCH,
       flock: flock._id,
       registrationNumber: "1AN26098P",
       role: "serviteur",
@@ -700,7 +737,7 @@ describe("newSoul.service (intégration MongoDB)", () => {
     const presenceMember = await Member.create({
       firstName: "Agent",
       lastName: "Présence Notif",
-      church: 1,
+      church: TEST_CHURCH,
       flock: flock._id,
       registrationNumber: "1AN26101P",
       role: "serviteur",

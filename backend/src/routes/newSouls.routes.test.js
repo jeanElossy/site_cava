@@ -8,11 +8,18 @@ import User from "../models/User.js";
 import Flock from "../models/Flock.js";
 import NewSoul from "../models/NewSoul.js";
 import Member from "../models/Member.js";
+import RegistrationCounter from "../models/RegistrationCounter.js";
 
 const { createApp } = await import("../app.js");
 
 const FLOCK_CODE = "AR";
 const EMAIL_SUFFIX = "@example.invalid";
+// Église FICTIVE, distincte de celle de newSoul.service.test.js (4) :
+// la route de clôture crée un Member via `nextRegistrationNumber`, qui
+// incrémente le compteur RÉEL de l'église concernée. Utiliser l'église
+// réelle (1) ici a fait dériver le compteur réel en production — voir
+// le commentaire équivalent dans newSoul.service.test.js.
+const TEST_CHURCH = 5;
 
 let server;
 let baseUrl;
@@ -57,7 +64,7 @@ describe("Routes des nouvelles âmes (intégration HTTP)", () => {
     flock = await Flock.create({
       code: FLOCK_CODE,
       name: "Bergerie Test Routes Nouvelles Âmes",
-      church: 1,
+      church: TEST_CHURCH,
     });
 
     const app = createApp();
@@ -71,6 +78,9 @@ describe("Routes des nouvelles âmes (intégration HTTP)", () => {
     await Member.deleteMany({ flock: flock._id });
     await Flock.deleteOne({ _id: flock._id });
     await User.deleteMany({ _id: { $in: [soaUserId, canaUserId] } });
+    // Église fictive, jamais réelle : purge sans condition, aucune
+    // valeur "d'avant le test" à préserver.
+    await RegistrationCounter.deleteOne({ church: TEST_CHURCH });
     await new Promise((resolve) => server.close(resolve));
     await disconnectTestDb();
   });
@@ -196,7 +206,7 @@ describe("Routes des nouvelles âmes (intégration HTTP)", () => {
     const presenceMember = await Member.create({
       firstName: "Agent",
       lastName: "Présence Route Test",
-      church: 1,
+      church: TEST_CHURCH,
       flock: flock._id,
       registrationNumber: "1AR26097O",
       role: "serviteur",

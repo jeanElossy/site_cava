@@ -10,7 +10,7 @@ import {
   parseRegistrationNumber,
   hasValidControlLetter,
   nextRegistrationNumber,
-  releaseIfLastIssued,
+  advancePastManualNumber,
 } from "./registrationNumber.service.js";
 
 // ---- Fonctions pures (aucune base de données) ----------------------
@@ -20,6 +20,28 @@ describe("registrationNumber.service — fonctions pures", () => {
     assert.equal(letterForNumber(1), "A");
     assert.equal(letterForNumber(26), "Z");
     assert.equal(letterForNumber(27), "A");
+  });
+
+  it("letterForNumber suit la séquence 050→X à 058→F, à cheval sur deux tours d'alphabet", () => {
+    const expected = {
+      50: "X",
+      51: "Y",
+      52: "Z",
+      53: "A",
+      54: "B",
+      55: "C",
+      56: "D",
+      57: "E",
+      58: "F",
+    };
+
+    for (const [number, letter] of Object.entries(expected)) {
+      assert.equal(
+        letterForNumber(Number(number)),
+        letter,
+        `numéro ${number} doit correspondre à la lettre ${letter}`
+      );
+    }
   });
 
   it("normalizeRegistrationNumber met en majuscules et retire espaces/tirets", () => {
@@ -127,9 +149,9 @@ describe("registrationNumber.service — nextRegistrationNumber (intégration Mo
   });
 });
 
-// ---- releaseIfLastIssued (intégration MongoDB) ---------------------
+// ---- advancePastManualNumber (intégration MongoDB) ------------------
 
-describe("registrationNumber.service — releaseIfLastIssued (intégration MongoDB)", () => {
+describe("registrationNumber.service — advancePastManualNumber (intégration MongoDB)", () => {
   const TEST_CHURCH = 9;
 
   before(async () => {
@@ -146,78 +168,63 @@ describe("registrationNumber.service — releaseIfLastIssued (intégration Mongo
     await disconnectTestDb();
   });
 
-  it("décrémente le compteur quand le numéro rendu est bien le tout dernier émis", async () => {
-    await nextRegistrationNumber({
-      church: TEST_CHURCH,
-      flockCode: "ZZ",
-      year: 2026,
-    }); // -> 1
-    const second = await nextRegistrationNumber({
-      church: TEST_CHURCH,
-      flockCode: "ZZ",
-      year: 2026,
-    }); // -> 2
-
-    await releaseIfLastIssued({ church: TEST_CHURCH, number: second.number });
+  it("crée le compteur s'il n'existe pas encore (premier membre historique de l'église)", async () => {
+    await advancePastManualNumber({ church: TEST_CHURCH, number: 44 });
 
     const counter = await RegistrationCounter.findOne({
       church: TEST_CHURCH,
     }).lean();
 
-    assert.equal(
-      counter.lastNumber,
-      1,
-      "le numero 2 est rendu, le prochain doit redevenir 2"
-    );
+    assert.equal(counter.lastNumber, 44);
   });
 
-  it("ne fait rien si le numéro n'est plus le dernier émis (d'autres inscriptions ont eu lieu depuis)", async () => {
+  it("ne fait jamais reculer le compteur : un numéro manuel inférieur au dernier émis reste sans effet", async () => {
     await nextRegistrationNumber({
       church: TEST_CHURCH,
       flockCode: "ZZ",
       year: 2026,
     }); // -> 1
-    const second = await nextRegistrationNumber({
-      church: TEST_CHURCH,
-      flockCode: "ZZ",
-      year: 2026,
-    }); // -> 2
     await nextRegistrationNumber({
       church: TEST_CHURCH,
       flockCode: "ZZ",
       year: 2026,
-    }); // -> 3, quelqu'un d'autre s'est inscrit entretemps
+    }); // -> 2
 
-    // Tentative de rendre le numéro 2, qui N'EST PLUS le dernier émis
-    // (c'est 3 désormais) : ne doit rien changer, sous peine de faire
-    // réattribuer le 3 à quelqu'un d'autre.
-    await releaseIfLastIssued({ church: TEST_CHURCH, number: second.number });
+    await advancePastManualNumber({ church: TEST_CHURCH, number: 1 });
 
     const counter = await RegistrationCounter.findOne({
       church: TEST_CHURCH,
     }).lean();
 
+    assert.equal(counter.lastNumber, 2);
+  });
+
+  it("évite qu'un numéro attribué automatiquement ensuite retombe sous un matricule saisi à la main", async () => {
+    // Ex. concret : un membre historique numéro 60 est ajouté à la main
+    // depuis l'administration, sans passer par `nextRegistrationNumber`.
+    await advancePastManualNumber({ church: TEST_CHURCH, number: 60 });
+
+    const next = await nextRegistrationNumber({
+      church: TEST_CHURCH,
+      flockCode: "ZZ",
+      year: 2026,
+    });
+
     assert.equal(
-      counter.lastNumber,
-      3,
-      "le compteur ne doit pas reculer quand un numero plus recent existe deja"
+      next.number,
+      61,
+      "sans synchronisation, ce numéro serait retombé à 1 et aurait désordonné la liste des membres"
     );
   });
 
   it("ne fait rien pour des entrées invalides (pas d'église, ou numéro non positif)", async () => {
-    await nextRegistrationNumber({
-      church: TEST_CHURCH,
-      flockCode: "ZZ",
-      year: 2026,
-    }); // -> 1
-
-    await releaseIfLastIssued({ church: null, number: 1 });
-    await releaseIfLastIssued({ church: TEST_CHURCH, number: 0 });
+    await advancePastManualNumber({ church: null, number: 5 });
+    await advancePastManualNumber({ church: TEST_CHURCH, number: 0 });
 
     const counter = await RegistrationCounter.findOne({
       church: TEST_CHURCH,
     }).lean();
 
-    assert.equal(counter.lastNumber, 1);
+    assert.equal(counter, null);
   });
 });

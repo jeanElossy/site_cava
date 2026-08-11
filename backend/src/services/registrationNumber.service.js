@@ -99,23 +99,26 @@ export const nextRegistrationNumber = async ({
   return { registrationNumber, number, letter };
 };
 
-// Rend un numéro au compteur quand le membre qui le portait est
-// supprimé — mais SEULEMENT si ce numéro est bien le tout dernier
-// émis pour cette église (cas typique : inscription de test suivie
-// d'une suppression immédiate). Sans cette condition, décrémenter
-// serait dangereux : si d'autres inscriptions ont eu lieu entre-temps,
-// ce numéro a pu être réattribué et deux membres se retrouveraient
-// avec le même matricule.
+// Un matricule saisi à la main (membre historique ajouté depuis
+// l'administration, correction d'un matricule existant) contourne
+// `nextRegistrationNumber` : il n'avance jamais le compteur de son
+// église. Sans cet appel en complément, le compteur reste en retard sur
+// ce numéro manuel, et la prochaine inscription en ligne peut se voir
+// attribuer un numéro qui lui est inférieur — deux matricules valides,
+// sans collision, mais dont l'ordre ne correspond plus à l'ordre réel
+// d'inscription (symptôme observé dans la liste des membres, triée par
+// numéro : voir `compareByRegistrationOrder` côté frontend).
 //
-// `updateOne({ church, lastNumber: number }, ...)` : la condition sur
-// `lastNumber` rend l'opération atomique et sûre même en cas de
-// suppressions concurrentes — elle ne peut réussir QUE si personne
-// d'autre n'a avancé le compteur depuis.
-export const releaseIfLastIssued = async ({ church, number }) => {
+// `$max` ne fait jamais reculer le compteur : un numéro manuel inférieur
+// au dernier numéro déjà émis automatiquement n'a aucun effet, comme
+// pour l'import du registre papier (`seed-legacy-members.js`), dont ce
+// correctif reprend exactement le même mécanisme.
+export const advancePastManualNumber = async ({ church, number }) => {
   if (!church || !Number.isInteger(number) || number < 1) return;
 
-  await RegistrationCounter.updateOne(
-    { church, lastNumber: number },
-    { $set: { lastNumber: number - 1 } }
+  await RegistrationCounter.findOneAndUpdate(
+    { church },
+    { $max: { lastNumber: number } },
+    { upsert: true }
   );
 };

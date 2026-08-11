@@ -621,10 +621,19 @@ const buildMemberPayload = async (newSoul) => {
     throw ApiError.unprocessable("La bergerie retenue pour ce dossier est introuvable.");
   }
 
+  // Le millésime du matricule doit correspondre à l'arrivée réelle de
+  // la personne à l'église, pas à la date de clôture administrative du
+  // dossier (un dossier peut être clôturé des mois après le premier
+  // contact) — même principe que pour les inscriptions publiques, voir
+  // `submission.service.js`. `firstVisitAt` (première visite, §A) est
+  // la donnée la plus fiable ; à défaut on retombe sur `openedAt`
+  // (ouverture du dossier par le SOA), toujours renseignée.
+  const arrivalDate = soa.firstVisitAt ?? soa.openedAt ?? new Date();
+
   const { registrationNumber } = await nextRegistrationNumber({
     church: flock.church,
     flockCode: flock.code,
-    year: new Date().getFullYear(),
+    year: arrivalDate.getFullYear(),
   });
 
   const waterBaptismYear = Number.parseInt(soa.waterBaptismYear, 10);
@@ -639,6 +648,7 @@ const buildMemberPayload = async (newSoul) => {
     church: flock.church,
     flock: flock._id,
     registrationNumber,
+    joinedAt: arrivalDate,
     dateOfBirth: cana.dateOfBirth,
     maritalStatus: MARITAL_STATUS_TO_MEMBER[cana.maritalStatus],
     profession: cana.profession,
