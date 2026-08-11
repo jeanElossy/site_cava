@@ -4,6 +4,7 @@ import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
 
 import Member from "../models/Member.js";
+import Church from "../models/Church.js";
 // Import de pur enregistrement, requis par `.populate("ministries", ...)`
 // plus bas — voir memberCardSvg.service.js pour le même besoin.
 import "../models/Ministry.js";
@@ -170,7 +171,7 @@ const drawHeader = (doc, member, church) => {
     .fillColor(GREEN_DARK)
     .font("Poppins-Bold")
     .fontSize(21)
-    .text("CAVA", left + 68, 28, { characterSpacing: 0.5 });
+    .text("ÇAVA", left + 68, 28, { characterSpacing: 0.5 });
 
   doc
     .fillColor(INK)
@@ -260,7 +261,7 @@ const drawHeader = (doc, member, church) => {
   return doc.y + 18;
 };
 
-const drawIdentityBlock = async (doc, member, top) => {
+const drawIdentityBlock = async (doc, member, top, churchName) => {
   const left = 32;
   const photoW = 150;
   const photoH = 148;
@@ -393,12 +394,11 @@ const drawIdentityBlock = async (doc, member, top) => {
   const leftRows = [
     ["E-MAIL", orDash(member.email)],
     ["TÉLÉPHONE", orDash(member.phone)],
-    ["ADRESSE", orDash(member.address)],
     ["WHATSAPP", orDash(member.whatsapp)],
   ];
 
   const rightRows = [
-    ["ÉGLISE", member.church ? `Église ${member.church}` : "—"],
+    ["ÉGLISE", orDash(churchName)],
     ["QUARTIER / GROUPE DE MAISON", orDash(member.area)],
     ["RÔLE", ROLE_LABELS[member.role] ?? "—"],
     ["ANNÉE D’ARRIVÉE", member.joinedAt ? String(new Date(member.joinedAt).getFullYear()) : "—"],
@@ -560,7 +560,7 @@ const drawNotesBox = (doc, { x, y, width, notes }) => {
     .fillColor(INK)
     .font("Poppins")
     .fontSize(8.5)
-    .text(notes?.trim() ? notes.trim() : "—", x + 16, y + 44, {
+    .text(notes?.trim() ? notes.trim() : "Aucune note interne n’a été ajoutée pour ce membre.", x + 16, y + 44, {
       width: width - 32,
       height: height - 54,
       ellipsis: true,
@@ -614,6 +614,11 @@ export const buildMemberProfileSheetPdf = async (memberId) => {
     throw ApiError.notFound("Membre introuvable.");
   }
 
+  const church = member.church
+    ? await Church.findOne({ number: member.church }).select("name").lean()
+    : null;
+  const churchName = church?.name ?? null;
+
   const doc = new PDFDocument({ size: "A4", margin: 0 });
 
   registerFonts(doc);
@@ -628,7 +633,7 @@ export const buildMemberProfileSheetPdf = async (memberId) => {
   });
 
   const contentTop = drawHeader(doc, member, null);
-  const gridTop = await drawIdentityBlock(doc, member, contentTop);
+  const gridTop = await drawIdentityBlock(doc, member, contentTop, churchName);
 
   const left = 32;
   const right = doc.page.width - 32;
@@ -683,7 +688,7 @@ export const buildMemberProfileSheetPdf = async (memberId) => {
       ["Statut", member.status === "inactif" ? "Inactif" : "Actif"],
       ["Matricule", formatRegistrationNumber(member.registrationNumber) || "—"],
       ["Date d’inscription", formatDateOnly(member.createdAt)],
-      ["Église", member.church ? `Église ${member.church}` : "—"],
+      ["Église", orDash(churchName)],
       ["Quartier / groupe de maison", orDash(member.area)],
       ["Rôle", ROLE_LABELS[member.role] ?? "—"],
     ],
@@ -710,7 +715,6 @@ export const buildMemberProfileSheetPdf = async (memberId) => {
       ["Téléphone", orDash(member.phone)],
       ["WhatsApp", orDash(member.whatsapp)],
       ["E-mail", orDash(member.email)],
-      ["Adresse", orDash(member.address)],
     ],
   }) + BOX_GAP;
 

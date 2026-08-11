@@ -4,7 +4,6 @@ import {
   Download,
   FileText,
   IdCard,
-  MessageCircle,
   MoreVertical,
   Pencil,
   Trash2,
@@ -498,36 +497,6 @@ const MemberRowMenu = ({ member, onEdit, onDelete, reload, onStatusChanged }) =>
     }
   };
 
-  // wa.me ne sait pas joindre de fichier à un message pré-rempli
-  // (limitation de l'API, déjà acceptée ailleurs dans le projet — voir
-  // buildWhatsAppMessage/whatsAppUrl dans socialShared.js pour les
-  // reçus d'offrande) : on télécharge donc la fiche puis on ouvre la
-  // conversation avec un message prêt, à charge pour l'agent d'y
-  // joindre manuellement le fichier qui vient d'être téléchargé.
-  const shareFicheByWhatsApp = async () => {
-    const ok = await download(
-      "ficheWhatsApp",
-      `/api/admin/members/${member.id}/fiche.pdf`,
-      `fiche-membre-${member.id}.pdf`
-    );
-
-    if (!ok) return;
-
-    const matriculeText = member.registrationNumber
-      ? formatRegistrationNumber(member.registrationNumber)
-      : "non renseigné";
-
-    const message =
-      `Fiche membre — ${memberLabel} (matricule ${matriculeText}).\n\n` +
-      "Le fichier PDF vient d’être téléchargé : merci de le joindre à ce message.";
-
-    window.open(
-      `https://wa.me/?text=${encodeURIComponent(message)}`,
-      "_blank",
-      "noopener,noreferrer"
-    );
-  };
-
   return (
     <div className="admin-community__row-menu" ref={containerRef}>
       <button
@@ -593,16 +562,6 @@ const MemberRowMenu = ({ member, onEdit, onDelete, reload, onStatusChanged }) =>
           >
             <FileText aria-hidden="true" />
             {busy === "fiche" ? "Téléchargement…" : "Fiche membre (PDF)"}
-          </button>
-
-          <button
-            type="button"
-            role="menuitem"
-            onClick={shareFicheByWhatsApp}
-            disabled={busy !== ""}
-          >
-            <MessageCircle aria-hidden="true" />
-            {busy === "ficheWhatsApp" ? "Préparation…" : "Envoyer la fiche par WhatsApp"}
           </button>
 
           <button
