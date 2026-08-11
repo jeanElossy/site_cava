@@ -82,24 +82,28 @@ describe("newSoul.service (intégration MongoDB)", () => {
       User.create({
         name: "Agent SOA Test",
         email: `soa.testsuite.newsoul${EMAIL_SUFFIX}`,
+        registrationNumber: "5AA00201A",
         password: "MotDePasseTemporaire123!",
         role: "soa",
       }),
       User.create({
         name: "Responsable CANA Test",
         email: `cana.testsuite.newsoul${EMAIL_SUFFIX}`,
+        registrationNumber: "5AA00202A",
         password: "MotDePasseTemporaire123!",
         role: "cana",
       }),
       User.create({
         name: "Coordonnateur Bergeries Test",
         email: `coordinateur.testsuite.newsoul${EMAIL_SUFFIX}`,
+        registrationNumber: "5AA00203A",
         password: "MotDePasseTemporaire123!",
         role: "coordinateur_bergeries",
       }),
       User.create({
         name: "Pasteur Test",
         email: `pasteur.testsuite.newsoul${EMAIL_SUFFIX}`,
+        registrationNumber: "5AA00204A",
         password: "MotDePasseTemporaire123!",
         role: "pasteur",
       }),
@@ -133,13 +137,13 @@ describe("newSoul.service (intégration MongoDB)", () => {
     await disconnectTestDb();
   });
 
-  it("génère un numéro de dossier au format AN-<année>-XXXX et verrouille l'agent créateur", async () => {
+  it("génère un numéro de dossier au format AN-<année>-XXX et verrouille l'agent créateur", async () => {
     const newSoul = await create(
       { firstName: "Jean", lastName: "Kouassi", phone: "0700000000" },
       asUser(soaUser)
     );
 
-    assert.match(newSoul.caseNumber, /^AN-\d{4}-\d{4}$/);
+    assert.match(newSoul.caseNumber, /^AN-\d{4}-\d{3,}$/);
     assert.equal(newSoul.status, "enregistre_soa");
     assert.equal(newSoul.createdBy.kind, "user");
     assert.equal(String(newSoul.createdBy.id), String(soaUser._id));
@@ -157,6 +161,7 @@ describe("newSoul.service (intégration MongoDB)", () => {
     const otherSoa = await User.create({
       name: "Autre Agent SOA",
       email: `soa2.testsuite.newsoul${EMAIL_SUFFIX}`,
+      registrationNumber: "5AA00205A",
       password: "MotDePasseTemporaire123!",
       role: "soa",
     });

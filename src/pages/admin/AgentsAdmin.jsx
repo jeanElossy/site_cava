@@ -12,23 +12,56 @@ import { agents } from "../../services/api";
 import { currentUser } from "../../services/auth";
 import usePageMeta from "../../hooks/usePageMeta";
 import AdminModal from "../../components/admin/AdminModal";
+import { formatRegistrationNumber } from "../../utils/registrationNumber";
 
 import "./AgentsAdmin.scss";
 
 // Rôles gérables depuis cet écran — jamais admin/editor, voir
 // agent.service.js côté serveur (même liste, dupliquée ici pour le
 // select du formulaire, la vraie barrière reste côté API).
-const ROLE_LABELS = {
-  soa: "SOA",
-  cana: "CANA",
-  coordinateur_bergeries: "Coordonnateur des bergeries",
-  pasteur: "Pasteur",
-};
+const ROLE_GROUPS = [
+  {
+    label: "Nouvelles âmes",
+    roles: {
+      soa: "SOA",
+      cana: "CANA",
+      coordinateur_bergeries: "Coordonnateur des bergeries",
+      pasteur: "Pasteur",
+    },
+  },
+  {
+    label: "Service Social",
+    roles: {
+      social_admin: "Service Social — Admin",
+      social_agent: "Service Social — Agent",
+      social_approver: "Service Social — Validateur",
+      social_viewer: "Service Social — Lecture seule",
+    },
+  },
+];
 
-const ROLE_OPTIONS = Object.entries(ROLE_LABELS);
+const ROLE_LABELS = Object.fromEntries(
+  ROLE_GROUPS.flatMap((group) => Object.entries(group.roles))
+);
 
-const EMPTY_CREATE = { name: "", email: "", password: "", role: "soa" };
-const EMPTY_EDIT = { name: "", email: "", role: "soa" };
+const EMPTY_CREATE = { name: "", registrationNumber: "", password: "", role: "soa" };
+const EMPTY_EDIT = { name: "", registrationNumber: "", role: "soa" };
+
+// Rôles groupés visuellement dans chaque <select> — huit rôles à plat
+// seraient difficiles à parcourir, surtout sur un écran de téléphone.
+const RoleOptions = () => (
+  <>
+    {ROLE_GROUPS.map((group) => (
+      <optgroup key={group.label} label={group.label}>
+        {Object.entries(group.roles).map(([value, label]) => (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        ))}
+      </optgroup>
+    ))}
+  </>
+);
 
 const formatLastLogin = (value) =>
   value
@@ -46,7 +79,7 @@ const formatLastLogin = (value) =>
 const AgentsAdmin = () => {
   usePageMeta({
     title: "Agents — Administration",
-    description: "Comptes SOA, CANA, coordonnateur des bergeries et pasteur.",
+    description: "Comptes SOA, CANA, coordonnateur des bergeries, pasteur et Service Social.",
   });
 
   const currentUserId = currentUser()?.id;
@@ -120,7 +153,11 @@ const AgentsAdmin = () => {
 
   const openEdit = (agent) => {
     setEditing(agent);
-    setEditValues({ name: agent.name, email: agent.email, role: agent.role });
+    setEditValues({
+      name: agent.name,
+      registrationNumber: agent.registrationNumber,
+      role: agent.role,
+    });
     setFormError("");
   };
 
@@ -184,8 +221,9 @@ const AgentsAdmin = () => {
       <header>
         <h1>Agents</h1>
         <p className="admin-form__help">
-          Comptes SOA, CANA, coordonnateur des bergeries et pasteur — chacun ne voit,
-          une fois connecté, que le module Nouvelles Âmes.
+          Comptes SOA, CANA, coordonnateur des bergeries, pasteur et Service Social —
+          chacun ne voit, une fois connecté, que son propre module. Connexion par
+          matricule (pas d&apos;e-mail nécessaire).
         </p>
       </header>
 
@@ -193,7 +231,7 @@ const AgentsAdmin = () => {
         <div className="admin-form__field">
           <input
             type="search"
-            placeholder="Rechercher (nom, e-mail)"
+            placeholder="Rechercher (nom, matricule)"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -202,11 +240,7 @@ const AgentsAdmin = () => {
         <div className="admin-form__field">
           <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
             <option value="">Tous les rôles</option>
-            {ROLE_OPTIONS.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
+            <RoleOptions />
           </select>
         </div>
 
@@ -233,7 +267,7 @@ const AgentsAdmin = () => {
           <thead>
             <tr>
               <th>Nom</th>
-              <th>E-mail</th>
+              <th>Matricule</th>
               <th>Rôle</th>
               <th>Statut</th>
               <th>Dernière connexion</th>
@@ -244,7 +278,7 @@ const AgentsAdmin = () => {
             {items.map((agent) => (
               <tr key={agent.id} className={agent.isActive ? "" : "admin-agents__row--inactive"}>
                 <td>{agent.name}</td>
-                <td>{agent.email}</td>
+                <td>{formatRegistrationNumber(agent.registrationNumber)}</td>
                 <td>{ROLE_LABELS[agent.role] ?? agent.role}</td>
                 <td>
                   <span
@@ -332,14 +366,18 @@ const AgentsAdmin = () => {
               </div>
 
               <div className="admin-form__field">
-                <label htmlFor="agent-create-email">E-mail</label>
+                <label htmlFor="agent-create-registration-number">Matricule</label>
                 <input
-                  id="agent-create-email"
-                  type="email"
+                  id="agent-create-registration-number"
+                  type="text"
                   required
-                  value={createValues.email}
+                  placeholder="1OL25045S"
+                  value={createValues.registrationNumber}
                   onChange={(event) =>
-                    setCreateValues((prev) => ({ ...prev, email: event.target.value }))
+                    setCreateValues((prev) => ({
+                      ...prev,
+                      registrationNumber: event.target.value,
+                    }))
                   }
                 />
               </div>
@@ -368,11 +406,7 @@ const AgentsAdmin = () => {
                     setCreateValues((prev) => ({ ...prev, role: event.target.value }))
                   }
                 >
-                  {ROLE_OPTIONS.map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
+                  <RoleOptions />
                 </select>
               </div>
             </div>
@@ -414,14 +448,18 @@ const AgentsAdmin = () => {
               </div>
 
               <div className="admin-form__field">
-                <label htmlFor="agent-edit-email">E-mail</label>
+                <label htmlFor="agent-edit-registration-number">Matricule</label>
                 <input
-                  id="agent-edit-email"
-                  type="email"
+                  id="agent-edit-registration-number"
+                  type="text"
                   required
-                  value={editValues.email}
+                  placeholder="1OL25045S"
+                  value={editValues.registrationNumber}
                   onChange={(event) =>
-                    setEditValues((prev) => ({ ...prev, email: event.target.value }))
+                    setEditValues((prev) => ({
+                      ...prev,
+                      registrationNumber: event.target.value,
+                    }))
                   }
                 />
               </div>
@@ -435,11 +473,7 @@ const AgentsAdmin = () => {
                     setEditValues((prev) => ({ ...prev, role: event.target.value }))
                   }
                 >
-                  {ROLE_OPTIONS.map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
+                  <RoleOptions />
                 </select>
               </div>
             </div>

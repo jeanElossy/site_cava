@@ -1,23 +1,34 @@
+import Member from "../models/Member.js";
 import User from "../models/User.js";
 import { ApiError } from "../utils/ApiError.js";
+import { normalizeRegistrationNumber } from "./registrationNumber.service.js";
 
-// Gestion des comptes "agents" du module Nouvelles Âmes — SOA, CANA,
-// coordonnateur des bergeries, pasteur. Volontairement séparé de tout
-// CRUD générique : ce service ne touche JAMAIS un compte `admin` ou
+// Gestion des comptes "agents" du module Nouvelles Âmes ET du Service
+// Social — SOA, CANA, coordonnateur des bergeries, pasteur, social_admin,
+// social_agent, social_approver, social_viewer. Volontairement séparé de
+// tout CRUD générique : ce service ne touche JAMAIS un compte `admin` ou
 // `editor`, pour qu'un accès pensé pour gérer des agents de terrain ne
 // puisse pas, même par erreur, modifier ou supprimer un compte
 // d'administration.
+//
+// Distinct du `AGENT_ROLES` frontend (src/routes/roleGroups.js), qui ne
+// sert qu'à filtrer la navigation Nouvelles Âmes — ne pas confondre les
+// deux malgré le nom identique.
 export const AGENT_ROLES = [
   "soa",
   "cana",
   "coordinateur_bergeries",
   "pasteur",
+  "social_admin",
+  "social_agent",
+  "social_approver",
+  "social_viewer",
 ];
 
 const publicAgent = (user) => ({
   id: String(user._id),
   name: user.name,
-  email: user.email,
+  registrationNumber: user.registrationNumber,
   role: user.role,
   isActive: user.isActive,
   lastLoginAt: user.lastLoginAt,
@@ -27,9 +38,38 @@ const publicAgent = (user) => ({
 const assertAgentRole = (role) => {
   if (!AGENT_ROLES.includes(role)) {
     throw ApiError.badRequest(
-      "Rôle invalide : un agent doit être soa, cana, coordinateur_bergeries ou pasteur."
+      "Rôle invalide : un agent doit être soa, cana, coordinateur_bergeries, pasteur, social_admin, social_agent, social_approver ou social_viewer."
     );
   }
+};
+
+// Un agent se connecte par matricule (voir User.js) : il doit
+// correspondre à un membre réellement enregistré, pas être un
+// identifiant inventé au clavier — ni une simple coïncidence de forme.
+const assertMemberExists = async (registrationNumber) => {
+  const normalized = normalizeRegistrationNumber(registrationNumber);
+
+  if (!normalized) {
+    throw ApiError.unprocessable("Le matricule est obligatoire.", {
+      registrationNumber: "Indiquez le matricule du membre.",
+    });
+  }
+
+  const member = await Member.findOne({
+    registrationNumber: normalized,
+  }).select("_id");
+
+  if (!member) {
+    throw ApiError.unprocessable(
+      "Aucun membre trouvé avec ce matricule.",
+      {
+        registrationNumber:
+          "Vérifiez le matricule, ou enregistrez d'abord ce membre.",
+      }
+    );
+  }
+
+  return normalized;
 };
 
 // Ne charge et n'agit QUE sur des comptes déjà "agent" : un compte
@@ -54,7 +94,7 @@ export const list = async ({ role, search } = {}) => {
   if (search) {
     const regex = new RegExp(search.trim(), "i");
 
-    filter.$or = [{ name: regex }, { email: regex }];
+    filter.$or = [{ name: regex }, { registrationNumber: regex }];
   }
 
   const users = await User.find(filter).sort({ name: 1 }).lean();
@@ -62,20 +102,27 @@ export const list = async ({ role, search } = {}) => {
   return users.map(publicAgent);
 };
 
-export const create = async ({ name, email, password, role }) => {
+export const create = async ({ name, registrationNumber, password, role }) => {
   assertAgentRole(role);
 
-  if (!name || !email || !password) {
-    throw ApiError.badRequest("Nom, e-mail et mot de passe sont requis.");
+  if (!name || !password) {
+    throw ApiError.badRequest("Nom et mot de passe sont requis.");
   }
 
+  const normalized = await assertMemberExists(registrationNumber);
+
   try {
-    const user = await User.create({ name, email, password, role });
+    const user = await User.create({
+      name,
+      registrationNumber: normalized,
+      password,
+      role,
+    });
 
     return publicAgent(user);
   } catch (error) {
     if (error.code === 11000) {
-      throw ApiError.conflict("Un compte existe déjà avec cet e-mail.");
+      throw ApiError.conflict("Un compte existe déjà avec ce matricule.");
     }
 
     if (error.name === "ValidationError") {
@@ -88,11 +135,14 @@ export const create = async ({ name, email, password, role }) => {
   }
 };
 
-export const update = async (id, { name, email, role }) => {
+export const update = async (id, { name, registrationNumber, role }) => {
   const user = await loadAgentOrThrow(id);
 
   if (name !== undefined) user.name = name;
-  if (email !== undefined) user.email = email;
+
+  if (registrationNumber !== undefined) {
+    user.registrationNumber = await assertMemberExists(registrationNumber);
+  }
 
   // Un agent ne peut être reclassé que vers un AUTRE rôle agent —
   // jamais promu admin/editor par ce même formulaire.
@@ -105,7 +155,7 @@ export const update = async (id, { name, email, role }) => {
     await user.save();
   } catch (error) {
     if (error.code === 11000) {
-      throw ApiError.conflict("Un compte existe déjà avec cet e-mail.");
+      throw ApiError.conflict("Un compte existe déjà avec ce matricule.");
     }
 
     if (error.name === "ValidationError") {

@@ -26,6 +26,7 @@ import * as receiptService from "../services/receipt.service.js";
 import * as submissionService from "../services/submission.service.js";
 import * as memberExportService from "../services/memberExport.service.js";
 import * as memberCardService from "../services/memberCardSvg.service.js";
+import { buildMemberProfileSheetPdf } from "../services/memberProfileSheet.service.js";
 import * as guestBadgeService from "../services/guestBadgeSvg.service.js";
 import * as presenceQrService from "../services/presenceQr.service.js";
 import * as presenceService from "../services/presence.service.js";
@@ -204,7 +205,12 @@ export const buildRoutes = () => {
     "/login",
     loginLimiter,
     asyncHandler(async (req, res) => {
-      const email = req.body?.email;
+      // `identifier` : e-mail (admin/editor) ou matricule (agents de
+      // terrain, voir auth.service.js#login). Le champ `actorEmail` de
+      // AuditLog garde ce nom historique mais reçoit indifféremment
+      // l'un ou l'autre — c'est la trace de ce qui a été saisi, pas
+      // une garantie que c'est une adresse e-mail.
+      const identifier = req.body?.identifier;
 
       let data;
 
@@ -212,7 +218,7 @@ export const buildRoutes = () => {
         data = await authService.login(req.body ?? {});
       } catch (error) {
         await audit.recordLoginAttempt(req, {
-          email,
+          email: identifier,
           success: false,
         });
 
@@ -231,7 +237,7 @@ export const buildRoutes = () => {
       }
 
       await audit.recordLoginAttempt(req, {
-        email,
+        email: identifier,
         success: true,
         actorId: data.user.id,
       });
@@ -982,6 +988,25 @@ export const buildRoutes = () => {
       res.setHeader(
         "Content-Disposition",
         `attachment; filename="carte-membre-${req.params.id}-verso.jpg"`
+      );
+
+      res.send(buffer);
+    })
+  );
+
+  // Fiche membre : dossier individuel complet (informations
+  // personnelles, spirituelles, administratives, contact d'urgence,
+  // notes internes) — plus détaillé que la carte, donc réservé à
+  // l'admin comme le reste de ce routeur.
+  memberExportRouter.get(
+    "/:id/fiche.pdf",
+    asyncHandler(async (req, res) => {
+      const buffer = await buildMemberProfileSheetPdf(req.params.id);
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="fiche-membre-${req.params.id}.pdf"`
       );
 
       res.send(buffer);

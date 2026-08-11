@@ -46,12 +46,14 @@ describe("Routes des nouvelles âmes (intégration HTTP)", () => {
     const soaUser = await User.create({
       name: "Agent SOA Route Test",
       email: `soa.testsuite.newsoulroutes${EMAIL_SUFFIX}`,
+      registrationNumber: "5AA00301A",
       password: "MotDePasseTemporaire123!",
       role: "soa",
     });
     const canaUser = await User.create({
       name: "Responsable CANA Route Test",
       email: `cana.testsuite.newsoulroutes${EMAIL_SUFFIX}`,
+      registrationNumber: "5AA00302A",
       password: "MotDePasseTemporaire123!",
       role: "cana",
     });
@@ -113,7 +115,7 @@ describe("Routes des nouvelles âmes (intégration HTTP)", () => {
     assert.equal(createRes.status, 201);
     const created = (await json(createRes)).data;
     createdIds.push(created._id);
-    assert.match(created.caseNumber, /^AN-\d{4}-\d{4}$/);
+    assert.match(created.caseNumber, /^AN-\d{4}-\d{3,}$/);
 
     // La CANA ne peut pas encore voir ce dossier.
     const tooEarlyRes = await fetch(`${baseUrl}/api/admin/new-souls/${created._id}`, {

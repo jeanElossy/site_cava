@@ -131,6 +131,7 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
     id: String(user._id),
     name: user.name,
     email: user.email,
+    registrationNumber: user.registrationNumber,
     role: user.role,
     twoFactorEnabled: Boolean(user.twoFactor?.enabled),
   };

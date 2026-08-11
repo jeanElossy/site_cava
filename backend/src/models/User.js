@@ -15,15 +15,39 @@ const userSchema = new mongoose.Schema(
       maxlength: 80,
     },
 
+    // Obligatoire pour admin/editor, absent pour les agents de terrain
+    // (voir `registrationNumber` ci-dessous et le hook de validation en
+    // bas de fichier) — `sparse` : plusieurs comptes sans e-mail ne
+    // doivent pas se heurter à l'unicité sur la valeur `null`.
     email: {
       type: String,
-      required: [true, "L'e-mail est obligatoire."],
       unique: true,
+      sparse: true,
       lowercase: true,
       trim: true,
       match: [
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         "Adresse e-mail invalide.",
+      ],
+    },
+
+    // Identifiant de connexion des agents de terrain (soa, cana,
+    // coordinateur_bergeries, pasteur, social_*) : ces comptes n'ont
+    // souvent pas d'adresse e-mail facilement accessible, mais
+    // connaissent tous leur matricule de membre. Même forme que
+    // `Member.registrationNumber` (voir registrationNumber.service.js) —
+    // vérifié à la création contre un membre existant par
+    // agent.service.js, pas au niveau du schéma (ce champ n'a pas
+    // besoin de connaître Member).
+    registrationNumber: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      sparse: true,
+      unique: true,
+      match: [
+        /^[1-5][A-Z]{2}\d{2}\d{3}[A-Z]$/,
+        "Matricule invalide.",
       ],
     },
 
@@ -135,6 +159,33 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Comptes de gestion classique : connexion par e-mail, comme avant ce
+// changement. Tout le reste (agents de terrain, y compris les rôles
+// Service Social) se connecte par matricule — voir `registrationNumber`
+// ci-dessus et auth.service.js#login.
+const EMAIL_LOGIN_ROLES = ["admin", "editor"];
+
+// Exactement un identifiant de connexion selon le rôle, jamais les deux
+// absents ni un mélange incohérent (ex. un agent avec un e-mail mais
+// sans matricule ne pourrait jamais se connecter, sans qu'aucune
+// validation ne le signale à la création).
+userSchema.pre("validate", function (next) {
+  const needsEmail = EMAIL_LOGIN_ROLES.includes(this.role);
+
+  if (needsEmail && !this.email) {
+    this.invalidate("email", "L'e-mail est obligatoire pour ce rôle.");
+  }
+
+  if (!needsEmail && !this.registrationNumber) {
+    this.invalidate(
+      "registrationNumber",
+      "Le matricule est obligatoire pour ce rôle."
+    );
+  }
+
+  next();
+});
 
 // Le hachage est fait au niveau du modèle : impossible de l'oublier
 // depuis un controller ou un script d'amorçage.

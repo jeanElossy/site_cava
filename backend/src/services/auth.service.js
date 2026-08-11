@@ -12,6 +12,10 @@ import {
   otpauthURL,
   verifyTotp,
 } from "../utils/totp.js";
+import {
+  normalizeRegistrationNumber,
+  parseRegistrationNumber,
+} from "./registrationNumber.service.js";
 
 // Message unique pour tout échec de connexion.
 //
@@ -32,6 +36,7 @@ const publicUser = (user) => ({
   id: String(user._id),
   name: user.name,
   email: user.email,
+  registrationNumber: user.registrationNumber,
   role: user.role,
   twoFactorEnabled: Boolean(user.twoFactor?.enabled),
 });
@@ -43,20 +48,39 @@ const loadWithSecrets = (id) =>
     "+password +twoFactor.secret +twoFactor.pendingSecret +twoFactor.lastUsedStep +twoFactor.recoveryCodes +failedLoginAttempts +lockedUntil"
   );
 
-export const login = async ({ email, password }) => {
-  if (!email || !password) {
+// `identifier` est soit un e-mail (admin/editor), soit un matricule
+// (agents de terrain, y compris Service Social — voir User.js). La
+// forme de la valeur normalisée décide laquelle chercher : un matricule
+// a une forme rigide (`parseRegistrationNumber` renvoie `null` sinon),
+// donc aucune ambiguïté possible avec un e-mail.
+//
+// Les DEUX voies passent par le même message d'erreur unique et la
+// même politique de verrouillage plus bas — ne jamais laisser cette
+// détection elle-même distinguer « ça ressemble à un identifiant
+// existant » (elle ne fait que choisir QUEL champ interroger, pas SI
+// un compte existe).
+const findUserByIdentifier = (identifier) => {
+  const normalized = normalizeRegistrationNumber(identifier);
+
+  const query = parseRegistrationNumber(normalized)
+    ? { registrationNumber: normalized }
+    : { email: String(identifier).toLowerCase().trim() };
+
+  return User.findOne(query).select(
+    "+password +failedLoginAttempts +lockedUntil +twoFactor.secret"
+  );
+};
+
+export const login = async ({ identifier, password }) => {
+  if (!identifier || !password) {
     throw ApiError.badRequest(
-      "E-mail et mot de passe sont requis." 
+      "L'identifiant (e-mail ou matricule) et le mot de passe sont requis."
     );
   }
 
   // `select('+...')` : hash et compteurs de verrouillage sont exclus
   // par défaut au niveau du modèle, il faut les demander ici.
-  const user = await User.findOne({
-    email: String(email).toLowerCase().trim(),
-  }).select(
-    "+password +failedLoginAttempts +lockedUntil +twoFactor.secret"
-  );
+  const user = await findUserByIdentifier(identifier);
 
   // Compte inexistant ou désactivé : même réponse qu'un mot de passe
   // faux, pour ne pas révéler quelles adresses existent.
@@ -275,9 +299,12 @@ export const startTwoFactorSetup = async (userId) => {
 
   return {
     secret,
+    // Les agents de terrain n'ont pas forcément d'e-mail (voir User.js) —
+    // le matricule, puis le nom, servent de repli pour que le libellé
+    // affiché dans l'application d'authentification ne soit jamais vide.
     otpauthUrl: otpauthURL({
       secret,
-      account: user.email,
+      account: user.email ?? user.registrationNumber ?? user.name,
       issuer: ISSUER,
     }),
   };

@@ -27,12 +27,14 @@ describe("push.service (intégration MongoDB)", () => {
     soaUser = await User.create({
       name: "Agent SOA Push Test",
       email: `${EMAIL_PREFIX}.soa${EMAIL_SUFFIX}`,
+      registrationNumber: "5AA00401A",
       password: "MotDePasseTemporaire123!",
       role: "soa",
     });
     canaUser = await User.create({
       name: "Agent CANA Push Test",
       email: `${EMAIL_PREFIX}.cana${EMAIL_SUFFIX}`,
+      registrationNumber: "5AA00402A",
       password: "MotDePasseTemporaire123!",
       role: "cana",
     });

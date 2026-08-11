@@ -4,17 +4,24 @@ import assert from "node:assert/strict";
 import { connectTestDb, disconnectTestDb } from "../test/db.js";
 import { signToken } from "../middlewares/auth.js";
 import User from "../models/User.js";
+import Member from "../models/Member.js";
 
 const { createApp } = await import("../app.js");
 
-const EMAIL_SUFFIX = "@example.invalid";
-const EMAIL_PREFIX = "agent.testsuite.routes";
+// Un agent se connecte par matricule (voir User.js) ; la création via
+// l'API HTTP passe par agent.service.js#create, qui exige un membre
+// réellement enregistré pour ce matricule — d'où le membre fixture
+// ci-dessous, sur une église/bergerie improbable en production réelle,
+// nettoyé par identifiant exact.
+const SOA_MATRICULE = "5ZZ99101A";
+const CANA_MATRICULE = "5ZZ99102A";
 
 let server;
 let baseUrl;
 let adminToken;
 let soaToken;
 let soaUserId;
+let memberIds = [];
 
 const json = async (res) => res.json();
 
@@ -24,7 +31,21 @@ describe("Routes des agents (intégration HTTP)", () => {
   before(async () => {
     await connectTestDb();
 
-    await User.deleteMany({ email: { $regex: `${EMAIL_PREFIX}.*${EMAIL_SUFFIX}$` } });
+    const soaMember = await Member.create({
+      firstName: "Fixture",
+      lastName: "SoaRouteTest",
+      church: 5,
+      status: "actif",
+      registrationNumber: SOA_MATRICULE,
+    });
+    const canaMember = await Member.create({
+      firstName: "Fixture",
+      lastName: "CanaRouteTest",
+      church: 5,
+      status: "actif",
+      registrationNumber: CANA_MATRICULE,
+    });
+    memberIds = [soaMember._id, canaMember._id];
 
     const adminUser = await User.findOne({ role: "admin" }).lean();
     assert.ok(adminUser, "Un utilisateur admin doit exister en base pour ce test.");
@@ -32,7 +53,7 @@ describe("Routes des agents (intégration HTTP)", () => {
 
     const soaUser = await User.create({
       name: "Agent SOA Route Test",
-      email: `${EMAIL_PREFIX}.soa${EMAIL_SUFFIX}`,
+      registrationNumber: SOA_MATRICULE,
       password: "MotDePasseTemporaire123!",
       role: "soa",
     });
@@ -47,6 +68,7 @@ describe("Routes des agents (intégration HTTP)", () => {
 
   after(async () => {
     await User.deleteMany({ _id: { $in: [...createdAgentIds, soaUserId] } });
+    await Member.deleteMany({ _id: { $in: memberIds } });
     await new Promise((resolve) => server.close(resolve));
     await disconnectTestDb();
   });
@@ -72,7 +94,7 @@ describe("Routes des agents (intégration HTTP)", () => {
       },
       body: JSON.stringify({
         name: "Nouvel Agent CANA",
-        email: `${EMAIL_PREFIX}.cana${EMAIL_SUFFIX}`,
+        registrationNumber: CANA_MATRICULE,
         password: "MotDePasseTemporaire123!",
         role: "cana",
       }),
@@ -143,7 +165,7 @@ describe("Routes des agents (intégration HTTP)", () => {
       },
       body: JSON.stringify({
         name: "Tentative Admin",
-        email: `${EMAIL_PREFIX}.badrole${EMAIL_SUFFIX}`,
+        registrationNumber: "5ZZ99199Z",
         password: "MotDePasseTemporaire123!",
         role: "admin",
       }),

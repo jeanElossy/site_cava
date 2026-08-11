@@ -32,16 +32,19 @@ export const isAuthenticated = () =>
 // double authentification est active, cette étape ne produit qu'un
 // « challengeToken » qui n'ouvre aucune route : il reste en mémoire du
 // composant et ne va pas dans le stockage local.
-export const signIn = async ({ email, password }) => {
-  if (!email?.trim() || !password) {
+// `identifier` : e-mail (admin/editor) ou matricule (agents de terrain,
+// y compris Service Social) — un seul champ, le serveur détecte lequel
+// (voir auth.service.js#login côté backend).
+export const signIn = async ({ identifier, password }) => {
+  if (!identifier?.trim() || !password) {
     throw new Error(
-      "Merci de renseigner votre e-mail et votre mot de passe."
+      "Merci de renseigner votre e-mail (ou matricule) et votre mot de passe."
     );
   }
 
   const data = await request("/api/auth/login", {
     method: "POST",
-    body: { email: email.trim(), password },
+    body: { identifier: identifier.trim(), password },
   });
 
   if (data.twoFactorRequired) {

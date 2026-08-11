@@ -47,7 +47,7 @@ const Login = () => {
   // serveur réclame un second facteur.
   const [step, setStep] = useState("credentials");
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
@@ -98,7 +98,7 @@ const Login = () => {
     setError("");
 
     try {
-      const result = await signIn({ email, password });
+      const result = await signIn({ identifier, password });
 
       if (result.twoFactorRequired) {
         challengeRef.current = result.challengeToken;
@@ -251,22 +251,22 @@ const Login = () => {
                   onSubmit={handleCredentials}
                 >
                   <div className="admin-login__field">
-                    <label htmlFor="admin-login-email">
-                      Adresse e-mail
+                    <label htmlFor="admin-login-identifier">
+                      E-mail ou matricule
                     </label>
 
                     <div className="admin-login__control">
                       <Mail aria-hidden="true" />
 
                       <input
-                        id="admin-login-email"
-                        type="email"
-                        value={email}
+                        id="admin-login-identifier"
+                        type="text"
+                        value={identifier}
                         onChange={(event) =>
-                          setEmail(event.target.value)
+                          setIdentifier(event.target.value)
                         }
                         autoComplete="username"
-                        placeholder="vous@exemple.ci"
+                        placeholder="vous@exemple.ci ou 1OL25045S"
                         required
                         disabled={busy}
                       />
@@ -400,7 +400,7 @@ const Login = () => {
                     <Smartphone aria-hidden="true" />
                   )}
 
-                  <span>{email}</span>
+                  <span>{identifier}</span>
                 </div>
 
                 <form

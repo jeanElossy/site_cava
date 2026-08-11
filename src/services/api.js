@@ -395,9 +395,10 @@ export const newSouls = {
     }),
 };
 
-// Comptes agents (SOA, CANA, coordonnateur des bergeries, pasteur) —
-// réservé aux administrateurs (voir agent.service.js). Ne touche
-// jamais un compte admin/editor, par construction côté serveur.
+// Comptes agents (SOA, CANA, coordonnateur des bergeries, pasteur,
+// Service Social) — réservé aux administrateurs (voir agent.service.js).
+// Ne touche jamais un compte admin/editor, par construction côté
+// serveur. Connexion par matricule, pas par e-mail (voir Login.jsx).
 export const agents = {
   list: async (params = {}) => {
     const query = new URLSearchParams(cleanParams(params)).toString();

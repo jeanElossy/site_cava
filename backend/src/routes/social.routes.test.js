@@ -67,6 +67,7 @@ describe("Routes du Service Social (intégration HTTP)", () => {
     viewerUser = await User.create({
       name: "Viewer Test Service Social",
       email: `${EMAIL_PREFIX}.viewer${EMAIL_SUFFIX}`,
+      registrationNumber: "5AA00701A",
       password: "MotDePasseTemporaire123!",
       role: "social_viewer",
     });
@@ -75,6 +76,7 @@ describe("Routes du Service Social (intégration HTTP)", () => {
     agentUser = await User.create({
       name: "Agent Test Service Social",
       email: `${EMAIL_PREFIX}.agent${EMAIL_SUFFIX}`,
+      registrationNumber: "5AA00702A",
       password: "MotDePasseTemporaire123!",
       role: "social_agent",
     });
@@ -83,6 +85,7 @@ describe("Routes du Service Social (intégration HTTP)", () => {
     approverUser = await User.create({
       name: "Approver Test Service Social",
       email: `${EMAIL_PREFIX}.approver${EMAIL_SUFFIX}`,
+      registrationNumber: "5AA00703A",
       password: "MotDePasseTemporaire123!",
       role: "social_approver",
     });

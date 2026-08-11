@@ -27,6 +27,7 @@ describe("Routes des notifications push (intégration HTTP)", () => {
     const soaUser = await User.create({
       name: "Agent SOA Push Route Test",
       email: `${EMAIL_PREFIX}${EMAIL_SUFFIX}`,
+      registrationNumber: "5AA00501A",
       password: "MotDePasseTemporaire123!",
       role: "soa",
     });

@@ -3,41 +3,72 @@ import assert from "node:assert/strict";
 
 import { connectTestDb, disconnectTestDb } from "../test/db.js";
 import User from "../models/User.js";
+import Member from "../models/Member.js";
 import * as agentService from "./agent.service.js";
 
-const EMAIL_SUFFIX = "@example.invalid";
-const EMAIL_PREFIX = "agent.testsuite";
+// Un agent se connecte désormais par matricule (voir User.js), vérifié
+// à la création contre un membre réellement enregistré (voir
+// agent.service.js#assertMemberExists) — chaque test qui crée un agent
+// a donc besoin d'un membre fixture portant un matricule valide.
+// Église 5, préfixe de bergerie improbable en production réelle : ces
+// membres sont nettoyés par identifiant exact (jamais par un filtre
+// large sur l'église), donc sans risque de collision avec les fixtures
+// d'un autre fichier de test qui partagerait la même église.
+const memberFixture = (sequence) => ({
+  firstName: "Fixture",
+  lastName: `AgentTest${sequence}`,
+  church: 5,
+  status: "actif",
+  registrationNumber: `5ZZ99${String(sequence).padStart(3, "0")}A`,
+});
 
-let createdIds = [];
+let memberIds = [];
+let createdUserIds = [];
 
-const cleanup = async () => {
-  await User.deleteMany({ _id: { $in: createdIds } });
-  createdIds = [];
+const nextMatricule = (() => {
+  let sequence = 0;
+
+  return async () => {
+    sequence += 1;
+
+    const member = await Member.create(memberFixture(sequence));
+    memberIds.push(member._id);
+
+    return member.registrationNumber;
+  };
+})();
+
+const cleanupUsers = async () => {
+  await User.deleteMany({ _id: { $in: createdUserIds } });
+  createdUserIds = [];
 };
 
 describe("agent.service (intégration MongoDB)", () => {
   before(async () => {
     await connectTestDb();
-
-    await User.deleteMany({ email: { $regex: `${EMAIL_PREFIX}.*${EMAIL_SUFFIX}$` } });
   });
 
-  afterEach(cleanup);
+  afterEach(cleanupUsers);
 
   after(async () => {
+    await cleanupUsers();
+    await Member.deleteMany({ _id: { $in: memberIds } });
     await disconnectTestDb();
   });
 
   it("crée un agent avec un rôle autorisé et masque le mot de passe", async () => {
+    const registrationNumber = await nextMatricule();
+
     const created = await agentService.create({
       name: "Jean SOA",
-      email: `${EMAIL_PREFIX}.create${EMAIL_SUFFIX}`,
+      registrationNumber,
       password: "MotDePasseTemporaire123!",
       role: "soa",
     });
-    createdIds.push(created.id);
+    createdUserIds.push(created.id);
 
     assert.equal(created.role, "soa");
+    assert.equal(created.registrationNumber, registrationNumber);
     assert.equal(created.isActive, true);
     assert.equal(created.password, undefined);
 
@@ -45,12 +76,39 @@ describe("agent.service (intégration MongoDB)", () => {
     assert.notEqual(stored.password, "MotDePasseTemporaire123!");
   });
 
+  it("crée un agent social", async () => {
+    const registrationNumber = await nextMatricule();
+
+    const created = await agentService.create({
+      name: "Responsable Service Social",
+      registrationNumber,
+      password: "MotDePasseTemporaire123!",
+      role: "social_admin",
+    });
+    createdUserIds.push(created.id);
+
+    assert.equal(created.role, "social_admin");
+  });
+
+  it("refuse un matricule qui ne correspond à aucun membre", async () => {
+    await assert.rejects(
+      () =>
+        agentService.create({
+          name: "Fantôme",
+          registrationNumber: "5ZZ99999Z",
+          password: "MotDePasseTemporaire123!",
+          role: "soa",
+        }),
+      /Aucun membre trouvé/
+    );
+  });
+
   it("refuse de créer un agent avec un rôle admin/editor", async () => {
     await assert.rejects(
       () =>
         agentService.create({
           name: "Faux Agent",
-          email: `${EMAIL_PREFIX}.badrole${EMAIL_SUFFIX}`,
+          registrationNumber: "5ZZ99998Z",
           password: "MotDePasseTemporaire123!",
           role: "admin",
         }),
@@ -58,20 +116,22 @@ describe("agent.service (intégration MongoDB)", () => {
     );
   });
 
-  it("refuse deux agents avec le même e-mail", async () => {
+  it("refuse deux agents avec le même matricule", async () => {
+    const registrationNumber = await nextMatricule();
+
     const first = await agentService.create({
       name: "Premier",
-      email: `${EMAIL_PREFIX}.duplicate${EMAIL_SUFFIX}`,
+      registrationNumber,
       password: "MotDePasseTemporaire123!",
       role: "cana",
     });
-    createdIds.push(first.id);
+    createdUserIds.push(first.id);
 
     await assert.rejects(
       () =>
         agentService.create({
           name: "Second",
-          email: `${EMAIL_PREFIX}.duplicate${EMAIL_SUFFIX}`,
+          registrationNumber,
           password: "MotDePasseTemporaire123!",
           role: "cana",
         }),
@@ -82,17 +142,17 @@ describe("agent.service (intégration MongoDB)", () => {
   it("liste uniquement les comptes agents, filtrables par rôle", async () => {
     const soa = await agentService.create({
       name: "Agent Soa Liste",
-      email: `${EMAIL_PREFIX}.list-soa${EMAIL_SUFFIX}`,
+      registrationNumber: await nextMatricule(),
       password: "MotDePasseTemporaire123!",
       role: "soa",
     });
     const cana = await agentService.create({
       name: "Agent Cana Liste",
-      email: `${EMAIL_PREFIX}.list-cana${EMAIL_SUFFIX}`,
+      registrationNumber: await nextMatricule(),
       password: "MotDePasseTemporaire123!",
       role: "cana",
     });
-    createdIds.push(soa.id, cana.id);
+    createdUserIds.push(soa.id, cana.id);
 
     const all = await agentService.list({ search: "Liste" });
     assert.ok(all.some((item) => item.id === soa.id));
@@ -106,14 +166,14 @@ describe("agent.service (intégration MongoDB)", () => {
     assert.ok(!all.some((item) => item.id === String(adminAccount._id)));
   });
 
-  it("met à jour nom/e-mail/rôle d'un agent, sans jamais permettre le passage à admin/editor", async () => {
+  it("met à jour nom/matricule/rôle d'un agent, sans jamais permettre le passage à admin/editor", async () => {
     const agent = await agentService.create({
       name: "Avant",
-      email: `${EMAIL_PREFIX}.update${EMAIL_SUFFIX}`,
+      registrationNumber: await nextMatricule(),
       password: "MotDePasseTemporaire123!",
       role: "soa",
     });
-    createdIds.push(agent.id);
+    createdUserIds.push(agent.id);
 
     const updated = await agentService.update(agent.id, {
       name: "Après",
@@ -121,6 +181,13 @@ describe("agent.service (intégration MongoDB)", () => {
     });
     assert.equal(updated.name, "Après");
     assert.equal(updated.role, "coordinateur_bergeries");
+
+    const newMatricule = await nextMatricule();
+
+    const reMatriculed = await agentService.update(agent.id, {
+      registrationNumber: newMatricule,
+    });
+    assert.equal(reMatriculed.registrationNumber, newMatricule);
 
     await assert.rejects(
       () => agentService.update(agent.id, { role: "admin" }),
@@ -131,11 +198,11 @@ describe("agent.service (intégration MongoDB)", () => {
   it("active/désactive un agent", async () => {
     const agent = await agentService.create({
       name: "À désactiver",
-      email: `${EMAIL_PREFIX}.status${EMAIL_SUFFIX}`,
+      registrationNumber: await nextMatricule(),
       password: "MotDePasseTemporaire123!",
       role: "pasteur",
     });
-    createdIds.push(agent.id);
+    createdUserIds.push(agent.id);
 
     const deactivated = await agentService.setActive(agent.id, false);
     assert.equal(deactivated.isActive, false);
@@ -147,11 +214,11 @@ describe("agent.service (intégration MongoDB)", () => {
   it("réinitialise le mot de passe d'un agent", async () => {
     const agent = await agentService.create({
       name: "Mot de passe oublié",
-      email: `${EMAIL_PREFIX}.reset${EMAIL_SUFFIX}`,
+      registrationNumber: await nextMatricule(),
       password: "MotDePasseTemporaire123!",
       role: "soa",
     });
-    createdIds.push(agent.id);
+    createdUserIds.push(agent.id);
 
     await agentService.resetPassword(agent.id, "NouveauMotDePasse456!");
 
@@ -163,11 +230,11 @@ describe("agent.service (intégration MongoDB)", () => {
   it("supprime un agent, sauf en cas d'auto-suppression", async () => {
     const agent = await agentService.create({
       name: "À supprimer",
-      email: `${EMAIL_PREFIX}.delete${EMAIL_SUFFIX}`,
+      registrationNumber: await nextMatricule(),
       password: "MotDePasseTemporaire123!",
       role: "cana",
     });
-    createdIds.push(agent.id);
+    createdUserIds.push(agent.id);
 
     await assert.rejects(
       () => agentService.remove(agent.id, agent.id),
@@ -175,7 +242,7 @@ describe("agent.service (intégration MongoDB)", () => {
     );
 
     await agentService.remove(agent.id, "000000000000000000000000");
-    createdIds = createdIds.filter((id) => id !== agent.id);
+    createdUserIds = createdUserIds.filter((id) => id !== agent.id);
 
     const gone = await User.findById(agent.id);
     assert.equal(gone, null);
