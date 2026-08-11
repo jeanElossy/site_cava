@@ -39,11 +39,17 @@ import "./SocialCaisse.scss";
 // de conception.
 const canConfigure = () => ["admin", "social_admin"].includes(currentUser()?.role);
 
+const MOVEMENT_TYPE_LABELS = {
+  cotisation: "Offrande",
+  aide: "Aide sociale",
+  aide_annulation: "Annulation d'aide",
+};
+
 const SocialCaisse = () => {
   usePageMeta({
     title: "Service Social — Caisse",
     description:
-      "Solde et mouvements de la caisse sociale, par église (cotisations uniquement en Phase 1).",
+      "Solde et mouvements de la caisse sociale, par église (offrandes et aides sociales).",
   });
 
   const { options: churchOptions, loading: churchesLoading } = useChurchOptions();
@@ -105,8 +111,8 @@ const SocialCaisse = () => {
         <div>
           <h1>Caisse sociale</h1>
           <p>
-            Solde par église, alimenté uniquement par les cotisations en Phase 1
-            (aucune sortie de caisse pour l&apos;instant).
+            Solde par église, alimenté par les offrandes sociales et débité par
+            les aides sociales versées.
           </p>
         </div>
 
@@ -158,7 +164,7 @@ const SocialCaisse = () => {
           </div>
 
           <div className="admin-social-caisse__summary-line">
-            <span>Total des cotisations</span>
+            <span>Total des offrandes</span>
             <strong>{money(caisse.totalCotisations)}</strong>
           </div>
 
@@ -201,7 +207,9 @@ const SocialCaisse = () => {
                   <tr key={movement.id}>
                     <td>{formatDateOnly(movement.createdAt)}</td>
                     <td>{formatTimeOnly(movement.createdAt)}</td>
-                    <td className="admin-social-caisse__type">{movement.type}</td>
+                    <td className="admin-social-caisse__type">
+                      {MOVEMENT_TYPE_LABELS[movement.type] ?? movement.type}
+                    </td>
                     <td>{movement.reference ?? "—"}</td>
                     <td>{movement.description ?? "—"}</td>
                     <td
@@ -318,7 +326,7 @@ const ConfigModal = ({ church, churchOptions, onClose, onDone }) => {
   return (
     <AdminModal
       title={`Configurer — ${churchLabelFrom(churchOptions, church)}`}
-      description="Montant de cotisation mensuel et solde initial de caisse pour cette église."
+      description="Montant d'offrande mensuel et solde initial de caisse pour cette église."
       onClose={onClose}
     >
       <div className="admin-social-caisse__config">
@@ -328,7 +336,7 @@ const ConfigModal = ({ church, churchOptions, onClose, onDone }) => {
         {!loading && !error && (
           <>
             <label>
-              <span>Montant de cotisation mensuel (F)</span>
+              <span>Montant d'offrande mensuel (F)</span>
               <input
                 type="number"
                 min="0"

@@ -30,7 +30,7 @@ const SocialDashboard = () => {
   usePageMeta({
     title: "Service Social — Tableau de bord",
     description:
-      "Vue d'ensemble des cotisations sociales et de la caisse de solidarité du Centre Apostolique Vie et Abondance.",
+      "Vue d'ensemble des offrandes sociales et de la caisse de solidarité du Centre Apostolique Vie et Abondance.",
   });
 
   const [church, setChurch] = useState("");
@@ -50,7 +50,7 @@ const SocialDashboard = () => {
         <div>
           <h1>Service Social</h1>
           <p>
-            Cotisations mensuelles et caisse de solidarité, par église ou toutes
+            Offrandes sociales mensuelles et caisse de solidarité, par église ou toutes
             églises confondues.
           </p>
         </div>
@@ -86,7 +86,7 @@ const SocialDashboard = () => {
           <li className="admin-social-dashboard__stat">
             <UserCheck aria-hidden="true" />
             <span className="admin-social-dashboard__stat-label">
-              Cotisations du mois
+              Offrandes du mois
             </span>
             <strong>
               {data.contributionsThisMonth?.paidCount ?? 0} /{" "}
@@ -106,7 +106,7 @@ const SocialDashboard = () => {
           <li className="admin-social-dashboard__stat admin-social-dashboard__stat--warning">
             <AlertTriangle aria-hidden="true" />
             <span className="admin-social-dashboard__stat-label">
-              Cotisations en retard
+              Offrandes en retard
             </span>
             <strong>{data.lateContributions ?? 0}</strong>
           </li>
@@ -137,7 +137,7 @@ const SocialDashboard = () => {
           <li className="admin-social-dashboard__stat">
             <Percent aria-hidden="true" />
             <span className="admin-social-dashboard__stat-label">
-              Taux de cotisation
+              Taux d&apos;offrande
             </span>
             <strong>{data.paymentRate ?? 0}%</strong>
           </li>

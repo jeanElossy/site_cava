@@ -59,6 +59,7 @@ export const requireNewSoulActor = asyncHandler(async (req, _res, next) => {
       id: String(user._id),
       name: user.name,
       email: user.email,
+      registrationNumber: user.registrationNumber,
       role: user.role,
     };
 
@@ -77,6 +78,7 @@ export const requireNewSoulActor = asyncHandler(async (req, _res, next) => {
       id: String(member._id),
       name: `${member.firstName} ${member.lastName}`.trim(),
       email: member.email,
+      registrationNumber: member.registrationNumber,
       role: member.role,
     };
 

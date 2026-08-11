@@ -18,7 +18,13 @@ export const record = async (
   try {
     await AuditLog.create({
       actor: who.id,
-      actorEmail: who.email,
+      // Repli sur le matricule, puis un texte fixe : depuis
+      // l'authentification par matricule, un acteur (agent de terrain
+      // ou membre en session de badgeage) peut n'avoir aucune adresse
+      // e-mail — voir User.js. Sans repli, l'écriture échouait
+      // silencieusement (validation Mongoose sur `actorEmail`
+      // obligatoire) et l'action correspondante n'était jamais tracée.
+      actorEmail: who.email ?? who.registrationNumber ?? "identifiant inconnu",
       action,
       resource,
       resourceId: resourceId ? String(resourceId) : undefined,

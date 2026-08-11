@@ -89,7 +89,7 @@ export const fetchContributionReceipt = async (id) => {
 
   return {
     blob: await response.blob(),
-    filename: `recu-cotisation-sociale-${id}.pdf`,
+    filename: `recu-offrande-sociale-${id}.pdf`,
   };
 };
 

@@ -377,6 +377,17 @@ export const buildVisitorsPdf = async (securityQr) => {
   const women = visitors.filter((visitor) => visitor.gender === "femme").length;
   const men = visitors.filter((visitor) => visitor.gender === "homme").length;
 
+  // Un badge invité pré-imprimé porte une identité fictive ("Invité
+  // Homme 1", voir isBadge dans listVisitors ci-dessus) destinée au
+  // seul comptage : le même invité est ensuite, le plus souvent,
+  // ré-enregistré à la main sous son vrai nom. Lister les deux ferait
+  // apparaître deux lignes pour la même personne — seuls les
+  // visiteurs identifiés par leur vrai nom apparaissent donc dans la
+  // liste nominative ci-dessous ; les totaux ci-dessus restent basés
+  // sur TOUS les visiteurs (badges compris), pour ne pas perdre le
+  // décompte de ceux jamais ré-enregistrés à la main.
+  const namedVisitors = visitors.filter((visitor) => !visitor.isBadge);
+
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: "A4", margin: 40 });
     const chunks = [];
@@ -413,10 +424,10 @@ export const buildVisitorsPdf = async (securityQr) => {
       )
       .moveDown(0.6);
 
-    if (visitors.length === 0) {
-      doc.fontSize(10).text("Aucun visiteur enregistré pour ce service.", { align: "center" });
+    if (namedVisitors.length === 0) {
+      doc.fontSize(10).text("Aucun visiteur identifié par son nom pour ce service.", { align: "center" });
     } else {
-      visitors.forEach((visitor, index) => {
+      namedVisitors.forEach((visitor, index) => {
         doc
           .fontSize(11)
           .fillColor("#1f2a25")

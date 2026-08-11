@@ -160,9 +160,24 @@ export const buildAttendanceXlsx = async (securityQrId) => {
   return workbook.xlsx.writeBuffer();
 };
 
+// Un badge invité pré-imprimé porte une identité fictive ("Invité
+// Homme 1", voir presence.service.js#recordGuestBadgeAttendance)
+// destinée au seul comptage : le même invité est ensuite, le plus
+// souvent, ré-enregistré à la main sous son vrai nom. Lister les deux
+// ferait apparaître deux lignes pour la même personne dans le
+// tableau nominatif — voir buildVisitorsPdf, même principe.
+const isGuestBadgePlaceholder = (record) =>
+  record.kind === "visitor" && Boolean(record.visitor?.badgeCode);
+
 export const buildAttendancePdf = async (securityQrId) => {
   const { qr, records, members, visitors } = await fetchAttendanceReport(securityQrId);
   const { women, men } = countByGender(records);
+
+  // Les totaux ci-dessus restent basés sur TOUS les enregistrements
+  // (badges compris, pour ne pas perdre le décompte de ceux jamais
+  // ré-enregistrés à la main) — seul le tableau nominatif exclut les
+  // badges invités, dont l'identité est fictive.
+  const listedRecords = records.filter((record) => !isGuestBadgePlaceholder(record));
 
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: "A4", margin: 40 });
@@ -225,7 +240,7 @@ export const buildAttendancePdf = async (securityQrId) => {
 
     drawHeader();
 
-    records.forEach((record, index) => {
+    listedRecords.forEach((record, index) => {
       if (doc.y > doc.page.height - doc.page.margins.bottom - 20) {
         doc.addPage();
         drawHeader();

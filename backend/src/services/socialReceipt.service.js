@@ -123,9 +123,9 @@ export const buildContributionReceipt = async (contribution) => {
     size: "A4",
     margins: { top: 50, bottom: 50, left: 55, right: 55 },
     info: {
-      Title: `Reçu de cotisation sociale ${contribution.reference}`,
+      Title: `Reçu d'offrande sociale ${contribution.reference}`,
       Author: church.name,
-      Subject: "Reçu de cotisation sociale",
+      Subject: "Reçu d'offrande sociale",
     },
   });
 
@@ -176,7 +176,7 @@ export const buildContributionReceipt = async (contribution) => {
     .fillColor(INK)
     .font("Helvetica-Bold")
     .fontSize(16)
-    .text("REÇU DE COTISATION SOCIALE", left, 168, {
+    .text("REÇU D'OFFRANDE SOCIALE", left, 168, {
       width: inner,
       align: "center",
       characterSpacing: 1.2,
@@ -285,7 +285,7 @@ export const buildContributionReceipt = async (contribution) => {
     .font("Helvetica")
     .fontSize(9)
     .text(
-      "Ce code rappelle la référence de cette cotisation dans le tableau " +
+      "Ce code rappelle la référence de cette offrande dans le tableau " +
         "de bord du Service Social. Seule la base de données de l'église fait foi.",
       left + 104,
       qrTop + 22,
@@ -306,7 +306,7 @@ export const buildContributionReceipt = async (contribution) => {
     .font("Helvetica")
     .fontSize(8)
     .text(
-      "Ce document atteste d'une cotisation au Service Social du Centre " +
+      "Ce document atteste d'une offrande au Service Social du Centre " +
         "Apostolique Vie et Abondance. Il ne constitue pas un reçu fiscal.",
       left,
       footTop + 12,

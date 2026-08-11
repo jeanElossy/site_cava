@@ -15,6 +15,7 @@ const emergencyContactSchema = new mongoose.Schema(
   {
     name: { type: String, trim: true, maxlength: 120 },
     phone: { type: String, trim: true, maxlength: 40 },
+    relation: { type: String, trim: true, maxlength: 60 },
   },
   { _id: false }
 );

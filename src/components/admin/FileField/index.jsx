@@ -30,6 +30,12 @@ const FileField = ({
   accept = "image",
   disabled = false,
   id,
+  // "square" : aperçu carré cadré en haut, pour les champs dont
+  // l'usage final recadre aussi en carré (ex. photo de membre sur la
+  // carte — voir memberCardSvg.service.js#buildMemberPhotoDataUri côté
+  // backend) — l'aperçu reflète alors fidèlement ce recadrage plutôt
+  // que la vignette générique 96×68.
+  previewShape,
 }) => {
   const inputRef = useRef(null);
   const abortRef = useRef(null);
@@ -85,7 +91,11 @@ const FileField = ({
   return (
     <div className="admin-file">
       {value && !busy && (
-        <div className="admin-file__preview">
+        <div
+          className={`admin-file__preview${
+            previewShape === "square" ? " admin-file__preview--square" : ""
+          }`}
+        >
           {isVideo ? (
             <video
               src={value}

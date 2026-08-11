@@ -31,7 +31,7 @@ const SocialMemberSearch = () => {
   usePageMeta({
     title: "Service Social — Recherche membre",
     description:
-      "Rechercher un membre et consulter son historique complet de cotisations sociales.",
+      "Rechercher un membre et consulter son historique complet d'offrandes sociales.",
   });
 
   const { options: churchOptions } = useChurchOptions();
@@ -196,7 +196,7 @@ const SocialMemberSearch = () => {
                   <strong>{file.totals?.unpaidMonths ?? 0}</strong>
                 </li>
                 <li>
-                  <span>Dernière cotisation</span>
+                  <span>Dernière offrande</span>
                   <strong>{formatDateTime(file.totals?.lastPaymentAt)}</strong>
                 </li>
               </ul>
@@ -204,7 +204,7 @@ const SocialMemberSearch = () => {
               <h2>Historique mensuel</h2>
 
               {(!file.contributions || file.contributions.length === 0) && (
-                <AdminEmpty message="Aucune cotisation générée pour ce membre pour l'instant." />
+                <AdminEmpty message="Aucune offrande générée pour ce membre pour l'instant." />
               )}
 
               {file.contributions?.length > 0 && (

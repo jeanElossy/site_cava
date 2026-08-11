@@ -173,6 +173,7 @@ const Field = ({ field, value, onChange }) => {
           onChange={(next) => onChange(field.name, next)}
           folder={field.folder}
           accept={field.accept ?? "image"}
+          previewShape={field.previewShape}
         />
       )}
 

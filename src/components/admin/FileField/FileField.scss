@@ -194,6 +194,21 @@
     }
   }
 
+  // Variante utilisée pour la photo de membre : l'aperçu reproduit le
+  // recadrage carré appliqué sur la carte (voir
+  // memberCardSvg.service.js#buildMemberPhotoDataUri côté backend),
+  // ancré en haut plutôt qu'au centre pour laisser de la marge sous le
+  // menton plutôt que de risquer de couper le sommet de la tête.
+  &__preview--square {
+    img,
+    video {
+      width: 96px;
+      height: 96px;
+
+      object-position: center top;
+    }
+  }
+
   &__preview-info {
     display: grid;
     gap: 7px;

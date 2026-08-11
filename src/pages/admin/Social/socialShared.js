@@ -179,7 +179,7 @@ export const buildWhatsAppMessage = ({
   date,
   reference,
 }) =>
-  `Bonjour ${firstName},\n\nVotre cotisation sociale du mois de ${month} ${year} a bien été enregistrée.\n\nMontant : ${amount} FCFA\nMatricule : ${matricule}\nDate : ${date}\nRéférence : ${reference}\n\nMerci.`;
+  `Bonjour ${firstName},\n\nVotre offrande sociale du mois de ${month} ${year} a bien été enregistrée.\n\nMontant : ${amount} FCFA\nMatricule : ${matricule}\nDate : ${date}\nRéférence : ${reference}\n\nMerci.`;
 
 export const whatsAppUrl = (message) =>
   `https://wa.me/?text=${encodeURIComponent(message)}`;

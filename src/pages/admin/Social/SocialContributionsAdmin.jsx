@@ -81,9 +81,9 @@ const canWrite = () => SOCIAL_WRITE_ROLES.includes(currentUser()?.role);
 
 const SocialContributionsAdmin = () => {
   usePageMeta({
-    title: "Service Social — Cotisations",
+    title: "Service Social — Offrandes sociales",
     description:
-      "Suivi mensuel des cotisations sociales par membre, avec enregistrement de paiement et exonération.",
+      "Suivi mensuel des offrandes sociales par membre, avec enregistrement de paiement et exonération.",
   });
 
   const { options: churchOptions } = useChurchOptions();
@@ -174,10 +174,10 @@ const SocialContributionsAdmin = () => {
     <div className="admin-social-contributions">
       <header className="admin-social-contributions__header">
         <div>
-          <h1>Cotisations sociales</h1>
+          <h1>Offrandes sociales</h1>
           <p>
-            Suivi mensuel des cotisations par membre. Une ligne = un membre × un
-            mois.
+            Suivi mensuel des offrandes sociales par membre. Une ligne = un
+            membre × un mois.
           </p>
         </div>
 
@@ -206,7 +206,7 @@ const SocialContributionsAdmin = () => {
               onClick={() => setNewOpen(true)}
             >
               <Plus size={17} aria-hidden="true" />
-              Nouvelle cotisation
+              Nouvelle offrande
             </button>
           )}
         </div>
@@ -288,8 +288,8 @@ const SocialContributionsAdmin = () => {
         <AdminEmpty
           message={
             statusFilter
-              ? "Aucune cotisation ne correspond à ce filtre pour cette période."
-              : "Aucune cotisation générée pour cette période."
+              ? "Aucune offrande ne correspond à ce filtre pour cette période."
+              : "Aucune offrande générée pour cette période."
           }
         />
       )}
@@ -301,7 +301,6 @@ const SocialContributionsAdmin = () => {
               <tr>
                 <th scope="col">Matricule</th>
                 <th scope="col">Nom</th>
-                <th scope="col">Église</th>
                 <th scope="col">Bergerie</th>
                 <th scope="col">Mois</th>
                 <th scope="col">Montant dû</th>
@@ -325,7 +324,6 @@ const SocialContributionsAdmin = () => {
                   <tr key={item.id}>
                     <td>{memberMatricule(item.member)}</td>
                     <td>{memberName(item.member)}</td>
-                    <td>{churchLabelFrom(churchOptions, item.church)}</td>
                     <td>{flockLabel(item.flock)}</td>
                     <td>
                       {monthLabel(item.month)} {item.year}
@@ -448,7 +446,7 @@ const ExemptModal = ({ contribution, onClose, onDone }) => {
 
   return (
     <AdminModal
-      title="Exonérer cette cotisation"
+      title="Exonérer cette offrande"
       description={`${memberName(contribution.member)} — ${monthLabel(contribution.month)} ${contribution.year}`}
       onClose={onClose}
     >
@@ -680,11 +678,11 @@ const NewContributionModal = ({ defaultChurch, churchOptions, onClose, onDone })
 
   return (
     <AdminModal
-      title="Nouvelle cotisation"
+      title="Nouvelle offrande"
       description="Recherchez un membre, sélectionnez les mois à régler puis enregistrez le paiement."
       onClose={onClose}
     >
-      <div className="admin-social-contributions__new">
+      <div className="admin-social-contributions__new-form">
         {!member && (
           <div className="admin-social-contributions__new-search">
             <label>

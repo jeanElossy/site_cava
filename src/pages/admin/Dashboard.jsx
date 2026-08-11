@@ -220,7 +220,7 @@ const SocialOnlyDashboard = () => {
   const cards = [
     {
       key: "contributions",
-      label: "Cotisations du mois",
+      label: "Offrandes du mois",
       value: `${data?.contributionsThisMonth?.paidCount ?? 0} / ${data?.contributionsThisMonth?.totalMembers ?? 0}`,
       icon: HeartHandshake,
     },
@@ -232,7 +232,7 @@ const SocialOnlyDashboard = () => {
     },
     {
       key: "late",
-      label: "Cotisations en retard",
+      label: "Offrandes en retard",
       value: data?.lateContributions ?? 0,
       icon: UserPlus,
     },
@@ -309,7 +309,7 @@ const SocialOnlyDashboard = () => {
 
               <span className="admin-dashboard__shortcut-text">
                 <strong>Service Social</strong>
-                <span>Voir le tableau de bord, les cotisations, les aides et la caisse</span>
+                <span>Voir le tableau de bord, les offrandes, les aides et la caisse</span>
               </span>
 
               <ArrowRight aria-hidden="true" />
@@ -629,7 +629,7 @@ const Dashboard = () => {
       : isSocialOnly
         ? {
             title: "Service Social — Tableau de bord",
-            description: "Cotisations, aides et caisse de solidarité.",
+            description: "Offrandes, aides et caisse de solidarité.",
           }
         : {
             title: "Tableau de bord",

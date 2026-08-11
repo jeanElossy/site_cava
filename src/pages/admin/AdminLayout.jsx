@@ -72,7 +72,7 @@ const NAV_GROUPS = [
         end: true,
       },
       { to: "/admin/messages", label: "Messages", icon: Mail, roles: STAFF_ROLES },
-      { to: "/admin/dons", label: "Dons", icon: HandCoins, roles: STAFF_ROLES },
+      { to: "/admin/dons", label: "Dons", icon: HandCoins, roles: STAFF_ROLES, end: true },
       {
         to: "/admin/dons/moyens-de-paiement",
         label: "Moyens de paiement",
@@ -144,11 +144,11 @@ const NAV_GROUPS = [
     title: "Service Social",
     roles: SOCIAL_ROLES,
     items: [
-      { to: "/admin/social", label: "Tableau de bord", icon: HeartHandshake },
-      { to: "/admin/social/cotisations", label: "Cotisations", icon: Banknote },
+      { to: "/admin/social", label: "Aperçu", icon: HeartHandshake, end: true },
+      { to: "/admin/social/cotisations", label: "Offrandes", icon: Banknote },
       { to: "/admin/social/membres", label: "Membres", icon: Search },
       { to: "/admin/social/caisse", label: "Caisse", icon: PiggyBank },
-      { to: "/admin/social/aides", label: "Aides sociales", icon: HandHelping },
+      { to: "/admin/social/aides", label: "Aides sociales", icon: HandHelping, end: true },
       {
         to: "/admin/social/aides/types",
         label: "Types d'aide",
@@ -516,7 +516,7 @@ const AdminLayout = () => {
             <span className="admin-shell__identity-text">
               <strong>{user?.name ?? "Administrateur"}</strong>
 
-              <span>{user?.email ?? ""}</span>
+              <span>{user?.email ?? user?.registrationNumber ?? ""}</span>
             </span>
           </div>
 

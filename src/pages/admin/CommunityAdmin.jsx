@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 
 import {
   Download,
+  FileText,
   IdCard,
+  MessageCircle,
   MoreVertical,
   Pencil,
   Trash2,
@@ -167,6 +169,7 @@ const buildMemberFields = (flockOptions, churchSelectOptions) => [
     folder: "members",
     accept: "image",
     wide: true,
+    previewShape: "square",
   },
   {
     name: "email",
@@ -452,22 +455,25 @@ const MemberRowMenu = ({ member, onEdit, onDelete, reload, onStatusChanged }) =>
     [member.firstName, member.lastName].filter(Boolean).join(" ") ||
     "ce membre";
 
-  // Un seul format proposé : le PDF (recto+verso) sert aussi bien à
-  // l'impression qu'à être gardé sur le téléphone comme version
-  // numérique — pas de JPEG recto/verso séparés.
-  const download = async (kind) => {
+  // Un seul format proposé pour la carte : le PDF (recto+verso) sert
+  // aussi bien à l'impression qu'à être gardé sur le téléphone comme
+  // version numérique — pas de JPEG recto/verso séparés. Même
+  // fonction pour la fiche membre (voir memberProfileSheet.service.js
+  // côté backend) : seuls l'endpoint et le nom de fichier changent.
+  // Renvoie `true` en cas de succès, pour que l'appelant WhatsApp
+  // sache s'il doit ouvrir le lien de partage ou non.
+  const download = async (kind, endpoint, filename) => {
     setBusy(kind);
     setError("");
 
     try {
-      const response = await fetch(
-        `${apiBaseUrl}/api/admin/members/${member.id}/card.pdf`,
-        { headers: { Authorization: `Bearer ${getToken()}` } }
-      );
+      const response = await fetch(`${apiBaseUrl}${endpoint}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
 
       if (!response.ok) {
         throw new Error(
-          `Le téléchargement de la carte a échoué (code ${response.status}).`
+          `Le téléchargement a échoué (code ${response.status}).`
         );
       }
 
@@ -476,16 +482,50 @@ const MemberRowMenu = ({ member, onEdit, onDelete, reload, onStatusChanged }) =>
       const link = document.createElement("a");
 
       link.href = url;
-      link.download = `carte-membre-${member.id}.pdf`;
+      link.download = filename;
       link.click();
 
       URL.revokeObjectURL(url);
       setOpen(false);
+
+      return true;
     } catch (caught) {
-      setError(caught?.message ?? "Le téléchargement de la carte a échoué.");
+      setError(caught?.message ?? "Le téléchargement a échoué.");
+
+      return false;
     } finally {
       setBusy("");
     }
+  };
+
+  // wa.me ne sait pas joindre de fichier à un message pré-rempli
+  // (limitation de l'API, déjà acceptée ailleurs dans le projet — voir
+  // buildWhatsAppMessage/whatsAppUrl dans socialShared.js pour les
+  // reçus d'offrande) : on télécharge donc la fiche puis on ouvre la
+  // conversation avec un message prêt, à charge pour l'agent d'y
+  // joindre manuellement le fichier qui vient d'être téléchargé.
+  const shareFicheByWhatsApp = async () => {
+    const ok = await download(
+      "ficheWhatsApp",
+      `/api/admin/members/${member.id}/fiche.pdf`,
+      `fiche-membre-${member.id}.pdf`
+    );
+
+    if (!ok) return;
+
+    const matriculeText = member.registrationNumber
+      ? formatRegistrationNumber(member.registrationNumber)
+      : "non renseigné";
+
+    const message =
+      `Fiche membre — ${memberLabel} (matricule ${matriculeText}).\n\n` +
+      "Le fichier PDF vient d’être téléchargé : merci de le joindre à ce message.";
+
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
 
   return (
@@ -525,13 +565,45 @@ const MemberRowMenu = ({ member, onEdit, onDelete, reload, onStatusChanged }) =>
             <button
               type="button"
               role="menuitem"
-              onClick={() => download("pdf")}
+              onClick={() =>
+                download(
+                  "pdf",
+                  `/api/admin/members/${member.id}/card.pdf`,
+                  `carte-membre-${member.id}.pdf`
+                )
+              }
               disabled={busy !== ""}
             >
               <IdCard aria-hidden="true" />
               {busy === "pdf" ? "Téléchargement…" : "Carte imprimable (PDF)"}
             </button>
           )}
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() =>
+              download(
+                "fiche",
+                `/api/admin/members/${member.id}/fiche.pdf`,
+                `fiche-membre-${member.id}.pdf`
+              )
+            }
+            disabled={busy !== ""}
+          >
+            <FileText aria-hidden="true" />
+            {busy === "fiche" ? "Téléchargement…" : "Fiche membre (PDF)"}
+          </button>
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={shareFicheByWhatsApp}
+            disabled={busy !== ""}
+          >
+            <MessageCircle aria-hidden="true" />
+            {busy === "ficheWhatsApp" ? "Préparation…" : "Envoyer la fiche par WhatsApp"}
+          </button>
 
           <button
             type="button"

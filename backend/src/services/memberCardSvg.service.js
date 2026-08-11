@@ -156,7 +156,14 @@ const buildMemberPhotoDataUri = async (member) => {
       const photoImage = await loadImage(member.photo);
       const size = Math.min(photoImage.width, photoImage.height);
       const sourceX = (photoImage.width - size) / 2;
-      const sourceY = (photoImage.height - size) / 2;
+      // Recadrage vertical ancré vers le haut plutôt que centré : sans
+      // détection de visage, un centrage strict coupait régulièrement
+      // le sommet de la tête sur les photos portrait (où le visage
+      // occupe surtout la moitié haute du cadre, avec de l'espace
+      // libre sous les épaules). Ne retire qu'une fraction modeste de
+      // l'excédent vertical en haut, le reste en bas.
+      const excessHeight = photoImage.height - size;
+      const sourceY = excessHeight * 0.15;
 
       const canvas = createCanvas(320, 320);
       const ctx = canvas.getContext("2d");
