@@ -23,11 +23,11 @@ import {
 } from "../../../components/admin/AdminFeedback";
 
 import {
-  CHURCH_NUMBERS,
-  churchLabel,
+  churchLabelFrom,
   formatDateOnly,
   formatTimeOnly,
   money,
+  useChurchOptions,
 } from "./socialShared";
 
 import "./SocialCaisse.scss";
@@ -46,9 +46,22 @@ const SocialCaisse = () => {
       "Solde et mouvements de la caisse sociale, par église (cotisations uniquement en Phase 1).",
   });
 
-  const [church, setChurch] = useState(CHURCH_NUMBERS[0]);
+  const { options: churchOptions, loading: churchesLoading } = useChurchOptions();
+
+  // La caisse n'a pas de vue « toutes les églises » (un solde par
+  // église, pas d'agrégat) — il faut donc toujours une église
+  // sélectionnée. `church` démarre à `null` le temps que la liste
+  // réelle des églises se charge, puis se cale sur la première
+  // disponible — ajusté pendant le rendu plutôt que dans un effet
+  // (même pattern que `settingsSnapshot` dans `ConfigModal`
+  // ci-dessous), pour ne jamais présélectionner une église fictive.
+  const [church, setChurch] = useState(null);
   const [page, setPage] = useState(1);
   const [configOpen, setConfigOpen] = useState(false);
+
+  if (church === null && churchOptions.length > 0) {
+    setChurch(churchOptions[0].value);
+  }
 
   // Le changement d'église revient à la première page des mouvements
   // — géré directement dans le gestionnaire de changement plutôt que
@@ -59,14 +72,20 @@ const SocialCaisse = () => {
     setPage(1);
   };
 
-  const loadCaisse = useCallback(() => fetchSocialCaisse({ church }), [church]);
+  const loadCaisse = useCallback(() => {
+    if (!church) return Promise.resolve(null);
+
+    return fetchSocialCaisse({ church });
+  }, [church]);
+
   const { data: caisse, loading: caisseLoading, error: caisseError, reload: reloadCaisse } =
     useAsyncData(loadCaisse);
 
-  const loadLedger = useCallback(
-    () => fetchSocialLedger({ church, page, limit: 20 }),
-    [church, page]
-  );
+  const loadLedger = useCallback(() => {
+    if (!church) return Promise.resolve(null);
+
+    return fetchSocialLedger({ church, page, limit: 20 });
+  }, [church, page]);
 
   const { data: ledger, loading: ledgerLoading, error: ledgerError, reload: reloadLedger } =
     useAsyncData(loadLedger);
@@ -94,10 +113,10 @@ const SocialCaisse = () => {
         <div className="admin-social-caisse__header-actions">
           <label className="admin-social-caisse__church-select">
             <span>Église</span>
-            <select value={church} onChange={(event) => changeChurch(event.target.value)}>
-              {CHURCH_NUMBERS.map((number) => (
-                <option key={number} value={number}>
-                  {churchLabel(number)}
+            <select value={church ?? ""} onChange={(event) => changeChurch(event.target.value)}>
+              {churchOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </select>
@@ -116,14 +135,22 @@ const SocialCaisse = () => {
         </div>
       </header>
 
-      {caisseLoading && <AdminLoading />}
+      {(churchesLoading || church === null) && !caisseError && (
+        <AdminLoading label="Chargement des églises…" />
+      )}
+
+      {!churchesLoading && church !== null && churchOptions.length === 0 && (
+        <AdminEmpty message="Aucune église n'est encore enregistrée (voir Communauté → Églises)." />
+      )}
+
+      {church !== null && caisseLoading && <AdminLoading />}
       {caisseError && <AdminError message={caisseError} onRetry={reloadCaisse} />}
 
-      {!caisseLoading && !caisseError && !caisse && (
+      {church !== null && !caisseLoading && !caisseError && !caisse && (
         <AdminEmpty message="Cette église n'a pas encore de module Service Social actif." />
       )}
 
-      {!caisseLoading && !caisseError && caisse && (
+      {church !== null && !caisseLoading && !caisseError && caisse && (
         <div className="admin-social-caisse__summary">
           <div className="admin-social-caisse__summary-line">
             <span>Solde initial</span>
@@ -142,14 +169,16 @@ const SocialCaisse = () => {
         </div>
       )}
 
-      <h2 className="admin-social-caisse__movements-title">Mouvements</h2>
+      {church !== null && (
+        <>
+          <h2 className="admin-social-caisse__movements-title">Mouvements</h2>
 
-      {ledgerLoading && <AdminLoading />}
-      {ledgerError && <AdminError message={ledgerError} onRetry={reloadLedger} />}
+          {ledgerLoading && <AdminLoading />}
+          {ledgerError && <AdminError message={ledgerError} onRetry={reloadLedger} />}
 
-      {!ledgerLoading && !ledgerError && movements.length === 0 && (
-        <AdminEmpty message="Aucun mouvement enregistré pour cette église." />
-      )}
+          {!ledgerLoading && !ledgerError && movements.length === 0 && (
+            <AdminEmpty message="Aucun mouvement enregistré pour cette église." />
+          )}
 
       {!ledgerLoading && !ledgerError && movements.length > 0 && (
         <>
@@ -217,9 +246,16 @@ const SocialCaisse = () => {
           )}
         </>
       )}
+        </>
+      )}
 
       {configOpen && (
-        <ConfigModal church={church} onClose={() => setConfigOpen(false)} onDone={afterConfig} />
+        <ConfigModal
+          church={church}
+          churchOptions={churchOptions}
+          onClose={() => setConfigOpen(false)}
+          onDone={afterConfig}
+        />
       )}
     </div>
   );
@@ -228,7 +264,7 @@ const SocialCaisse = () => {
 // ------------------------------------------------------------------
 // CONFIGURATION (montant mensuel + solde initial)
 // ------------------------------------------------------------------
-const ConfigModal = ({ church, onClose, onDone }) => {
+const ConfigModal = ({ church, churchOptions, onClose, onDone }) => {
   const loadSettings = useCallback(() => fetchSocialSettings(), []);
   const { data: settingsList, loading, error } = useAsyncData(loadSettings);
 
@@ -271,7 +307,7 @@ const ConfigModal = ({ church, onClose, onDone }) => {
 
   return (
     <AdminModal
-      title={`Configurer — ${churchLabel(church)}`}
+      title={`Configurer — ${churchLabelFrom(churchOptions, church)}`}
       description="Montant de cotisation mensuel et solde initial de caisse pour cette église."
       onClose={onClose}
     >

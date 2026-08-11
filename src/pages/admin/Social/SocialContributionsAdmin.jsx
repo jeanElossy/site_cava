@@ -38,10 +38,9 @@ import {
 } from "../../../components/admin/AdminFeedback";
 
 import {
-  CHURCH_NUMBERS,
   MONTH_OPTIONS,
   buildWhatsAppMessage,
-  churchLabel,
+  churchLabelFrom,
   downloadBlob,
   flockLabel,
   formatDateTime,
@@ -52,6 +51,7 @@ import {
   monthLabel,
   recordedByLabel,
   STATUS,
+  useChurchOptions,
   whatsAppUrl,
 } from "./socialShared";
 
@@ -85,6 +85,8 @@ const SocialContributionsAdmin = () => {
     description:
       "Suivi mensuel des cotisations sociales par membre, avec enregistrement de paiement et exonération.",
   });
+
+  const { options: churchOptions } = useChurchOptions();
 
   const [church, setChurch] = useState("");
   const [year, setYear] = useState(now.getFullYear());
@@ -184,9 +186,9 @@ const SocialContributionsAdmin = () => {
             <span>Église</span>
             <select value={church} onChange={(event) => setChurch(event.target.value)}>
               <option value="">Toutes les églises</option>
-              {CHURCH_NUMBERS.map((number) => (
-                <option key={number} value={number}>
-                  {churchLabel(number)}
+              {churchOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </select>
@@ -323,7 +325,7 @@ const SocialContributionsAdmin = () => {
                   <tr key={item.id}>
                     <td>{memberMatricule(item.member)}</td>
                     <td>{memberName(item.member)}</td>
-                    <td>{churchLabel(item.church)}</td>
+                    <td>{churchLabelFrom(churchOptions, item.church)}</td>
                     <td>{flockLabel(item.flock)}</td>
                     <td>
                       {monthLabel(item.month)} {item.year}
@@ -400,6 +402,7 @@ const SocialContributionsAdmin = () => {
       {newOpen && (
         <NewContributionModal
           defaultChurch={church}
+          churchOptions={churchOptions}
           onClose={() => setNewOpen(false)}
           onDone={afterWrite}
         />
@@ -490,7 +493,7 @@ const ExemptModal = ({ contribution, onClose, onDone }) => {
 // ------------------------------------------------------------------
 const SEARCH_DELAY_MS = 400;
 
-const NewContributionModal = ({ defaultChurch, onClose, onDone }) => {
+const NewContributionModal = ({ defaultChurch, churchOptions, onClose, onDone }) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -720,7 +723,7 @@ const NewContributionModal = ({ defaultChurch, onClose, onDone }) => {
                         {found.firstName} {found.lastName}
                       </span>
                       <span className="admin-social-contributions__new-results-church">
-                        {churchLabel(found.church)}
+                        {churchLabelFrom(churchOptions, found.church)}
                       </span>
                     </button>
                   </li>
@@ -737,7 +740,7 @@ const NewContributionModal = ({ defaultChurch, onClose, onDone }) => {
                 <strong>
                   {member.firstName} {member.lastName}
                 </strong>
-                <span>{memberMatricule(member)} — {churchLabel(member.church)}</span>
+                <span>{memberMatricule(member)} — {churchLabelFrom(churchOptions, member.church)}</span>
               </div>
 
               <button

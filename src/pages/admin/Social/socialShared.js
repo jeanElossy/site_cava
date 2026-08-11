@@ -3,12 +3,38 @@
 // plutôt que dupliqués, sur le même principe que `data.js` pour le
 // tunnel d'inscription (voir components/registration/RegistrationForm/data.js).
 
+import { churches as churchesApi } from "../../../services/api";
+import useAsyncData from "../../../hooks/useAsyncData";
 import { formatRegistrationNumber } from "../../../utils/registrationNumber";
 
-export const CHURCH_NUMBERS = [1, 2, 3, 4, 5];
+// Les églises réelles (numéro + nom, ex. « Centre Apostolique Vie et
+// Abondance (CAVA) » pour l'église 1) viennent de la ressource
+// `churches` déjà administrée ailleurs (voir CommunityAdmin.jsx),
+// jamais d'un libellé générique « Église N » codé en dur — un module
+// social sur cinq églises fictives serait trompeur tant que seule la
+// première existe réellement.
+export const useChurchOptions = () => {
+  const { data, loading, error, reload } = useAsyncData(churchesApi.listAdmin);
 
-export const churchLabel = (value) =>
-  value ? `Église ${value}` : "Toutes les églises";
+  const options = (data ?? [])
+    .slice()
+    .sort((a, b) => a.number - b.number)
+    .map((church) => ({ value: church.number, label: church.name }));
+
+  return { options, loading, error, reload };
+};
+
+// Repli seulement si un numéro d'église n'a pas (ou plus) de fiche
+// `Church` correspondante — même convention que `churchLabelFrom` dans
+// RegistrationForm/data.js.
+export const churchLabelFrom = (churchOptions, value) => {
+  if (!value) return "Toutes les églises";
+
+  return (
+    churchOptions.find((church) => Number(church.value) === Number(value))
+      ?.label ?? `Église ${value}`
+  );
+};
 
 const MONTHS = [
   "Janvier",

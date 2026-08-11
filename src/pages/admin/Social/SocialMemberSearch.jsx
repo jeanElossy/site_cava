@@ -15,11 +15,12 @@ import {
 
 import {
   STATUS,
-  churchLabel,
+  churchLabelFrom,
   formatDateTime,
   memberMatricule,
   money,
   monthLabel,
+  useChurchOptions,
 } from "./socialShared";
 
 import "./SocialMemberSearch.scss";
@@ -32,6 +33,8 @@ const SocialMemberSearch = () => {
     description:
       "Rechercher un membre et consulter son historique complet de cotisations sociales.",
   });
+
+  const { options: churchOptions } = useChurchOptions();
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
@@ -130,7 +133,7 @@ const SocialMemberSearch = () => {
                     {found.firstName} {found.lastName}
                   </span>
                   <span className="admin-social-members__results-church">
-                    {churchLabel(found.church)}
+                    {churchLabelFrom(churchOptions, found.church)}
                   </span>
                 </button>
               </li>
@@ -162,7 +165,7 @@ const SocialMemberSearch = () => {
                 <dl>
                   <div>
                     <dt>Église</dt>
-                    <dd>{churchLabel(file.member?.church)}</dd>
+                    <dd>{churchLabelFrom(churchOptions, file.member?.church)}</dd>
                   </div>
                   <div>
                     <dt>Bergerie</dt>

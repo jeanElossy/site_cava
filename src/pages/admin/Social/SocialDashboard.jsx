@@ -22,7 +22,7 @@ import {
   AdminLoading,
 } from "../../../components/admin/AdminFeedback";
 
-import { CHURCH_NUMBERS, churchLabel, money } from "./socialShared";
+import { money, useChurchOptions } from "./socialShared";
 
 import "./SocialDashboard.scss";
 
@@ -34,6 +34,8 @@ const SocialDashboard = () => {
   });
 
   const [church, setChurch] = useState("");
+
+  const { options: churchOptions } = useChurchOptions();
 
   const load = useCallback(
     () => fetchSocialDashboard(church ? { church } : {}),
@@ -57,9 +59,9 @@ const SocialDashboard = () => {
           <span>Église</span>
           <select value={church} onChange={(event) => setChurch(event.target.value)}>
             <option value="">Toutes les églises</option>
-            {CHURCH_NUMBERS.map((number) => (
-              <option key={number} value={number}>
-                {churchLabel(number)}
+            {churchOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
