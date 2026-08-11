@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import RequireAuth from "./RequireAuth";
 import RequireRole from "./RequireRole";
-import { STAFF_ROLES } from "./roleGroups";
+import { SOCIAL_ROLES, STAFF_ROLES } from "./roleGroups";
 
 import AdminLayout from "../pages/admin/AdminLayout";
 import Login from "../pages/admin/Login";
@@ -22,6 +22,10 @@ import SettingsAdmin from "../pages/admin/SettingsAdmin";
 import AgentsAdmin from "../pages/admin/AgentsAdmin";
 import NewSoulsListPage from "../pages/admin/NewSouls/NewSoulsListPage";
 import NewSoulDetailPage from "../pages/admin/NewSouls/NewSoulDetailPage";
+import SocialDashboard from "../pages/admin/Social/SocialDashboard";
+import SocialContributionsAdmin from "../pages/admin/Social/SocialContributionsAdmin";
+import SocialMemberSearch from "../pages/admin/Social/SocialMemberSearch";
+import SocialCaisse from "../pages/admin/Social/SocialCaisse";
 
 /**
  * Toutes les routes de l'espace d'administration.
@@ -182,6 +186,48 @@ const AdminRoutes = () => {
           element={
             <RequireRole allow={["admin"]}>
               <AgentsAdmin />
+            </RequireRole>
+          }
+        />
+
+        {/* Module Service Social : cotisations, caisse, membres.
+            SOCIAL_ROLES couvre lecture ET écriture — la distinction
+            (ex. social_viewer sans bouton d'action) se fait à
+            l'intérieur de chaque page via currentUser()?.role et
+            SOCIAL_WRITE_ROLES, pas au niveau de la route (même
+            approche que STAFF_ROLES pour /dons). */}
+        <Route
+          path="social"
+          element={
+            <RequireRole allow={SOCIAL_ROLES}>
+              <SocialDashboard />
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="social/cotisations"
+          element={
+            <RequireRole allow={SOCIAL_ROLES}>
+              <SocialContributionsAdmin />
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="social/membres"
+          element={
+            <RequireRole allow={SOCIAL_ROLES}>
+              <SocialMemberSearch />
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="social/caisse"
+          element={
+            <RequireRole allow={SOCIAL_ROLES}>
+              <SocialCaisse />
             </RequireRole>
           }
         />

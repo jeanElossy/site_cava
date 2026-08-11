@@ -1,0 +1,165 @@
+@use "../../../styles/admin" as *;
+
+.admin-social-dashboard {
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+
+    margin-bottom: 24px;
+
+    h1 {
+      margin: 0;
+
+      color: $admin-ink;
+
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 8px 0 0;
+
+      max-width: 560px;
+
+      color: $admin-ink-soft;
+
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+  }
+
+  &__church-select {
+    display: grid;
+    gap: 6px;
+
+    color: $admin-ink;
+
+    font-size: 0.83rem;
+    font-weight: 600;
+
+    select {
+      padding: 10px 13px;
+
+      border: 1px solid $admin-border-strong;
+      border-radius: 9px;
+
+      background: $admin-surface;
+
+      color: $admin-ink;
+
+      font-family: inherit;
+      font-size: 0.88rem;
+
+      &:focus {
+        border-color: $primary;
+
+        outline: none;
+
+        box-shadow: 0 0 0 3px $admin-accent-soft;
+      }
+    }
+  }
+
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+  }
+
+  &__stat {
+    display: flex;
+    flex-direction: column;
+
+    padding: 20px 22px;
+
+    border: 1px solid $admin-border;
+    border-left: 4px solid $admin-border-strong;
+    border-radius: 13px;
+
+    background: $admin-surface;
+
+    svg {
+      margin-bottom: 10px;
+
+      color: $admin-ink-faint;
+    }
+
+    strong {
+      margin: 6px 0 4px;
+
+      color: $admin-ink;
+
+      font-size: 1.5rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    &--accent {
+      border-left-color: $primary;
+
+      svg {
+        color: $primary;
+      }
+    }
+
+    &--warning {
+      border-left-color: $admin-warning;
+
+      svg {
+        color: $admin-warning;
+      }
+    }
+
+    // Cartes hors périmètre Phase 1 (aides sociales) : présentes pour
+    // que la maquette reste complète, mais visuellement en retrait —
+    // sans donner l'impression que la fonctionnalité est active.
+    &--muted {
+      opacity: 0.6;
+
+      strong {
+        color: $admin-ink-soft;
+      }
+    }
+  }
+
+  &__stat-label {
+    color: $admin-ink-faint;
+
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  &__stat-hint {
+    color: $admin-ink-soft;
+
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 768px) {
+    &__header {
+      flex-direction: column;
+
+      h1 {
+        font-size: 1.35rem;
+      }
+    }
+
+    &__church-select {
+      width: 100%;
+
+      select {
+        width: 100%;
+      }
+    }
+  }
+}

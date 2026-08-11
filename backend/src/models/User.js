@@ -43,6 +43,12 @@ const userSchema = new mongoose.Schema(
     // Nouvelles Âmes (voir NewSoul.js). Chaque rôle a un jeu de
     // permissions fixe, appliqué via requireRole et le filtrage dans
     // newSoul.service.js — pas de permissions par ressource ici.
+    // "social_admin"/"social_agent"/"social_approver"/"social_viewer" :
+    // rôles du module Service Social (cotisations, caisse — voir
+    // SocialContribution.js). `social_approver` n'a pas encore d'usage
+    // concret (réservé au futur workflow de validation des aides
+    // sociales) : ajouté dès maintenant pour éviter une seconde
+    // migration d'enum quand ce workflow arrivera.
     role: {
       type: String,
       enum: [
@@ -52,6 +58,10 @@ const userSchema = new mongoose.Schema(
         "cana",
         "coordinateur_bergeries",
         "pasteur",
+        "social_admin",
+        "social_agent",
+        "social_approver",
+        "social_viewer",
       ],
       default: "editor",
     },

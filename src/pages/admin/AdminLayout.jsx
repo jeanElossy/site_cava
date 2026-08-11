@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 
 import {
+  Banknote,
   Bell,
   BellOff,
   Calendar,
@@ -15,6 +16,7 @@ import {
   Church,
   ExternalLink,
   HandCoins,
+  HeartHandshake,
   Heart,
   Image,
   LayoutDashboard,
@@ -23,8 +25,10 @@ import {
   Menu,
   MessageSquareQuote,
   Moon,
+  PiggyBank,
   RefreshCw,
   ScanLine,
+  Search,
   Send,
   Settings,
   ShieldCheck,
@@ -36,7 +40,7 @@ import {
 } from "lucide-react";
 
 import { currentUser, signOut } from "../../services/auth";
-import { STAFF_ROLES } from "../../routes/roleGroups";
+import { SOCIAL_ROLES, STAFF_ROLES } from "../../routes/roleGroups";
 
 import usePendingSubmissionsCount from "../../hooks/usePendingSubmissionsCount";
 import useNewSoulsBadgeCount from "../../hooks/useNewSoulsBadgeCount";
@@ -133,6 +137,16 @@ const NAV_GROUPS = [
         icon: Heart,
         badgeKey: "newSouls",
       },
+    ],
+  },
+  {
+    title: "Service Social",
+    roles: SOCIAL_ROLES,
+    items: [
+      { to: "/admin/social", label: "Tableau de bord", icon: HeartHandshake },
+      { to: "/admin/social/cotisations", label: "Cotisations", icon: Banknote },
+      { to: "/admin/social/membres", label: "Membres", icon: Search },
+      { to: "/admin/social/caisse", label: "Caisse", icon: PiggyBank },
     ],
   },
   {

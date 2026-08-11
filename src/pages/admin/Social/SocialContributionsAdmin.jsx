@@ -1,0 +1,964 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import {
+  AlertTriangle,
+  Ban,
+  Check,
+  Clock,
+  FileText,
+  MessageCircle,
+  Plus,
+  RefreshCw,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
+
+import {
+  exemptContribution,
+  fetchContributionReceipt,
+  fetchMemberSocialFile,
+  fetchSocialContributions,
+  recordSocialPayments,
+  searchSocialMembers,
+} from "../../../services/social";
+
+import { currentUser } from "../../../services/auth";
+import { SOCIAL_WRITE_ROLES } from "../../../routes/roleGroups";
+
+import useAsyncData from "../../../hooks/useAsyncData";
+import usePageMeta from "../../../hooks/usePageMeta";
+
+import AdminModal from "../../../components/admin/AdminModal";
+
+import {
+  AdminEmpty,
+  AdminError,
+  AdminLoading,
+} from "../../../components/admin/AdminFeedback";
+
+import {
+  CHURCH_NUMBERS,
+  MONTH_OPTIONS,
+  buildWhatsAppMessage,
+  churchLabel,
+  downloadBlob,
+  flockLabel,
+  formatDateTime,
+  isLate,
+  memberMatricule,
+  memberName,
+  money,
+  monthLabel,
+  recordedByLabel,
+  STATUS,
+  whatsAppUrl,
+} from "./socialShared";
+
+import "./SocialContributionsAdmin.scss";
+
+const STATUS_ICON = {
+  paye: Check,
+  non_paye: X,
+  partiel: Clock,
+  exonere: Ban,
+  annule: X,
+};
+
+const STATUS_FILTERS = [
+  ["", "Tous"],
+  ["paye", "Payé"],
+  ["non_paye", "Non payé"],
+  ["partiel", "Partiel"],
+  ["retard", "En retard"],
+  ["exonere", "Exonéré"],
+];
+
+const now = new Date();
+const YEAR_OPTIONS = [now.getFullYear() - 2, now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
+
+const canWrite = () => SOCIAL_WRITE_ROLES.includes(currentUser()?.role);
+
+const SocialContributionsAdmin = () => {
+  usePageMeta({
+    title: "Service Social — Cotisations",
+    description:
+      "Suivi mensuel des cotisations sociales par membre, avec enregistrement de paiement et exonération.",
+  });
+
+  const [church, setChurch] = useState("");
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [statusFilter, setStatusFilter] = useState("");
+
+  const [newOpen, setNewOpen] = useState(false);
+  const [exempting, setExempting] = useState(null);
+
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [downloadError, setDownloadError] = useState("");
+
+  // La barre de totaux doit refléter TOUT le mois affiché, pas
+  // seulement le filtre de statut actif : le chargement ne passe donc
+  // jamais `status` à l'API, et le filtrage par statut (y compris «
+  // en retard », qui n'existe pas côté API) se fait entièrement ici.
+  const load = useCallback(
+    () =>
+      fetchSocialContributions({
+        ...(church ? { church } : {}),
+        year,
+        month,
+        limit: 300,
+      }),
+    [church, year, month]
+  );
+
+  const { data, loading, error, reload } = useAsyncData(load);
+  const items = data?.items ?? [];
+
+  const displayItems = statusFilter
+    ? items.filter((item) =>
+        statusFilter === "retard" ? isLate(item) : item.status === statusFilter
+      )
+    : items;
+
+  const totals = items.reduce(
+    (acc, item) => {
+      acc.due += Number(item.amountDue) || 0;
+      acc.paid += Number(item.amountPaid) || 0;
+
+      return acc;
+    },
+    { due: 0, paid: 0 }
+  );
+
+  totals.remaining = Math.max(totals.due - totals.paid, 0);
+  totals.rate = totals.due > 0 ? Math.round((totals.paid / totals.due) * 100) : 0;
+
+  const handleDownloadReceipt = async (item) => {
+    setDownloadingId(item.id);
+    setDownloadError("");
+
+    try {
+      const { blob, filename } = await fetchContributionReceipt(item.id);
+
+      downloadBlob(blob, filename);
+    } catch (caught) {
+      setDownloadError(caught.message ?? "Le reçu n'a pas pu être téléchargé.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const whatsAppHref = (item) =>
+    whatsAppUrl(
+      buildWhatsAppMessage({
+        firstName: item.member?.firstName ?? "",
+        month: monthLabel(item.month),
+        year: item.year,
+        amount: money(item.amountPaid || item.amountDue),
+        matricule: memberMatricule(item.member),
+        date: formatDateTime(item.paidAt),
+        reference: item.reference ?? "—",
+      })
+    );
+
+  const afterWrite = () => {
+    setNewOpen(false);
+    setExempting(null);
+    reload();
+  };
+
+  return (
+    <div className="admin-social-contributions">
+      <header className="admin-social-contributions__header">
+        <div>
+          <h1>Cotisations sociales</h1>
+          <p>
+            Suivi mensuel des cotisations par membre. Une ligne = un membre × un
+            mois.
+          </p>
+        </div>
+
+        <div className="admin-social-contributions__header-actions">
+          <label className="admin-social-contributions__church-select">
+            <span>Église</span>
+            <select value={church} onChange={(event) => setChurch(event.target.value)}>
+              <option value="">Toutes les églises</option>
+              {CHURCH_NUMBERS.map((number) => (
+                <option key={number} value={number}>
+                  {churchLabel(number)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <button type="button" className="admin-social-contributions__refresh" onClick={reload}>
+            <RefreshCw size={17} aria-hidden="true" />
+            Actualiser
+          </button>
+
+          {canWrite() && (
+            <button
+              type="button"
+              className="admin-social-contributions__new"
+              onClick={() => setNewOpen(true)}
+            >
+              <Plus size={17} aria-hidden="true" />
+              Nouvelle cotisation
+            </button>
+          )}
+        </div>
+      </header>
+
+      <div className="admin-social-contributions__period">
+        <label>
+          <span>Mois</span>
+          <select value={month} onChange={(event) => setMonth(Number(event.target.value))}>
+            {MONTH_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          <span>Année</span>
+          <select value={year} onChange={(event) => setYear(Number(event.target.value))}>
+            {YEAR_OPTIONS.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {!loading && !error && data && (
+        <ul className="admin-social-contributions__totals">
+          <li>
+            <span>Attendu</span>
+            <strong>{money(totals.due)}</strong>
+          </li>
+          <li>
+            <span>Collecté</span>
+            <strong>{money(totals.paid)}</strong>
+          </li>
+          <li>
+            <span>Reste à collecter</span>
+            <strong>{money(totals.remaining)}</strong>
+          </li>
+          <li>
+            <span>Taux</span>
+            <strong>{totals.rate}%</strong>
+          </li>
+        </ul>
+      )}
+
+      <div className="admin-social-contributions__filters" role="group" aria-label="Filtrer par statut">
+        {STATUS_FILTERS.map(([value, label]) => (
+          <button
+            key={value || "all"}
+            type="button"
+            className={
+              statusFilter === value
+                ? "admin-social-contributions__filter admin-social-contributions__filter--active"
+                : "admin-social-contributions__filter"
+            }
+            aria-pressed={statusFilter === value}
+            onClick={() => setStatusFilter(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {downloadError && (
+        <p className="admin-social-contributions__download-error" role="alert">
+          {downloadError}
+        </p>
+      )}
+
+      {loading && <AdminLoading />}
+      {error && <AdminError message={error} onRetry={reload} />}
+
+      {!loading && !error && displayItems.length === 0 && (
+        <AdminEmpty
+          message={
+            statusFilter
+              ? "Aucune cotisation ne correspond à ce filtre pour cette période."
+              : "Aucune cotisation générée pour cette période."
+          }
+        />
+      )}
+
+      {!loading && !error && displayItems.length > 0 && (
+        <div className="admin-social-contributions__table-wrap">
+          <table className="admin-social-contributions__table">
+            <thead>
+              <tr>
+                <th scope="col">Matricule</th>
+                <th scope="col">Nom</th>
+                <th scope="col">Église</th>
+                <th scope="col">Bergerie</th>
+                <th scope="col">Mois</th>
+                <th scope="col">Montant dû</th>
+                <th scope="col">Montant payé</th>
+                <th scope="col">Paiement</th>
+                <th scope="col">Statut</th>
+                <th scope="col">Agent</th>
+                <th scope="col" className="admin-social-contributions__actions-col">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {displayItems.map((item) => {
+                const meta = STATUS[item.status] ?? STATUS.non_paye;
+                const Icon = STATUS_ICON[item.status] ?? X;
+                const late = isLate(item);
+
+                return (
+                  <tr key={item.id}>
+                    <td>{memberMatricule(item.member)}</td>
+                    <td>{memberName(item.member)}</td>
+                    <td>{churchLabel(item.church)}</td>
+                    <td>{flockLabel(item.flock)}</td>
+                    <td>
+                      {monthLabel(item.month)} {item.year}
+                    </td>
+                    <td className="admin-social-contributions__amount">{money(item.amountDue)}</td>
+                    <td className="admin-social-contributions__amount">{money(item.amountPaid)}</td>
+                    <td>{formatDateTime(item.paidAt)}</td>
+
+                    <td>
+                      <span
+                        className={`admin-social-contributions__status admin-social-contributions__status--${item.status}`}
+                      >
+                        <Icon size={13} aria-hidden="true" />
+                        {meta.label}
+                      </span>
+
+                      {late && (
+                        <span className="admin-social-contributions__status admin-social-contributions__status--retard">
+                          <AlertTriangle size={13} aria-hidden="true" />
+                          En retard
+                        </span>
+                      )}
+                    </td>
+
+                    <td>{recordedByLabel(item.recordedBy)}</td>
+
+                    <td className="admin-social-contributions__actions-col">
+                      <div className="admin-social-contributions__actions">
+                        {item.reference && (
+                          <button
+                            type="button"
+                            className="admin-social-contributions__action"
+                            onClick={() => handleDownloadReceipt(item)}
+                            disabled={downloadingId === item.id}
+                          >
+                            <FileText size={13} aria-hidden="true" />
+                            {downloadingId === item.id ? "…" : "Reçu"}
+                          </button>
+                        )}
+
+                        {item.reference && (
+                          <a
+                            className="admin-social-contributions__action"
+                            href={whatsAppHref(item)}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <MessageCircle size={13} aria-hidden="true" />
+                            WhatsApp
+                          </a>
+                        )}
+
+                        {(item.status === "non_paye" || item.status === "partiel") &&
+                          canWrite() && (
+                            <button
+                              type="button"
+                              className="admin-social-contributions__action admin-social-contributions__action--exempt"
+                              onClick={() => setExempting(item)}
+                            >
+                              <Ban size={13} aria-hidden="true" />
+                              Exonérer
+                            </button>
+                          )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {newOpen && (
+        <NewContributionModal
+          defaultChurch={church}
+          onClose={() => setNewOpen(false)}
+          onDone={afterWrite}
+        />
+      )}
+
+      {exempting && (
+        <ExemptModal
+          contribution={exempting}
+          onClose={() => setExempting(null)}
+          onDone={afterWrite}
+        />
+      )}
+    </div>
+  );
+};
+
+// ------------------------------------------------------------------
+// EXONÉRATION
+// ------------------------------------------------------------------
+const ExemptModal = ({ contribution, onClose, onDone }) => {
+  const [motif, setMotif] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async () => {
+    if (!motif.trim()) {
+      setError("Le motif est obligatoire.");
+
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+
+    try {
+      await exemptContribution(contribution.id, motif.trim());
+      onDone();
+    } catch (caught) {
+      setError(caught.message ?? "L'exonération n'a pas pu être enregistrée.");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <AdminModal
+      title="Exonérer cette cotisation"
+      description={`${memberName(contribution.member)} — ${monthLabel(contribution.month)} ${contribution.year}`}
+      onClose={onClose}
+    >
+      <div className="admin-social-contributions__exempt">
+        <label>
+          <span>Motif (obligatoire)</span>
+          <textarea
+            value={motif}
+            onChange={(event) => setMotif(event.target.value)}
+            rows={3}
+            placeholder="Ex. : situation de précarité, décision du conseil…"
+          />
+        </label>
+
+        {error && (
+          <p className="admin-social-contributions__exempt-error" role="alert">
+            {error}
+          </p>
+        )}
+
+        <div className="admin-social-contributions__exempt-actions">
+          <button type="button" onClick={onClose} disabled={busy}>
+            Annuler
+          </button>
+
+          <button
+            type="button"
+            className="admin-social-contributions__exempt-confirm"
+            onClick={submit}
+            disabled={busy}
+          >
+            {busy ? "Enregistrement…" : "Exonérer"}
+          </button>
+        </div>
+      </div>
+    </AdminModal>
+  );
+};
+
+// ------------------------------------------------------------------
+// NOUVELLE COTISATION
+// ------------------------------------------------------------------
+const SEARCH_DELAY_MS = 400;
+
+const NewContributionModal = ({ defaultChurch, onClose, onDone }) => {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
+
+  const [member, setMember] = useState(null);
+  const [fileLoading, setFileLoading] = useState(false);
+  const [fileError, setFileError] = useState("");
+
+  // clé "année-mois" -> { checked, amount, contribution }
+  const [selections, setSelections] = useState({});
+  const [extraMonths, setExtraMonths] = useState([]);
+
+  const [submitBusy, setSubmitBusy] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [submitResult, setSubmitResult] = useState(null);
+
+  const [resultDownloadingKey, setResultDownloadingKey] = useState(null);
+  const [resultDownloadError, setResultDownloadError] = useState("");
+
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    // Rien à chercher tant qu'un membre est déjà choisi ou que le
+    // champ est vide : pas de setState ici (voir la règle
+    // react-hooks/set-state-in-effect) — `resultsToShow` ci-dessous
+    // masque `results` dans ce cas sans avoir besoin de le vider.
+    if (member || !query.trim()) return undefined;
+
+    clearTimeout(timerRef.current);
+
+    timerRef.current = setTimeout(async () => {
+      setSearching(true);
+      setSearchError("");
+
+      try {
+        const found = await searchSocialMembers({
+          q: query.trim(),
+          ...(defaultChurch ? { church: defaultChurch } : {}),
+        });
+
+        setResults(found ?? []);
+      } catch (caught) {
+        setSearchError(caught.message ?? "La recherche a échoué.");
+      } finally {
+        setSearching(false);
+      }
+    }, SEARCH_DELAY_MS);
+
+    return () => clearTimeout(timerRef.current);
+  }, [query, member, defaultChurch]);
+
+  const resultsToShow = member || !query.trim() ? [] : results;
+
+  const selectMember = async (found) => {
+    setMember(found);
+    setResults([]);
+    setFileLoading(true);
+    setFileError("");
+    setSelections({});
+
+    try {
+      const memberFile = await fetchMemberSocialFile(found.id);
+
+      const initial = {};
+
+      (memberFile.contributions ?? [])
+        .filter((c) => c.status === "non_paye" || c.status === "partiel")
+        .forEach((c) => {
+          initial[`${c.year}-${c.month}`] = {
+            checked: false,
+            amount: Math.max((c.amountDue ?? 0) - (c.amountPaid ?? 0), 0),
+            contribution: c,
+          };
+        });
+
+      setSelections(initial);
+    } catch (caught) {
+      setFileError(caught.message ?? "La fiche du membre n'a pas pu être chargée.");
+    } finally {
+      setFileLoading(false);
+    }
+  };
+
+  const changeSelection = (key, patch) => {
+    setSelections((previous) => ({
+      ...previous,
+      [key]: { ...previous[key], ...patch },
+    }));
+  };
+
+  const addExtraMonth = () => {
+    setExtraMonths((previous) => [
+      ...previous,
+      { year: now.getFullYear(), month: now.getMonth() + 1, amount: "" },
+    ]);
+  };
+
+  const updateExtraMonth = (index, patch) => {
+    setExtraMonths((previous) =>
+      previous.map((row, rowIndex) => (rowIndex === index ? { ...row, ...patch } : row))
+    );
+  };
+
+  const removeExtraMonth = (index) => {
+    setExtraMonths((previous) => previous.filter((_, rowIndex) => rowIndex !== index));
+  };
+
+  const buildPayments = () => {
+    const fromSelections = Object.values(selections)
+      .filter((entry) => entry.checked && Number(entry.amount) > 0)
+      .map((entry) => ({
+        year: entry.contribution.year,
+        month: entry.contribution.month,
+        amount: Number(entry.amount),
+      }));
+
+    const fromExtra = extraMonths
+      .filter((row) => Number(row.amount) > 0)
+      .map((row) => ({
+        year: Number(row.year),
+        month: Number(row.month),
+        amount: Number(row.amount),
+      }));
+
+    return [...fromSelections, ...fromExtra];
+  };
+
+  const submit = async () => {
+    const payments = buildPayments();
+
+    if (!member || payments.length === 0) {
+      setSubmitError("Sélectionnez au moins un mois avec un montant supérieur à zéro.");
+
+      return;
+    }
+
+    setSubmitBusy(true);
+    setSubmitError("");
+
+    try {
+      const response = await recordSocialPayments({ memberId: member.id, payments });
+
+      // La réponse de `POST /contributions` ne porte que l'année, le
+      // mois et la référence — pas l'identifiant Mongo de la ligne,
+      // pourtant nécessaire au reçu authentifié. On récupère la fiche
+      // à jour du membre pour retrouver cet identifiant par
+      // année/mois plutôt que d'ajouter un endpoint.
+      const refreshed = await fetchMemberSocialFile(member.id);
+
+      const lookup = new Map(
+        (refreshed.contributions ?? []).map((c) => [`${c.year}-${c.month}`, c])
+      );
+
+      const rows = (response.results ?? []).map((result) => ({
+        ...result,
+        contribution: lookup.get(`${result.year}-${result.month}`) ?? null,
+      }));
+
+      setSubmitResult({ rows, totalPaid: response.totalPaid });
+    } catch (caught) {
+      setSubmitError(caught.message ?? "L'enregistrement a échoué.");
+    } finally {
+      setSubmitBusy(false);
+    }
+  };
+
+  const handleDownload = async (row, key) => {
+    if (!row.contribution) return;
+
+    setResultDownloadingKey(key);
+    setResultDownloadError("");
+
+    try {
+      const { blob, filename } = await fetchContributionReceipt(row.contribution.id);
+
+      downloadBlob(blob, filename);
+    } catch (caught) {
+      setResultDownloadError(caught.message ?? "Le reçu n'a pas pu être téléchargé.");
+    } finally {
+      setResultDownloadingKey(null);
+    }
+  };
+
+  return (
+    <AdminModal
+      title="Nouvelle cotisation"
+      description="Recherchez un membre, sélectionnez les mois à régler puis enregistrez le paiement."
+      onClose={onClose}
+    >
+      <div className="admin-social-contributions__new">
+        {!member && (
+          <div className="admin-social-contributions__new-search">
+            <label>
+              <span>Rechercher un membre</span>
+              <div className="admin-social-contributions__new-search-field">
+                <Search size={16} aria-hidden="true" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Matricule, nom, prénom ou téléphone"
+                  autoFocus
+                />
+              </div>
+            </label>
+
+            {searching && <p className="admin-social-contributions__new-hint">Recherche…</p>}
+
+            {searchError && (
+              <p role="alert" className="admin-social-contributions__new-error">
+                {searchError}
+              </p>
+            )}
+
+            {!searching && !searchError && query.trim() && resultsToShow.length === 0 && (
+              <p className="admin-social-contributions__new-hint">Aucun membre trouvé.</p>
+            )}
+
+            {resultsToShow.length > 0 && (
+              <ul className="admin-social-contributions__new-results">
+                {resultsToShow.map((found) => (
+                  <li key={found.id}>
+                    <button type="button" onClick={() => selectMember(found)}>
+                      <strong>{memberMatricule(found)}</strong>
+                      <span>
+                        {found.firstName} {found.lastName}
+                      </span>
+                      <span className="admin-social-contributions__new-results-church">
+                        {churchLabel(found.church)}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {member && !submitResult && (
+          <div className="admin-social-contributions__new-member">
+            <div className="admin-social-contributions__new-member-header">
+              <div>
+                <strong>
+                  {member.firstName} {member.lastName}
+                </strong>
+                <span>{memberMatricule(member)} — {churchLabel(member.church)}</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMember(null);
+                  setSubmitResult(null);
+                  setSubmitError("");
+                }}
+              >
+                Changer de membre
+              </button>
+            </div>
+
+            {fileLoading && <AdminLoading label="Chargement de la fiche…" />}
+            {fileError && <AdminError message={fileError} />}
+
+            {!fileLoading && !fileError && (
+              <>
+                {Object.keys(selections).length === 0 ? (
+                  <p className="admin-social-contributions__new-hint">
+                    Aucun mois impayé ou partiel récent pour ce membre.
+                  </p>
+                ) : (
+                  <ul className="admin-social-contributions__new-months">
+                    {Object.entries(selections).map(([key, entry]) => (
+                      <li key={key}>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={entry.checked}
+                            onChange={(event) =>
+                              changeSelection(key, { checked: event.target.checked })
+                            }
+                          />
+                          <span>
+                            {monthLabel(entry.contribution.month)} {entry.contribution.year}
+                            {entry.contribution.status === "partiel" && " (partiel)"}
+                          </span>
+                        </label>
+
+                        <input
+                          type="number"
+                          min="0"
+                          step="100"
+                          value={entry.amount}
+                          disabled={!entry.checked}
+                          onChange={(event) =>
+                            changeSelection(key, { amount: event.target.value })
+                          }
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="admin-social-contributions__new-extra">
+                  <div className="admin-social-contributions__new-extra-header">
+                    <span>Ajouter un autre mois</span>
+                    <button type="button" onClick={addExtraMonth}>
+                      <Plus size={14} aria-hidden="true" />
+                      Ajouter
+                    </button>
+                  </div>
+
+                  {extraMonths.map((row, index) => (
+                    <div className="admin-social-contributions__new-extra-row" key={index}>
+                      <select
+                        value={row.month}
+                        onChange={(event) =>
+                          updateExtraMonth(index, { month: Number(event.target.value) })
+                        }
+                      >
+                        {MONTH_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        value={row.year}
+                        onChange={(event) =>
+                          updateExtraMonth(index, { year: Number(event.target.value) })
+                        }
+                      >
+                        {YEAR_OPTIONS.map((value) => (
+                          <option key={value} value={value}>
+                            {value}
+                          </option>
+                        ))}
+                      </select>
+
+                      <input
+                        type="number"
+                        min="0"
+                        step="100"
+                        placeholder="Montant"
+                        value={row.amount}
+                        onChange={(event) =>
+                          updateExtraMonth(index, { amount: event.target.value })
+                        }
+                      />
+
+                      <button
+                        type="button"
+                        className="admin-social-contributions__new-extra-remove"
+                        onClick={() => removeExtraMonth(index)}
+                        aria-label="Retirer ce mois"
+                      >
+                        <Trash2 size={14} aria-hidden="true" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {submitError && (
+                  <p role="alert" className="admin-social-contributions__new-error">
+                    {submitError}
+                  </p>
+                )}
+
+                <button
+                  type="button"
+                  className="admin-social-contributions__new-submit"
+                  onClick={submit}
+                  disabled={submitBusy}
+                >
+                  {submitBusy ? "Enregistrement…" : "Enregistrer"}
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {submitResult && (
+          <div className="admin-social-contributions__new-result">
+            <p className="admin-social-contributions__new-result-total">
+              Total enregistré : <strong>{money(submitResult.totalPaid)}</strong>
+            </p>
+
+            {resultDownloadError && (
+              <p role="alert" className="admin-social-contributions__new-error">
+                {resultDownloadError}
+              </p>
+            )}
+
+            <ul className="admin-social-contributions__new-result-list">
+              {submitResult.rows.map((row) => {
+                const key = `${row.year}-${row.month}`;
+
+                return (
+                  <li
+                    key={key}
+                    className={
+                      row.ok
+                        ? "admin-social-contributions__new-result-row admin-social-contributions__new-result-row--ok"
+                        : "admin-social-contributions__new-result-row admin-social-contributions__new-result-row--fail"
+                    }
+                  >
+                    <div>
+                      {row.ok ? <Check size={15} aria-hidden="true" /> : <X size={15} aria-hidden="true" />}
+                      <span>
+                        {monthLabel(row.month)} {row.year}
+                      </span>
+                    </div>
+
+                    {row.ok ? (
+                      <div className="admin-social-contributions__new-result-actions">
+                        <span>{row.reference}</span>
+
+                        {row.contribution && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleDownload(row, key)}
+                              disabled={resultDownloadingKey === key}
+                            >
+                              <FileText size={13} aria-hidden="true" />
+                              {resultDownloadingKey === key ? "…" : "Reçu"}
+                            </button>
+
+                            <a
+                              href={whatsAppUrl(
+                                buildWhatsAppMessage({
+                                  firstName: member.firstName,
+                                  month: monthLabel(row.month),
+                                  year: row.year,
+                                  amount: money(row.contribution.amountPaid),
+                                  matricule: memberMatricule(member),
+                                  date: formatDateTime(row.contribution.paidAt),
+                                  reference: row.reference,
+                                })
+                              )}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <MessageCircle size={13} aria-hidden="true" />
+                              WhatsApp
+                            </a>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="admin-social-contributions__new-result-reason">
+                        {row.reason ?? "Refusé"}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+
+            <button type="button" className="admin-social-contributions__new-done" onClick={onDone}>
+              Terminer
+            </button>
+          </div>
+        )}
+      </div>
+    </AdminModal>
+  );
+};
+
+export default SocialContributionsAdmin;

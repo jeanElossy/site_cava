@@ -2,6 +2,7 @@ import { env, validateEnv } from "./config/env.js";
 import { connectDB, disconnectDB } from "./config/db.js";
 import { createApp } from "./app.js";
 import { scheduleFollowUpReminders } from "./jobs/followUpReminders.js";
+import { scheduleSocialContributionsGenerator } from "./jobs/socialContributionsGenerator.js";
 
 // Point d'entrée.
 //
@@ -39,6 +40,7 @@ const start = async () => {
   });
 
   scheduleFollowUpReminders();
+  scheduleSocialContributionsGenerator();
 
   // Arrêt propre : on laisse les requêtes en cours se terminer et on
   // ferme la connexion base. Sans cela, un redéploiement coupe des

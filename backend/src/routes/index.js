@@ -39,6 +39,7 @@ import {
 } from "../services/registrationNumber.service.js";
 
 import { resourceRouter } from "./resource.routes.js";
+import { buildSocialRouter } from "./social.routes.js";
 
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -1299,6 +1300,15 @@ export const buildRoutes = () => {
   );
 
   api.use("/admin/donations", adminDonations);
+
+  // ---- Service Social ---------------------------------------------
+  //
+  // Cotisations sociales, dashboard et caisse en lecture (Phase 1) —
+  // voir docs/superpowers/specs/2026-08-11-service-social-phase1-design.md.
+  // Routeur sur-mesure comme le module Dons ci-dessus : la logique
+  // (montants figés, génération de référence, calcul de solde) est
+  // trop spécifique pour le CRUD générique `resourceRouter`.
+  api.use("/admin/social", buildSocialRouter());
 
   // ---- Statistiques publiques de la communauté ----------------
   //
