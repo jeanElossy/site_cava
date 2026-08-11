@@ -21,6 +21,7 @@ import {
   searchPresenceMembers,
 } from "../../services/presences";
 import { extractQrParam } from "../../utils/qrLink";
+import { formatRegistrationNumber } from "../../utils/registrationNumber";
 
 import QrCameraScanner from "../../components/presence/QrCameraScanner/QrCameraScanner";
 import ThemeToggle from "../../components/presence/ThemeToggle/ThemeToggle";
@@ -355,7 +356,7 @@ const PresenceScanner = ({
           Connecté
         </span>
         <span>
-          Agent : <strong>{agent.registrationNumber}</strong>
+          Agent : <strong>{formatRegistrationNumber(agent.registrationNumber)}</strong>
         </span>
         <span>
           Rôle : <strong>{AGENT_ROLE_LABELS[agent.role] ?? agent.role}</strong>
@@ -431,7 +432,7 @@ const PresenceScanner = ({
                           <strong>
                             {member.firstName} {member.lastName}
                           </strong>
-                          <em>{member.registrationNumber}</em>
+                          <em>{formatRegistrationNumber(member.registrationNumber)}</em>
                         </span>
                       </button>
                     </li>
@@ -577,7 +578,7 @@ const PresenceScanner = ({
               </strong>
 
               <span>Matricule</span>
-              <p>{lastResult.member.registrationNumber}</p>
+              <p>{formatRegistrationNumber(lastResult.member.registrationNumber)}</p>
 
               {lastResult.member.area && (
                 <>

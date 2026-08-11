@@ -28,6 +28,7 @@ import {
 
 import useAsyncData from "../../hooks/useAsyncData";
 import usePageMeta from "../../hooks/usePageMeta";
+import { formatRegistrationNumber } from "../../utils/registrationNumber";
 
 import AdminModal from "../../components/admin/AdminModal";
 import {
@@ -615,7 +616,9 @@ const QrDetailModal = ({ qr, onClose, onRevoked }) => {
                   <span>
                     {record.kind === "visitor"
                       ? "Visiteur"
-                      : record.member?.registrationNumber ?? "—"}
+                      : record.member?.registrationNumber
+                        ? formatRegistrationNumber(record.member.registrationNumber)
+                        : "—"}
                   </span>
                   <span>
                     {new Date(record.recordedAt).toLocaleTimeString("fr-FR", {
@@ -653,7 +656,7 @@ const QrDetailModal = ({ qr, onClose, onRevoked }) => {
                   <span>
                     {entry.agent?.firstName} {entry.agent?.lastName}
                   </span>
-                  <span>{entry.agent?.registrationNumber}</span>
+                  <span>{formatRegistrationNumber(entry.agent?.registrationNumber)}</span>
                   <span>{formatDateTime(entry.loggedInAt)}</span>
                 </li>
               ))}
