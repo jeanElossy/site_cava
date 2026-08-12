@@ -249,7 +249,7 @@ describe("socialContribution.service (intégration MongoDB)", () => {
     assert.equal(batch.totalPaid, AMOUNT);
   });
 
-  it("refuse un dépassement du montant dû", async () => {
+  it("accepte un montant supérieur au montant dû (plancher, pas plafond) et marque le mois payé", async () => {
     const member = await makeMember();
 
     const result = await socialContributionService.recordPayments(
@@ -257,8 +257,17 @@ describe("socialContribution.service (intégration MongoDB)", () => {
       admin
     );
 
-    assert.equal(result.results[0].ok, false);
-    assert.match(result.results[0].reason, /dépasse/);
+    assert.equal(result.results[0].ok, true);
+    assert.equal(result.results[0].status, "paye");
+
+    const stored = await SocialContribution.findOne({
+      member: member._id,
+      year: 2025,
+      month: 11,
+    }).lean();
+
+    assert.equal(stored.amountPaid, AMOUNT + 1000);
+    assert.equal(stored.status, "paye");
   });
 
   it("exonération : exige un motif et refuse une ligne déjà payée", async () => {

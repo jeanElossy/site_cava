@@ -410,20 +410,11 @@ export const recordPayments = async ({ memberId, payments } = {}, user) => {
       continue;
     }
 
+    // `amountDue` est un PLANCHER, pas un plafond : un membre reste
+    // libre de donner plus que le montant mensuel minimal pour un même
+    // mois (offrande généreuse) — voir SocialFundSettings. Seul un
+    // montant sous ce plancher laisse le mois "partiel".
     const newAmountPaid = (contribution.amountPaid || 0) + amount;
-
-    if (newAmountPaid > contribution.amountDue) {
-      const remaining = contribution.amountDue - contribution.amountPaid;
-
-      results.push({
-        year,
-        month,
-        ok: false,
-        reason: `Le montant dépasse le solde dû (${remaining} F CFA restant).`,
-      });
-      continue;
-    }
-
     const newStatus = newAmountPaid >= contribution.amountDue ? "paye" : "partiel";
     const reference = contribution.reference || (await nextSocialReference());
 
