@@ -579,6 +579,7 @@ export const listContributions = async ({
       .skip((current - 1) * perPage)
       .limit(perPage)
       .populate("member", "firstName lastName registrationNumber phone")
+      .populate("recordedBy", "name")
       .lean(),
     SocialContribution.countDocuments(filter),
   ]);
