@@ -260,13 +260,13 @@
     border-collapse: collapse;
 
     th {
-      padding: 14px 16px;
+      padding: 12px 10px;
 
       border-bottom: 1px solid $admin-border;
 
       color: $admin-ink-faint;
 
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 700;
       letter-spacing: 0.05em;
       text-align: left;
@@ -276,13 +276,13 @@
     }
 
     td {
-      padding: 13px 16px;
+      padding: 10px;
 
       border-bottom: 1px solid $admin-border;
 
       color: $admin-ink;
 
-      font-size: 0.86rem;
+      font-size: 0.83rem;
 
       vertical-align: top;
 
@@ -352,61 +352,128 @@
     text-align: right;
   }
 
-  &__actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 6px;
+  // Menu unique (Reçu, WhatsApp, Exonérer) sur la ligne d'une offrande
+  // — remplace trois boutons alignés, qui ne tenaient plus sur une
+  // ligne une fois les autres colonnes affichées. Même pattern que
+  // `.admin-community__row-menu` dans CommunityAdmin.scss.
+  &__row-menu {
+    position: relative;
+
+    display: inline-flex;
   }
 
-  &__action {
-    display: inline-flex;
+  &__row-menu-trigger {
+    display: flex;
     align-items: center;
-    gap: 5px;
+    justify-content: center;
 
-    padding: 7px 12px;
+    width: 32px;
+    height: 32px;
 
-    border: 1px solid $admin-border-strong;
-    border-radius: 8px;
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius-sm;
 
     background: $admin-surface;
 
-    color: $primary;
-
-    font-family: inherit;
-    font-size: 0.74rem;
-    font-weight: 700;
-    text-decoration: none;
+    color: $admin-ink-soft;
 
     cursor: pointer;
 
     transition: $transition;
 
-    &:hover:not([disabled]) {
-      border-color: $primary;
-
-      background: $admin-accent-soft;
+    svg {
+      width: 16px;
+      height: 16px;
     }
 
-    &:focus-visible {
-      outline: 2px solid $primary;
-      outline-offset: 2px;
+    &:hover {
+      border-color: $admin-accent;
+      color: $admin-accent-strong;
     }
 
-    &[disabled] {
-      opacity: 0.6;
-
-      cursor: not-allowed;
+    &[aria-expanded="true"] {
+      border-color: $admin-accent;
+      background: $admin-surface-hover;
+      color: $admin-accent-strong;
     }
+  }
 
-    &--exempt {
-      color: $admin-danger;
+  &__row-menu-panel {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 6px);
+    right: 0;
 
-      &:hover:not([disabled]) {
-        border-color: $admin-danger;
+    display: flex;
+    flex-direction: column;
 
-        background: $admin-danger-bg;
+    width: 190px;
+
+    padding: 6px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius;
+
+    background: $admin-surface;
+    box-shadow: $admin-shadow-lg;
+    white-space: normal;
+
+    button,
+    a {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+
+      width: 100%;
+      padding: 9px 10px;
+      border: 0;
+      border-radius: $admin-radius-sm;
+
+      background: transparent;
+
+      color: $admin-ink;
+
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-align: left;
+      text-decoration: none;
+      white-space: nowrap;
+
+      cursor: pointer;
+
+      transition: background $admin-ease;
+
+      svg {
+        flex-shrink: 0;
+
+        width: 16px;
+        height: 16px;
+        margin-right: 10px;
+
+        color: $admin-ink-soft;
       }
+
+      &:hover:not(:disabled) {
+        background: $admin-surface-hover;
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: progress;
+      }
+    }
+  }
+
+  &__row-menu-danger {
+    color: $admin-danger;
+
+    svg {
+      color: $admin-danger;
+    }
+
+    &:hover:not(:disabled) {
+      background: $admin-danger-bg;
     }
   }
 

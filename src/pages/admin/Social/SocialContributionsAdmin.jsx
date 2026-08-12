@@ -7,6 +7,7 @@ import {
   Clock,
   FileText,
   MessageCircle,
+  MoreVertical,
   Plus,
   RefreshCw,
   Search,
@@ -348,43 +349,17 @@ const SocialContributionsAdmin = () => {
                     <td>{recordedByLabel(item.recordedBy)}</td>
 
                     <td className="admin-social-contributions__actions-col">
-                      <div className="admin-social-contributions__actions">
-                        {item.reference && (
-                          <button
-                            type="button"
-                            className="admin-social-contributions__action"
-                            onClick={() => handleDownloadReceipt(item)}
-                            disabled={downloadingId === item.id}
-                          >
-                            <FileText size={13} aria-hidden="true" />
-                            {downloadingId === item.id ? "…" : "Reçu"}
-                          </button>
-                        )}
-
-                        {item.reference && (
-                          <a
-                            className="admin-social-contributions__action"
-                            href={whatsAppHref(item)}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <MessageCircle size={13} aria-hidden="true" />
-                            WhatsApp
-                          </a>
-                        )}
-
-                        {(item.status === "non_paye" || item.status === "partiel") &&
-                          canWrite() && (
-                            <button
-                              type="button"
-                              className="admin-social-contributions__action admin-social-contributions__action--exempt"
-                              onClick={() => setExempting(item)}
-                            >
-                              <Ban size={13} aria-hidden="true" />
-                              Exonérer
-                            </button>
-                          )}
-                      </div>
+                      <ContributionRowMenu
+                        item={item}
+                        onDownloadReceipt={handleDownloadReceipt}
+                        downloading={downloadingId === item.id}
+                        whatsAppHref={whatsAppHref}
+                        canExempt={
+                          (item.status === "non_paye" || item.status === "partiel") &&
+                          canWrite()
+                        }
+                        onExempt={() => setExempting(item)}
+                      />
                     </td>
                   </tr>
                 );
@@ -409,6 +384,103 @@ const SocialContributionsAdmin = () => {
           onClose={() => setExempting(null)}
           onDone={afterWrite}
         />
+      )}
+    </div>
+  );
+};
+
+// ------------------------------------------------------------------
+// MENU D'ACTIONS PAR LIGNE
+// ------------------------------------------------------------------
+// Un seul déclencheur (icône « ⋮ ») plutôt que Reçu/WhatsApp/Exonérer
+// alignés côte à côte, qui ne tenaient plus sur une ligne une fois les
+// autres colonnes affichées — même pattern que MemberRowMenu dans
+// CommunityAdmin.jsx.
+const ContributionRowMenu = ({
+  item,
+  onDownloadReceipt,
+  downloading,
+  whatsAppHref,
+  canExempt,
+  onExempt,
+}) => {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [open]);
+
+  if (!item.reference && !canExempt) return null;
+
+  return (
+    <div className="admin-social-contributions__row-menu" ref={containerRef}>
+      <button
+        type="button"
+        className="admin-social-contributions__row-menu-trigger"
+        onClick={() => setOpen((previous) => !previous)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`Actions — ${memberName(item.member)}`}
+      >
+        <MoreVertical size={16} aria-hidden="true" />
+      </button>
+
+      {open && (
+        <div className="admin-social-contributions__row-menu-panel" role="menu">
+          {item.reference && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onDownloadReceipt(item);
+              }}
+              disabled={downloading}
+            >
+              <FileText aria-hidden="true" />
+              {downloading ? "Téléchargement…" : "Reçu"}
+            </button>
+          )}
+
+          {item.reference && (
+            <a
+              role="menuitem"
+              href={whatsAppHref(item)}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setOpen(false)}
+            >
+              <MessageCircle aria-hidden="true" />
+              WhatsApp
+            </a>
+          )}
+
+          {canExempt && (
+            <button
+              type="button"
+              role="menuitem"
+              className="admin-social-contributions__row-menu-danger"
+              onClick={() => {
+                setOpen(false);
+                onExempt();
+              }}
+            >
+              <Ban aria-hidden="true" />
+              Exonérer
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
