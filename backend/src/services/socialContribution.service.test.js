@@ -25,8 +25,15 @@ import * as socialContributionService from "./socialContribution.service.js";
 // n'a AUCUN membre actif réel à ce jour ni aucun SocialFundSettings
 // existant (vérifié manuellement avant d'écrire ce test - seule
 // l'église 1 est actuellement active en pratique, voir la spec
-// Phase 1). generateDueContributionsForCurrentMonth() balaie donc
-// cette église sans toucher la moindre donnée réelle.
+// Phase 1).
+//
+// generateDueContributionsForCurrentMonth() DOIT être appelée avec
+// `{ church: TEST_CHURCH }` ci-dessous : sans ce filtre, elle balaie
+// TOUTES les églises dotées d'un SocialFundSettings, y compris l'église
+// 1 réelle — bug constaté concrètement (des offrandes réellement
+// payées de l'église 1 écrasées par une régénération "non_paye"
+// pendant une exécution de cette suite). Voir le commentaire du
+// paramètre `church` sur la fonction elle-même.
 const TEST_CHURCH = 5;
 const AMOUNT = 1500;
 
@@ -83,7 +90,9 @@ describe("socialContribution.service (intégration MongoDB)", () => {
     const m1 = await makeMember();
     const m2 = await makeMember();
 
-    await socialContributionService.generateDueContributionsForCurrentMonth();
+    await socialContributionService.generateDueContributionsForCurrentMonth({
+      church: TEST_CHURCH,
+    });
 
     const now = new Date();
     const year = now.getUTCFullYear();
@@ -98,7 +107,9 @@ describe("socialContribution.service (intégration MongoDB)", () => {
     assert.equal(firstPass.length, 2);
 
     // Deuxième appel : aucune ligne supplémentaire, aucune erreur.
-    await socialContributionService.generateDueContributionsForCurrentMonth();
+    await socialContributionService.generateDueContributionsForCurrentMonth({
+      church: TEST_CHURCH,
+    });
 
     const secondPass = await SocialContribution.find({
       church: TEST_CHURCH,

@@ -214,10 +214,25 @@ export const getMemberSocialFile = async (memberId) => {
 // chaque passage quotidien ; le try/catch reste nécessaire pour la
 // course entre deux exécutions concurrentes du job (backfill manuel +
 // job planifié, par exemple).
-export const generateDueContributionsForCurrentMonth = async () => {
+//
+// `church` (facultatif) restreint le balayage à une seule église —
+// SANS filtre (cas réel du job planifié, voir
+// socialContributionsGenerator.js), la fonction traite TOUTES les
+// églises dotées d'un SocialFundSettings, y compris les vraies églises
+// en production. Un test d'intégration qui appelle cette fonction sans
+// préciser son église de test régénère donc, en effet de bord, les
+// offrandes réelles de toute église déjà configurée (église 1 en
+// pratique) — bug constaté concrètement : des offrandes réellement
+// payées ont été écrasées par une ligne "non_paye" fraîchement
+// régénérée pendant l'exécution de la suite de tests. D'où l'ajout de
+// ce paramètre, utilisé par socialContribution.service.test.js pour se
+// cantonner à son église de test.
+export const generateDueContributionsForCurrentMonth = async ({ church } = {}) => {
   const { year, month } = currentPeriod();
 
-  const settingsList = await SocialFundSettings.find().lean();
+  const settingsList = await SocialFundSettings.find(
+    church ? { church } : {}
+  ).lean();
 
   let createdTotal = 0;
 
