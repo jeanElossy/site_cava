@@ -49,10 +49,7 @@ const SocialDashboard = () => {
       <header className="admin-social-dashboard__header">
         <div>
           <h1>Service Social</h1>
-          <p>
-            Offrandes sociales mensuelles et caisse de solidarité, par église ou toutes
-            églises confondues.
-          </p>
+          <p>Offrandes sociales mensuelles et caisse de solidarité.</p>
         </div>
 
         <label className="admin-social-dashboard__church-select">
