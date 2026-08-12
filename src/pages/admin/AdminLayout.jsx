@@ -41,7 +41,7 @@ import {
 } from "lucide-react";
 
 import { currentUser, signOut } from "../../services/auth";
-import { SOCIAL_ROLES, STAFF_ROLES } from "../../routes/roleGroups";
+import { AGENT_ROLES, SOCIAL_ROLES, STAFF_ROLES } from "../../routes/roleGroups";
 
 import usePendingSubmissionsCount from "../../hooks/usePendingSubmissionsCount";
 import useNewSoulsBadgeCount from "../../hooks/useNewSoulsBadgeCount";
@@ -58,9 +58,7 @@ import "./AdminLayout.scss";
 // `roles` (facultatif) restreint l'entrée à certains rôles — voir
 // RequireRole.jsx pour la garde de route correspondante, sur laquelle
 // ce filtrage s'aligne. Sans `roles`, l'entrée reste visible à tout
-// compte authentifié (c'est le cas de "Nouvelles âmes" : le seul
-// module que voient les comptes soa/cana/coordinateur_bergeries/
-// pasteur une fois connectés).
+// compte authentifié.
 const NAV_GROUPS = [
   {
     title: null,
@@ -133,10 +131,18 @@ const NAV_GROUPS = [
         roles: STAFF_ROLES,
       },
       {
+        // Module réservé à soa/cana/coordinateur_bergeries/pasteur (+
+        // admin), seuls rôles acceptés par requireNewSoulActor côté API
+        // (voir newSoul.service.js#isSoaUser/isCanaSideUser) — sans ce
+        // `roles`, l'entrée restait visible à TOUT compte authentifié,
+        // y compris les comptes social_* (Service Social), qui
+        // tombaient alors sur « Votre rôle ne permet pas de consulter
+        // ces dossiers » en cliquant dessus.
         to: "/admin/nouvelles-ames",
         label: "Nouvelles âmes",
         icon: Heart,
         badgeKey: "newSouls",
+        roles: [...AGENT_ROLES, "admin"],
       },
     ],
   },

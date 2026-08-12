@@ -42,7 +42,6 @@ import {
   buildWhatsAppMessage,
   churchLabelFrom,
   downloadBlob,
-  flockLabel,
   formatDateTime,
   isLate,
   memberMatricule,
@@ -301,7 +300,6 @@ const SocialContributionsAdmin = () => {
               <tr>
                 <th scope="col">Matricule</th>
                 <th scope="col">Nom</th>
-                <th scope="col">Bergerie</th>
                 <th scope="col">Mois</th>
                 <th scope="col">Montant dû</th>
                 <th scope="col">Montant payé</th>
@@ -324,7 +322,6 @@ const SocialContributionsAdmin = () => {
                   <tr key={item.id}>
                     <td>{memberMatricule(item.member)}</td>
                     <td>{memberName(item.member)}</td>
-                    <td>{flockLabel(item.flock)}</td>
                     <td>
                       {monthLabel(item.month)} {item.year}
                     </td>

@@ -7,6 +7,7 @@ import User from "../models/User.js";
 import SocialFundSettings from "../models/SocialFundSettings.js";
 import SocialAid from "../models/SocialAid.js";
 import SocialAidType from "../models/SocialAidType.js";
+import SocialContribution from "../models/SocialContribution.js";
 import SocialLedgerEntry from "../models/SocialLedgerEntry.js";
 import * as socialAidService from "./socialAid.service.js";
 import * as socialContributionService from "./socialContribution.service.js";
@@ -47,6 +48,17 @@ let aidType;
 const cleanup = async () => {
   await SocialAid.deleteMany({ church: TEST_CHURCH });
   await SocialLedgerEntry.deleteMany({ church: TEST_CHURCH });
+  // Ce fichier crée un `SocialFundSettings(church: 4)` pendant toute sa
+  // durée : si le serveur de dev tourne en parallèle (même base
+  // partagée, voir CLAUDE.md), son job planifié
+  // (socialContributionsGenerator.js, relancé à chaque redémarrage
+  // --watch) peut générer des `SocialContribution` pour les membres de
+  // test actifs de ce fichier avant qu'ils ne soient supprimés
+  // ci-dessous — laissant des lignes orphelines (`member` inexistant)
+  // dans la page Offrandes. Constaté concrètement en base de
+  // production (62 lignes orphelines, église 4) au cours de cette
+  // session.
+  await SocialContribution.deleteMany({ church: TEST_CHURCH });
   await Member.deleteMany({ church: TEST_CHURCH });
   await SocialFundSettings.deleteMany({ church: TEST_CHURCH });
   // SocialAidType est une collection GLOBALE (pas de champ church) :

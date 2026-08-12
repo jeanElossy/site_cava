@@ -615,8 +615,13 @@
   }
 
   // ---- Fenêtre de nouvelle demande ----------------------------------
+  // Nom distinct de `&__new` (le bouton d'en-tête) : les deux étaient
+  // fusionnés sous la même classe, alors qu'il n'existe qu'une seule
+  // feuille de style globale pour tout le site (voir CLAUDE.md) — le
+  // `display: grid` ci-dessous écrasait le `display: inline-flex` du
+  // bouton et désalignait son icône.
 
-  &__new {
+  &__new-body {
     display: grid;
     gap: 18px;
   }

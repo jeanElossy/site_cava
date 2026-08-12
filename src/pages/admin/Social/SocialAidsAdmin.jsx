@@ -700,7 +700,7 @@ const NewAidModal = ({ defaultChurch, churchOptions, onClose, onDone }) => {
       description="Recherchez le membre bénéficiaire, puis renseignez le type d'aide et le montant demandé."
       onClose={onClose}
     >
-      <div className="admin-social-aids__new">
+      <div className="admin-social-aids__new-body">
         {!member && !submitResult && (
           <div className="admin-social-aids__new-search">
             <label>

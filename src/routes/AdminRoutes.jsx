@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import RequireAuth from "./RequireAuth";
 import RequireRole from "./RequireRole";
-import { SOCIAL_ROLES, STAFF_ROLES } from "./roleGroups";
+import { AGENT_ROLES, SOCIAL_ROLES, STAFF_ROLES } from "./roleGroups";
 
 import AdminLayout from "../pages/admin/AdminLayout";
 import Login from "../pages/admin/Login";
@@ -141,17 +141,27 @@ const AdminRoutes = () => {
           }
         />
 
-        {/* Ouvertes à tous les rôles authentifiés : c'est le seul
-            module que soa/cana/coordinateur_bergeries/pasteur voient
-            une fois connectés (voir RequireRole.jsx). */}
+        {/* Réservé à soa/cana/coordinateur_bergeries/pasteur (+ admin)
+            — mêmes rôles que ceux acceptés par requireNewSoulActor côté
+            API (voir newSoul.service.js). C'est le seul module que
+            soa/cana/coordinateur_bergeries/pasteur voient une fois
+            connectés (voir RequireRole.jsx). */}
         <Route
           path="nouvelles-ames"
-          element={<NewSoulsListPage />}
+          element={
+            <RequireRole allow={[...AGENT_ROLES, "admin"]}>
+              <NewSoulsListPage />
+            </RequireRole>
+          }
         />
 
         <Route
           path="nouvelles-ames/:id"
-          element={<NewSoulDetailPage />}
+          element={
+            <RequireRole allow={[...AGENT_ROLES, "admin"]}>
+              <NewSoulDetailPage />
+            </RequireRole>
+          }
         />
 
         <Route
