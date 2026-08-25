@@ -757,21 +757,36 @@ const NewContributionModal = ({ defaultChurch, churchOptions, onClose, onDone })
     try {
       const response = await recordSocialPayments({ memberId: member.id, payments });
 
-      // La réponse de `POST /contributions` ne porte que l'année, le
-      // mois et la référence — pas l'identifiant Mongo de la ligne,
-      // pourtant nécessaire au reçu authentifié. On récupère la fiche
-      // à jour du membre pour retrouver cet identifiant par
-      // année/mois plutôt que d'ajouter un endpoint.
+      // La fiche à jour du membre fournit le montant versé et la date
+      // de paiement, dont le message WhatsApp a besoin et que la
+      // réponse du POST ne porte pas.
       const refreshed = await fetchMemberSocialFile(member.id);
 
       const lookup = new Map(
         (refreshed.contributions ?? []).map((c) => [`${c.year}-${c.month}`, c])
       );
 
-      const rows = (response.results ?? []).map((result) => ({
-        ...result,
-        contribution: lookup.get(`${result.year}-${result.month}`) ?? null,
-      }));
+      // L'IDENTIFIANT, lui, est repris du résultat de paiement et NON
+      // de la fiche.
+      //
+      // `normalize()` (services/http.js) n'ajoute `id` qu'au PREMIER
+      // niveau de la réponse. `contributions` est un tableau imbriqué
+      // dans un objet : ses éléments gardent `_id` et n'ont jamais de
+      // `id`. Le reçu appelait donc `/contributions/undefined/recu`, à
+      // quoi le serveur répondait « Cotisation introuvable » — alors
+      // que le paiement, lui, était bien enregistré.
+      const rows = (response.results ?? []).map((result) => {
+        const contribution = lookup.get(`${result.year}-${result.month}`);
+
+        if (!contribution) return { ...result, contribution: null };
+
+        const id = result.id ?? contribution.id ?? contribution._id;
+
+        return {
+          ...result,
+          contribution: { ...contribution, id: id ? String(id) : undefined },
+        };
+      });
 
       setSubmitResult({ rows, totalPaid: response.totalPaid });
     } catch (caught) {
@@ -782,7 +797,7 @@ const NewContributionModal = ({ defaultChurch, churchOptions, onClose, onDone })
   };
 
   const handleDownload = async (row, key) => {
-    if (!row.contribution) return;
+    if (!row.contribution?.id) return;
 
     setResultDownloadingKey(key);
     setResultDownloadError("");
