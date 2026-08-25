@@ -20,6 +20,7 @@ import "../models/User.js";
 
 import { ApiError } from "../utils/ApiError.js";
 import { normalizeRegistrationNumber } from "./registrationNumber.service.js";
+import { UNRANKED } from "../utils/registrationFormat.js";
 import {
   assertExerciceOpen,
   computeYearBalance,
@@ -314,6 +315,11 @@ const firstDuePeriodFor = (member) => {
 };
 
 const periodKey = (memberId, year, month) => `${memberId}:${year}:${month}`;
+
+// { a: 1, b: 1, … } — un tri Mongo se décrit champ par champ, et les
+// écrire à la main à chaque appel invitait la faute de frappe.
+const ascending = (fields) =>
+  Object.fromEntries(fields.map((field) => [field, 1]));
 
 // L'index unique {member, year, month} est le vrai garde-fou
 // anti-doublon ; le filtrage préalable évite simplement le bruit
@@ -958,6 +964,63 @@ const sumContributions = async (filter) => {
   };
 };
 
+// ------------------------------------------------------------------
+// TRI PAR MATRICULE
+// ------------------------------------------------------------------
+//
+// Le matricule ne vit PAS sur la ligne d'offrande : il appartient au
+// membre. Trier dessus impose donc une jointure, le temps de disposer
+// de la clé — d'où ces étapes, partagées par les deux écrans qui
+// listent des membres (offrandes, arriérés).
+//
+// L'ordre est celui de l'annuaire (voir routes/index.js#defaultSort) :
+// église, puis RANG extrait du matricule (`registrationOrder`), puis
+// nom pour départager. Pas l'ordre alphabétique du matricule brut : le
+// rang est le seul champ qui donne 009 avant 010, et A avant Z sans
+// que la lettre de contrôle s'en mêle.
+//
+// Le tri est fait ICI et jamais dans le navigateur : ces listes sont
+// paginées, retrier une page ne réordonnerait qu'elle et ferait sauter
+// les matricules d'une page à l'autre (même piège que l'annuaire, voir
+// CLAUDE.md).
+const MEMBER_SORT_FIELDS = ["_sortChurch", "_sortOrder", "_sortLastName"];
+
+// `localField` diffère selon l'étape : la ligne d'offrande porte
+// `member`, alors qu'un `$group` par membre l'a déjà mis dans `_id`.
+const memberSortStages = (localField) => [
+  {
+    $lookup: {
+      from: "members",
+      localField,
+      foreignField: "_id",
+      as: "_sortMember",
+    },
+  },
+  {
+    $set: {
+      // Un membre supprimé ou sans église part en fin de liste plutôt
+      // que de remonter en tête par un 0 implicite.
+      _sortChurch: {
+        $ifNull: [{ $arrayElemAt: ["$_sortMember.church", 0] }, 99],
+      },
+      // Même repli que le modèle Member : une fiche sans matricule
+      // n'a pas de rang, elle passe après toutes celles qui en ont un.
+      _sortOrder: {
+        $ifNull: [
+          { $arrayElemAt: ["$_sortMember.registrationOrder", 0] },
+          UNRANKED,
+        ],
+      },
+      _sortLastName: {
+        $ifNull: [{ $arrayElemAt: ["$_sortMember.lastName", 0] }, ""],
+      },
+    },
+  },
+  { $unset: "_sortMember" },
+];
+
+const stripSortFields = { $unset: MEMBER_SORT_FIELDS };
+
 export const listContributions = async ({
   church,
   year,
@@ -978,16 +1041,29 @@ export const listContributions = async ({
   // décrire le mois entier, pas les 20 lignes visibles. Elle était
   // jusqu'ici calculée dans le navigateur sur la seule page chargée,
   // donc fausse dès que le mois dépassait la taille de page.
+  // La période reste le premier critère : sans elle, un tri par
+  // matricule seul entremêlerait les mois. À l'intérieur d'un mois —
+  // le cas normal de cet écran — l'ordre est donc bien celui des
+  // matricules.
   const [items, total, totals] = await Promise.all([
-    SocialContribution.find(filter)
-      .sort({ year: -1, month: -1, createdAt: -1 })
-      .skip((current - 1) * perPage)
-      .limit(perPage)
-      .populate("member", "firstName lastName registrationNumber phone")
-      .populate("recordedBy", "name")
-      .lean(),
+    SocialContribution.aggregate([
+      { $match: filter },
+      ...memberSortStages("member"),
+      { $sort: { year: -1, month: -1, ...ascending(MEMBER_SORT_FIELDS) } },
+      { $skip: (current - 1) * perPage },
+      { $limit: perPage },
+      stripSortFields,
+    ]),
     SocialContribution.countDocuments(filter),
     sumContributions(periodFilter),
+  ]);
+
+  // `populate` après agrégation : le `$lookup` ci-dessus n'a servi
+  // qu'à fabriquer la clé de tri, il ne remplace pas la mise en forme
+  // attendue par l'écran.
+  await SocialContribution.populate(items, [
+    { path: "member", select: "firstName lastName registrationNumber phone" },
+    { path: "recordedBy", select: "name" },
   ]);
 
   return { items, total, page: current, perPage, totals };
@@ -1035,7 +1111,12 @@ export const listUnpaid = async ({ church, year } = {}) => {
         totalPaid: { $sum: "$amountPaid" },
       },
     },
-    { $sort: { totalDue: -1 } },
+    ...memberSortStages("_id"),
+    // Trié par matricule et non plus par montant décroissant : c'est
+    // une liste de RELANCE, on la parcourt dans l'ordre de l'annuaire
+    // pour pointer les membres un par un.
+    { $sort: ascending(MEMBER_SORT_FIELDS) },
+    stripSortFields,
   ]);
 
   const memberIds = rows.map((row) => row._id);

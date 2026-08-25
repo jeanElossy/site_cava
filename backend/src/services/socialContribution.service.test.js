@@ -540,4 +540,63 @@ describe("socialContribution.service (intégration MongoDB)", () => {
     assert.equal(entries.length, 1);
     assert.equal(entries[0].year, new Date().getUTCFullYear());
   });
+  // ----------------------------------------------------------------
+  // ORDRE DES LISTES
+  // ----------------------------------------------------------------
+
+  it("liste les offrandes et les arriérés dans l'ordre des matricules", async () => {
+    // Créés À L'ENVERS du résultat attendu : un tri absent passerait
+    // inaperçu si les fixtures étaient déjà dans le bon ordre.
+    const matricules = ["5ZZ26003C", "5ZZ26001A", "5ZZ26002B"];
+
+    for (const registrationNumber of matricules) {
+      await makeMember({ registrationNumber });
+    }
+
+    await socialContributionService.generateDueContributions({
+      church: TEST_CHURCH,
+    });
+
+    const now = new Date();
+
+    const { items } = await socialContributionService.listContributions({
+      church: TEST_CHURCH,
+      year: now.getUTCFullYear(),
+      month: now.getUTCMonth() + 1,
+      limit: 100,
+    });
+
+    const listed = items
+      .map((item) => item.member?.registrationNumber)
+      .filter((value) => matricules.includes(value));
+
+    assert.deepEqual(listed, ["5ZZ26001A", "5ZZ26002B", "5ZZ26003C"]);
+
+    // `listUnpaid` ne retient que les mois ÉCHUS : le mois courant n'y
+    // est pas. On vérifie donc l'ordre sur des mois passés, ouverts
+    // exprès via les arriérés antérieurs.
+    const membersById = new Map();
+
+    for (const registrationNumber of matricules) {
+      const member = await Member.findOne({ registrationNumber }).lean();
+
+      membersById.set(String(member._id), registrationNumber);
+
+      await socialContributionService.recordLegacyArrears(
+        { memberId: member._id, year: LEGACY_YEAR, months: [2] },
+        admin
+      );
+    }
+
+    const unpaid = await socialContributionService.listUnpaid({
+      church: TEST_CHURCH,
+      year: LEGACY_YEAR,
+    });
+
+    const unpaidOrder = unpaid
+      .map((row) => row.member?.registrationNumber)
+      .filter((value) => matricules.includes(value));
+
+    assert.deepEqual(unpaidOrder, ["5ZZ26001A", "5ZZ26002B", "5ZZ26003C"]);
+  });
 });
