@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import { connectTestDb, disconnectTestDb } from "../test/db.js";
 import Member from "../models/Member.js";
+import User from "../models/User.js";
 import PresenceSecurityQr from "../models/PresenceSecurityQr.js";
 import PresenceLogin from "../models/PresenceLogin.js";
 import Attendance from "../models/Attendance.js";
@@ -25,8 +26,14 @@ let qr;
 
 const fakeReq = { ip: "127.0.0.1", headers: { "user-agent": "test-suite" } };
 
+// Nom porté par les seuls comptes agents créés ici — le nettoyage vise
+// ce marqueur, jamais un critère large qui emporterait de vrais comptes
+// (base partagée avec le développement, voir CLAUDE.md).
+const TEST_AGENT_ACCOUNT_NAME = "Compte TestSuitePresence";
+
 const cleanupFixtures = async () => {
   await Member.deleteMany({ lastName: TEST_LAST_NAME });
+  await User.deleteMany({ name: TEST_AGENT_ACCOUNT_NAME });
   const qrs = await PresenceSecurityQr.find({ label: QR_LABEL }).select("_id");
   const ids = qrs.map((doc) => doc._id);
 
@@ -136,6 +143,72 @@ describe("presence.service (intégration MongoDB)", () => {
           error.status === 401 &&
           error.message === "Matricule inconnu ou non habilité au badgeage."
       );
+    });
+
+    // Le module Agents (/admin/agents) est arrivé après le badgeage :
+    // un compte agent créé exprès pour badger restait sans effet, le
+    // scanner ne regardant que le rôle ecclésial de la fiche membre.
+    it("accepte un rôle non habilité DÈS LORS qu'il porte un compte agent habilité", async () => {
+      const token = signPresenceQrToken(qr);
+
+      await User.create({
+        name: TEST_AGENT_ACCOUNT_NAME,
+        registrationNumber: "1XP26002B",
+        password: "MotDePasseTemporaire123!",
+        role: "soa",
+      });
+
+      const result = await presenceService.agentLogin(
+        { token, matricule: "1XP26002B" },
+        fakeReq
+      );
+
+      assert.ok(result.sessionToken);
+      assert.equal(result.agent.registrationNumber, "1XP26002B");
+
+      await User.deleteMany({ name: TEST_AGENT_ACCOUNT_NAME });
+    });
+
+    it("n'ouvre pas le badgeage à un compte agent d'un AUTRE métier", async () => {
+      const token = signPresenceQrToken(qr);
+
+      // `social_viewer` administre le Service Social, pas le Service
+      // d'Ordre : lui ouvrir le scanner élargirait la porte bien
+      // au-delà de ce que la correction visait.
+      await User.create({
+        name: TEST_AGENT_ACCOUNT_NAME,
+        registrationNumber: "1XP26002B",
+        password: "MotDePasseTemporaire123!",
+        role: "social_viewer",
+      });
+
+      await assert.rejects(
+        presenceService.agentLogin({ token, matricule: "1XP26002B" }, fakeReq),
+        (error) =>
+          error.status === 401 &&
+          error.message === "Matricule inconnu ou non habilité au badgeage."
+      );
+
+      await User.deleteMany({ name: TEST_AGENT_ACCOUNT_NAME });
+    });
+
+    it("refuse un compte agent désactivé", async () => {
+      const token = signPresenceQrToken(qr);
+
+      await User.create({
+        name: TEST_AGENT_ACCOUNT_NAME,
+        registrationNumber: "1XP26002B",
+        password: "MotDePasseTemporaire123!",
+        role: "soa",
+        isActive: false,
+      });
+
+      await assert.rejects(
+        presenceService.agentLogin({ token, matricule: "1XP26002B" }, fakeReq),
+        (error) => error.status === 401
+      );
+
+      await User.deleteMany({ name: TEST_AGENT_ACCOUNT_NAME });
     });
 
     it("refuse un agent inactif", async () => {

@@ -107,6 +107,13 @@ const memberSchema = new mongoose.Schema(
         "responsable chantre",
         "communication",
         "responsable communication",
+        // Rôles de service repris À L'IDENTIQUE de l'énumération des
+        // comptes agents (User.js) : « soa » ici et « soa » là-bas
+        // désignent la même chose, les écrire de deux façons créerait
+        // deux vocabulaires pour un seul concept.
+        "soa",
+        "cana",
+        "coordinateur_bergeries",
       ],
       default: "membre",
     },

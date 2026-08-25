@@ -5,6 +5,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { extractToken } from "./auth.js";
 import Member from "../models/Member.js";
+import User from "../models/User.js";
 import PresenceSecurityQr from "../models/PresenceSecurityQr.js";
 import { getEffectiveWindow } from "../utils/presenceQrWindow.js";
 
@@ -38,7 +39,55 @@ export const PRESENCE_AGENT_ROLES = [
   "pasteur",
   "chantre",
   "dirigeant",
+  // SOA = Service-Ordre-Accueil. C'est littéralement le métier du
+  // badgeage : un membre dont la fiche porte ce rôle y a droit sans
+  // avoir besoin d'un compte agent.
+  // « cana » et « coordinateur_bergeries » en restent exclus — ils
+  // décrivent le circuit des nouvelles âmes, pas le badgeage.
+  "soa",
 ];
+
+// Rôles de COMPTE AGENT (User) habilités au badgeage.
+//
+// Le module Agents (/admin/agents) est arrivé APRÈS le badgeage : la
+// règle ci-dessus ne connaissait que le rôle ecclésial porté par la
+// fiche membre, et un compte agent créé exprès pour badger restait
+// sans le moindre effet — constaté sur un agent SOA à qui le scanner
+// répondait « Matricule inconnu ou non habilité ».
+//
+// Un compte que l'administration a délibérément créé est une
+// habilitation au moins aussi explicite qu'un rôle ecclésial. Les
+// rôles du module social et le circuit CANA/coordonnateur en sont
+// exclus : ils désignent un autre métier, pas le Service-Ordre-Accueil.
+export const PRESENCE_AGENT_ACCOUNT_ROLES = ["admin", "soa", "pasteur"];
+
+// Un membre peut badger s'il est actif ET qu'il porte soit un rôle
+// ecclésial habilité, soit un compte agent actif habilité.
+//
+// Point d'entrée UNIQUE de cette décision : les trois endroits qui la
+// prennent (connexion de l'agent, vérification de sa session, et
+// l'authentification du module Nouvelles âmes qui accepte le même
+// jeton) doivent répondre pareil. Les laisser diverger ferait passer
+// la connexion pour ensuite refuser chaque requête suivante.
+export const isPresenceAgent = async (member) => {
+  if (!member || member.status !== "actif") return false;
+
+  if (PRESENCE_AGENT_ROLES.includes(member.role)) return true;
+
+  if (!member.registrationNumber) return false;
+
+  const account = await User.findOne({
+    registrationNumber: member.registrationNumber,
+  })
+    .select("role isActive")
+    .lean();
+
+  return Boolean(
+    account &&
+      account.isActive !== false &&
+      PRESENCE_AGENT_ACCOUNT_ROLES.includes(account.role)
+  );
+};
 
 const PRESENCE_SESSION_MAX_HOURS = 6;
 
@@ -119,7 +168,7 @@ export const requirePresenceSession = asyncHandler(async (req, _res, next) => {
     PresenceSecurityQr.findOne({ jti: payload.qrJti }).lean(),
   ]);
 
-  if (!agent || agent.status !== "actif" || !PRESENCE_AGENT_ROLES.includes(agent.role)) {
+  if (!(await isPresenceAgent(agent))) {
     throw ApiError.unauthorized("Session de badgeage invalide ou expirée.");
   }
 

@@ -73,6 +73,12 @@ const MEMBER_ROLES = [
   { value: "responsable chantre", label: "Responsable Chantre" },
   { value: "communication", label: "Communication" },
   { value: "responsable communication", label: "Responsable Communication" },
+  // Mêmes libellés que le module Agents (AgentsAdmin.jsx#ROLE_GROUPS) :
+  // un « SOA » sur une fiche membre et un compte agent SOA désignent la
+  // même personne au même poste.
+  { value: "soa", label: "SOA — Service Ordre Accueil" },
+  { value: "cana", label: "CANA" },
+  { value: "coordinateur_bergeries", label: "Coordonnateur des bergeries" },
 ];
 
 const MEMBER_STATUSES = [

@@ -4,7 +4,7 @@ import { env } from "../config/env.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { extractToken, TOKEN_SCOPE } from "./auth.js";
-import { PRESENCE_TOKEN_SCOPE, PRESENCE_AGENT_ROLES } from "./presenceAuth.js";
+import { PRESENCE_TOKEN_SCOPE, isPresenceAgent } from "./presenceAuth.js";
 import User from "../models/User.js";
 import Member from "../models/Member.js";
 
@@ -69,7 +69,10 @@ export const requireNewSoulActor = asyncHandler(async (req, _res, next) => {
   if (payload.scope === PRESENCE_TOKEN_SCOPE.SESSION) {
     const member = await Member.findById(payload.sub).lean();
 
-    if (!member || member.status !== "actif" || !PRESENCE_AGENT_ROLES.includes(member.role)) {
+    // Même règle qu'au badgeage, et pour cause : c'est le MÊME jeton de
+    // session. Une règle plus stricte ici refuserait un agent que le
+    // scanner vient d'accepter.
+    if (!(await isPresenceAgent(member))) {
       throw ApiError.unauthorized("Session invalide ou expirée.");
     }
 

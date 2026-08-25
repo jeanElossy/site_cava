@@ -13,7 +13,7 @@ import { drawCenteredImage } from "../utils/pdfLogo.js";
 import * as presenceQrService from "./presenceQr.service.js";
 import {
   signPresenceSessionToken,
-  PRESENCE_AGENT_ROLES,
+  isPresenceAgent,
 } from "../middlewares/presenceAuth.js";
 
 const LOGO_PATH = path.join(
@@ -58,11 +58,7 @@ export const agentLogin = async ({ token, matricule }, req) => {
   // Message volontairement identique, matricule inconnu ou rôle non
   // habilité : distinguer les deux confirmerait à quelqu'un qui essaie
   // des matricules au hasard qu'il en a trouvé un qui existe.
-  if (
-    !agent ||
-    agent.status !== "actif" ||
-    !PRESENCE_AGENT_ROLES.includes(agent.role)
-  ) {
+  if (!(await isPresenceAgent(agent))) {
     throw ApiError.unauthorized(
       "Matricule inconnu ou non habilité au badgeage."
     );

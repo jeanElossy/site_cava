@@ -297,6 +297,9 @@ const ROLE_LABELS = {
   "responsable chantre": "Responsable Chantre",
   communication: "Communication",
   "responsable communication": "Responsable Communication",
+  soa: "SOA",
+  cana: "CANA",
+  coordinateur_bergeries: "Coordonnateur des bergeries",
 };
 
 const injectRectoFields = async (document, member) => {
