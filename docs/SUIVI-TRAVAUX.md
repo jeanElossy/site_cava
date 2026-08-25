@@ -305,6 +305,12 @@ isolé). La dépendance est maintenant explicite.
       en base). Vite ne les embarque pas, donc **aucun impact en
       production** : c'est du poids de dépôt, pas de performance. À
       supprimer seulement si vous confirmez qu'elles ne servent plus.
-- [ ] **Mettre à jour `CLAUDE.md`** : il décrit encore un site vitrine
-      « contenu en dur » et ignore les modules Membres, Présences, Âmes
-      nouvelles et Social, qui font aujourd'hui l'essentiel du code.
+- [x] ~~**Mettre à jour `CLAUDE.md`**~~ — fait le 25/08. Corrigé : la
+      liste des routes (incomplète), « le contenu est en dur » (faux,
+      l'essentiel vit en base), une « duplication connue » des
+      ministères qui n'existe plus, et le poids des images. Ajouté : les
+      modules d'administration, le **format du matricule** et la règle
+      de la lettre de contrôle, le **Service Social** (règle de
+      rattachement d'un mouvement à un exercice, report du solde, point
+      d'écriture unique, garde-fous), les scripts de reprise, et une
+      section **Tests** rappelant les deux pièges de la base partagée.

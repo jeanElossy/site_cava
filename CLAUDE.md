@@ -41,7 +41,10 @@ Le **frontend** est une SPA React côté client ; l'état applicatif persistant 
 
 - [src/main.jsx](src/main.jsx) — monte l'app, importe `styles/main.scss`, enveloppe le tout dans `ContributionProvider`.
 - [src/App.jsx](src/App.jsx) — `BrowserRouter` seul.
-- [src/routes/AppRoutes.jsx](src/routes/AppRoutes.jsx) — **toutes** les routes. Toute nouvelle page s'ajoute ici. Routes : `/`, `/about`, `/ministries`, `/ministries/:slug`, `/events`, `/media`, `/contact`, `/donate`, `/mentions-legales`, `/politique-confidentialite`, `*` → NotFound.
+- [src/routes/AppRoutes.jsx](src/routes/AppRoutes.jsx) — **toutes** les routes publiques. Toute nouvelle page s'ajoute ici : `/`, `/about`, `/ministries`, `/ministries/:slug`, `/events`, `/events/:slug`, `/media`, `/communaute`, `/contact`, `/donate`, `/inscription`, `/mentions-legales`, `/politique-confidentialite`, `/desinscription`, `*` → NotFound.
+- [src/routes/AdminRoutes.jsx](src/routes/AdminRoutes.jsx) — toutes les routes de `/admin`, chargées **paresseusement** : un visiteur du site public ne télécharge jamais ce morceau de bundle. Même mécanisme pour `/presences` (badgeage, réservé aux agents).
+
+**Interrupteur de déploiement** : `/admin` et `/presences` n'existent que si `VITE_ENABLE_ADMIN=true` (ou en dev). Sur une build sans cette variable, la branche devient du code mort et Rollup supprime l'`import()` — le chunk n'est même pas généré. Ce n'est **pas** ce qui protège les données : c'est l'API qui refuse les requêtes non authentifiées.
 
 **Pas de page Blog** : le client l'a explicitement refusée. Ne pas en créer, ne pas ajouter de lien "Blog" dans la Navbar ou le Footer, même si les maquettes de `src/assets/design/` en montrent un dans la barre de navigation.
 
@@ -61,9 +64,11 @@ Le code mort a été supprimé (les anciens `Donation*` remplacés par `componen
 
 ### Données
 
-Le contenu est en dur dans le code. Les données des ministères vivent dans [src/components/MinistryDetails/data/ministries.js](src/components/MinistryDetails/data/ministries.js) : un objet indexé par `slug`, chaque ministère portant son propre contenu (mission, vision, stats, leaders, galerie, événements, témoignages). `MinistryDetails.jsx` lit `useParams().slug` et affiche un fallback « Ministère introuvable » si la clé n'existe pas.
+**L'essentiel du contenu vit en base**, administrable depuis `/admin` : événements, médias, annonces, témoignages, moyens de paiement, types de don, types d'aide sociale, églises, bergeries, paramètres du site. Le frontend public le lit par `fetch` (voir [src/services/api.js](src/services/api.js)).
 
-**Duplication connue** : la liste des ministères existe en double, dans ce fichier et dans [src/components/MinistriesGrid.jsx](src/components/MinistriesGrid.jsx). Les slugs concordent aujourd'hui — toute modification doit être répercutée des deux côtés, sinon une carte mène à « Ministère introuvable ».
+**Exception : les pages de ministères.** Leur contenu détaillé (mission, vision, stats, leaders, galerie, événements, témoignages) reste en dur dans [src/components/MinistryDetails/data/ministries.js](src/components/MinistryDetails/data/ministries.js), un objet indexé par `slug`. [MinistryDetails.jsx](src/pages/MinistryDetails/MinistryDetails.jsx) lit `useParams().slug` et affiche « Ministère introuvable » si la clé n'existe pas ; [MinistriesGrid.jsx](src/components/MinistriesGrid.jsx) dérive ses cartes du **même** fichier (la duplication qui existait entre les deux a été supprimée — ne pas la réintroduire).
+
+Il existe par ailleurs une ressource `ministries` administrable en base, utilisée par l'administration ; elle ne pilote pas encore les pages publiques de détail.
 
 ### État global
 
@@ -87,7 +92,42 @@ Un backend Node.js + Express 5 + MongoDB/Mongoose vit dans [backend/](backend/),
 - `backend/src/middlewares/`, `backend/src/jobs/`, `backend/src/config/`, `backend/src/utils/` — auth/rôles, tâches planifiées, configuration (`config/env.js` valide les variables au démarrage via `validateEnv()`), utilitaires.
 - `backend/src/scripts/seed.js` — amorçage **idempotent** (admin, contenu par défaut, moyens de paiement, types de don) : ne supprime jamais rien, donc réutilisable sans risque sur une base déjà peuplée.
 
+**Scripts de reprise de données** (`backend/src/scripts/`). Convention : ils **n'écrivent rien par défaut** et affichent leur plan ; il faut `--apply` pour exécuter. Tous sont idempotents.
+
+| Script | Rôle |
+|---|---|
+| `backfillRegistrationOrder.js` | renseigne `Member.registrationOrder` sur les fiches antérieures au champ |
+| `fixRegistrationControlLetters.js` | remet en cohérence une lettre de contrôle fautive |
+| `migrateSocialFundYears.js` | rattache les mouvements de caisse à un exercice et ouvre les exercices depuis 2024 |
+| `backfillSocialContributions.js` | rattrape les lignes d'offrande dues, sans attendre le job quotidien |
+| `seed-legacy-members.js` | import du registre papier |
+
 **Pas de base de test dédiée** : [backend/src/test/db.js](backend/src/test/db.js) connecte les tests d'intégration à la **même** base que le développement (`MONGODB_URI`), y compris en local. Les tests doivent donc nettoyer scrupuleusement ce qu'ils créent (identifiants improbables en production, ex. e-mails `*.testsuite.*@example.invalid`). Ne jamais interrompre `cd backend && npm test` en cours de route (Ctrl+C ou kill du process) : les hooks `after()` de nettoyage n'ont alors pas l'occasion de s'exécuter et laissent des données de test résiduelles dans la base partagée — vécu concrètement lors de la vérification finale de la fonctionnalité de dons (Task 24), où un processus de test interrompu a laissé une bergerie de test fantôme qui a fait échouer la suite `newSoul.service` d'une session ultérieure avec une erreur de clé dupliquée, le temps d'être identifiée et nettoyée à la main.
+
+### Modules d'administration
+
+Le projet n'est plus un simple site vitrine : `/admin` porte plusieurs modules métier, chacun avec ses modèles, son service et ses écrans.
+
+- **Communauté** (`/admin/communaute`) — annuaire des membres, bergeries, églises, et validation des inscriptions envoyées depuis `/inscription`. Génère cartes de membre (PDF/JPEG), fiches individuelles (PDF) et exports (XLSX/PDF).
+- **Présences** (`/admin/presences`, badgeage sur `/presences`) — pointage par scan du QR de la carte de membre, réservé aux agents du Service d'Ordre.
+- **Nouvelles âmes** (`/admin/nouvelles-ames`) — suivi des nouveaux convertis, du premier contact à la clôture (qui crée le membre). Circuit à plusieurs rôles : SOA, CANA, coordonnateur de bergeries.
+- **Dons** (`/admin/dons`) — voir ci-dessous.
+- **Service Social** (`/admin/social`) — voir plus bas.
+- **Agents** (`/admin/agents`) — comptes de terrain, qui se connectent par **matricule** et non par e-mail.
+
+### Matricule des membres
+
+Format canonique stocké, 9 caractères sans séparateur : `1ME19016P`, affiché `1ME 19-016 P`.
+
+| `1` | `ME` | `19` | `016` | `P` |
+|---|---|---|---|---|
+| église (1-5) | code de bergerie | année d'arrivée | rang dans l'église | lettre de contrôle |
+
+- Le **rang** est attribué par un compteur atomique **par église** (`RegistrationCounter`) — deux validations simultanées ne peuvent pas obtenir le même numéro.
+- La **lettre ne se saisit jamais** : elle se déduit du rang (`alphabet[(rang - 1) % 26]`, donc 016 → P, et elle repart à A après Z). C'est un repère de recopie, pas une sécurité. Le modèle **refuse** un matricule dont la lettre contredit le rang.
+- `Member.registrationOrder` est le rang **dérivé et dénormalisé**, recalculé à chaque écriture par des hooks du schéma. C'est lui qui donne l'ordre de l'annuaire (`defaultSort: { church, registrationOrder, lastName }`). **Ne jamais retrier côté navigateur** : la liste est paginée, retrier une page ne réordonne qu'elle et fait « sauter » les matricules.
+- Les fonctions pures du format vivent dans [backend/src/utils/registrationFormat.js](backend/src/utils/registrationFormat.js), avec un **miroir** frontend dans [src/utils/registrationNumber.js](src/utils/registrationNumber.js) — le dépôt n'a pas de code partagé entre le site et l'API, toute évolution du format se répercute des deux côtés.
+- `normalizeRegistrationNumber` répare les confusions `O`/`0` et `I`/`1` **par position** (le format impose la nature de chaque caractère, la correction est donc déterministe) et ignore espaces et tirets de la forme affichée.
 
 ### Dons — parcours Mobile Money manuel
 
@@ -96,6 +136,26 @@ Le paiement en ligne a été remplacé par un parcours **Mobile Money déclarati
 1. **Public**, page `/donate` (composant [src/components/donate/ContributionForm/](src/components/donate/ContributionForm/)) : tunnel à 4 étapes — identité/montant/type (`StepIdentity`) → moyen de paiement (`StepPaymentMethod`) → billet QR à scanner (`StepQrTicket`) → preuve (numéro de transaction Mobile Money obligatoire, capture d'écran optionnelle — `StepProof`). Le don n'est créé en base qu'à l'étape finale (« Envoyer »), avec le statut `en_attente`.
 2. **Admin** : `/admin/dons` (`DonationsAdmin.jsx`) liste les dons et permet de les **valider** ou **rejeter** — le rejet est bloqué côté serveur sans remarque ; `/admin/dons/moyens-de-paiement` gère les QR Mobile Money proposés dans le tunnel (Orange Money, MTN, Moov, Wave…) ; `/admin/dons/types` gère les types de don (Dîme, Offrande, Action de grâce…). Un moyen de paiement sans QR/numéro renseigné ne doit jamais être activé (`active: true`) : le tunnel l'affiche alors aux donateurs tel quel.
 3. Un don validé expose un reçu PDF public, non authentifié, à `GET /api/donations/:reference/recu` (lien « Reçu » dans `DonationsAdmin`). Aucune vérification n'est automatique : la mise en correspondance du numéro de transaction avec le relevé Mobile Money réel de l'église reste un geste manuel de l'administrateur.
+
+### Service Social — offrandes, arriérés et caisses annuelles
+
+Module de solidarité : chaque membre actif doit une **offrande sociale mensuelle**, et la caisse ainsi constituée finance des **aides** versées aux membres.
+
+**Une caisse par église ET par année civile** (`SocialFundYear`). Points de conception à ne pas contourner :
+
+- **Un mouvement appartient à l'exercice de sa DATE D'ENREGISTREMENT**, pas au mois cotisé. C'est une comptabilité de caisse : l'argent entre dans le tiroir le jour où l'agent l'encaisse. Un arriéré de 2025 réglé en 2027 alimente donc la caisse 2027 — la dette, elle, reste datée de 2025 côté `SocialContribution`, qui porte `year`/`month`.
+- Conséquence utile : un exercice révolu ne peut plus recevoir d'écriture (l'horloge serveur ne recule pas), donc son solde de clôture est définitif. C'est ce qui autorise à **stocker** le report sans risque de divergence.
+- **Le solde est reporté** sur l'exercice suivant à la clôture. Clôturer fige le solde **et** ouvre l'année suivante, en une seule opération serveur : un solde ne peut pas se perdre entre deux appels. Une réouverture reste possible (admin) pour réparer une clôture par erreur.
+- [socialFundYear.service.js](backend/src/services/socialFundYear.service.js) est le **seul point d'écriture** d'un mouvement de caisse (`recordLedgerEntry`). Ne jamais faire `SocialLedgerEntry.create()` en direct : on perdrait le rattachement à l'exercice et le refus d'écrire dans une caisse clôturée.
+- `recordPayments` et `validateAid` **contrôlent l'exercice avant toute mutation** (`assertExerciceOpen`). Découvrir la clôture au moment de journaliser laisserait une offrande « payée » sans contrepartie en caisse.
+
+**Arriérés.** `generateDueContributions()` rattrape tous les mois dus depuis `SOCIAL_START_YEAR` (2024), ou depuis le mois d'arrivée du membre s'il est postérieur — un membre présent depuis 2016 ne se voit pas réclamer dix ans. La fonction est idempotente (index unique `{member, year, month}`).
+
+⚠️ **Appelée SANS le paramètre `church`, elle balaie toutes les églises dotées d'un `SocialFundSettings`, production comprise.** Un test d'intégration qui l'oublie régénère les offrandes réelles — bug déjà constaté. Toute suite de tests doit passer son église de test.
+
+Elle est déclenchée par le job quotidien, **et** immédiatement à la validation d'une inscription comme à la création/réactivation d'un membre (`syncMemberContributionsQuietly`, en « au mieux » : une panne du module social ne doit pas invalider une inscription approuvée).
+
+**Le montant mensuel est un plancher, pas un plafond** : un membre peut donner plus pour un même mois. Seul un versement sous ce plancher laisse le mois `partiel`.
 
 ## Styles
 
@@ -138,7 +198,11 @@ Deux emplacements distincts, ne pas les confondre :
 
 `src/assets/design/` contient des maquettes de référence, pas des assets de production. Attention, `Event details.png` est mal nommé : c'est la maquette du **détail de ministère**, pas d'un détail d'événement.
 
-**Images non optimisées** : les fichiers de `src/assets/images/` pèsent 2 à 2,7 Mo pièce. Une galerie de ministère en charge 6 d'un coup. Une passe de compression/WebP est le principal chantier de performance restant.
+**Poids des images** (mesuré le 25/08/2026 — une note plus ancienne annonçait « 2 à 2,7 Mo par fichier », c'était faux) : la plus grosse image embarquée pèse **291 Ko**, pour **5,7 Mo** au total. Une recompression JPEG/PNG ne rendrait que 4 % : elles sont déjà correctes. Un passage en **WebP** rendrait 42 % (2,4 Mo), mais suppose de réécrire chaque référence — à peser contre le fait que les chemins de `public/images/` ne sont pas vérifiés au build.
+
+⚠️ Tout ce qui traîne dans `public/` est **copié tel quel à chaque déploiement**, référencé ou non. Un fichier de 1,5 Mo y est resté des semaines sans être utilisé nulle part. Vérifier avant d'y déposer un fichier.
+
+`src/assets/images/` contient à l'inverse ~3,5 Mo d'images **importées nulle part** : Vite ne les embarque pas, donc aucun impact en production — mais ne pas s'y fier pour juger du poids réel du site.
 
 ## Déploiement
 
@@ -146,6 +210,18 @@ Deux déploiements distincts :
 
 - **Frontend** sur Vercel. [vercel.json](vercel.json) fait un rewrite SPA de toutes les routes vers `index.html` et impose des en-têtes de sécurité, dont une **CSP stricte**. `connect-src` n'autorise que `'self'`, l'API de production (`https://site-cava.onrender.com`) et Cloudinary (`https://api.cloudinary.com`) ; `img-src`/`media-src` autorisent Cloudinary et `i.ytimg.com`. Toute nouvelle intégration tierce (autre domaine d'API, iframe, script analytics) sera bloquée tant que `vercel.json` n'est pas mis à jour en conséquence.
 - **Backend** sur Render, connecté à MongoDB Atlas — voir [backend/DEPLOIEMENT.md](backend/DEPLOIEMENT.md) pour la procédure et ses compromis (notamment l'absence d'IP fixe côté Render, qui oblige à autoriser `0.0.0.0/0` dans Atlas Network Access).
+
+## Tests
+
+- **Frontend** : `npm test` (Vitest) — logique pure et quelques rendus de composants clés.
+- **Backend** : `cd backend && npm test` (`node --test`, ni Jest ni Vitest).
+
+Les tests d'intégration tournent sur la **base de développement**, et `node --test` exécute les fichiers **en parallèle**. Deux règles en découlent :
+
+1. **Ne jamais nettoyer par un critère large** (`deleteMany({ church })`) : un autre fichier de test peut utiliser la même église au même instant et voir ses fixtures disparaître en pleine assertion. Nettoyer sur un marqueur propre à la suite (préfixe de nom, e-mail `*.testsuite.*@example.invalid`).
+2. **Ne jamais interrompre une exécution** (Ctrl+C) : les hooks `after()` ne s'exécutent pas et laissent des résidus dans la base partagée. Vécu deux fois — une bergerie fantôme puis un membre fantôme visible dans l'annuaire réel.
+
+Les églises 2 à 5 servent de bacs à sable (l'église 1 est la seule réelle). L'église fictive « 9 » évoquée dans certains commentaires est **inutilisable dès qu'un `Member` est en jeu** : le schéma valide `church` entre 1 et 5.
 
 ## Conventions du dépôt
 
