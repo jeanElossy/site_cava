@@ -1,6 +1,6 @@
 # Suivi des travaux — Membres & Service Social
 
-Dernière mise à jour : 25 août 2026.
+Dernière mise à jour : 25 août 2026 (2ᵉ passe).
 
 Ce fichier suit le chantier ouvert après l'audit du 25 août 2026 : trois
 défauts signalés sur la partie **Membres**, et la refonte de la partie
@@ -120,6 +120,44 @@ Corrigé par une option `adminSelect: "+notes"` sur la ressource membres
 
 ---
 
+### A5 — Validation d'inscription bloquée par un matricule fautif ✅ TERMINÉ
+
+*Signalé pendant le chantier. Le défaut est antérieur aux corrections
+ci-dessus.*
+
+**Ce qui n'allait pas.** Une demande en attente refusait de se valider
+avec « Les données envoyées sont invalides. » Le matricule saisi par le
+membre était `10L24061J` : **un zéro à la place de la lettre O**. Le
+matricule ne correspondait donc à aucune fiche, le pré-remplissage
+public ne le retrouvait pas, et l'erreur ne disait ni quel champ était
+en cause ni quoi corriger. Aucun moyen, non plus, de rectifier le
+matricule depuis le panneau de validation : la demande était bloquée
+définitivement.
+
+**Ce qui a été fait.**
+
+- `normalizeRegistrationNumber` répare les confusions `O`/`0` et `I`/`1`
+  **par position**. La correction est déterministe, pas une supposition :
+  le format impose la nature de chaque caractère, donc un `0` en
+  position de lettre ne peut être qu'un `O`. Appliqué uniquement sur une
+  chaîne de 9 caractères, pour ne pas abîmer un identifiant de connexion.
+  Répercuté dans le miroir frontend.
+- Le matricule est **diagnostiqué avant** d'atteindre Mongoose, avec un
+  message qui dit quoi faire :
+  - format invalide → rappel du format attendu, avec exemple ;
+  - lettre incohérente → la lettre attendue et le matricule corrigé ;
+  - déjà attribué → **le nom du membre qui le porte**, et la
+    recommandation de rejeter la demande si c'est la même personne.
+- Le champ **Matricule est devenu corrigeable** dans le panneau de
+  validation (uniquement pour un membre historique — sur une inscription
+  neuve il reste attribué automatiquement).
+
+Dans le cas signalé, le diagnostic tombe juste : la demande émane de
+**YAO Adou Emmanuel, déjà enregistré** sous `1OL 24-061 I`. Elle est donc
+à rejeter, pas à valider.
+
+---
+
 ## B. Service Social — caisses annuelles
 
 ### B1 — Une caisse par année, solde reporté ✅ TERMINÉ
@@ -232,9 +270,11 @@ ses propres fixtures.
 
 ## D. Reste à faire
 
-- [ ] **Vérifier en production** l'affichage de la carte de membre et de
-      la fiche PDF avec une vraie photo portrait — le recadrage a changé,
-      un contrôle visuel s'impose avant impression d'une série.
+- [x] ~~**Vérifier l'affichage** de la carte et de la fiche PDF avec une
+      vraie photo.~~ Fait le 25/08 : fiches régénérées et inspectées pour
+      une source paysage (ratio 1,12) et une source portrait (0,75) — les
+      proportions sont respectées, les visages entiers, aucun étirement.
+      Cartes confirmées bonnes par le client.
 - [ ] **Compression des images** (`src/assets/images/`, 2 à 2,7 Mo par
       fichier) — principal chantier de performance restant, identifié de
       longue date.

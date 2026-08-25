@@ -36,10 +36,43 @@ export const UNRANKED = MAX_NUMBER + 1;
 
 export const letterForNumber = (number) => ALPHABET[(number - 1) % 26];
 
+// Confusions de saisie les plus courantes sur un matricule recopié à
+// la main ou lu sur une carte : le chiffre 0 et la lettre O, le chiffre
+// 1 et la lettre I.
+//
+// La correction est DÉTERMINISTE, jamais une supposition : le format
+// impose la nature de chaque position (chiffre d'église, deux lettres
+// de bergerie, cinq chiffres, une lettre de contrôle). Un « 0 » en
+// position de lettre ne peut donc être qu'un « O », et réciproquement.
+//
+// Cas réel : un membre a saisi « 10L24061J » pour « 1OL24061J ». Le
+// matricule ne correspondait à rien, le pré-remplissage public ne le
+// retrouvait pas, et la validation de son inscription échouait sur un
+// « Les données envoyées sont invalides » sans explication.
+const LETTER_POSITIONS = new Set([1, 2, 8]);
+const DIGIT_LOOKALIKE_TO_LETTER = { 0: "O", 1: "I" };
+const LETTER_LOOKALIKE_TO_DIGIT = { O: "0", I: "1" };
+
+const repairLookalikes = (value) => {
+  // Uniquement sur une chaîne de la bonne longueur : ailleurs, la
+  // position ne veut rien dire et « corriger » abîmerait la valeur.
+  // (`normalizeRegistrationNumber` sert aussi à décider si un
+  // identifiant de connexion est un matricule ou un e-mail.)
+  if (value.length !== 9) return value;
+
+  return Array.from(value, (char, index) =>
+    LETTER_POSITIONS.has(index)
+      ? DIGIT_LOOKALIKE_TO_LETTER[char] ?? char
+      : LETTER_LOOKALIKE_TO_DIGIT[char] ?? char
+  ).join("");
+};
+
 export const normalizeRegistrationNumber = (input) =>
-  String(input ?? "")
-    .toUpperCase()
-    .replace(/[\s-]/g, "");
+  repairLookalikes(
+    String(input ?? "")
+      .toUpperCase()
+      .replace(/[\s-]/g, "")
+  );
 
 export const formatRegistrationNumber = (canonical) => {
   const match = SHAPE.exec(canonical ?? "");

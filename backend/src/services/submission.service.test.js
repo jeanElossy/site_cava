@@ -828,6 +828,87 @@ describe("submission.service (intégration MongoDB)", () => {
     );
   });
 
+  // ---- Diagnostic du matricule papier ---------------------------------
+  //
+  // C'est le seul champ que le membre recopie de mémoire ou d'une carte
+  // usée. Une saisie fautive partait droit dans Mongoose et remontait à
+  // l'administration en « Les données envoyées sont invalides. » — un
+  // message qui ne dit ni quel champ est en cause, ni quoi corriger.
+
+  // `type: "update"` et non `"new"` : c'est le seul parcours qui porte
+  // un matricule papier (le membre déclare « j'ai déjà un matricule »).
+  // Quand ce matricule ne correspond à aucune fiche — parce qu'il est
+  // fautif, précisément —, `existingMember` reste vide et `approve()`
+  // crée le membre à partir du matricule soumis. C'est le cas réel
+  // rencontré en production.
+  const submitWithPaperNumber = async (registrationNumber, firstName) => {
+    await submissionService.submit({
+      type: "update",
+      registrationNumber,
+      data: {
+        firstName,
+        lastName: TEST_LAST_NAME,
+        church: TEST_CHURCH,
+        flock: String(testFlockChurch1._id),
+        phone: "0700000042",
+      },
+    });
+
+    return MemberSubmission.findOne({ "data.firstName": firstName }).lean();
+  };
+
+  it("approve() nomme le champ fautif quand le matricule papier n'a pas le bon format", async () => {
+    // « ABC » en tête : ni un chiffre d'église, ni deux lettres de
+    // bergerie suivies de chiffres.
+    const pending = await submitWithPaperNumber("ABCDEFGHI", "Formatfaux");
+
+    await assert.rejects(
+      submissionService.approve(pending._id, {
+        user: { id: new mongoose.Types.ObjectId() },
+      }),
+      (error) =>
+        error.status === 422 &&
+        /pas au bon format/.test(error.message) &&
+        Boolean(error.details?.registrationNumber)
+    );
+  });
+
+  it("approve() donne la lettre de contrôle attendue plutôt qu'un rejet muet", async () => {
+    // Rang 016 → lettre « P ». Ici « Z », donc incohérent.
+    const pending = await submitWithPaperNumber("2ZZ19016Z", "Lettrefausse");
+
+    await assert.rejects(
+      submissionService.approve(pending._id, {
+        user: { id: new mongoose.Types.ObjectId() },
+      }),
+      (error) =>
+        error.status === 422 && /appelle la lettre « P »/.test(error.message)
+    );
+  });
+
+  it("approve() accepte le matricule corrigé par l'administration", async () => {
+    const pending = await submitWithPaperNumber("2ZZ19016Z", "Corrige");
+
+    const { member } = await submissionService.approve(pending._id, {
+      overrides: { registrationNumber: "2ZZ19016P" },
+      user: { id: new mongoose.Types.ObjectId() },
+    });
+
+    assert.equal(member.registrationNumber, "2ZZ19016P");
+  });
+
+  it("approve() répare un zéro saisi à la place de la lettre O", async () => {
+    // Saisie réellement observée : « 10L… » pour « 1OL… ». Le membre
+    // n'y voit que du feu, le matricule ne correspond à rien.
+    const pending = await submitWithPaperNumber("20Z19017Q", "Zeroletttreo");
+
+    const { member } = await submissionService.approve(pending._id, {
+      user: { id: new mongoose.Types.ObjectId() },
+    });
+
+    assert.equal(member.registrationNumber, "2OZ19017Q");
+  });
+
   it("reject() lève une 404 pour une soumission introuvable", async () => {
     await assert.rejects(
       submissionService.reject(new mongoose.Types.ObjectId(), {

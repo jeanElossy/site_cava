@@ -92,6 +92,33 @@ describe("hasValidControlLetter", () => {
   });
 });
 
+describe("normalizeRegistrationNumber — confusions de saisie", () => {
+  it("répare un zéro saisi à la place de la lettre O", () => {
+    // Cas réel : un membre avait saisi « 10L24061J » pour
+    // « 1OL24061J ». Le matricule ne correspondait à rien.
+    expect(normalizeRegistrationNumber("10L24061J")).toBe("1OL24061J");
+  });
+
+  it("répare un I saisi à la place du chiffre 1, et l'inverse", () => {
+    expect(normalizeRegistrationNumber("I0L24061J")).toBe("1OL24061J");
+    // Le dernier caractère est une position de LETTRE (lettre de
+    // contrôle) : le « I » final y reste un « I ». Seul celui du rang,
+    // en position de chiffre, devient « 1 ».
+    expect(normalizeRegistrationNumber("1OL2406II")).toBe("1OL24061I");
+  });
+
+  it("ne touche pas une valeur qui n'a pas la longueur d'un matricule", () => {
+    // `normalizeRegistrationNumber` sert aussi à distinguer un
+    // identifiant de connexion (e-mail ou matricule) : « corriger »
+    // des caractères hors format abîmerait l'adresse.
+    expect(normalizeRegistrationNumber("jean.0@ok.fr")).toBe("JEAN.0@OK.FR");
+  });
+
+  it("ignore toujours espaces et tirets de la forme affichée", () => {
+    expect(normalizeRegistrationNumber("1ME 19-016 P")).toBe("1ME19016P");
+  });
+});
+
 describe("parseRegistrationNumber", () => {
   it("décompose un matricule bien formé", () => {
     expect(parseRegistrationNumber("1ME23044R")).toEqual({

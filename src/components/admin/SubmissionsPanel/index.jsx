@@ -16,6 +16,7 @@ import { AdminEmpty, AdminError, AdminLoading } from "../AdminFeedback";
 import "./SubmissionsPanel.scss";
 
 const FIELD_LABELS = {
+  registrationNumber: "Matricule",
   firstName: "Prénom",
   lastName: "Nom",
   photo: "Photo",
@@ -40,7 +41,19 @@ const FIELD_LABELS = {
 
 const KIND_LABELS = { new: "Nouveau", update: "Mise à jour" };
 
-const EDITABLE_FIELDS = ["firstName", "lastName", "phone", "email"];
+// `registrationNumber` n'est PAS un champ de `data` : il vit sur la
+// soumission elle-même (`submittedRegistrationNumber`), et n'apparaît
+// que pour un membre historique qui a saisi son matricule papier. Il
+// est éditable ici parce que c'est le seul champ que le membre recopie
+// de mémoire ou d'une vieille carte : sans possibilité de correction,
+// une demande au matricule fautif restait bloquée définitivement.
+const EDITABLE_FIELDS = [
+  "firstName",
+  "lastName",
+  "phone",
+  "email",
+  "registrationNumber",
+];
 
 const formatValue = (field, value, flockNames, churchNames) => {
   if (value === undefined || value === null || value === "") return "—";
@@ -305,14 +318,24 @@ const SubmissionsPanel = () => {
               <div className="submissions-panel__overrides">
                 <p>Corriger si nécessaire avant de valider :</p>
 
-                {EDITABLE_FIELDS.map((field) => (
+                {EDITABLE_FIELDS.filter(
+                  // Le matricule ne concerne que les membres
+                  // historiques : l'afficher sur une inscription neuve
+                  // laisserait croire qu'on peut en imposer un, alors
+                  // qu'il est attribué automatiquement à la validation.
+                  (field) =>
+                    field !== "registrationNumber" ||
+                    detail.submission.submittedRegistrationNumber
+                ).map((field) => (
                   <label key={field}>
                     {FIELD_LABELS[field]}
                     <input
                       type="text"
                       value={
                         overrides[field] ??
-                        detail.submission.data[field] ??
+                        (field === "registrationNumber"
+                          ? detail.submission.submittedRegistrationNumber
+                          : detail.submission.data[field]) ??
                         ""
                       }
                       onChange={(event) =>

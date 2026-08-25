@@ -6,6 +6,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { syncMemberContributionsQuietly } from "./socialContribution.service.js";
 import { isTrustedMemberPhotoUrl } from "../utils/cloudinaryUrl.js";
 import {
+  letterForNumber,
   normalizeRegistrationNumber,
   parseRegistrationNumber,
   nextRegistrationNumber,
@@ -308,6 +309,52 @@ const assertFlockBelongsToChurch = async (flockId, church) => {
   return flock;
 };
 
+// Diagnostic d'un matricule papier repris tel quel à la validation.
+//
+// Sans ce contrôle, une saisie fautive du membre partait directement
+// dans Mongoose et remontait à l'administration en « Les données
+// envoyées sont invalides. » — un message qui ne dit ni quel champ est
+// en cause, ni quoi corriger. Or c'est justement le seul champ que le
+// membre recopie de mémoire ou depuis une vieille carte.
+const describeRegistrationProblem = async (canonical) => {
+  const parsed = parseRegistrationNumber(canonical);
+
+  if (!parsed) {
+    return (
+      `Le matricule « ${canonical} » n'est pas au bon format ` +
+      "(attendu : chiffre d'église, deux lettres de bergerie, deux chiffres d'année, " +
+      "trois chiffres de rang, une lettre — par exemple 1ME19016P). " +
+      "Corrigez-le dans le champ « Matricule » avant de valider."
+    );
+  }
+
+  const expected = letterForNumber(parsed.number);
+
+  if (parsed.letter !== expected) {
+    const corrected = `${canonical.slice(0, 8)}${expected}`;
+
+    return (
+      `La lettre de contrôle du matricule « ${canonical} » ne correspond pas à son rang : ` +
+      `le numéro ${String(parsed.number).padStart(3, "0")} appelle la lettre « ${expected} », ` +
+      `donc ${corrected}. Vérifiez le rang autant que la lettre, puis corrigez le champ « Matricule ».`
+    );
+  }
+
+  const holder = await Member.findOne({ registrationNumber: canonical })
+    .select("firstName lastName")
+    .lean();
+
+  if (holder) {
+    return (
+      `Le matricule « ${canonical} » appartient déjà à ${holder.firstName} ${holder.lastName}. ` +
+      "S'il s'agit de la même personne, rejetez cette demande : sa fiche existe déjà. " +
+      "Sinon, corrigez le champ « Matricule »."
+    );
+  }
+
+  return null;
+};
+
 export const approve = async (id, { overrides = {}, user } = {}) => {
   const submission = await MemberSubmission.findById(id);
 
@@ -328,6 +375,16 @@ export const approve = async (id, { overrides = {}, user } = {}) => {
   }
 
   const flock = await assertFlockBelongsToChurch(data.flock, data.church);
+
+  // Le matricule papier soumis peut être corrigé par l'administration
+  // au moment de valider (champ « Matricule » du panneau). C'est
+  // indispensable : le membre le recopie souvent de mémoire ou d'une
+  // carte usée, et sans possibilité de correction une demande fautive
+  // restait définitivement bloquée. `normalizeRegistrationNumber`
+  // répare au passage les confusions O/0 et I/1.
+  const registrationNumberToUse = normalizeRegistrationNumber(
+    overrides.registrationNumber ?? submission.submittedRegistrationNumber ?? ""
+  ) || null;
 
   // `arrivalYear` (l'année seule, saisie par le membre) n'est pas un
   // champ de `Member` — seul `joinedAt` (une date) l'est. On la retire
@@ -353,15 +410,25 @@ export const approve = async (id, { overrides = {}, user } = {}) => {
     if (!member) {
       throw ApiError.notFound("Le membre à mettre à jour n'existe plus.");
     }
-  } else if (submission.submittedRegistrationNumber) {
+  } else if (registrationNumberToUse) {
     // Matricule papier jamais informatisé : repris tel quel, sans
     // passer par le compteur, qui ne doit générer QUE des matricules
     // neufs. L'année d'arrivée se déduit du matricule lui-même — plus
     // fiable qu'une saisie libre pour un membre historique — plutôt
     // que de `arrivalYear`.
-    const parsed = parseRegistrationNumber(
-      submission.submittedRegistrationNumber
-    );
+    //
+    // Il est diagnostiqué ICI, avant d'atteindre Mongoose : c'est le
+    // seul champ que le membre recopie de mémoire, et un rejet du
+    // schéma ne dirait pas ce qui cloche.
+    const problem = await describeRegistrationProblem(registrationNumberToUse);
+
+    if (problem) {
+      throw ApiError.unprocessable(problem, {
+        registrationNumber: problem,
+      });
+    }
+
+    const parsed = parseRegistrationNumber(registrationNumberToUse);
     const joinedAt = parsed
       ? new Date(2000 + parsed.year, 0, 1)
       : joinedAtFromYear;
@@ -369,7 +436,7 @@ export const approve = async (id, { overrides = {}, user } = {}) => {
     try {
       member = await Member.create({
         ...memberData,
-        registrationNumber: submission.submittedRegistrationNumber,
+        registrationNumber: registrationNumberToUse,
         ...(joinedAt ? { joinedAt } : {}),
       });
     } catch (error) {
