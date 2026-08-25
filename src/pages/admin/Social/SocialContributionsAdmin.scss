@@ -852,6 +852,109 @@
     }
   }
 
+  // Assistant de répartition d'un montant global sur plusieurs mois
+  // (voir SocialContributionsAdmin.jsx#applySpread). Encadré et détaché
+  // de la liste : c'est une aide à la saisie, pas une étape obligatoire.
+  &__spread {
+    margin-bottom: 18px;
+    padding: 16px;
+
+    border: 1px solid $admin-border;
+    border-radius: 12px;
+
+    background: $admin-surface-muted;
+  }
+
+  &__spread-lead {
+    margin: 0 0 14px;
+
+    color: $admin-ink-soft;
+
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  &__spread-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 10px;
+
+    label {
+      display: flex;
+      flex: 1 1 200px;
+      flex-direction: column;
+      gap: 6px;
+
+      color: $admin-ink-faint;
+
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    input {
+      padding: 10px 12px;
+
+      border: 1px solid $admin-border-strong;
+      border-radius: 10px;
+
+      background: $admin-surface;
+      color: $admin-ink;
+
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      letter-spacing: normal;
+      text-transform: none;
+    }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+
+      padding: 11px 16px;
+
+      border: 0;
+      border-radius: 10px;
+
+      background: $admin-accent-strong;
+      color: #fff;
+
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 700;
+
+      cursor: pointer;
+    }
+  }
+
+  &__spread-hint {
+    margin: 12px 0 0;
+
+    color: $admin-ink-faint;
+
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  &__spread-notice {
+    margin: 12px 0 0;
+
+    padding: 10px 13px;
+
+    border-radius: 10px;
+
+    background: $admin-success-bg;
+    color: $admin-success;
+
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.45;
+  }
+
   &__new-months {
     display: grid;
     gap: 10px;

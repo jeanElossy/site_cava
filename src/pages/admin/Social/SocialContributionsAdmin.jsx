@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Search,
   Trash2,
+  Wand2,
   X,
 } from "lucide-react";
 
@@ -41,6 +42,7 @@ import {
 import {
   MONTH_OPTIONS,
   SOCIAL_LEGACY_START_YEAR,
+  allocateAcrossMonths,
   buildWhatsAppMessage,
   churchLabelFrom,
   downloadBlob,
@@ -674,6 +676,8 @@ const NewContributionModal = ({ defaultChurch, churchOptions, onClose, onDone })
     setFileLoading(true);
     setFileError("");
     setSelections({});
+    setSpreadAmount("");
+    setSpreadNotice("");
 
     try {
       const memberFile = await fetchMemberSocialFile(found.id);
@@ -698,7 +702,78 @@ const NewContributionModal = ({ defaultChurch, churchOptions, onClose, onDone })
     }
   };
 
+  // ---- Répartition d'un montant global sur plusieurs mois --------
+  //
+  // Le responsable encaisse une somme (« le membre m'a remis 5 000 F »)
+  // et doit pouvoir dire, APRÈS échange avec le membre, si elle couvre
+  // un seul mois ou plusieurs. Rien n'est deviné : ce bouton ne fait que
+  // PRÉ-REMPLIR la liste ci-dessous, que le responsable relit, corrige
+  // et valide. Un montant destiné à un seul mois se saisit toujours
+  // directement sur ce mois — le montant mensuel reste un plancher, pas
+  // un plafond.
+  //
+  // Calculé ici plutôt que sur le serveur, et volontairement : la
+  // répartition passe ensuite par le circuit de paiement habituel, mois
+  // par mois. Si un autre agent a réglé un de ces mois entretemps,
+  // `recordPayments` le signale ligne à ligne (verrou optimiste) au lieu
+  // d'écraser sa saisie.
+  const [spreadAmount, setSpreadAmount] = useState("");
+  const [spreadNotice, setSpreadNotice] = useState("");
+
+  const applySpread = () => {
+    const total = Number(spreadAmount);
+
+    if (!Number.isFinite(total) || total <= 0) {
+      setSpreadNotice("Indiquez le montant remis par le membre.");
+
+      return;
+    }
+
+    const { parts, left } = allocateAcrossMonths(
+      Object.entries(selections).map(([key, entry]) => ({
+        key,
+        year: entry.contribution.year,
+        month: entry.contribution.month,
+        owed: Math.max(
+          (entry.contribution.amountDue ?? 0) - (entry.contribution.amountPaid ?? 0),
+          0
+        ),
+      })),
+      total
+    );
+
+    if (parts.length === 0) {
+      setSpreadNotice("Aucun mois impayé à couvrir pour ce membre.");
+
+      return;
+    }
+
+    const next = { ...selections };
+
+    for (const item of parts) {
+      next[item.key] = { ...next[item.key], checked: true, amount: item.part };
+    }
+
+    setSelections(next);
+
+    const covered = parts.map(
+      (item) =>
+        `${monthLabel(item.month).toLowerCase()} ${item.year}${
+          item.partial ? " (partiel)" : ""
+        }`
+    );
+
+    setSpreadNotice(
+      `${covered.length} mois couvert(s) : ${covered.join(", ")}.` +
+        (left > 0
+          ? ` Il reste ${money(left)} non affecté(s) — ajoutez-les au mois de votre choix.`
+          : "")
+    );
+  };
+
   const changeSelection = (key, patch) => {
+    setSpreadNotice("");
+
     setSelections((previous) => ({
       ...previous,
       [key]: { ...previous[key], ...patch },
@@ -895,6 +970,54 @@ const NewContributionModal = ({ defaultChurch, churchOptions, onClose, onDone })
 
             {!fileLoading && !fileError && (
               <>
+                {Object.keys(selections).length > 0 && (
+                  <div className="admin-social-contributions__spread">
+                    <p className="admin-social-contributions__spread-lead">
+                      Le montant remis couvre-t-il plusieurs mois ? Saisissez-le
+                      ici pour le répartir sur les mois dus, du plus ancien au
+                      plus récent. Vous pourrez relire et corriger avant
+                      d&apos;enregistrer.
+                    </p>
+
+                    <div className="admin-social-contributions__spread-row">
+                      <label>
+                        <span>Montant remis par le membre</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="100"
+                          value={spreadAmount}
+                          onChange={(event) => {
+                            setSpreadAmount(event.target.value);
+                            setSpreadNotice("");
+                          }}
+                          placeholder="Ex. 5000"
+                        />
+                      </label>
+
+                      <button type="button" onClick={applySpread}>
+                        <Wand2 size={15} aria-hidden="true" />
+                        Répartir
+                      </button>
+                    </div>
+
+                    <p className="admin-social-contributions__spread-hint">
+                      Pour une offrande généreuse destinée à un seul mois,
+                      n&apos;utilisez pas ce champ : saisissez le montant
+                      directement sur le mois concerné ci-dessous.
+                    </p>
+
+                    {spreadNotice && (
+                      <p
+                        role="status"
+                        className="admin-social-contributions__spread-notice"
+                      >
+                        {spreadNotice}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {Object.keys(selections).length === 0 ? (
                   <p className="admin-social-contributions__new-hint">
                     Aucun mois impayé ou partiel récent pour ce membre.

@@ -211,3 +211,47 @@ export const buildWhatsAppMessage = ({
 
 export const whatsAppUrl = (message) =>
   `https://wa.me/?text=${encodeURIComponent(message)}`;
+
+// Répartit un montant global sur des mois dus, du plus ancien au plus
+// récent — le responsable encaisse une somme et doit pouvoir dire si
+// elle couvre un seul mois ou plusieurs (voir
+// SocialContributionsAdmin.jsx#applySpread).
+//
+// Fonction PURE, isolée du composant pour être testable : c'est du
+// calcul d'argent, l'endroit du projet où une erreur se voit le plus.
+//
+// `months` : [{ key, year, month, owed }], `owed` étant ce qui reste dû
+// sur ce mois. Renvoie les parts affectées et le reliquat.
+//
+// Le reliquat n'est JAMAIS placé d'office sur le dernier mois : à ce
+// stade le responsable sait ce dont il a convenu avec le membre
+// (offrande généreuse, avance…), c'est à lui de le poser.
+export const allocateAcrossMonths = (months, total) => {
+  const amount = Number(total);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { parts: [], left: 0 };
+  }
+
+  const ordered = [...months].sort(
+    (a, b) => a.year - b.year || a.month - b.month
+  );
+
+  const parts = [];
+  let left = amount;
+
+  for (const item of ordered) {
+    if (left <= 0) break;
+
+    const owed = Math.max(Number(item.owed) || 0, 0);
+
+    if (owed <= 0) continue;
+
+    const part = Math.min(owed, left);
+
+    parts.push({ ...item, part, partial: part < owed });
+    left -= part;
+  }
+
+  return { parts, left };
+};
