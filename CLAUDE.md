@@ -101,6 +101,7 @@ Un backend Node.js + Express 5 + MongoDB/Mongoose vit dans [backend/](backend/),
 | `migrateSocialFundYears.js` | rattache les mouvements de caisse à un exercice et ouvre les exercices manquants |
 | `resetSocialStartYear.js` | supprime les cotisations et exercices antérieurs à 2026 restés sans le moindre encaissement |
 | `backfillSocialContributions.js` | rattrape les lignes d'offrande dues, sans attendre le job quotidien |
+| `reaffecterTropPercu.js` | replace le trop-perçu d'un mois sur les mois dus les plus anciens, sans toucher à la caisse |
 | `seed-legacy-members.js` | import du registre papier |
 
 **Pas de base de test dédiée** : [backend/src/test/db.js](backend/src/test/db.js) connecte les tests d'intégration à la **même** base que le développement (`MONGODB_URI`), y compris en local. Les tests doivent donc nettoyer scrupuleusement ce qu'ils créent (identifiants improbables en production, ex. e-mails `*.testsuite.*@example.invalid`). Ne jamais interrompre `cd backend && npm test` en cours de route (Ctrl+C ou kill du process) : les hooks `after()` de nettoyage n'ont alors pas l'occasion de s'exécuter et laissent des données de test résiduelles dans la base partagée — vécu concrètement lors de la vérification finale de la fonctionnalité de dons (Task 24), où un processus de test interrompu a laissé une bergerie de test fantôme qui a fait échouer la suite `newSoul.service` d'une session ultérieure avec une erreur de clé dupliquée, le temps d'être identifiée et nettoyée à la main.
