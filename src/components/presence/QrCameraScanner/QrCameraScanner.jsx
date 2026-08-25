@@ -21,20 +21,42 @@ const SCAN_INTERVAL_MS = 200;
 // image) — assez nette pour un aperçu, sans coût de calcul inutile.
 const PREVIEW_SIZE = 480;
 
-// Message d'échec adapté à la CAUSE. « Vérifiez l'autorisation » était
-// affiché quoi qu'il arrive, y compris quand l'autorisation était
-// accordée et que l'échec venait d'ailleurs — l'agent cherchait alors
-// dans les réglages du téléphone un problème qui n'y était pas.
+// Un navigateur intégré à une autre application (le lien ouvert depuis
+// WhatsApp, Facebook, Messenger…) n'a très souvent AUCUN accès à la
+// caméra, quelles que soient les autorisations accordées : le refus ne
+// vient pas du site mais de l'application hôte. Cas fréquent ici, le QR
+// de service circulant par WhatsApp — et parfaitement invisible pour
+// l'agent, qui voit un navigateur ordinaire.
+const isInAppBrowser = () => {
+  const ua = navigator.userAgent ?? "";
+
+  // « wv » marque une WebView Android ; les autres sont les navigateurs
+  // intégrés qui s'annoncent explicitement.
+  return /\bwv\b|FBAN|FBAV|Instagram|Line\/|Twitter|MicroMessenger/i.test(ua);
+};
+
+// Message d'échec adapté à la CAUSE, et surtout à ce que l'agent doit
+// FAIRE. « Vérifiez l'autorisation » était affiché quoi qu'il arrive, y
+// compris quand l'autorisation était accordée et que l'échec venait
+// d'ailleurs.
 const failureMessage = (error) => {
   switch (error?.name) {
     case "NotAllowedError":
     case "SecurityError":
-      return "L'accès à la caméra a été refusé. Autorisez-le dans les réglages du navigateur, puis réessayez.";
+      // Un refus mémorisé ne redemande JAMAIS : réessayer sans rien
+      // changer redonnera la même erreur, indéfiniment. D'où des
+      // consignes concrètes plutôt qu'un « autorisez la caméra » que
+      // l'agent croit déjà avoir fait.
+      if (isInAppBrowser()) {
+        return "Cette page est ouverte dans le navigateur interne d'une autre application (WhatsApp, Facebook…), qui bloque la caméra. Touchez le menu ⋮ puis « Ouvrir dans Chrome », et reconnectez-vous.";
+      }
+
+      return "L'accès à la caméra est bloqué pour ce site. Touchez l'icône à gauche de l'adresse du site, en haut de l'écran, puis Autorisations → Caméra → Autoriser. Vérifiez aussi que la caméra est autorisée pour votre navigateur dans les réglages du téléphone.";
     case "NotFoundError":
     case "OverconstrainedError":
       return "Aucune caméra utilisable n'a été trouvée sur cet appareil.";
     case "NotReadableError":
-      return "La caméra est déjà utilisée par une autre application. Fermez-la, puis réessayez.";
+      return "La caméra est déjà utilisée par une autre application. Fermez-la complètement, puis réessayez.";
     default:
       return "La caméra n'a pas pu démarrer. Touchez « Activer la caméra » pour réessayer.";
   }
@@ -46,7 +68,11 @@ const failureMessage = (error) => {
 const isPermissionError = (error) =>
   error?.name === "NotAllowedError" || error?.name === "SecurityError";
 
-const QrCameraScanner = ({ active, onDecode, onError, hint }) => {
+// Les échecs de caméra ne remontent PAS au parent : ce composant les
+// affiche lui-même, avec la consigne adaptée et le bouton de reprise.
+// Les faire remonter en plus affichait deux fois le même message à
+// l'écran, celui du parent étant le plus court et le moins utile.
+const QrCameraScanner = ({ active, onDecode, hint }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const previewCanvasRef = useRef(null);
@@ -89,11 +115,8 @@ const QrCameraScanner = ({ active, onDecode, onError, hint }) => {
     const fail = (error) => {
       if (runId !== runIdRef.current) return;
 
-      const message = failureMessage(error);
-
       setStatus("failed");
-      setFailure(message);
-      onError?.(message);
+      setFailure(failureMessage(error));
     };
 
     // `getUserMedia` n'existe tout simplement PAS hors contexte
@@ -108,7 +131,6 @@ const QrCameraScanner = ({ active, onDecode, onError, hint }) => {
 
       setStatus("failed");
       setFailure(message);
-      onError?.(message);
 
       return;
     }
@@ -265,8 +287,8 @@ const QrCameraScanner = ({ active, onDecode, onError, hint }) => {
     }, SCAN_INTERVAL_MS);
 
     setStatus("ready");
-    // `onDecode`/`onError` changent à chaque rendu du parent : les
-    // inclure relancerait la caméra en boucle.
+    // `onDecode` change à chaque rendu du parent : l'inclure
+    // relancerait la caméra en boucle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stopCamera]);
 

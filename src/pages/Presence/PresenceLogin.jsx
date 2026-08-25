@@ -195,7 +195,6 @@ const PresenceLogin = ({ theme, onToggleTheme, onAuthenticated }) => {
               <QrCameraScanner
                 active={scanning && !verifying}
                 onDecode={handleDecode}
-                onError={setError}
                 hint={
                   verifying
                     ? "Vérification du QR…"
