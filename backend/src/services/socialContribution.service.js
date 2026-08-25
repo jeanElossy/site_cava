@@ -13,6 +13,10 @@ import Member from "../models/Member.js";
 // ce modèle ailleurs. Elle échouait dès qu'on l'appelait hors du
 // serveur complet (script, test isolé).
 import "../models/Flock.js";
+// Même raison : `getReceiptData` peuple `recordedBy` (l'agent qui a
+// encaissé). Sans cet import, la génération d'un reçu échoue dès qu'on
+// l'appelle hors du serveur complet.
+import "../models/User.js";
 
 import { ApiError } from "../utils/ApiError.js";
 import { normalizeRegistrationNumber } from "./registrationNumber.service.js";

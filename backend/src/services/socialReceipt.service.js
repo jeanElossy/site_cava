@@ -2,6 +2,7 @@ import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
 
 import Settings from "../models/Settings.js";
+import Church from "../models/Church.js";
 
 import { env } from "../config/env.js";
 import { toFrenchWords } from "../utils/frenchNumber.js";
@@ -96,6 +97,22 @@ const churchIdentity = async () => {
   };
 };
 
+// Nom réel de l'église, tel qu'il est administré dans la ressource
+// `churches` — « Centre Apostolique Vie et Abondance (CAVA) » plutôt
+// que « Église 1 ». Même source que la fiche membre PDF
+// (memberProfileSheet.service.js) et que les écrans d'administration.
+//
+// Repli sur « Église N » seulement si le numéro n'a pas (ou plus) de
+// fiche correspondante : mieux vaut un libellé générique qu'un tiret
+// sur un reçu qui, lui, existe bel et bien.
+const churchLabel = async (number) => {
+  if (!number) return "—";
+
+  const church = await Church.findOne({ number }).select("name").lean();
+
+  return church?.name ?? `Église ${number}`;
+};
+
 const memberLine = (contribution) => {
   const member = contribution.member ?? {};
   const full = [member.firstName, member.lastName].filter(Boolean).join(" ");
@@ -108,6 +125,7 @@ const memberLine = (contribution) => {
 // (répondre une erreur propre en cas d'échec en cours de génération).
 export const buildContributionReceipt = async (contribution) => {
   const church = await churchIdentity();
+  const memberChurchLabel = await churchLabel(contribution.church);
 
   const verifyUrl = `${env.PUBLIC_API_URL}/api/admin/social/contributions/${contribution._id}/recu`;
 
@@ -233,7 +251,7 @@ export const buildContributionReceipt = async (contribution) => {
   const rows = [
     ["Membre", memberLine(contribution)],
     ["Matricule", contribution.member?.registrationNumber || "—"],
-    ["Église", contribution.church ? `Église ${contribution.church}` : "—"],
+    ["Église", memberChurchLabel],
     ["Bergerie", contribution.member?.flock?.name || "—"],
     ["Période", periodLabel(contribution.month, contribution.year)],
     ["Date du paiement", formatDate(contribution.paidAt)],
