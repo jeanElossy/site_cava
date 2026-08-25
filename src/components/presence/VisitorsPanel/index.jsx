@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, Heart, Share2, UserPlus } from "lucide-react";
 
-import { listPresenceVisitors, downloadVisitorsPdf } from "../../../services/presences";
+import {
+  listPresenceVisitors,
+  downloadSessionAttendancePdf,
+  downloadVisitorsPdf,
+} from "../../../services/presences";
 import { newSouls } from "../../../services/api";
 
 import "./VisitorsPanel.scss";
@@ -54,12 +58,17 @@ const VisitorsPanel = ({ sessionToken }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionToken]);
 
-  const withPdf = async (action, task) => {
+  // `fetcher` explicite : les deux boutons ne produisent PAS le même
+  // document. Télécharger donne la feuille de présence complète —
+  // membres scannés et visiteurs, avec les totaux — que l'agent
+  // archive ; partager envoie la seule liste des visiteurs, destinée à
+  // l'équipe des nouvelles âmes.
+  const withPdf = async (action, fetcher, task) => {
     setBusy(action);
     setError("");
 
     try {
-      const { blob, filename } = await downloadVisitorsPdf(sessionToken);
+      const { blob, filename } = await fetcher(sessionToken);
 
       await task(blob, filename);
     } catch (caught) {
@@ -72,7 +81,7 @@ const VisitorsPanel = ({ sessionToken }) => {
   };
 
   const download = () =>
-    withPdf("download", (blob, filename) => {
+    withPdf("download", downloadSessionAttendancePdf, (blob, filename) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
 
@@ -87,7 +96,7 @@ const VisitorsPanel = ({ sessionToken }) => {
     });
 
   const share = () =>
-    withPdf("share", async (blob, filename) => {
+    withPdf("share", downloadVisitorsPdf, async (blob, filename) => {
       const file = new File([blob], filename, { type: "application/pdf" });
 
       if (!navigator.canShare({ files: [file] })) {

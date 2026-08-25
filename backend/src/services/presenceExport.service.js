@@ -10,6 +10,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { excelSafeCell } from "../utils/excelSafeCell.js";
 import { getEffectiveWindow } from "../utils/presenceQrWindow.js";
 import { drawCenteredImage } from "../utils/pdfLogo.js";
+import { formatRegistrationNumber } from "../utils/registrationFormat.js";
 
 // Export de la liste des présences d'un service, avec le décompte
 // membres/visiteurs — voir docs/superpowers/specs/2026-08-04-badgeage-
@@ -32,12 +33,16 @@ const LOGO_PATH = path.join(
 // utils/presenceQrWindow.js), avec un repli explicite pour un QR
 // encore "en attente" : sans ça, `.toLocaleString()` sur un `validFrom`
 // nul ferait planter l'export au lieu d'un message clair.
-const formatWindow = (qr) => {
+// `separator` : la flèche « → » n'existe pas dans la police par défaut
+// de PDFKit (Helvetica, jeu WinAnsi), où elle s'imprimait en caractères
+// parasites. Le PDF passe donc « à » ; le XLSX, lui, garde la flèche —
+// un tableur n'a pas cette limite.
+const formatWindow = (qr, { separator = "→" } = {}) => {
   const { validFrom, validUntil } = getEffectiveWindow(qr);
 
   if (!validFrom) return "QR jamais activé — aucune présence possible.";
 
-  return `${validFrom.toLocaleString("fr-FR")} → ${validUntil.toLocaleString("fr-FR")}`;
+  return `${validFrom.toLocaleString("fr-FR")} ${separator} ${validUntil.toLocaleString("fr-FR")}`;
 };
 
 const fetchAttendanceReport = async (securityQrId) => {
@@ -201,7 +206,7 @@ export const buildAttendancePdf = async (securityQrId) => {
       .text(qr.label, { align: "center" })
       .fontSize(9)
       .fillColor(GREEN)
-      .text(formatWindow(qr), { align: "center" })
+      .text(formatWindow(qr, { separator: "à" }), { align: "center" })
       .moveDown(0.5);
 
     doc
@@ -252,7 +257,9 @@ export const buildAttendancePdf = async (securityQrId) => {
         String(index + 1).padStart(3, "0"),
         displayName(record),
         record.kind === "member" ? "Membre" : "Visiteur",
-        record.kind === "member" ? record.member?.registrationNumber ?? "—" : "—",
+        record.kind === "member"
+          ? formatRegistrationNumber(record.member?.registrationNumber) || "—"
+          : "—",
         new Date(record.recordedAt).toLocaleTimeString("fr-FR", {
           hour: "2-digit",
           minute: "2-digit",

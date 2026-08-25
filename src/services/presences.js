@@ -97,6 +97,24 @@ export const downloadVisitorsPdf = async (sessionToken) => {
   return { blob: await response.blob(), filename: "visiteurs.pdf" };
 };
 
+// Feuille de présence COMPLÈTE : membres scannés ET visiteurs, avec les
+// totaux. À ne pas confondre avec `downloadVisitorsPdf` ci-dessus, qui
+// ne liste que les visiteurs — c'est ce document-là que l'agent archive
+// en fin de culte.
+export const downloadSessionAttendancePdf = async (sessionToken) => {
+  const response = await fetch(`${apiBaseUrl}/api/presences/attendance.pdf`, {
+    headers: { Authorization: `Bearer ${sessionToken ?? ""}` },
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+
+    throw new Error(payload?.message ?? "Le PDF n'a pas pu être généré.");
+  }
+
+  return { blob: await response.blob(), filename: "presences.pdf" };
+};
+
 // ---- Administration --------------------------------------------------
 
 export const adminListPresenceQrs = () =>

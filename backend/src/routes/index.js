@@ -702,6 +702,39 @@ export const buildRoutes = () => {
     })
   );
 
+  // Feuille de présence COMPLÈTE — membres scannés ET visiteurs, avec
+  // les totaux (général, membres, visiteurs, femmes, hommes).
+  //
+  // Distincte de `/visitors.pdf` juste au-dessus, qui ne liste que les
+  // visiteurs : c'est le document que l'agent archive en fin de culte,
+  // pas la liste à transmettre à l'équipe des nouvelles âmes.
+  //
+  // Réutilise telle quelle la génération de l'administration
+  // (`presenceExportService`), plutôt que d'en écrire une seconde qui
+  // divergerait : l'agent et l'administrateur doivent obtenir le même
+  // document pour le même service.
+  presencesPublic.get(
+    "/attendance.pdf",
+    requirePresenceSession,
+    asyncHandler(async (req, res) => {
+      const buffer = await presenceExportService.buildAttendancePdf(
+        req.presenceQr._id
+      );
+
+      const safeLabel = String(req.presenceQr.label ?? "service")
+        .replace(/[^a-zA-Z0-9-]+/g, "-")
+        .slice(0, 60);
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="presences-${safeLabel}.pdf"`
+      );
+
+      res.send(buffer);
+    })
+  );
+
   api.use("/presences", presencesPublic);
 
   // Administration des QR de sécurité — génération, révocation,
