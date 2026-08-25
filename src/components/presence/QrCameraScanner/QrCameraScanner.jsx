@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import jsQR from "jsqr";
 
-import { Camera } from "lucide-react";
+import { Camera, RefreshCw } from "lucide-react";
 
 import "./QrCameraScanner.scss";
 
@@ -21,6 +21,31 @@ const SCAN_INTERVAL_MS = 200;
 // image) — assez nette pour un aperçu, sans coût de calcul inutile.
 const PREVIEW_SIZE = 480;
 
+// Message d'échec adapté à la CAUSE. « Vérifiez l'autorisation » était
+// affiché quoi qu'il arrive, y compris quand l'autorisation était
+// accordée et que l'échec venait d'ailleurs — l'agent cherchait alors
+// dans les réglages du téléphone un problème qui n'y était pas.
+const failureMessage = (error) => {
+  switch (error?.name) {
+    case "NotAllowedError":
+    case "SecurityError":
+      return "L'accès à la caméra a été refusé. Autorisez-le dans les réglages du navigateur, puis réessayez.";
+    case "NotFoundError":
+    case "OverconstrainedError":
+      return "Aucune caméra utilisable n'a été trouvée sur cet appareil.";
+    case "NotReadableError":
+      return "La caméra est déjà utilisée par une autre application. Fermez-la, puis réessayez.";
+    default:
+      return "La caméra n'a pas pu démarrer. Touchez « Activer la caméra » pour réessayer.";
+  }
+};
+
+// Un refus d'autorisation ne se rejoue pas avec d'autres contraintes :
+// insister ne ferait que redemander, et parfois réafficher une invite
+// que l'utilisateur vient de refuser.
+const isPermissionError = (error) =>
+  error?.name === "NotAllowedError" || error?.name === "SecurityError";
+
 const QrCameraScanner = ({ active, onDecode, onError, hint }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -29,153 +54,245 @@ const QrCameraScanner = ({ active, onDecode, onError, hint }) => {
   const intervalRef = useRef(null);
   const rafRef = useRef(null);
 
-  const [ready, setReady] = useState(false);
+  // Chaque démarrage porte un numéro. Une reprise manuelle, ou un
+  // changement de `active` pendant l'attente de l'autorisation, périme
+  // le démarrage en cours : sans ce jeton, deux flux pouvaient rester
+  // ouverts en même temps, la caméra du second n'étant jamais affichée.
+  const runIdRef = useRef(0);
 
-  useEffect(() => {
-    if (!active) return undefined;
+  const [status, setStatus] = useState("idle");
+  const [failure, setFailure] = useState("");
 
-    let cancelled = false;
+  const stopCamera = useCallback(() => {
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
 
-    const start = async () => {
+    if (rafRef.current) {
+      window.cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+  }, []);
+
+  const startCamera = useCallback(async () => {
+    const runId = runIdRef.current + 1;
+    runIdRef.current = runId;
+
+    stopCamera();
+    setStatus("starting");
+    setFailure("");
+
+    const fail = (error) => {
+      if (runId !== runIdRef.current) return;
+
+      const message = failureMessage(error);
+
+      setStatus("failed");
+      setFailure(message);
+      onError?.(message);
+    };
+
+    // `getUserMedia` n'existe tout simplement PAS hors contexte
+    // sécurisé. Sur un téléphone ouvert en http:// ou par adresse IP,
+    // l'appel échouait donc sur un « undefined is not a function »
+    // avalé par le catch, et l'agent voyait un message d'autorisation
+    // alors qu'aucune invite n'avait jamais pu s'afficher.
+    if (!navigator.mediaDevices?.getUserMedia) {
+      const message = window.isSecureContext
+        ? "Ce navigateur ne permet pas l'accès à la caméra."
+        : "La caméra exige une connexion sécurisée (https). Ouvrez le site en https, pas par son adresse IP.";
+
+      setStatus("failed");
+      setFailure(message);
+      onError?.(message);
+
+      return;
+    }
+
+    // Contraintes de CADRAGE, en `ideal` : voir plus bas pourquoi un
+    // flux non carré s'affichait comme une tranche étirée.
+    let stream;
+
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "environment",
+          aspectRatio: { ideal: 1 },
+          width: { ideal: 720 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+    } catch (error) {
+      if (isPermissionError(error)) {
+        fail(error);
+
+        return;
+      }
+
+      // Repli sans la moindre contrainte. Des Android refusent le jeu
+      // complet alors qu'ils ont bien une caméra utilisable : mieux
+      // vaut un cadrage imparfait que pas de scanner du tout.
       try {
-        // Sans contrainte de résolution/ratio, certains téléphones
-        // renvoient un flux natif de forme quelconque (parfois
-        // portrait) que le cadrage CSS (`object-fit: cover`) recadre
-        // alors en n'affichant qu'une fine tranche de l'image, étirée
-        // pour remplir le cadre carré — perçu comme "la caméra est
-        // toute étroite/verticale". `ideal` (pas `exact`) : une
-        // préférence que le navigateur essaie de satisfaire sans
-        // jamais faire échouer l'accès à la caméra s'il ne le peut
-        // pas.
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment",
-            aspectRatio: { ideal: 1 },
-            width: { ideal: 720 },
-            height: { ideal: 720 },
-          },
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
           audio: false,
         });
+      } catch (fallbackError) {
+        fail(fallbackError);
 
-        if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
+        return;
+      }
+    }
 
-        streamRef.current = stream;
+    if (runId !== runIdRef.current) {
+      stream.getTracks().forEach((track) => track.stop());
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-        }
+      return;
+    }
 
-        setReady(true);
+    streamRef.current = stream;
 
-        // Aperçu visible : recadrage carré centré dessiné nous-mêmes à
-        // chaque image, plutôt que de compter sur `object-fit: cover`
-        // du <video> — certains navigateurs/WebView (Android
-        // notamment) l'ignorent ou l'appliquent mal et ÉTIRENT
-        // l'image pour remplir le cadre au lieu de la ROGNER, d'où
-        // l'effet "caméra toute déformée/verticale" remonté. Le
-        // <video> lui-même reste dans le DOM (nécessaire pour
-        // continuer à décoder) mais invisible — seul ce canvas,
-        // entièrement sous notre contrôle, est affiché.
-        const drawPreviewFrame = () => {
-          const video = videoRef.current;
-          const preview = previewCanvasRef.current;
+    const video = videoRef.current;
 
-          if (
-            video &&
-            preview &&
-            video.readyState >= video.HAVE_CURRENT_DATA
-          ) {
-            const { videoWidth, videoHeight } = video;
+    if (!video) {
+      stopCamera();
+      fail(new Error("video element absent"));
 
-            if (videoWidth && videoHeight) {
-              const size = Math.min(videoWidth, videoHeight);
-              const sx = (videoWidth - size) / 2;
-              const sy = (videoHeight - size) / 2;
+      return;
+    }
 
-              preview
-                .getContext("2d")
-                .drawImage(
-                  video,
-                  sx,
-                  sy,
-                  size,
-                  size,
-                  0,
-                  0,
-                  preview.width,
-                  preview.height
-                );
-            }
-          }
+    // Posés SUR L'ÉLÉMENT et pas seulement en JSX : React ne rend pas
+    // l'attribut `muted` dans le DOM, et Chrome Android refuse de lire
+    // automatiquement une vidéo qu'il ne voit pas muette. C'est l'une
+    // des raisons pour lesquelles le scanner démarrait sur iPhone et
+    // pas sur Android, autorisations pourtant accordées.
+    video.muted = true;
+    video.defaultMuted = true;
+    video.setAttribute("muted", "");
+    video.setAttribute("playsinline", "");
+    video.setAttribute("autoplay", "");
 
-          rafRef.current = window.requestAnimationFrame(drawPreviewFrame);
-        };
+    video.srcObject = stream;
 
-        rafRef.current = window.requestAnimationFrame(drawPreviewFrame);
+    try {
+      await video.play();
+    } catch {
+      // NON FATAL, et c'est tout le correctif : `play()` rejette
+      // couramment sur Android (AbortError quand une lecture précédente
+      // est interrompue) alors que le flux est bien vivant. Cette
+      // exception faisait basculer TOUT le démarrage dans le catch
+      // général : ni aperçu, ni décodage, et un message d'autorisation
+      // trompeur — alors qu'il n'y avait qu'à continuer.
+    }
 
-        intervalRef.current = window.setInterval(() => {
-          const video = videoRef.current;
-          const canvas = canvasRef.current;
+    if (runId !== runIdRef.current) return;
 
-          if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) {
-            return;
-          }
+    const drawPreviewFrame = () => {
+      const source = videoRef.current;
+      const preview = previewCanvasRef.current;
 
-          const width = video.videoWidth;
-          const height = video.videoHeight;
+      if (source && preview && source.readyState >= source.HAVE_CURRENT_DATA) {
+        const { videoWidth, videoHeight } = source;
 
-          if (!width || !height) return;
+        if (videoWidth && videoHeight) {
+          const size = Math.min(videoWidth, videoHeight);
+          const sx = (videoWidth - size) / 2;
+          const sy = (videoHeight - size) / 2;
 
-          canvas.width = width;
-          canvas.height = height;
-
-          const context = canvas.getContext("2d", { willReadFrequently: true });
-          context.drawImage(video, 0, 0, width, height);
-
-          const imageData = context.getImageData(0, 0, width, height);
-          const result = jsQR(imageData.data, width, height, {
-            inversionAttempts: "dontInvert",
-          });
-
-          if (result?.data) {
-            onDecode(result.data);
-          }
-        }, SCAN_INTERVAL_MS);
-      } catch {
-        if (!cancelled) {
-          onError?.(
-            "Impossible d'accéder à la caméra. Vérifiez l'autorisation dans votre navigateur."
-          );
+          preview
+            .getContext("2d")
+            .drawImage(
+              source,
+              sx,
+              sy,
+              size,
+              size,
+              0,
+              0,
+              preview.width,
+              preview.height
+            );
         }
       }
+
+      rafRef.current = window.requestAnimationFrame(drawPreviewFrame);
     };
 
-    start();
+    rafRef.current = window.requestAnimationFrame(drawPreviewFrame);
+
+    intervalRef.current = window.setInterval(() => {
+      const source = videoRef.current;
+      const canvas = canvasRef.current;
+
+      // `HAVE_CURRENT_DATA` et non plus `HAVE_ENOUGH_DATA` : sur un flux
+      // caméra en direct, beaucoup d'Android plafonnent à
+      // HAVE_CURRENT_DATA et n'atteignent JAMAIS HAVE_ENOUGH_DATA, qui
+      // décrit un tampon suffisant pour lire sans interruption — notion
+      // sans objet pour du direct. L'égalité stricte empêchait donc tout
+      // décodage sur ces appareils, aperçu affiché ou non.
+      if (
+        !source ||
+        !canvas ||
+        source.readyState < source.HAVE_CURRENT_DATA
+      ) {
+        return;
+      }
+
+      const width = source.videoWidth;
+      const height = source.videoHeight;
+
+      if (!width || !height) return;
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      context.drawImage(source, 0, 0, width, height);
+
+      const imageData = context.getImageData(0, 0, width, height);
+      const result = jsQR(imageData.data, width, height, {
+        inversionAttempts: "dontInvert",
+      });
+
+      if (result?.data) {
+        onDecode(result.data);
+      }
+    }, SCAN_INTERVAL_MS);
+
+    setStatus("ready");
+    // `onDecode`/`onError` changent à chaque rendu du parent : les
+    // inclure relancerait la caméra en boucle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stopCamera]);
+
+  useEffect(() => {
+    if (!active) {
+      // Pas de `setStatus` ici : l'état n'est lu que sous `active`
+      // (ligne de scan et bloc de reprise), le remettre à zéro
+      // déclencherait un rendu en cascade pour rien.
+      runIdRef.current += 1;
+      stopCamera();
+
+      return undefined;
+    }
+
+    // Planifié plutôt qu'appelé directement, pour deux raisons : le
+    // démarrage met à jour l'état, ce qui n'a pas sa place dans le corps
+    // d'un effet (rendu en cascade) ; et cela laisse au navigateur le
+    // temps d'attacher la balise <video> avant qu'on lui pose un flux.
+    const timer = window.setTimeout(startCamera, 0);
 
     return () => {
-      cancelled = true;
-
-      if (intervalRef.current) {
-        window.clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-
-      if (rafRef.current) {
-        window.cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-
-      setReady(false);
+      window.clearTimeout(timer);
+      runIdRef.current += 1;
+      stopCamera();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
+  }, [active, startCamera, stopCamera]);
 
   return (
     <div className="qr-camera-scanner">
@@ -187,6 +304,7 @@ const QrCameraScanner = ({ active, onDecode, onError, hint }) => {
               className="qr-camera-scanner__source-video"
               playsInline
               muted
+              autoPlay
               aria-hidden="true"
             />
             <canvas
@@ -221,13 +339,28 @@ const QrCameraScanner = ({ active, onDecode, onError, hint }) => {
           aria-hidden="true"
         />
 
-        {active && ready && (
+        {active && status === "ready" && (
           <span
             className="qr-camera-scanner__line"
             aria-hidden="true"
           />
         )}
       </div>
+
+      {/* Reprise MANUELLE. Un démarrage automatique dépend de règles de
+          lecture automatique et d'autorisation que le navigateur peut
+          refuser sans rien dire ; un appui de l'agent, lui, est un geste
+          utilisateur explicite, que tous les navigateurs acceptent. */}
+      {active && status === "failed" && (
+        <div className="qr-camera-scanner__recover">
+          <p role="alert">{failure}</p>
+
+          <button type="button" onClick={startCamera}>
+            <RefreshCw size={16} aria-hidden="true" />
+            Activer la caméra
+          </button>
+        </div>
+      )}
 
       {hint && <p className="qr-camera-scanner__hint">{hint}</p>}
 
