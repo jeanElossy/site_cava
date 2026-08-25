@@ -81,6 +81,27 @@ const displayName = (record) =>
     ? `${record.member?.lastName ?? "—"} ${record.member?.firstName ?? ""}`.trim()
     : `${record.visitor?.lastName ?? "—"} ${record.visitor?.firstName ?? ""}`.trim();
 
+// Un badge invité pré-imprimé porte une identité fictive ("Invité
+// Homme 1", voir presence.service.js#recordGuestBadgeAttendance)
+// destinée au comptage : le même invité est ensuite, le plus souvent,
+// ré-enregistré à la main sous son vrai nom.
+//
+// Ces lignes ÉTAIENT masquées du tableau nominatif du PDF pour éviter
+// d'afficher deux fois la même personne. Le remède était pire que le
+// mal : les totaux annonçaient cinq visiteurs pour un seul nom listé,
+// sans que rien ne l'explique, et le PDF contredisait le XLSX qui, lui,
+// a toujours tout listé. Elles sont désormais listées dans les deux
+// documents, mais explicitement typées « Badge invité » — un doublon
+// visible et compréhensible vaut mieux qu'un écart inexpliqué.
+const isGuestBadgePlaceholder = (record) =>
+  record.kind === "visitor" && Boolean(record.visitor?.badgeCode);
+
+const kindLabel = (record) => {
+  if (record.kind === "member") return "Membre";
+
+  return isGuestBadgePlaceholder(record) ? "Badge invité" : "Visiteur";
+};
+
 export const buildAttendanceXlsx = async (securityQrId) => {
   const { qr, records, members, visitors } = await fetchAttendanceReport(securityQrId);
   const { women, men } = countByGender(records);
@@ -145,7 +166,7 @@ export const buildAttendanceXlsx = async (securityQrId) => {
       firstName: excelSafeCell(
         isMember ? record.member?.firstName ?? "—" : record.visitor?.firstName ?? "—"
       ),
-      kind: isMember ? "Membre" : "Visiteur",
+      kind: kindLabel(record),
       registrationNumber: isMember ? record.member?.registrationNumber ?? "—" : "—",
       phone: excelSafeCell((isMember ? record.member?.phone : record.visitor?.phone) ?? "—"),
       area: excelSafeCell(isMember ? record.member?.area ?? "—" : "—"),
@@ -165,24 +186,15 @@ export const buildAttendanceXlsx = async (securityQrId) => {
   return workbook.xlsx.writeBuffer();
 };
 
-// Un badge invité pré-imprimé porte une identité fictive ("Invité
-// Homme 1", voir presence.service.js#recordGuestBadgeAttendance)
-// destinée au seul comptage : le même invité est ensuite, le plus
-// souvent, ré-enregistré à la main sous son vrai nom. Lister les deux
-// ferait apparaître deux lignes pour la même personne dans le
-// tableau nominatif — voir buildVisitorsPdf, même principe.
-const isGuestBadgePlaceholder = (record) =>
-  record.kind === "visitor" && Boolean(record.visitor?.badgeCode);
 
 export const buildAttendancePdf = async (securityQrId) => {
   const { qr, records, members, visitors } = await fetchAttendanceReport(securityQrId);
   const { women, men } = countByGender(records);
 
-  // Les totaux ci-dessus restent basés sur TOUS les enregistrements
-  // (badges compris, pour ne pas perdre le décompte de ceux jamais
-  // ré-enregistrés à la main) — seul le tableau nominatif exclut les
-  // badges invités, dont l'identité est fictive.
-  const listedRecords = records.filter((record) => !isGuestBadgePlaceholder(record));
+  // Le tableau nominatif liste EXACTEMENT ce que comptent les totaux :
+  // un lecteur doit pouvoir retrouver les cinq visiteurs annoncés en
+  // comptant cinq lignes.
+  const listedRecords = records;
 
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: "A4", margin: 40 });
@@ -222,7 +234,7 @@ export const buildAttendancePdf = async (securityQrId) => {
     const columns = [
       { label: "N°", width: 30 },
       { label: "Nom & prénoms", width: 190 },
-      { label: "Type", width: 60 },
+      { label: "Type", width: 74 },
       { label: "Matricule", width: 90 },
       { label: "Heure", width: 60 },
       { label: "Agent", width: 90 },
@@ -256,7 +268,7 @@ export const buildAttendancePdf = async (securityQrId) => {
       const row = [
         String(index + 1).padStart(3, "0"),
         displayName(record),
-        record.kind === "member" ? "Membre" : "Visiteur",
+        kindLabel(record),
         record.kind === "member"
           ? formatRegistrationNumber(record.member?.registrationNumber) || "—"
           : "—",
