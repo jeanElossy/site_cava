@@ -110,6 +110,14 @@ const SubmissionsPanel = () => {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
 
+  // Détail champ par champ renvoyé par l'API en cas de 422
+  // (`error.details`). Le serveur l'envoyait déjà, mais le panneau
+  // n'affichait que le message générique « Les données envoyées sont
+  // invalides. » — sans dire quel champ refusait. C'est le cas
+  // typique d'une MISE À JOUR : le matricule est bon (il a servi à
+  // retrouver le membre), c'est un autre champ qui coince.
+  const [actionErrorFields, setActionErrorFields] = useState(null);
+
   useEffect(() => {
     flocksApi
       .listAdmin({ limit: 200 })
@@ -170,6 +178,7 @@ const SubmissionsPanel = () => {
   const handleApprove = async () => {
     setBusy(true);
     setActionError("");
+    setActionErrorFields(null);
 
     try {
       await memberSubmissions.approve(selectedId(), overrides);
@@ -178,6 +187,7 @@ const SubmissionsPanel = () => {
       reload();
     } catch (caught) {
       setActionError(caught?.message ?? "La validation a échoué.");
+      setActionErrorFields(caught?.details ?? null);
     } finally {
       setBusy(false);
     }
@@ -319,13 +329,20 @@ const SubmissionsPanel = () => {
                 <p>Corriger si nécessaire avant de valider :</p>
 
                 {EDITABLE_FIELDS.filter(
-                  // Le matricule ne concerne que les membres
-                  // historiques : l'afficher sur une inscription neuve
-                  // laisserait croire qu'on peut en imposer un, alors
-                  // qu'il est attribué automatiquement à la validation.
+                  // Le matricule n'est proposé que là où le corriger
+                  // change quelque chose : une demande qui porte un
+                  // matricule papier SANS fiche correspondante, donc à
+                  // partir duquel le membre va être créé.
+                  //
+                  // Sur une inscription neuve, il est attribué
+                  // automatiquement. Sur une mise à jour déjà rattachée
+                  // à une fiche, il a servi de clé de recherche et n'est
+                  // plus en jeu : l'afficher laisserait croire qu'on
+                  // peut renuméroter le membre depuis ici.
                   (field) =>
                     field !== "registrationNumber" ||
-                    detail.submission.submittedRegistrationNumber
+                    (detail.submission.submittedRegistrationNumber &&
+                      !detail.submission.existingMember)
                 ).map((field) => (
                   <label key={field}>
                     {FIELD_LABELS[field]}
@@ -350,9 +367,23 @@ const SubmissionsPanel = () => {
               </div>
 
               {actionError && (
-                <p className="submissions-panel__alert" role="alert">
-                  {actionError}
-                </p>
+                <div className="submissions-panel__alert" role="alert">
+                  <p>{actionError}</p>
+
+                  {actionErrorFields && (
+                    <ul>
+                      {Object.entries(actionErrorFields).map(
+                        ([field, message]) => (
+                          <li key={field}>
+                            <strong>{FIELD_LABELS[field] ?? field}</strong>
+                            {" : "}
+                            {message}
+                          </li>
+                        )
+                      )}
+                    </ul>
+                  )}
+                </div>
               )}
 
               {rejecting ? (
