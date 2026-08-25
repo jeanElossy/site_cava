@@ -261,6 +261,12 @@ l'église 5 en nettoyage, y compris les fixtures de `agent.service.test.js`
 qui tourne en parallèle sur la même base. Le nettoyage ne vise plus que
 ses propres fixtures.
 
+**Corrigé au passage (2) :** `listUnpaid()` peuplait `member.flock`
+sans importer le modèle `Flock`. Ça ne fonctionnait que par effet de
+bord — `routes/index.js` charge ce modèle ailleurs — et la fonction
+échouait dès qu'on l'appelait hors du serveur complet (script, test
+isolé). La dépendance est maintenant explicite.
+
 **Note d'environnement :** si les tests de carte/badge échouent avec
 « Cannot find native binding », c'est la dépendance optionnelle
 `@napi-rs/canvas-linux-x64-gnu` qui manque localement (bug npm connu) —
@@ -275,9 +281,30 @@ ses propres fixtures.
       une source paysage (ratio 1,12) et une source portrait (0,75) — les
       proportions sont respectées, les visages entiers, aucun étirement.
       Cartes confirmées bonnes par le client.
-- [ ] **Compression des images** (`src/assets/images/`, 2 à 2,7 Mo par
-      fichier) — principal chantier de performance restant, identifié de
-      longue date.
+- [x] ~~**Compression des images**~~ — **la prémisse était fausse.** La
+      note « 2 à 2,7 Mo par fichier », héritée d'un `CLAUDE.md` obsolète,
+      ne correspond à rien : mesuré le 25/08, la plus grosse image
+      embarquée pèse **291 Ko**, et une recompression JPEG/PNG de tout le
+      lot ne rendrait que **4 %**. Les images sont déjà correctes.
+
+      Ce qui a réellement été fait : suppression d'un fichier parasite de
+      **1,5 Mo** (`ChatGPT Image 3 août 2026…png`) qui traînait dans
+      `public/` — donc copié tel quel à chaque déploiement — et n'était
+      référencé nulle part, ni dans le code ni en base. Le poids
+      embarqué passe de 7,2 à 5,7 Mo.
+
+- [ ] **(optionnel) Passer les images en WebP** — mesuré : 5,69 Mo →
+      3,27 Mo, soit **42 % (2,4 Mo)**. Non fait : il faudrait réécrire
+      chaque référence, et les chemins de `public/images/` ne sont pas
+      vérifiés au build (une faute de frappe casse en silence). À
+      décider — je peux le faire proprement si vous le voulez.
+
+- [ ] **(optionnel) Nettoyer `src/assets/images/`** — 3,49 Mo d'images
+      qui ne sont importées nulle part (dont `mariage.png`, 1,65 Mo, et
+      les logos Mobile Money, remplacés par les moyens de paiement gérés
+      en base). Vite ne les embarque pas, donc **aucun impact en
+      production** : c'est du poids de dépôt, pas de performance. À
+      supprimer seulement si vous confirmez qu'elles ne servent plus.
 - [ ] **Mettre à jour `CLAUDE.md`** : il décrit encore un site vitrine
       « contenu en dur » et ignore les modules Membres, Présences, Âmes
       nouvelles et Social, qui font aujourd'hui l'essentiel du code.

@@ -6,6 +6,13 @@ import SocialLedgerEntry from "../models/SocialLedgerEntry.js";
 import SocialCounter from "../models/SocialCounter.js";
 import SocialAid from "../models/SocialAid.js";
 import Member from "../models/Member.js";
+// Importé pour lui-même, jamais référencé directement : `listUnpaid`
+// peuple `member.flock`, et Mongoose exige que le modèle « Flock » soit
+// enregistré au moment du populate. Sans cet import, la fonction ne
+// marchait que par effet de bord — parce que `routes/index.js` charge
+// ce modèle ailleurs. Elle échouait dès qu'on l'appelait hors du
+// serveur complet (script, test isolé).
+import "../models/Flock.js";
 
 import { ApiError } from "../utils/ApiError.js";
 import { normalizeRegistrationNumber } from "./registrationNumber.service.js";
