@@ -1,9 +1,10 @@
 @use "../styles/variables" as *;
+@use "../styles/mixins" as *;
 
 .about-hero {
   position: relative;
 
-  min-height: 700px;
+  @include hero-height;
 
   display: flex;
   align-items: center;
@@ -75,8 +76,12 @@
 
   h1 {
     margin: 0;
+  // Plus petit que le titre d'accueil (4rem) alors que la bannière a
+  // désormais la même hauteur : celui-ci fait TROIS lignes longues
+  // contre deux lignes courtes. À taille égale, le bloc de titre
+  // occupait la moitié du hero et l'écrasait.
 
-    font-size: clamp(2.2rem, 3.8vw, 3.8rem);
+    font-size: clamp(1.8rem, 2.9vw, 2.9rem);
     line-height: 1.15;
     font-weight: 700;
 
@@ -143,14 +148,13 @@
 
 @media (max-width: 992px) {
   .about-hero {
-    min-height: 600px;
 
     &__container {
       padding: 120px 40px 80px;
     }
 
     h1 {
-      font-size: 3rem;
+      font-size: 2.4rem;
     }
 
     p {
@@ -161,14 +165,13 @@
 
 @media (max-width: 768px) {
   .about-hero {
-    min-height: auto;
 
     &__container {
       padding: 120px 25px 80px;
     }
 
     h1 {
-      font-size: 2.3rem;
+      font-size: 2rem;
     }
 
     p {
@@ -181,7 +184,7 @@
 @media (max-width: 480px) {
   .about-hero {
     h1 {
-      font-size: 2rem;
+      font-size: 1.75rem;
     }
 
     &__subtitle {

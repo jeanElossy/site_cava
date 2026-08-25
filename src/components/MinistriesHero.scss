@@ -1,9 +1,10 @@
 @use "../styles/variables" as *;
+@use "../styles/mixins" as *;
 
 .ministries-hero {
   position: relative;
 
-  min-height: 640px;
+  @include hero-height;
 
   display: flex;
   align-items: center;
@@ -211,7 +212,6 @@
 
 @media (max-width: 992px) {
   .ministries-hero {
-    min-height: 560px;
 
     &__container {
       padding: 130px 40px 70px;
@@ -229,7 +229,6 @@
 
 @media (max-width: 768px) {
   .ministries-hero {
-    min-height: auto;
 
     &__container {
       padding: 120px 25px 70px;

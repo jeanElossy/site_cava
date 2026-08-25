@@ -1,4 +1,5 @@
 @use "../../../styles/variables" as *;
+@use "../../../styles/mixins" as *;
 
 // Tout est imbriqué sous `.legal-hero` : les SCSS du projet sont
 // fusionnés en une feuille unique, une classe déclarée à la racine
@@ -9,7 +10,7 @@
   // Pleine hauteur d'écran, comme les héros de l'accueil et de la page
   // Médias. Les pages légales ne sont plus une annexe au rabais : elles
   // s'ouvrent exactement comme le reste du site.
-  min-height: 100vh;
+  @include hero-height;
 
   display: flex;
   align-items: center;
@@ -130,7 +131,6 @@
   @media (max-width: 768px) {
     // Sur mobile, `100vh` inclut la barre d'adresse du navigateur : le
     // héros dépasserait l'écran et pousserait le texte hors du cadre.
-    min-height: 620px;
 
     &__container {
       padding: 120px 25px 70px;

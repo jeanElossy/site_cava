@@ -1,9 +1,10 @@
 @use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
 
 .ministry-hero {
   position: relative;
 
-  min-height: 720px;
+  @include hero-height;
 
   display: flex;
   align-items: center;
@@ -186,7 +187,6 @@
 
 @media (max-width: 768px) {
   .ministry-hero {
-    min-height: 620px;
   }
 
   .ministry-hero__title {

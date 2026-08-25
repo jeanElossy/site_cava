@@ -1,7 +1,10 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
 .media-hero {
   position: relative;
 
-  min-height: 100vh;
+  @include hero-height;
 
   background-size: cover;
   background-position: center;
@@ -106,7 +109,6 @@
 @media (max-width: 992px) {
 
   .media-hero {
-    min-height: 100vh;
 
     padding-top: 30px;
   }

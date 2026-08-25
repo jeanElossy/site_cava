@@ -1,3 +1,5 @@
+@use "variables" as *;
+
 @mixin flex-center {
   display: flex;
   align-items: center;
@@ -20,5 +22,24 @@
 
   @media (max-width: 768px) {
     padding: 0 20px;
+  }
+}
+
+
+// Hauteur d'un hero de page publique, à ses trois échelles.
+//
+// UN SEUL endroit décide : chaque hero portait sa propre valeur (640,
+// 650, 700, 720 px…), si bien qu'aucune page n'avait la même bannière
+// que l'accueil. Les heros appellent ce mixin sur leur classe racine et
+// ne redéclarent plus de `min-height` dans leurs media queries.
+@mixin hero-height {
+  min-height: $hero-min-height;
+
+  @media (max-width: 992px) {
+    min-height: $hero-min-height-tablet;
+  }
+
+  @media (max-width: 768px) {
+    min-height: $hero-min-height-mobile;
   }
 }

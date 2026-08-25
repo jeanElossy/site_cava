@@ -10,6 +10,19 @@ const ContributionHero = () => {
   return (
     <section className="contribution-hero">
 
+      {/* CALQUES DE FOND, en dehors de `__container`.
+          `__container` est centré et plafonné à 1400 px : une image
+          absolue placée dedans se cale sur LUI, pas sur le hero, et
+          n'atteignait donc pas les bords de l'écran au-delà de cette
+          largeur. */}
+      <div className="contribution-hero__right">
+        <img
+          src={donateImg}
+          alt=""
+          aria-hidden="true"
+        />
+      </div>
+
       <div className="contribution-hero__overlay" />
 
       <div className="contribution-hero__container">
@@ -44,15 +57,6 @@ const ContributionHero = () => {
             <FaHeart aria-hidden="true" />
             Contribuer maintenant
           </a>
-
-        </div>
-
-        <div className="contribution-hero__right">
-
-          <img
-            src={donateImg}
-            alt="Contribution"
-          />
 
         </div>
 

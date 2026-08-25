@@ -22,3 +22,26 @@ $primary-green: #0d5b3e;
 $primary-green-dark: #083b2a;
 $primary-yellow: #f4c41d;
 $background-light: #f8f8f8;
+
+// Hauteur des heros de pages publiques.
+//
+// UNE SEULE VALEUR pour tout le site : chaque hero portait la sienne
+// (640, 650, 700, 720 px, parfois `auto` en dessous de 768 px), si bien
+// qu'aucune page n'avait la même bannière que l'accueil. La référence
+// est le hero d'accueil (`Hero/Hero.scss`), en pleine hauteur de
+// fenêtre à tous les points de rupture.
+//
+// `min-height` et non `height` : un hero dont le contenu dépasse (titre
+// long, écran bas) grandit au lieu de rogner son texte.
+$hero-min-height: 100vh;
+
+// Sous 992 px, la pleine hauteur de fenêtre devient contre-productive :
+// la bannière occupe tout l'écran et repousse le contenu réel sous la
+// ligne de flottaison. Sur mobile, `100vh` dépasse en plus la zone
+// réellement visible, la barre d'adresse du navigateur n'étant pas
+// comptée.
+//
+// Ce sont des `min-height` : un hero dont le contenu est plus haut
+// (titre long, petit écran) grandit au lieu de le rogner.
+$hero-min-height-tablet: 80vh;
+$hero-min-height-mobile: 70vh;

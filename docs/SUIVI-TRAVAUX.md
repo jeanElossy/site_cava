@@ -245,6 +245,50 @@ mois** — justes quels que soient la page et le filtre.
 
 ---
 
+## C bis. Site public — bannières (heros)
+
+### C1 — Toutes les pages à la même hauteur de bannière ✅ TERMINÉ
+
+**Demande.** Que chaque page publique ait la même bannière que l'accueil.
+
+**Ce qui n'allait pas.** Chaque hero portait sa propre hauteur, écrite en
+dur : 620, 640, 650, 700, 720 px selon la page, et parfois `auto` sous
+768 px. Aucune page n'avait la bannière de l'accueil (`100vh`).
+
+**Ce qui a été fait.** Un mixin unique `hero-height` dans
+[_mixins.scss](src/styles/_mixins.scss), appelé par les **12 heros**. Les
+`min-height` des media queries de chaque fichier ont été supprimées :
+elles redivergeraient. Barème unique :
+
+| Écran | Hauteur |
+|---|---|
+| > 992 px | `100vh` (référence : l'accueil) |
+| ≤ 992 px | `80vh` |
+| ≤ 768 px | `70vh` |
+
+La réduction sous 992 px est volontaire : à `100vh`, la bannière occupait
+tout l'écran et repoussait le contenu réel sous la ligne de flottaison —
+et sur mobile `100vh` dépasse la zone visible, la barre d'adresse
+n'étant pas comptée. Vérifié par capture d'écran en 1600×900, 820×1180
+et 390×844.
+
+### C2 — Page Don : l'image ne remplissait pas la bannière ✅ TERMINÉ
+
+L'image de fond était placée **dans** `.contribution-hero__container`,
+centré et plafonné à 1400 px. Une image en `position: absolute` se cale
+sur son ancêtre positionné : elle s'arrêtait donc à 1400 px et
+n'atteignait pas les bords au-delà. Sortie du conteneur, elle devient un
+calque de fond du hero (comme l'overlay), avec un `z-index` explicite.
+
+### C3 — Page À propos : titre trop grand ✅ TERMINÉ
+
+Le titre fait **trois lignes longues** là où celui de l'accueil en fait
+deux courtes. À taille quasi égale (3,8 rem contre 4 rem), son bloc
+occupait la moitié de la bannière. Ramené à `clamp(1.8rem, 2.9vw,
+2.9rem)`, et les trois paliers responsives réduits d'autant.
+
+---
+
 ## C. Qualité
 
 | Contrôle | Résultat |
