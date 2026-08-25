@@ -20,6 +20,8 @@ import {
 } from "../../../components/admin/AdminFeedback";
 
 import {
+  LEGACY_YEARS,
+  SOCIAL_START_YEAR,
   flockLabel,
   memberMatricule,
   memberName,
@@ -36,7 +38,7 @@ import "./SocialArrearsAdmin.scss";
 const canGenerate = () =>
   ["admin", "social_admin"].includes(currentUser()?.role);
 
-// « De janvier 2024 à mars 2026 » plutôt que la liste des 27 mois : le
+// « De janvier 2025 à mars 2026 » plutôt que la liste des mois : le
 // détail complet noierait le tableau, alors que la borne basse est ce
 // qui dit depuis quand le membre a décroché.
 const rangeLabel = (months) => {
@@ -90,6 +92,20 @@ const SocialArrearsAdmin = () => {
   }, [church]);
 
   const { data: exercices } = useAsyncData(loadExercices);
+
+  // Années proposées au filtre = exercices de caisse de l'église, PLUS
+  // les années d'arriérés antérieurs saisis à la main (2025).
+  //
+  // Ces dernières n'ont pas d'exercice — c'était précisément la
+  // décision : la caisse démarre à 2026, la dette peut être plus
+  // ancienne. Les omettre rendrait invisible, dans cet écran, le seul
+  // arriéré qu'on ait pris la peine de saisir.
+  const filterYears = [
+    ...new Set([
+      ...(exercices ?? []).map((item) => Number(item.year)),
+      ...LEGACY_YEARS,
+    ]),
+  ].sort((a, b) => b - a);
 
   const load = useCallback(
     () =>
@@ -152,9 +168,12 @@ const SocialArrearsAdmin = () => {
           <h1>Arriérés d&apos;offrandes</h1>
           <p>
             Membres dont des mois échus restent dus, et cumul restant à
-            recouvrer. Les arriérés remontent à janvier 2024, ou au mois
-            d&apos;arrivée du membre s&apos;il est postérieur. Le mois en cours
-            n&apos;apparaît pas tant qu&apos;il n&apos;est pas écoulé.
+            recouvrer. La réclamation automatique démarre à janvier{" "}
+            {SOCIAL_START_YEAR}, ou au mois d&apos;arrivée du membre s&apos;il
+            est postérieur. Les mois plus anciens n&apos;apparaissent que
+            s&apos;ils ont été saisis à la main depuis la fiche sociale du
+            membre. Le mois en cours n&apos;apparaît pas tant qu&apos;il
+            n&apos;est pas écoulé.
           </p>
         </div>
 
@@ -175,16 +194,16 @@ const SocialArrearsAdmin = () => {
           </label>
 
           <label className="admin-social-arrears__select">
-            <span>Exercice</span>
+            <span>Année</span>
             <select
               value={year}
               onChange={(event) => setYear(event.target.value)}
               disabled={!church}
             >
               <option value="">Toutes les années</option>
-              {(exercices ?? []).map((item) => (
-                <option key={item.year} value={item.year}>
-                  {item.year}
+              {filterYears.map((item) => (
+                <option key={item} value={item}>
+                  {item}
                 </option>
               ))}
             </select>

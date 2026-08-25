@@ -37,6 +37,20 @@ import {
 // de chaque mois est renvoyé dans la réponse : aucun sous-ensemble
 // n'échoue jamais en silence.
 
+// Année la plus ancienne pour laquelle un arriéré peut exister.
+//
+// La génération automatique ne descend jamais avant
+// SOCIAL_START_YEAR (2026) : c'est le module qui réclame, et il ne
+// réclame pas rétroactivement. Mais les mois de 2025 restés impayés
+// n'ont pas disparu pour autant — le responsable les saisit membre
+// par membre depuis la fiche sociale (voir recordLegacyArrears), là
+// où lui seul sait qui doit quoi.
+//
+// Cette borne encadre aussi la lecture (filtre « exercice » des
+// impayés) et le paiement : elle empêche qu'une faute de frappe
+// d'année fabrique une dette pour 2019.
+export const SOCIAL_LEGACY_START_YEAR = 2025;
+
 const MONTHS_FR = [
   "janvier", "février", "mars", "avril", "mai", "juin",
   "juillet", "août", "septembre", "octobre", "novembre", "décembre",
@@ -213,7 +227,8 @@ export const getMemberSocialFile = async (memberId) => {
   }
 
   // `balance` est le cumul demandé : ce que le membre doit encore,
-  // toutes années confondues depuis SOCIAL_START_YEAR. Négatif s'il a
+  // toutes années confondues — arriérés antérieurs saisis à la main
+  // compris, ils comptent comme n'importe quel mois dû. Négatif s'il a
   // donné plus que le minimum (`amountDue` est un plancher, pas un
   // plafond) — on expose alors ce surplus séparément plutôt que de le
   // présenter comme une dette négative.
@@ -239,7 +254,7 @@ export const getMemberSocialFile = async (memberId) => {
 // ------------------------------------------------------------------
 //
 // La génération ne se limite plus au mois courant : elle rattrape
-// TOUS les mois dus depuis SOCIAL_START_YEAR (2024). Sans ce
+// TOUS les mois dus depuis SOCIAL_START_YEAR (2026). Sans ce
 // rattrapage, un membre validé aujourd'hui n'avait aucune ligne pour
 // les mois écoulés — donc aucun arriéré, donc rien à cumuler, alors
 // que la dette d'un membre doit précisément s'accumuler mois après
@@ -275,9 +290,9 @@ const monthsBetween = (from, to) => {
 
 // Premier mois dû par un membre : son mois d'arrivée, jamais avant
 // SOCIAL_START_YEAR. Un membre présent depuis 2016 ne doit pas se voir
-// réclamer dix ans d'arriérés (décision de cadrage : les arriérés
-// remontent à 2024) ; un membre arrivé en 2025 ne doit rien devoir
-// pour 2024.
+// réclamer dix ans d'arriérés (décision de cadrage : la réclamation
+// automatique démarre à janvier 2026) ; un membre arrivé en cours de
+// route ne doit rien devoir pour les mois précédant son arrivée.
 const firstDuePeriodFor = (member) => {
   const floor = { year: SOCIAL_START_YEAR, month: 1 };
 
@@ -448,6 +463,158 @@ export const syncMemberContributionsQuietly = async (member) => {
 };
 
 // ------------------------------------------------------------------
+// ARRIÉRÉS ANTÉRIEURS (saisie manuelle)
+// ------------------------------------------------------------------
+//
+// Ouvre à la main les mois dus d'une année antérieure à
+// SOCIAL_START_YEAR, pour UN membre.
+//
+// Pourquoi à la main plutôt qu'en générant 2025 pour tout le monde :
+// avant la mise en service du module, les offrandes étaient tenues sur
+// papier. Générer douze mois dus à chaque membre inventerait une dette
+// à ceux qui avaient déjà réglé. Seul le responsable sait qui doit
+// encore, et pour quels mois — c'est donc lui qui les déclare, mois
+// par mois.
+//
+// La dette reste datée de son année (`year`/`month`), mais son
+// règlement alimentera la caisse de l'année où il est encaissé : c'est
+// la règle de caisse déjà en vigueur pour tout le module (voir
+// socialFundYear.service.js). Rien de particulier à prévoir ici — le
+// paiement passe par recordPayments comme n'importe quel autre mois.
+//
+// Idempotent : les mois déjà ouverts sont ignorés, jamais réécrits
+// (index unique {member, year, month}), donc une double soumission ne
+// double pas la dette.
+export const recordLegacyArrears = async (
+  { memberId, year, months, amountDue } = {},
+  user
+) => {
+  if (!mongoose.isValidObjectId(memberId)) {
+    throw ApiError.notFound("Membre introuvable.");
+  }
+
+  const member = await Member.findById(memberId).lean();
+
+  if (!member) throw ApiError.notFound("Membre introuvable.");
+
+  const yearNumber = Number(year);
+
+  // Borne haute STRICTE : à partir de SOCIAL_START_YEAR, les mois dus
+  // sont générés automatiquement. Les saisir à la main créerait une
+  // seconde source de vérité pour la même période.
+  if (
+    !Number.isInteger(yearNumber) ||
+    yearNumber < SOCIAL_LEGACY_START_YEAR ||
+    yearNumber >= SOCIAL_START_YEAR
+  ) {
+    throw ApiError.unprocessable("Année d'arriéré invalide.", {
+      year:
+        SOCIAL_LEGACY_START_YEAR === SOCIAL_START_YEAR - 1
+          ? `Seuls les arriérés de ${SOCIAL_LEGACY_START_YEAR} se saisissent à la main ; à partir de ${SOCIAL_START_YEAR}, les mois dus sont générés automatiquement.`
+          : `L'année doit être comprise entre ${SOCIAL_LEGACY_START_YEAR} et ${SOCIAL_START_YEAR - 1}.`,
+    });
+  }
+
+  // Doublons tolérés dans l'entrée (deux cases pour le même mois),
+  // dédoublonnés ici : c'est une erreur de saisie sans conséquence, pas
+  // de quoi rejeter tout le formulaire.
+  const uniqueMonths = [
+    ...new Set(
+      (Array.isArray(months) ? months : []).map((month) => Number(month))
+    ),
+  ].sort((a, b) => a - b);
+
+  if (uniqueMonths.length === 0) {
+    throw ApiError.unprocessable("Aucun mois sélectionné.", {
+      months: "Sélectionnez au moins un mois resté impayé.",
+    });
+  }
+
+  if (
+    uniqueMonths.some(
+      (month) => !Number.isInteger(month) || month < 1 || month > 12
+    )
+  ) {
+    throw ApiError.unprocessable("Mois invalide.", {
+      months: "Les mois doivent être compris entre 1 et 12.",
+    });
+  }
+
+  const churchNumber = Number(member.church);
+
+  if (!isChurch(churchNumber)) {
+    throw ApiError.unprocessable("Église du membre invalide.", {
+      member: "Ce membre n'est rattaché à aucune église valide.",
+    });
+  }
+
+  const settings = await SocialFundSettings.findOne({
+    church: churchNumber,
+  }).lean();
+
+  if (!settings) {
+    throw ApiError.unprocessable(
+      "Aucune configuration du Service Social pour l'église de ce membre.",
+      { member: "Configurez d'abord le montant mensuel de cette église." }
+    );
+  }
+
+  // Montant saisissable : le tarif de l'époque n'est pas conservé
+  // (`SocialFundSettings` ne garde que la valeur courante), et rien ne
+  // dit qu'il valait ce qu'il vaut aujourd'hui. À défaut de saisie, on
+  // reprend le montant courant.
+  const resolvedAmountDue =
+    amountDue === undefined || amountDue === null || amountDue === ""
+      ? settings.monthlyContributionAmount
+      : Number(amountDue);
+
+  if (
+    !Number.isFinite(resolvedAmountDue) ||
+    resolvedAmountDue <= 0 ||
+    resolvedAmountDue > 10_000_000
+  ) {
+    throw ApiError.unprocessable("Montant mensuel invalide.", {
+      amountDue: "Le montant doit être un nombre supérieur à 0.",
+    });
+  }
+
+  const existing = await SocialContribution.find({
+    member: memberId,
+    year: yearNumber,
+    month: { $in: uniqueMonths },
+  })
+    .select("month")
+    .lean();
+
+  const alreadyOpen = new Set(existing.map((line) => line.month));
+
+  const docs = uniqueMonths
+    .filter((month) => !alreadyOpen.has(month))
+    .map((month) => ({
+      member: memberId,
+      church: churchNumber,
+      flock: member.flock,
+      year: yearNumber,
+      month,
+      amountDue: resolvedAmountDue,
+      amountPaid: 0,
+      status: "non_paye",
+      recordedBy: user?.id,
+    }));
+
+  const created = docs.length > 0 ? await insertIgnoringDuplicates(docs) : 0;
+
+  return {
+    year: yearNumber,
+    amountDue: resolvedAmountDue,
+    months: uniqueMonths,
+    created,
+    skipped: uniqueMonths.length - created,
+    totalDue: created * resolvedAmountDue,
+  };
+};
+
+// ------------------------------------------------------------------
 // PAIEMENT
 // ------------------------------------------------------------------
 
@@ -481,8 +648,14 @@ export const recordPayments = async ({ memberId, payments } = {}, user) => {
     const month = Number(raw?.month);
     const amount = Number(raw?.amount);
 
+    // Borne basse alignée sur SOCIAL_LEGACY_START_YEAR : plus bas, la
+    // ligne n'existe pas et serait fabriquée à la volée (voir plus
+    // bas) — une faute de frappe d'année créerait une dette fantôme
+    // pour 2019.
     if (
-      !Number.isInteger(year) || year < 2000 || year > 2100 ||
+      !Number.isInteger(year) ||
+      year < SOCIAL_LEGACY_START_YEAR ||
+      year > 2100 ||
       !Number.isInteger(month) || month < 1 || month > 12 ||
       !Number.isFinite(amount) || amount <= 0
     ) {

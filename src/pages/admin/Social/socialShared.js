@@ -36,6 +36,34 @@ export const churchLabelFrom = (churchOptions, value) => {
   );
 };
 
+// Bornes d'année du module, MIROIR du serveur
+// (socialFundYear.service.js#SOCIAL_START_YEAR et
+// socialContribution.service.js#SOCIAL_LEGACY_START_YEAR). Le dépôt
+// n'a pas de code partagé entre le site et l'API — même convention que
+// utils/registrationNumber.js : toute évolution se répercute des deux
+// côtés.
+//
+// Le serveur reste l'autorité : il rejette toute année hors plage.
+// Ces constantes ne servent qu'à construire les listes de choix.
+
+// Premier exercice de caisse, et première année réclamée
+// automatiquement.
+export const SOCIAL_START_YEAR = 2026;
+
+// Année la plus ancienne pour laquelle un arriéré peut être saisi à la
+// main. Avant la mise en service, les offrandes étaient tenues sur
+// papier : rien n'est généré, le responsable déclare les mois restés
+// impayés membre par membre.
+export const SOCIAL_LEGACY_START_YEAR = 2025;
+
+// Années saisissables à la main, de la plus récente à la plus
+// ancienne. Vide si les deux bornes se rejoignent — la section de
+// saisie disparaît alors d'elle-même.
+export const LEGACY_YEARS = Array.from(
+  { length: Math.max(SOCIAL_START_YEAR - SOCIAL_LEGACY_START_YEAR, 0) },
+  (_, index) => SOCIAL_START_YEAR - 1 - index
+);
+
 const MONTHS = [
   "Janvier",
   "Février",

@@ -7,7 +7,7 @@ import { generateDueContributions } from "../services/socialContribution.service
 // attendre le premier passage du job planifié
 // (socialContributionsGenerator.js) après un déploiement.
 //
-// Couvre tous les mois depuis 2024 (SOCIAL_START_YEAR), pas seulement
+// Couvre tous les mois depuis 2026 (SOCIAL_START_YEAR), pas seulement
 // le mois courant : c'est ce qui reconstitue les arriérés de chaque
 // membre.
 //
@@ -28,7 +28,7 @@ const run = async () => {
 
   await connectDB();
 
-  console.log("\nGénération des cotisations sociales dues (depuis 2024) :\n");
+  console.log("\nGénération des cotisations sociales dues (depuis 2026) :\n");
 
   const created = await generateDueContributions();
 

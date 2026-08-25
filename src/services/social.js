@@ -43,6 +43,23 @@ export const searchSocialMembers = (params = {}) =>
 export const fetchMemberSocialFile = (memberId) =>
   request(`/api/admin/social/members/${memberId}/fiche`, { auth: true });
 
+// Saisie manuelle des arriérés d'une année antérieure au module.
+//
+// Ces mois-là ne sont jamais générés automatiquement (voir
+// SOCIAL_START_YEAR côté serveur) : avant la mise en service, les
+// offrandes étaient tenues sur papier, et seul le responsable sait qui
+// devait encore quoi. Il les ouvre donc membre par membre.
+//
+// `months` est la liste des mois RESTÉS IMPAYÉS (1-12) ; `amountDue`
+// est facultatif et vaut par défaut le montant mensuel courant de
+// l'église.
+export const recordMemberArrears = (memberId, payload) =>
+  request(`/api/admin/social/members/${memberId}/arrieres`, {
+    method: "POST",
+    body: payload,
+    auth: true,
+  });
+
 // ---- Cotisations ----------------------------------------------------
 
 export const recordSocialPayments = (payload) =>

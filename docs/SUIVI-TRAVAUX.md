@@ -194,7 +194,12 @@ Dans le cas signalé, le diagnostic tombe juste : la demande émane de
 
 ---
 
-### B2 — Arriérés cumulés depuis 2024 ✅ TERMINÉ
+### B2 — Arriérés cumulés ✅ TERMINÉ
+
+> ⚠️ **Recadré le 25/08 : le point de départ est passé de 2024 à
+> janvier 2026.** Voir B6 ci-dessous — ce qui suit décrit le mécanisme
+> de rattrapage, dont la borne basse a changé.
+
 
 **Ce qui n'allait pas.** Le job ne générait **que le mois courant**. Un
 membre validé aujourd'hui n'avait aucune ligne pour les mois écoulés :
@@ -202,11 +207,64 @@ aucun arriéré, donc rien à cumuler.
 
 **Ce qui a été fait.**
 
-- `generateDueContributions()` rattrape tous les mois dus depuis janvier
-  2024, ou depuis le mois d'arrivée du membre s'il est postérieur (un
-  membre de 2016 ne se voit pas réclamer dix ans).
+- `generateDueContributions()` rattrape tous les mois dus depuis
+  `SOCIAL_START_YEAR`, ou depuis le mois d'arrivée du membre s'il est
+  postérieur (un membre de 2016 ne se voit pas réclamer dix ans).
 - La fiche d'un membre expose son **solde cumulé** : total dû, total
   versé, reste à payer, et le trop-perçu à part.
+
+---
+
+### B6 — Départ au 1ᵉʳ janvier 2026, arriérés 2025 saisis à la main ✅ TERMINÉ (⚠️ une commande à lancer)
+
+**Ce qui n'allait pas.** Le module avait été cadré sur 2024. La
+génération avait donc ouvert **1 044 mois dus** (492 pour 2024, 552 pour
+2025) à tous les membres — une dette réclamée à des gens qui, pour
+beaucoup, avaient déjà réglé sur le registre papier de l'époque. Aucune
+de ces lignes n'avait jamais reçu le moindre franc.
+
+**Ce qui a été fait.**
+
+- `SOCIAL_START_YEAR` passe de 2024 à **2026** : premier exercice de
+  caisse, et première année réclamée automatiquement.
+- Nouvelle borne `SOCIAL_LEGACY_START_YEAR = 2025` : l'année pour
+  laquelle un arriéré peut être **saisi à la main**, jamais généré.
+- **Nouvel encadré sur la fiche sociale d'un membre**
+  (`/admin/social/membres`) : le responsable choisit l'année, coche les
+  seuls mois restés impayés, et fixe au besoin un montant mensuel
+  différent de celui d'aujourd'hui (le tarif de l'époque n'est pas
+  conservé en base). Les mois déjà ouverts apparaissent cochés et
+  verrouillés. Réservé à `admin` / `social_admin` : ouvrir un arriéré,
+  c'est **créer une dette**, pas encaisser — l'agent de terrain n'a pas
+  à en décider.
+- Réglés aujourd'hui, ces arriérés alimentent la **caisse 2026**, en
+  passant par le circuit de paiement habituel. C'est la règle de caisse
+  déjà en vigueur : l'argent entre dans le tiroir le jour où il est
+  encaissé, la dette garde sa date.
+- L'écran **Arriérés** filtre désormais sur une *année de cotisation*
+  (2025 comprise) et non plus sur une *année d'exercice* (2026 au plus
+  tôt) — sans quoi le seul arriéré qu'on ait pris la peine de saisir
+  serait resté invisible.
+- Un paiement ne peut plus fabriquer une ligne pour une année hors
+  périmètre : une faute de frappe d'année créait auparavant une dette
+  fantôme pour 2019.
+
+**⚠️ Il reste UNE commande à lancer.** Le nettoyage de la base n'a pas
+pu être exécuté depuis cette session (l'environnement bloque les
+suppressions en base). Tant qu'elle n'est pas passée, **l'écran Arriérés
+continue d'afficher 2024 et 2025** :
+
+```bash
+cd backend
+node src/scripts/resetSocialStartYear.js           # simulation, n'écrit rien
+node src/scripts/resetSocialStartYear.js --apply   # exécute
+```
+
+Le script ne supprime que ce qui n'a **jamais rien encaissé** (statut
+`non_paye`, 0 versé, aucune référence de reçu) et s'arrête en le
+signalant sur toute ligne qui porte de l'argent. Simulation déjà passée :
+1 044 cotisations et 2 exercices vides à supprimer, **aucune ligne
+porteuse d'argent**.
 
 ---
 

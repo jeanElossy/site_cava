@@ -40,6 +40,7 @@ import {
 
 import {
   MONTH_OPTIONS,
+  SOCIAL_LEGACY_START_YEAR,
   buildWhatsAppMessage,
   churchLabelFrom,
   downloadBlob,
@@ -75,7 +76,16 @@ const STATUS_FILTERS = [
 ];
 
 const now = new Date();
-const YEAR_OPTIONS = [now.getFullYear() - 2, now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
+// Deux ans en arrière et un en avant, mais JAMAIS avant
+// SOCIAL_LEGACY_START_YEAR : plus bas, aucune ligne n'existe et le
+// serveur refuserait l'encaissement. Proposer 2024 dans le sélecteur de
+// mois supplémentaire ne pouvait mener qu'à une erreur.
+const YEAR_OPTIONS = [
+  now.getFullYear() - 2,
+  now.getFullYear() - 1,
+  now.getFullYear(),
+  now.getFullYear() + 1,
+].filter((value) => value >= SOCIAL_LEGACY_START_YEAR);
 
 const canWrite = () => SOCIAL_WRITE_ROLES.includes(currentUser()?.role);
 

@@ -147,16 +147,21 @@ describe("socialFundYear.service — caisses annuelles (intégration MongoDB)", 
     assert.equal(current.totalIn, 2000);
     assert.equal(current.totalOut, 500);
 
-    // L'exercice 2024 n'a reçu aucun mouvement : il ne doit rien voir
-    // de ceux de l'année en cours.
-    const first = await fundYear.computeYearBalance(
+    // Depuis que SOCIAL_START_YEAR vaut 2026, le PREMIER exercice est
+    // aussi celui de l'année en cours : il n'existe plus d'exercice
+    // passé où vérifier l'isolation. On la vérifie donc sur l'exercice
+    // SUIVANT, qui n'a évidemment reçu aucun mouvement.
+    const next = await fundYear.computeYearBalance(
       TEST_CHURCH,
-      fundYear.SOCIAL_START_YEAR
+      fundYear.currentYear() + 1
     );
 
-    assert.equal(first.totalIn, 0);
-    assert.equal(first.totalOut, 0);
-    assert.equal(first.currentBalance, 5000);
+    assert.equal(next.totalIn, 0);
+    assert.equal(next.totalOut, 0);
+
+    // Son solde n'est pas nul pour autant : c'est le report de
+    // l'exercice en cours (5000 de reprise + 2000 - 500).
+    assert.equal(next.currentBalance, 6500);
   });
 
   it("reporte le solde de clôture sur l'exercice suivant, créé automatiquement", async () => {
@@ -167,21 +172,32 @@ describe("socialFundYear.service — caisses annuelles (intégration MongoDB)", 
     );
 
     assert.equal(closed.closed.status, "cloture");
-    assert.equal(closed.closed.closingBalance, 5000);
+
+    // 5000 de reprise + 2000 encaissés - 500 décaissés par les tests
+    // précédents : la clôture fige le solde RÉEL, pas le solde
+    // d'ouverture.
+    assert.equal(closed.closed.closingBalance, 6500);
 
     assert.ok(closed.next, "l'exercice suivant doit être ouvert");
     assert.equal(closed.next.year, fundYear.SOCIAL_START_YEAR + 1);
     assert.equal(
       closed.next.openingBalance,
-      5000,
+      6500,
       "le solde doit être reporté, pas remis à zéro"
     );
   });
 
   it("refuse d'encaisser dans un exercice clôturé, et le redit clairement", async () => {
-    const year = fundYear.currentYear();
+    // L'exercice courant vient d'être clôturé par le test précédent
+    // (SOCIAL_START_YEAR est l'année en cours) : le re-clôturer ici
+    // échouerait pour la mauvaise raison. C'est bien l'ÉCRITURE qui
+    // doit être refusée.
+    const closed = await SocialFundYear.findOne({
+      church: TEST_CHURCH,
+      year: fundYear.currentYear(),
+    }).lean();
 
-    await fundYear.closeFundYear(TEST_CHURCH, year, admin);
+    assert.equal(closed?.status, "cloture");
 
     await assert.rejects(
       () =>

@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { Check, Search, X } from "lucide-react";
+import { Check, PlusCircle, Search, X } from "lucide-react";
 
-import { fetchMemberSocialFile, searchSocialMembers } from "../../../services/social";
+import {
+  fetchMemberSocialFile,
+  recordMemberArrears,
+  searchSocialMembers,
+} from "../../../services/social";
+
+import { currentUser } from "../../../services/auth";
 
 import useAsyncData from "../../../hooks/useAsyncData";
 import usePageMeta from "../../../hooks/usePageMeta";
@@ -14,6 +20,9 @@ import {
 } from "../../../components/admin/AdminFeedback";
 
 import {
+  LEGACY_YEARS,
+  MONTH_OPTIONS,
+  SOCIAL_START_YEAR,
   STATUS,
   churchLabelFrom,
   formatDateTime,
@@ -26,6 +35,13 @@ import {
 import "./SocialMemberSearch.scss";
 
 const SEARCH_DELAY_MS = 400;
+
+// Ouvrir un arriéré, c'est CRÉER UNE DETTE — geste plus lourd qu'un
+// encaissement. Réservé aux mêmes rôles que côté serveur
+// (SOCIAL_ADMIN_ROLES) : l'agent de terrain enregistre des paiements,
+// il ne décide pas de ce qui est dû.
+const canRecordArrears = () =>
+  ["admin", "social_admin"].includes(currentUser()?.role);
 
 const SocialMemberSearch = () => {
   usePageMeta({
@@ -83,11 +99,86 @@ const SocialMemberSearch = () => {
   const { data: file, loading: fileLoading, error: fileError, reload: reloadFile } =
     useAsyncData(load);
 
+  // ---- Saisie des arriérés antérieurs ----------------------------
+
+  const [arrearsYear, setArrearsYear] = useState(LEGACY_YEARS[0] ?? "");
+  const [arrearsMonths, setArrearsMonths] = useState([]);
+  const [arrearsAmount, setArrearsAmount] = useState("");
+  const [savingArrears, setSavingArrears] = useState(false);
+  const [arrearsMessage, setArrearsMessage] = useState("");
+  const [arrearsError, setArrearsError] = useState("");
+
+  const resetArrearsForm = () => {
+    setArrearsMonths([]);
+    setArrearsAmount("");
+    setArrearsMessage("");
+    setArrearsError("");
+  };
+
   const selectMember = (found) => {
     setSelectedId(found.id);
     setSelectedSummary(found);
     setResults([]);
     setQuery("");
+    resetArrearsForm();
+  };
+
+  // Mois déjà ouverts pour l'année choisie : ils se cochent tout seuls
+  // et ne se décochent pas. Les proposer à nouveau ferait croire à une
+  // saisie possible alors que le serveur les ignorerait (idempotence).
+  const openedMonths = new Set(
+    (file?.contributions ?? [])
+      .filter((line) => Number(line.year) === Number(arrearsYear))
+      .map((line) => Number(line.month))
+  );
+
+  const toggleArrearsMonth = (month) => {
+    setArrearsMessage("");
+    setArrearsError("");
+
+    setArrearsMonths((previous) =>
+      previous.includes(month)
+        ? previous.filter((value) => value !== month)
+        : [...previous, month]
+    );
+  };
+
+  const submitArrears = async (event) => {
+    event.preventDefault();
+
+    if (arrearsMonths.length === 0 || savingArrears) return;
+
+    setSavingArrears(true);
+    setArrearsMessage("");
+    setArrearsError("");
+
+    try {
+      const result = await recordMemberArrears(selectedId, {
+        year: Number(arrearsYear),
+        months: arrearsMonths,
+        // Champ laissé vide = montant mensuel courant de l'église,
+        // décidé par le serveur : le frontend ne connaît pas le tarif
+        // et n'a pas à en inventer un.
+        ...(arrearsAmount.trim() ? { amountDue: Number(arrearsAmount) } : {}),
+      });
+
+      setArrearsMessage(
+        result?.created > 0
+          ? `${result.created} mois d'arriéré ${result.year} enregistré(s) — ${money(
+              result.totalDue
+            )} à recouvrer.`
+          : `Aucun mois ajouté : ces mois de ${result?.year ?? arrearsYear} étaient déjà ouverts.`
+      );
+
+      setArrearsMonths([]);
+      setArrearsAmount("");
+
+      await reloadFile();
+    } catch (caught) {
+      setArrearsError(caught.message ?? "L'enregistrement a échoué.");
+    } finally {
+      setSavingArrears(false);
+    }
   };
 
   return (
@@ -200,6 +291,121 @@ const SocialMemberSearch = () => {
                   <strong>{formatDateTime(file.totals?.lastPaymentAt)}</strong>
                 </li>
               </ul>
+
+              {canRecordArrears() && LEGACY_YEARS.length > 0 && (
+                <section className="admin-social-members__arrears">
+                  <h2>Arriérés antérieurs</h2>
+
+                  <p className="admin-social-members__arrears-hint">
+                    Les mois antérieurs à {SOCIAL_START_YEAR} ne sont pas
+                    réclamés automatiquement : avant cette date, les offrandes
+                    étaient tenues sur papier. Cochez ici les seuls mois restés
+                    impayés pour ce membre. Réglés aujourd'hui, ils
+                    alimenteront la caisse de l'exercice en cours.
+                  </p>
+
+                  <form
+                    className="admin-social-members__arrears-form"
+                    onSubmit={submitArrears}
+                  >
+                    <div className="admin-social-members__arrears-row">
+                      <label>
+                        <span>Année</span>
+                        <select
+                          value={arrearsYear}
+                          onChange={(event) => {
+                            setArrearsYear(event.target.value);
+                            resetArrearsForm();
+                          }}
+                        >
+                          {LEGACY_YEARS.map((year) => (
+                            <option key={year} value={year}>
+                              {year}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label>
+                        <span>Montant mensuel</span>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={arrearsAmount}
+                          onChange={(event) =>
+                            setArrearsAmount(event.target.value)
+                          }
+                          placeholder="Montant courant de l'église"
+                        />
+                      </label>
+                    </div>
+
+                    <fieldset className="admin-social-members__arrears-months">
+                      <legend>Mois restés impayés</legend>
+
+                      {MONTH_OPTIONS.map((option) => {
+                        const alreadyOpen = openedMonths.has(option.value);
+                        const checked =
+                          alreadyOpen || arrearsMonths.includes(option.value);
+
+                        return (
+                          <label
+                            key={option.value}
+                            className={`admin-social-members__arrears-month${
+                              alreadyOpen
+                                ? " admin-social-members__arrears-month--locked"
+                                : ""
+                            }`}
+                            title={
+                              alreadyOpen
+                                ? `${option.label} ${arrearsYear} est déjà ouvert pour ce membre.`
+                                : undefined
+                            }
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              disabled={alreadyOpen || savingArrears}
+                              onChange={() => toggleArrearsMonth(option.value)}
+                            />
+                            <span>{option.label.slice(0, 3)}</span>
+                          </label>
+                        );
+                      })}
+                    </fieldset>
+
+                    <button
+                      type="submit"
+                      className="admin-social-members__arrears-submit"
+                      disabled={arrearsMonths.length === 0 || savingArrears}
+                    >
+                      <PlusCircle size={16} aria-hidden="true" />
+                      {savingArrears
+                        ? "Enregistrement…"
+                        : `Ouvrir ${arrearsMonths.length || ""} mois d'arriéré`.trim()}
+                    </button>
+                  </form>
+
+                  {arrearsMessage && (
+                    <p
+                      role="status"
+                      className="admin-social-members__arrears-ok"
+                    >
+                      {arrearsMessage}
+                    </p>
+                  )}
+
+                  {arrearsError && (
+                    <p
+                      role="alert"
+                      className="admin-social-members__error-text"
+                    >
+                      {arrearsError}
+                    </p>
+                  )}
+                </section>
+              )}
 
               <h2>Historique mensuel</h2>
 

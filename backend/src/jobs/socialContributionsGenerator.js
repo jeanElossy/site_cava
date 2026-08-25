@@ -5,7 +5,7 @@ import * as socialContributionService from "../services/socialContribution.servi
 // followUpReminders.js (voir ce fichier pour la justification du
 // `setInterval` plutôt qu'une dépendance de cron).
 //
-// Le balayage rattrape TOUS les mois dus depuis 2024, pas seulement le
+// Le balayage rattrape TOUS les mois dus depuis 2026, pas seulement le
 // mois courant : un membre ajouté hors ligne, ou pendant une panne du
 // filet de sécurité ci-dessous, récupère ainsi son historique complet
 // au passage suivant. L'opération est idempotente, donc sans effet

@@ -14,13 +14,22 @@ import { ApiError } from "../utils/ApiError.js";
 // désormais leurs mouvements ici, jamais directement dans
 // `SocialLedgerEntry`.
 
-// Première année couverte par le module. Antérieurement à 2024, la
-// trésorerie du Service Social n'a pas d'historique exploitable : le
-// solde d'avant est repris en bloc dans l'`openingBalance` de
-// l'exercice 2024 (voir SocialFundYear.js et le script de migration).
-// Sert aussi de borne basse au rattrapage des cotisations, côté
-// socialContribution.service.js.
-export const SOCIAL_START_YEAR = 2024;
+// Premier EXERCICE de caisse tenu par le module. Avant 2026, la
+// trésorerie du Service Social n'a pas d'historique exploitable : rien
+// n'est reconstitué, la première caisse s'ouvre à 2026 avec le solde
+// d'avant-système saisi à la main dans son `openingBalance` (voir
+// SocialFundYear.js).
+//
+// Sert aussi de borne basse à la génération automatique des
+// cotisations, côté socialContribution.service.js : aucun mois
+// antérieur à janvier 2026 n'est réclamé automatiquement.
+//
+// Les arriérés plus anciens ne sont pas perdus pour autant : le
+// responsable les saisit membre par membre depuis la fiche sociale
+// (voir SOCIAL_LEGACY_START_YEAR). Réglés en 2026, ils alimentent la
+// caisse 2026 — comptabilité de caisse, l'argent entre dans le tiroir
+// le jour où il est encaissé.
+export const SOCIAL_START_YEAR = 2026;
 
 const MAX_YEAR = 2100;
 

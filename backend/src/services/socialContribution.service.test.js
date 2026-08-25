@@ -9,6 +9,7 @@ import SocialContribution from "../models/SocialContribution.js";
 import SocialLedgerEntry from "../models/SocialLedgerEntry.js";
 import SocialFundYear from "../models/SocialFundYear.js";
 import * as socialContributionService from "./socialContribution.service.js";
+import { SOCIAL_START_YEAR } from "./socialFundYear.service.js";
 
 // ------------------------------------------------------------------
 // ÉCART ASSUMÉ PAR RAPPORT A LA CONSIGNE "church: 9"
@@ -384,5 +385,159 @@ describe("socialContribution.service (intégration MongoDB)", () => {
     });
 
     assert.ok(results.some((m) => String(m._id) === String(member._id)));
+  });
+  // ----------------------------------------------------------------
+  // ARRIÉRÉS ANTÉRIEURS (saisie manuelle)
+  // ----------------------------------------------------------------
+  //
+  // Placés en fin de fichier À DESSEIN : ils encaissent, donc ils
+  // déplacent le solde de caisse de l'église de test. Les tests de
+  // caisse ci-dessus raisonnent sur un total absolu et échoueraient
+  // si ces mouvements les précédaient.
+
+  const LEGACY_YEAR = socialContributionService.SOCIAL_LEGACY_START_YEAR;
+
+  it("ouvre à la main les mois d'arriéré d'une année antérieure", async () => {
+    const member = await makeMember();
+
+    const result = await socialContributionService.recordLegacyArrears(
+      { memberId: member._id, year: LEGACY_YEAR, months: [3, 4, 5] },
+      admin
+    );
+
+    assert.equal(result.created, 3);
+    assert.equal(result.skipped, 0);
+    assert.equal(result.amountDue, AMOUNT);
+    assert.equal(result.totalDue, 3 * AMOUNT);
+
+    const lines = await SocialContribution.find({
+      member: member._id,
+      year: LEGACY_YEAR,
+    })
+      .sort({ month: 1 })
+      .lean();
+
+    assert.deepEqual(lines.map((line) => line.month), [3, 4, 5]);
+    assert.ok(lines.every((line) => line.status === "non_paye"));
+    assert.ok(lines.every((line) => line.amountDue === AMOUNT));
+  });
+
+  it("est idempotent : un mois déjà ouvert n'est jamais dupliqué ni réécrit", async () => {
+    const member = await makeMember();
+
+    await socialContributionService.recordLegacyArrears(
+      { memberId: member._id, year: LEGACY_YEAR, months: [6], amountDue: 700 },
+      admin
+    );
+
+    // Deuxième passage, montant différent : le mois existant garde son
+    // montant d'origine, seul le mois nouveau est créé.
+    const second = await socialContributionService.recordLegacyArrears(
+      { memberId: member._id, year: LEGACY_YEAR, months: [6, 7], amountDue: 900 },
+      admin
+    );
+
+    assert.equal(second.created, 1);
+    assert.equal(second.skipped, 1);
+
+    const lines = await SocialContribution.find({
+      member: member._id,
+      year: LEGACY_YEAR,
+    })
+      .sort({ month: 1 })
+      .lean();
+
+    assert.equal(lines.length, 2);
+    assert.equal(lines[0].amountDue, 700);
+    assert.equal(lines[1].amountDue, 900);
+  });
+
+  it("dédoublonne les mois envoyés deux fois", async () => {
+    const member = await makeMember();
+
+    const result = await socialContributionService.recordLegacyArrears(
+      { memberId: member._id, year: LEGACY_YEAR, months: [9, 9, 9] },
+      admin
+    );
+
+    assert.equal(result.created, 1);
+    assert.deepEqual(result.months, [9]);
+  });
+
+  it("refuse une année couverte par la génération automatique", async () => {
+    const member = await makeMember();
+
+    await assert.rejects(
+      socialContributionService.recordLegacyArrears(
+        {
+          memberId: member._id,
+          year: SOCIAL_START_YEAR,
+          months: [1],
+        },
+        admin
+      ),
+      /année/i
+    );
+  });
+
+  it("refuse une saisie sans mois ou avec un mois hors plage", async () => {
+    const member = await makeMember();
+
+    await assert.rejects(
+      socialContributionService.recordLegacyArrears(
+        { memberId: member._id, year: LEGACY_YEAR, months: [] },
+        admin
+      ),
+      /mois/i
+    );
+
+    await assert.rejects(
+      socialContributionService.recordLegacyArrears(
+        { memberId: member._id, year: LEGACY_YEAR, months: [13] },
+        admin
+      ),
+      /mois/i
+    );
+  });
+
+  it("un arriéré réglé alimente la caisse de l'exercice EN COURS, pas celle de sa dette", async () => {
+    const member = await makeMember();
+
+    await socialContributionService.recordLegacyArrears(
+      { memberId: member._id, year: LEGACY_YEAR, months: [11] },
+      admin
+    );
+
+    const before = await socialContributionService.caisse({
+      church: TEST_CHURCH,
+    });
+
+    const { results } = await socialContributionService.recordPayments(
+      {
+        memberId: member._id,
+        payments: [{ year: LEGACY_YEAR, month: 11, amount: AMOUNT }],
+      },
+      admin
+    );
+
+    assert.equal(results[0].ok, true);
+    assert.equal(results[0].status, "paye");
+
+    const after = await socialContributionService.caisse({
+      church: TEST_CHURCH,
+    });
+
+    // La caisse interrogée sans `year` est celle de l'année courante :
+    // c'est bien elle qui encaisse, alors que la dette porte l'année
+    // LEGACY_YEAR (comptabilité de caisse, voir socialFundYear.service.js).
+    assert.equal(after.currentBalance, before.currentBalance + AMOUNT);
+
+    const entries = await SocialLedgerEntry.find({
+      church: TEST_CHURCH,
+      reference: results[0].reference,
+    }).lean();
+
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].year, new Date().getUTCFullYear());
   });
 });

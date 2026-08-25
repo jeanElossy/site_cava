@@ -51,13 +51,26 @@ const parseYear = (value) => {
   return Number.isInteger(n) && n >= 2000 && n <= 2100 ? n : undefined;
 };
 
-// Année d'EXERCICE : bornée plus bas que `parseYear`, qui sert aux
-// cotisations. Aucune caisse n'existe avant 2024 (voir
+// Année d'EXERCICE : bornée plus haut que `parseYear`. Aucune caisse
+// n'existe avant 2026 (voir
 // socialFundYear.service.js#SOCIAL_START_YEAR).
 const parseExerciceYear = (value) => {
   const n = parseYear(value);
 
   return n !== undefined && n >= socialFundYearService.SOCIAL_START_YEAR
+    ? n
+    : undefined;
+};
+
+// Année de COTISATION : descend un cran plus bas que l'exercice, car
+// un arriéré antérieur saisi à la main porte l'année de la dette
+// (2025), pas celle de la caisse qui l'encaissera. Filtrer les impayés
+// avec la borne d'exercice masquerait précisément ces arriérés.
+const parseContributionYear = (value) => {
+  const n = parseYear(value);
+
+  return n !== undefined &&
+    n >= socialContributionService.SOCIAL_LEGACY_START_YEAR
     ? n
     : undefined;
 };
@@ -140,6 +153,42 @@ export const buildSocialRouter = () => {
     })
   );
 
+  // Saisie manuelle des arriérés d'une année antérieure au module
+  // (2025), membre par membre. Réservé à l'administrateur du module :
+  // c'est une CRÉATION DE DETTE, geste plus lourd qu'un encaissement,
+  // et l'agent de terrain (`social_agent`) n'a pas à en décider.
+  router.post(
+    "/members/:memberId/arrieres",
+    requireRole(...SOCIAL_ADMIN_ROLES),
+    asyncHandler(async (req, res) => {
+      const data = await socialContributionService.recordLegacyArrears(
+        {
+          memberId: req.params.memberId,
+          year: req.body?.year,
+          months: req.body?.months,
+          amountDue: req.body?.amountDue,
+        },
+        req.user
+      );
+
+      await audit.record(req, {
+        action: "create",
+        resource: "socialContributionArrears",
+        resourceId: `${req.params.memberId}-${data.year}`,
+      });
+
+      sendCreated(res, {
+        message:
+          data.created > 0
+            ? `${data.created} mois d'arriéré ${data.year} enregistré(s)${
+                data.skipped > 0 ? ` (${data.skipped} déjà ouvert(s))` : ""
+              }.`
+            : `Aucun mois ajouté : ces mois de ${data.year} étaient déjà ouverts.`,
+        data,
+      });
+    })
+  );
+
   router.post(
     "/contributions",
     requireRole(...SOCIAL_WRITE_ROLES),
@@ -206,7 +255,7 @@ export const buildSocialRouter = () => {
     asyncHandler(async (req, res) => {
       const data = await socialContributionService.listUnpaid({
         church: parseChurch(req.query.church),
-        year: parseExerciceYear(req.query.year),
+        year: parseContributionYear(req.query.year),
       });
 
       sendSuccess(res, { data });

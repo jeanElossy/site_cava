@@ -27,9 +27,10 @@ import mongoose from "mongoose";
 // `openingBalance` de l'exercice N = solde de clôture de l'exercice
 // N-1 (décision de cadrage du client : le solde est reporté, chaque
 // caisse ne repart pas de zéro). Pour le tout premier exercice
-// (SOCIAL_START_YEAR), c'est le solde d'avant-système, repris de
-// l'ancien `SocialFundSettings.openingBalance` par le script de
-// migration `migrateSocialFundYears.js`.
+// (SOCIAL_START_YEAR, soit 2026), il n'y a rien à reporter : la
+// trésorerie d'avant le module n'a pas d'historique exploitable. Son
+// `openingBalance` se saisit à la main, à l'ouverture, s'il y avait
+// une caisse antérieure à reprendre.
 const socialFundYearSchema = new mongoose.Schema(
   {
     church: {

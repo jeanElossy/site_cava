@@ -98,7 +98,8 @@ Un backend Node.js + Express 5 + MongoDB/Mongoose vit dans [backend/](backend/),
 |---|---|
 | `backfillRegistrationOrder.js` | renseigne `Member.registrationOrder` sur les fiches antérieures au champ |
 | `fixRegistrationControlLetters.js` | remet en cohérence une lettre de contrôle fautive |
-| `migrateSocialFundYears.js` | rattache les mouvements de caisse à un exercice et ouvre les exercices depuis 2024 |
+| `migrateSocialFundYears.js` | rattache les mouvements de caisse à un exercice et ouvre les exercices manquants |
+| `resetSocialStartYear.js` | supprime les cotisations et exercices antérieurs à 2026 restés sans le moindre encaissement |
 | `backfillSocialContributions.js` | rattrape les lignes d'offrande dues, sans attendre le job quotidien |
 | `seed-legacy-members.js` | import du registre papier |
 
@@ -149,7 +150,15 @@ Module de solidarité : chaque membre actif doit une **offrande sociale mensuell
 - [socialFundYear.service.js](backend/src/services/socialFundYear.service.js) est le **seul point d'écriture** d'un mouvement de caisse (`recordLedgerEntry`). Ne jamais faire `SocialLedgerEntry.create()` en direct : on perdrait le rattachement à l'exercice et le refus d'écrire dans une caisse clôturée.
 - `recordPayments` et `validateAid` **contrôlent l'exercice avant toute mutation** (`assertExerciceOpen`). Découvrir la clôture au moment de journaliser laisserait une offrande « payée » sans contrepartie en caisse.
 
-**Arriérés.** `generateDueContributions()` rattrape tous les mois dus depuis `SOCIAL_START_YEAR` (2024), ou depuis le mois d'arrivée du membre s'il est postérieur — un membre présent depuis 2016 ne se voit pas réclamer dix ans. La fonction est idempotente (index unique `{member, year, month}`).
+**Point de départ : janvier 2026.** `SOCIAL_START_YEAR` vaut **2026** — c'est à la fois le premier exercice de caisse et la première année réclamée automatiquement. Le module avait d'abord été cadré sur 2024 ; la génération avait alors ouvert 2024 et 2025 à tous les membres, soit une dette réclamée à des gens qui avaient déjà réglé sur le registre papier. `resetSocialStartYear.js` efface ces lignes (uniquement celles restées sans le moindre encaissement, il s'arrête en le signalant sur toute ligne qui porte de l'argent).
+
+Conséquence à ne pas perdre de vue : **2026 est le premier exercice ET l'exercice courant**. Il n'existe aucun exercice passé, donc aucun endroit où vérifier l'isolation entre exercices « vers le bas » — les tests de `socialFundYear.service.test.js` la vérifient sur l'exercice *suivant*.
+
+**Arriérés antérieurs : saisis à la main, membre par membre.** `SOCIAL_LEGACY_START_YEAR` vaut **2025**. Ces mois-là ne sont jamais générés : le responsable ouvre les seuls mois réellement restés impayés, depuis la fiche sociale du membre (`/admin/social/membres`), via `recordLegacyArrears()` — `POST /api/admin/social/members/:memberId/arrieres`, réservé à `admin`/`social_admin` parce que c'est une **création de dette**, pas un encaissement. Idempotent, et un mois déjà ouvert garde son montant d'origine.
+
+La dette reste datée de 2025, mais son règlement alimente la caisse de l'année où il est encaissé — la règle de caisse déjà en vigueur, rien de particulier à prévoir : le paiement passe par `recordPayments` comme n'importe quel autre mois. Côté lecture, les impayés se filtrent sur une **année de cotisation** (`parseContributionYear`, bornée à 2025), pas sur une année d'exercice (bornée à 2026) — confondre les deux masquerait précisément ces arriérés.
+
+**Arriérés courants.** `generateDueContributions()` rattrape tous les mois dus depuis `SOCIAL_START_YEAR`, ou depuis le mois d'arrivée du membre s'il est postérieur. La fonction est idempotente (index unique `{member, year, month}`).
 
 ⚠️ **Appelée SANS le paramètre `church`, elle balaie toutes les églises dotées d'un `SocialFundSettings`, production comprise.** Un test d'intégration qui l'oublie régénère les offrandes réelles — bug déjà constaté. Toute suite de tests doit passer son église de test.
 
