@@ -46,14 +46,14 @@ describe("Routes des nouvelles âmes (intégration HTTP)", () => {
     const soaUser = await User.create({
       name: "Agent SOA Route Test",
       email: `soa.testsuite.newsoulroutes${EMAIL_SUFFIX}`,
-      registrationNumber: "5AA00301A",
+      registrationNumber: "5AA00301O",
       password: "MotDePasseTemporaire123!",
       role: "soa",
     });
     const canaUser = await User.create({
       name: "Responsable CANA Route Test",
       email: `cana.testsuite.newsoulroutes${EMAIL_SUFFIX}`,
-      registrationNumber: "5AA00302A",
+      registrationNumber: "5AA00302P",
       password: "MotDePasseTemporaire123!",
       role: "cana",
     });
@@ -210,7 +210,7 @@ describe("Routes des nouvelles âmes (intégration HTTP)", () => {
       lastName: "Présence Route Test",
       church: TEST_CHURCH,
       flock: flock._id,
-      registrationNumber: "1AR26097O",
+      registrationNumber: "1AR26097S",
       role: "serviteur",
       status: "actif",
     });

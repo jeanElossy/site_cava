@@ -157,7 +157,7 @@ describe("presence.service (intégration MongoDB)", () => {
 
       await assert.rejects(
         presenceService.agentLogin(
-          { token, matricule: "1XP26099Z" },
+          { token, matricule: "1XP26099U" },
           fakeReq
         ),
         (error) => error.status === 401
@@ -224,7 +224,7 @@ describe("presence.service (intégration MongoDB)", () => {
     it("scan() renvoie une 404 pour un matricule de membre inconnu", async () => {
       await assert.rejects(
         presenceService.scan(
-          { registrationNumber: "1XP26099Z" },
+          { registrationNumber: "1XP26099U" },
           { id: agent._id },
           qr,
           fakeReq

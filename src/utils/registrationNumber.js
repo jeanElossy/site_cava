@@ -53,21 +53,11 @@ export const parseRegistrationNumber = (canonical) => {
   };
 };
 
-// Ordre chronologique réel d'inscription : PAS l'ordre alphabétique du
-// matricule complet, qui trierait par code de bergerie (positions 2-3)
-// avant le numéro de séquence (positions 5-7) et mélangerait donc les
-// rangs. Les membres sans matricule sont placés à la fin.
-export const compareByRegistrationOrder = (a, b) => {
-  const parsedA = parseRegistrationNumber(a?.registrationNumber);
-  const parsedB = parseRegistrationNumber(b?.registrationNumber);
-
-  if (!parsedA && !parsedB) return 0;
-  if (!parsedA) return 1;
-  if (!parsedB) return -1;
-
-  if (parsedA.church !== parsedB.church) {
-    return parsedA.church - parsedB.church;
-  }
-
-  return parsedA.number - parsedB.number;
-};
+// L'ORDRE D'AFFICHAGE N'EST PLUS CALCULÉ ICI.
+//
+// Un comparateur `compareByRegistrationOrder` vivait à cet endroit et
+// servait à retrier l'annuaire d'administration. Il a été retiré : la
+// liste est paginée côté serveur, et retrier une PAGE déjà découpée
+// par l'API selon un autre critère faisait « sauter » les matricules à
+// l'affichage. L'ordre appartient désormais à l'API, qui trie sur
+// `Member.registrationOrder` (voir backend/src/models/Member.js).

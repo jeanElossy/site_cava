@@ -42,6 +42,14 @@ export const createCrudService = (
     publicSort = defaultSort,
     // Champs interrogeables en recherche texte.
     searchableFields = ["title"],
+    // Champs `select: false` du modèle à réintégrer dans les lectures
+    // d'ADMINISTRATION uniquement (`+notes` pour les membres, par
+    // exemple). Les lectures publiques ne les voient jamais.
+    //
+    // Sans ça, le formulaire d'édition recevait un champ vide pour une
+    // valeur qui existait en base, et la réenvoyait tel quel : chaque
+    // modification d'un membre effaçait ses notes internes en silence.
+    adminSelect = null,
   } = {}
 ) => {
   const buildSearch = (search) => {
@@ -116,12 +124,15 @@ export const createCrudService = (
         ...buildSearch(asString(search, 80)),
       };
 
+      const listQuery = Model.find(criteria)
+        .sort(defaultSort)
+        .skip((safePage - 1) * safeLimit)
+        .limit(safeLimit);
+
+      if (adminSelect) listQuery.select(adminSelect);
+
       const [items, total] = await Promise.all([
-        Model.find(criteria)
-          .sort(defaultSort)
-          .skip((safePage - 1) * safeLimit)
-          .limit(safeLimit)
-          .lean(),
+        listQuery.lean(),
         Model.countDocuments(criteria),
       ]);
 
@@ -137,7 +148,11 @@ export const createCrudService = (
     },
 
     getById: async (id) => {
-      const doc = await Model.findById(id).lean();
+      const query = Model.findById(id);
+
+      if (adminSelect) query.select(adminSelect);
+
+      const doc = await query.lean();
 
       if (!doc) {
         throw ApiError.notFound(`${label} introuvable.`);

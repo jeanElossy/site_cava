@@ -84,15 +84,26 @@ const VideoField = ({ value, onChange }) => {
   );
 };
 
-const Field = ({ field, value, onChange }) => {
+// `fieldError` : message de validation renvoyé par l'API POUR CE
+// CHAMP (voir `errorDetails` plus bas). Il s'affiche sous le contrôle
+// concerné, et pas seulement en tête de formulaire : l'administration
+// recevait jusqu'ici un « Les données envoyées sont invalides » sans
+// jamais savoir quel champ posait problème, alors que le serveur
+// l'indiquait déjà dans sa réponse.
+const Field = ({ field, value, onChange, fieldError }) => {
   const id = useId();
   const helpId = useId();
+  const errorId = useId();
 
   const common = {
     id,
     name: field.name,
     required: field.required,
-    "aria-describedby": field.help ? helpId : undefined,
+    "aria-invalid": fieldError ? true : undefined,
+    "aria-describedby":
+      [field.help ? helpId : null, fieldError ? errorId : null]
+        .filter(Boolean)
+        .join(" ") || undefined,
     onChange: (event) =>
       onChange(
         field.name,
@@ -121,6 +132,12 @@ const Field = ({ field, value, onChange }) => {
             {field.help}
           </p>
         )}
+
+        {fieldError && (
+          <p className="admin-form__field-error" id={errorId}>
+            {fieldError}
+          </p>
+        )}
       </div>
     );
   }
@@ -129,7 +146,7 @@ const Field = ({ field, value, onChange }) => {
     <div
       className={`admin-form__field${
         field.wide ? " admin-form__field--wide" : ""
-      }`}
+      }${fieldError ? " admin-form__field--invalid" : ""}`}
     >
       <label htmlFor={id}>
         {field.label}
@@ -230,6 +247,12 @@ const Field = ({ field, value, onChange }) => {
           {field.help}
         </p>
       )}
+
+      {fieldError && (
+        <p className="admin-form__field-error" id={errorId}>
+          {fieldError}
+        </p>
+      )}
     </div>
   );
 };
@@ -248,7 +271,20 @@ const AdminForm = ({
   submitLabel = "Enregistrer",
   busy = false,
   error = null,
+  // Détail champ par champ renvoyé par l'API en cas de 422
+  // (`error.details` — voir backend/src/middlewares/error.js). Le
+  // serveur l'envoyait déjà, mais rien ne l'affichait.
+  errorDetails = null,
 }) => {
+  // Messages qui ne correspondent à aucun champ du formulaire (nom de
+  // sous-document Mongoose, champ non éditable ici…) : ils seraient
+  // perdus s'ils n'étaient affichés que sous leur champ.
+  const knownFieldNames = new Set(fields.map((field) => field.name));
+
+  const orphanErrors = Object.entries(errorDetails ?? {}).filter(
+    ([name]) => !knownFieldNames.has(name)
+  );
+
   return (
     <form
       className="admin-form"
@@ -275,18 +311,27 @@ const AdminForm = ({
               field={field}
               value={values[field.name]}
               onChange={onChange}
+              fieldError={errorDetails?.[field.name]}
             />
           )
         )}
       </div>
 
       {error && (
-        <p
+        <div
           className="admin-form__error"
           role="alert"
         >
-          {error}
-        </p>
+          <p>{error}</p>
+
+          {orphanErrors.length > 0 && (
+            <ul>
+              {orphanErrors.map(([name, message]) => (
+                <li key={name}>{message}</li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
       <div className="admin-form__actions">

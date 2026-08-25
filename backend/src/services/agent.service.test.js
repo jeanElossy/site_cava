@@ -2,6 +2,7 @@ import { describe, it, before, after, afterEach } from "node:test";
 import assert from "node:assert/strict";
 
 import { connectTestDb, disconnectTestDb } from "../test/db.js";
+import { letterForNumber } from "../utils/registrationFormat.js";
 import User from "../models/User.js";
 import Member from "../models/Member.js";
 import * as agentService from "./agent.service.js";
@@ -19,7 +20,12 @@ const memberFixture = (sequence) => ({
   lastName: `AgentTest${sequence}`,
   church: 5,
   status: "actif",
-  registrationNumber: `5ZZ99${String(sequence).padStart(3, "0")}A`,
+  // La lettre de contrôle se DÉDUIT du numéro : le modèle `Member` la
+  // valide désormais (voir Member.js), une lettre fixe « A » y serait
+  // refusée dès la deuxième fixture.
+  registrationNumber: `5ZZ99${String(sequence).padStart(3, "0")}${letterForNumber(
+    sequence
+  )}`,
 });
 
 let memberIds = [];
@@ -95,7 +101,7 @@ describe("agent.service (intégration MongoDB)", () => {
       () =>
         agentService.create({
           name: "Fantôme",
-          registrationNumber: "5ZZ99999Z",
+          registrationNumber: "5ZZ99999K",
           password: "MotDePasseTemporaire123!",
           role: "soa",
         }),
@@ -108,7 +114,7 @@ describe("agent.service (intégration MongoDB)", () => {
       () =>
         agentService.create({
           name: "Faux Agent",
-          registrationNumber: "5ZZ99998Z",
+          registrationNumber: "5ZZ99998J",
           password: "MotDePasseTemporaire123!",
           role: "admin",
         }),

@@ -9,6 +9,13 @@ import Member from "../models/Member.js";
 
 import { ApiError } from "../utils/ApiError.js";
 import { normalizeRegistrationNumber } from "./registrationNumber.service.js";
+import {
+  assertExerciceOpen,
+  computeYearBalance,
+  currentYear,
+  recordLedgerEntry,
+  SOCIAL_START_YEAR,
+} from "./socialFundYear.service.js";
 
 // Logique métier du Service Social (Phase 1 : cotisations, dashboard,
 // caisse en lecture) — voir
@@ -79,7 +86,7 @@ export const getSettings = async () =>
 
 export const upsertSettings = async (
   church,
-  { monthlyContributionAmount, openingBalance } = {},
+  { monthlyContributionAmount } = {},
   user
 ) => {
   const churchNumber = Number(church);
@@ -105,17 +112,11 @@ export const upsertSettings = async (
     update.monthlyContributionAmount = amount;
   }
 
-  if (openingBalance !== undefined) {
-    const opening = Number(openingBalance);
-
-    if (!Number.isFinite(opening) || opening < 0) {
-      throw ApiError.unprocessable("Solde initial invalide.", {
-        openingBalance: "Le solde initial doit être un nombre positif ou nul.",
-      });
-    }
-
-    update.openingBalance = opening;
-  }
+  // Le solde de caisse n'est PLUS un réglage d'église : il appartient
+  // désormais à un exercice annuel (voir socialFundYear.service.js).
+  // `SocialFundSettings.openingBalance` n'est conservé que le temps de
+  // la migration et n'est plus jamais réécrit ici — le laisser
+  // modifiable donnerait deux soldes initiaux concurrents.
 
   const settings = await SocialFundSettings.findOneAndUpdate(
     { church: churchNumber },
@@ -179,12 +180,19 @@ export const getMemberSocialFile = async (memberId) => {
     .lean();
 
   let totalPaid = 0;
+  let totalDue = 0;
   let paidCount = 0;
   let unpaidCount = 0;
   let lastPaidAt = null;
 
   for (const contribution of contributions) {
     totalPaid += contribution.amountPaid || 0;
+
+    // Une ligne exonérée ou annulée ne pèse pas dans la dette : elle
+    // reste visible dans l'historique, mais n'est plus réclamée.
+    if (!["exonere", "annule"].includes(contribution.status)) {
+      totalDue += contribution.amountDue || 0;
+    }
 
     if (contribution.status === "paye") paidCount += 1;
     if (["non_paye", "partiel"].includes(contribution.status)) unpaidCount += 1;
@@ -197,38 +205,133 @@ export const getMemberSocialFile = async (memberId) => {
     }
   }
 
+  // `balance` est le cumul demandé : ce que le membre doit encore,
+  // toutes années confondues depuis SOCIAL_START_YEAR. Négatif s'il a
+  // donné plus que le minimum (`amountDue` est un plancher, pas un
+  // plafond) — on expose alors ce surplus séparément plutôt que de le
+  // présenter comme une dette négative.
+  const balance = totalDue - totalPaid;
+
   return {
     member,
     contributions,
-    totals: { totalPaid, paidCount, unpaidCount, lastPaidAt },
+    totals: {
+      totalPaid,
+      totalDue,
+      balance: Math.max(balance, 0),
+      overpaid: Math.max(-balance, 0),
+      paidCount,
+      unpaidCount,
+      lastPaidAt,
+    },
   };
 };
 
 // ------------------------------------------------------------------
-// GÉNÉRATION MENSUELLE (job planifié)
+// GÉNÉRATION DES LIGNES DUES (rattrapage historique + job quotidien)
 // ------------------------------------------------------------------
+//
+// La génération ne se limite plus au mois courant : elle rattrape
+// TOUS les mois dus depuis SOCIAL_START_YEAR (2024). Sans ce
+// rattrapage, un membre validé aujourd'hui n'avait aucune ligne pour
+// les mois écoulés — donc aucun arriéré, donc rien à cumuler, alors
+// que la dette d'un membre doit précisément s'accumuler mois après
+// mois.
+//
+// MONTANT DES MOIS RATTRAPÉS : le montant mensuel EN VIGUEUR
+// AUJOURD'HUI est appliqué aux mois passés, faute d'historique des
+// tarifs (`SocialFundSettings` ne garde que la valeur courante). Les
+// lignes déjà émises, elles, ne sont jamais réécrites : leur
+// `amountDue` reste figé au tarif de leur époque, comme documenté sur
+// le modèle.
 
-// Idempotente par construction : l'index unique {member,year,month}
-// est le vrai garde-fou anti-doublon. Le filtrage préalable sur les
-// membres déjà couverts évite simplement le bruit d'erreurs 11000 à
-// chaque passage quotidien ; le try/catch reste nécessaire pour la
-// course entre deux exécutions concurrentes du job (backfill manuel +
-// job planifié, par exemple).
+// Toutes les périodes (année, mois) de `from` à `to`, bornes incluses.
+const monthsBetween = (from, to) => {
+  const periods = [];
+
+  let year = from.year;
+  let month = from.month;
+
+  while (year < to.year || (year === to.year && month <= to.month)) {
+    periods.push({ year, month });
+
+    month += 1;
+
+    if (month > 12) {
+      month = 1;
+      year += 1;
+    }
+  }
+
+  return periods;
+};
+
+// Premier mois dû par un membre : son mois d'arrivée, jamais avant
+// SOCIAL_START_YEAR. Un membre présent depuis 2016 ne doit pas se voir
+// réclamer dix ans d'arriérés (décision de cadrage : les arriérés
+// remontent à 2024) ; un membre arrivé en 2025 ne doit rien devoir
+// pour 2024.
+const firstDuePeriodFor = (member) => {
+  const floor = { year: SOCIAL_START_YEAR, month: 1 };
+
+  if (!member?.joinedAt) return floor;
+
+  const joined = new Date(member.joinedAt);
+
+  if (Number.isNaN(joined.getTime())) return floor;
+
+  const year = joined.getUTCFullYear();
+
+  if (year < floor.year) return floor;
+
+  return { year, month: joined.getUTCMonth() + 1 };
+};
+
+const periodKey = (memberId, year, month) => `${memberId}:${year}:${month}`;
+
+// L'index unique {member, year, month} est le vrai garde-fou
+// anti-doublon ; le filtrage préalable évite simplement le bruit
+// d'erreurs 11000 à chaque passage. Le try/catch reste nécessaire pour
+// la course entre deux exécutions concurrentes (rattrapage manuel
+// pendant le job planifié, par exemple).
+const insertIgnoringDuplicates = async (docs) => {
+  try {
+    const inserted = await SocialContribution.insertMany(docs, {
+      ordered: false,
+    });
+
+    return inserted.length;
+  } catch (error) {
+    const isDuplicateKeyError =
+      error?.code === 11000 ||
+      (Array.isArray(error?.writeErrors) &&
+        error.writeErrors.every(
+          (e) => e.code === 11000 || e.err?.code === 11000
+        ));
+
+    if (!isDuplicateKeyError) throw error;
+
+    return error.insertedDocs?.length ?? 0;
+  }
+};
+
+// Génère les lignes manquantes.
 //
 // `church` (facultatif) restreint le balayage à une seule église —
-// SANS filtre (cas réel du job planifié, voir
+// SANS filtre (cas du job planifié, voir
 // socialContributionsGenerator.js), la fonction traite TOUTES les
 // églises dotées d'un SocialFundSettings, y compris les vraies églises
 // en production. Un test d'intégration qui appelle cette fonction sans
 // préciser son église de test régénère donc, en effet de bord, les
-// offrandes réelles de toute église déjà configurée (église 1 en
-// pratique) — bug constaté concrètement : des offrandes réellement
-// payées ont été écrasées par une ligne "non_paye" fraîchement
-// régénérée pendant l'exécution de la suite de tests. D'où l'ajout de
-// ce paramètre, utilisé par socialContribution.service.test.js pour se
-// cantonner à son église de test.
-export const generateDueContributionsForCurrentMonth = async ({ church } = {}) => {
-  const { year, month } = currentPeriod();
+// offrandes réelles de toute église déjà configurée — bug constaté
+// concrètement lors de la Phase 1. D'où ce paramètre, que la suite de
+// tests doit toujours passer.
+//
+// `members` (facultatif) restreint à une liste de membres déjà
+// chargés, pour le cas « un membre vient d'être validé, il lui faut
+// ses lignes tout de suite » sans rebalayer toute l'église.
+export const generateDueContributions = async ({ church, members } = {}) => {
+  const upTo = currentPeriod();
 
   const settingsList = await SocialFundSettings.find(
     church ? { church } : {}
@@ -237,56 +340,104 @@ export const generateDueContributionsForCurrentMonth = async ({ church } = {}) =
   let createdTotal = 0;
 
   for (const settings of settingsList) {
-    const church = settings.church;
+    const churchNumber = settings.church;
 
-    const members = await Member.find({ church, status: "actif" })
-      .select("_id flock")
+    const scopedMembers = members
+      ? members.filter((member) => Number(member.church) === churchNumber)
+      : await Member.find({ church: churchNumber, status: "actif" })
+          .select("_id flock joinedAt")
+          .lean();
+
+    if (scopedMembers.length === 0) continue;
+
+    const existing = await SocialContribution.find({
+      member: { $in: scopedMembers.map((member) => member._id) },
+      year: { $gte: SOCIAL_START_YEAR },
+    })
+      .select("member year month")
       .lean();
 
-    if (members.length === 0) continue;
+    const alreadyCovered = new Set(
+      existing.map((line) => periodKey(line.member, line.year, line.month))
+    );
 
-    const existing = await SocialContribution.find({ church, year, month })
-      .select("member")
-      .lean();
+    const docs = [];
 
-    const existingIds = new Set(existing.map((c) => String(c.member)));
+    for (const member of scopedMembers) {
+      const periods = monthsBetween(firstDuePeriodFor(member), upTo);
 
-    const docs = members
-      .filter((m) => !existingIds.has(String(m._id)))
-      .map((m) => ({
-        member: m._id,
-        church,
-        flock: m.flock,
-        year,
-        month,
-        amountDue: settings.monthlyContributionAmount,
-        amountPaid: 0,
-        status: "non_paye",
-      }));
+      for (const { year, month } of periods) {
+        if (alreadyCovered.has(periodKey(member._id, year, month))) continue;
+
+        docs.push({
+          member: member._id,
+          church: churchNumber,
+          flock: member.flock,
+          year,
+          month,
+          amountDue: settings.monthlyContributionAmount,
+          amountPaid: 0,
+          status: "non_paye",
+        });
+      }
+    }
 
     if (docs.length === 0) continue;
 
-    try {
-      const inserted = await SocialContribution.insertMany(docs, {
-        ordered: false,
-      });
-
-      createdTotal += inserted.length;
-    } catch (error) {
-      const isDuplicateKeyError =
-        error?.code === 11000 ||
-        (Array.isArray(error?.writeErrors) &&
-          error.writeErrors.every(
-            (e) => e.code === 11000 || e.err?.code === 11000
-          ));
-
-      if (!isDuplicateKeyError) throw error;
-
-      createdTotal += error.insertedDocs?.length ?? 0;
-    }
+    createdTotal += await insertIgnoringDuplicates(docs);
   }
 
   return createdTotal;
+};
+
+// Rattrapage ciblé sur UN membre — appelé dès qu'un membre est créé ou
+// validé, pour qu'il apparaisse immédiatement dans les listes du
+// Service Social au lieu d'attendre le prochain passage du job
+// quotidien (jusqu'à 24 h).
+export const ensureMemberContributions = async (member) => {
+  const memberId = member?._id ?? member?.id;
+
+  if (!memberId) return 0;
+
+  // Un membre inactif ne cotise pas : le job de génération ne retient
+  // que `status: "actif"`, ce raccourci doit appliquer la même règle.
+  if (member.status && member.status !== "actif") return 0;
+
+  const churchNumber = Number(member.church);
+
+  if (!isChurch(churchNumber)) return 0;
+
+  return generateDueContributions({
+    church: churchNumber,
+    members: [
+      {
+        _id: memberId,
+        church: churchNumber,
+        flock: member.flock,
+        joinedAt: member.joinedAt,
+      },
+    ],
+  });
+};
+
+// Variante « au mieux » pour les chemins où l'échec de la génération
+// ne doit surtout pas annuler l'opération principale : valider une
+// inscription reste valide même si le Service Social est momentanément
+// indisponible. L'erreur est journalisée, jamais avalée en silence, et
+// le job quotidien rattrapera de toute façon.
+export const syncMemberContributionsQuietly = async (member) => {
+  try {
+    return await ensureMemberContributions(member);
+  } catch (error) {
+    console.error(
+      "[socialContribution] génération des cotisations impossible pour le membre",
+      String(member?._id ?? member?.id ?? "?"),
+      ":",
+      error.message
+    );
+
+    return 0;
+  }
 };
 
 // ------------------------------------------------------------------
@@ -307,6 +458,11 @@ export const recordPayments = async ({ memberId, payments } = {}, user) => {
       payments: "Indiquez au moins un mois à régler.",
     });
   }
+
+  // Contrôle de l'exercice AVANT de toucher la moindre cotisation :
+  // découvrir une caisse clôturée au moment d'écrire au journal
+  // laisserait des mois marqués « payé » sans contrepartie en caisse.
+  await assertExerciceOpen(member.church, user);
 
   let settingsForMember; // chargé au besoin, une seule fois
 
@@ -451,14 +607,19 @@ export const recordPayments = async ({ memberId, payments } = {}, user) => {
       continue;
     }
 
-    await SocialLedgerEntry.create({
-      church: updated.church,
-      type: "cotisation",
-      reference,
-      description: `Cotisation — ${member.firstName} ${member.lastName} — ${monthLabel(month, year)}`,
-      amount,
-      recordedBy: user.id,
-    });
+    // Jamais `SocialLedgerEntry.create` en direct : `recordLedgerEntry`
+    // rattache le mouvement à l'exercice courant et refuse une caisse
+    // clôturée (voir socialFundYear.service.js).
+    await recordLedgerEntry(
+      {
+        church: updated.church,
+        type: "cotisation",
+        reference,
+        description: `Cotisation — ${member.firstName} ${member.lastName} — ${monthLabel(month, year)}`,
+        amount,
+      },
+      user
+    );
 
     results.push({
       year,
@@ -521,23 +682,36 @@ export const exempt = async (contributionId, { motif } = {}, user) => {
 
 const STATUS_VALUES = ["non_paye", "paye", "partiel", "exonere", "annule"];
 
-export const listContributions = async ({
-  church,
-  year,
-  month,
-  status,
-  search,
-  page = 1,
-  limit = 20,
-} = {}) => {
+// « En retard » n'est pas un statut stocké (voir SocialContribution.js)
+// mais l'administration doit pouvoir filtrer dessus. Le critère est
+// donc traduit ici en condition Mongo, côté serveur : le faire côté
+// navigateur ne filtrait que la page affichée, et manquait donc tous
+// les retardataires des pages suivantes.
+const statusCriteria = (status) => {
+  if (status === "retard") {
+    const { year, month } = currentPeriod();
+
+    return {
+      status: { $in: ["non_paye", "partiel"] },
+      $or: [{ year: { $lt: year } }, { year, month: { $lt: month } }],
+    };
+  }
+
+  return STATUS_VALUES.includes(status) ? { status } : {};
+};
+
+const buildPeriodFilter = async ({ church, year, month, search }) => {
   const filter = {};
 
   if (isChurch(Number(church))) filter.church = Number(church);
   if (Number.isInteger(Number(year))) filter.year = Number(year);
-  if (Number.isInteger(Number(month)) && Number(month) >= 1 && Number(month) <= 12) {
+  if (
+    Number.isInteger(Number(month)) &&
+    Number(month) >= 1 &&
+    Number(month) <= 12
+  ) {
     filter.month = Number(month);
   }
-  if (STATUS_VALUES.includes(status)) filter.status = status;
 
   const trimmedSearch = asString(search, 80);
 
@@ -561,10 +735,66 @@ export const listContributions = async ({
     filter.member = { $in: matchingMembers.map((m) => m._id) };
   }
 
+  return filter;
+};
+
+const sumContributions = async (filter) => {
+  const [aggregate] = await SocialContribution.aggregate([
+    { $match: filter },
+    {
+      $group: {
+        _id: null,
+        // Une ligne exonérée ou annulée n'est plus réclamée : elle ne
+        // doit pas gonfler le montant attendu du mois, sinon le taux
+        // de recouvrement affiché ne pourra jamais atteindre 100 %.
+        amountDue: {
+          $sum: {
+            $cond: [
+              { $in: ["$status", ["exonere", "annule"]] },
+              0,
+              "$amountDue",
+            ],
+          },
+        },
+        amountPaid: { $sum: "$amountPaid" },
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const amountDue = aggregate?.amountDue ?? 0;
+  const amountPaid = aggregate?.amountPaid ?? 0;
+
+  return {
+    amountDue,
+    amountPaid,
+    remaining: Math.max(amountDue - amountPaid, 0),
+    rate: amountDue > 0 ? Math.round((amountPaid / amountDue) * 100) : 0,
+    count: aggregate?.count ?? 0,
+  };
+};
+
+export const listContributions = async ({
+  church,
+  year,
+  month,
+  status,
+  search,
+  page = 1,
+  limit = 20,
+} = {}) => {
+  const periodFilter = await buildPeriodFilter({ church, year, month, search });
+  const filter = { ...periodFilter, ...statusCriteria(status) };
+
   const perPage = Math.min(Math.max(Number(limit) || 20, 1), 100);
   const current = Math.max(Number(page) || 1, 1);
 
-  const [items, total] = await Promise.all([
+  // `totals` porte sur TOUTE la période affichée, filtre de statut
+  // exclu et pagination comprise : la barre de totaux de l'écran doit
+  // décrire le mois entier, pas les 20 lignes visibles. Elle était
+  // jusqu'ici calculée dans le navigateur sur la seule page chargée,
+  // donc fausse dès que le mois dépassait la taille de page.
+  const [items, total, totals] = await Promise.all([
     SocialContribution.find(filter)
       .sort({ year: -1, month: -1, createdAt: -1 })
       .skip((current - 1) * perPage)
@@ -573,12 +803,20 @@ export const listContributions = async ({
       .populate("recordedBy", "name")
       .lean(),
     SocialContribution.countDocuments(filter),
+    sumContributions(periodFilter),
   ]);
 
-  return { items, total, page: current, perPage };
+  return { items, total, page: current, perPage, totals };
 };
 
-export const listUnpaid = async ({ church } = {}) => {
+// Arriérés cumulés, un agrégat par membre : qui doit encore, combien,
+// et depuis quels mois. C'est la vue « qui participe / qui doit
+// encore » du cahier des charges.
+//
+// « En retard » se dérive de la période, jamais d'un statut stocké :
+// le mois courant n'est pas encore en retard tant qu'il n'est pas
+// écoulé.
+export const listUnpaid = async ({ church, year } = {}) => {
   const { year: curYear, month: curMonth } = currentPeriod();
 
   const match = {
@@ -591,14 +829,26 @@ export const listUnpaid = async ({ church } = {}) => {
 
   if (isChurch(Number(church))) match.church = Number(church);
 
+  // Filtre facultatif sur un exercice : « qui doit encore pour 2025 »,
+  // par opposition au cumul de toutes les années.
+  if (Number.isInteger(Number(year))) match.year = Number(year);
+
   const rows = await SocialContribution.aggregate([
     { $match: match },
     {
       $group: {
         _id: "$member",
-        unpaidMonths: { $push: { year: "$year", month: "$month" } },
+        unpaidMonths: {
+          $push: {
+            year: "$year",
+            month: "$month",
+            amountDue: "$amountDue",
+            amountPaid: "$amountPaid",
+          },
+        },
         monthsCount: { $sum: 1 },
-        totalDue: { $sum: { $subtract: ["$amountDue", "$amountPaid"] } },
+        totalDue: { $sum: "$amountDue" },
+        totalPaid: { $sum: "$amountPaid" },
       },
     },
     { $sort: { totalDue: -1 } },
@@ -607,7 +857,8 @@ export const listUnpaid = async ({ church } = {}) => {
   const memberIds = rows.map((row) => row._id);
 
   const members = await Member.find({ _id: { $in: memberIds } })
-    .select("firstName lastName registrationNumber phone church flock")
+    .select("firstName lastName registrationNumber phone whatsapp church flock status")
+    .populate("flock", "name")
     .lean();
 
   const memberMap = new Map(members.map((m) => [String(m._id), m]));
@@ -619,6 +870,10 @@ export const listUnpaid = async ({ church } = {}) => {
     ),
     monthsCount: row.monthsCount,
     totalDue: row.totalDue,
+    totalPaid: row.totalPaid,
+    // Ce qu'il reste réellement à recouvrer, une fois déduits les
+    // paiements partiels déjà encaissés sur ces mois.
+    remaining: Math.max(row.totalDue - row.totalPaid, 0),
   }));
 };
 
@@ -641,54 +896,21 @@ const churchesInScope = async (church) => {
 };
 
 // ------------------------------------------------------------------
-// SOLDE DE CAISSE — SOURCE UNIQUE DE CALCUL
+// SOLDE DE CAISSE
 // ------------------------------------------------------------------
-// `caisse()`, `dashboard()` et le service Aides sociales
-// (socialAid.service.js#validateAid, qui doit bloquer un décaissement
-// dépassant le solde disponible) ont tous besoin du même calcul :
-// openingBalance + somme signée des SocialLedgerEntry. Une seule
-// fonction interne fait cette agrégation ; `computeCashBalance` en est
-// la version publique, à une seule église, exportée pour être
-// réutilisée par socialAid.service.js — jamais dupliquée.
-const cashSummaryForChurches = async (churches) => {
-  if (churches.length === 0) {
-    return { openingBalance: 0, ledgerTotal: 0, currentBalance: 0 };
-  }
+// Le calcul ne vit plus ici : il appartient à l'exercice annuel (voir
+// socialFundYear.service.js#computeYearBalance). Ce module se contente
+// d'additionner les exercices COURANTS des églises de son périmètre,
+// pour le seul besoin du dashboard, qui peut afficher plusieurs
+// églises à la fois.
+const currentBalanceForChurches = async (churches) => {
+  if (churches.length === 0) return 0;
 
-  const [settingsList, ledgerAgg] = await Promise.all([
-    SocialFundSettings.find({ church: { $in: churches } })
-      .select("openingBalance")
-      .lean(),
-    SocialLedgerEntry.aggregate([
-      { $match: { church: { $in: churches } } },
-      { $group: { _id: null, total: { $sum: "$amount" } } },
-    ]),
-  ]);
-
-  const openingBalance = settingsList.reduce(
-    (sum, s) => sum + (s.openingBalance || 0),
-    0
+  const balances = await Promise.all(
+    churches.map((church) => computeYearBalance(church, currentYear()))
   );
-  const ledgerTotal = ledgerAgg[0]?.total ?? 0;
 
-  return {
-    openingBalance,
-    ledgerTotal,
-    currentBalance: openingBalance + ledgerTotal,
-  };
-};
-
-// Solde actuel d'UNE église, recalculé côté serveur — jamais reçu du
-// client. Utilisé par socialAid.service.js#validateAid pour bloquer
-// (409) un décaissement qui dépasserait ce solde.
-export const computeCashBalance = async (church) => {
-  const churchNumber = Number(church);
-
-  if (!isChurch(churchNumber)) return 0;
-
-  const summary = await cashSummaryForChurches([churchNumber]);
-
-  return summary.currentBalance;
+  return balances.reduce((sum, balance) => sum + balance.currentBalance, 0);
 };
 
 export const dashboard = async ({ church } = {}) => {
@@ -720,7 +942,7 @@ export const dashboard = async ({ church } = {}) => {
     activeMembers,
     contributionsAgg,
     lateMemberIds,
-    cashSummary,
+    cashBalance,
     aidAgg,
   ] = await Promise.all([
     Member.countDocuments({ status: "actif", church: { $in: churches } }),
@@ -743,7 +965,7 @@ export const dashboard = async ({ church } = {}) => {
       $or: [{ year: { $lt: year } }, { year, month: { $lt: month } }],
     }),
 
-    cashSummaryForChurches(churches),
+    currentBalanceForChurches(churches),
 
     // Aides décaissées ("payee") ce mois-ci, dans le périmètre — voir
     // socialAid.service.js pour le workflow qui pose `paidAt`.
@@ -782,7 +1004,7 @@ export const dashboard = async ({ church } = {}) => {
     },
     amountCollectedThisMonth: contributions.amountCollected,
     lateContributions: lateMemberIds.length,
-    cashBalance: cashSummary.currentBalance,
+    cashBalance,
     aidAmountThisMonth: aid.amount,
     aidCount: aid.count,
     paymentRate:
@@ -792,25 +1014,49 @@ export const dashboard = async ({ church } = {}) => {
   };
 };
 
-export const caisse = async ({ church } = {}) => {
-  const hasChurch = isChurch(Number(church));
-  const churches = await churchesInScope(church);
+// État d'UNE caisse : une église, un exercice. Contrairement au
+// dashboard, il n'y a jamais d'agrégat « toutes les églises » — un
+// solde de caisse appartient à une caisse physique, pas à une somme
+// d'églises.
+export const caisse = async ({ church, year } = {}) => {
+  const churchNumber = Number(church);
 
-  const { openingBalance, ledgerTotal: totalCotisations } =
-    await cashSummaryForChurches(churches);
+  if (!isChurch(churchNumber)) {
+    throw ApiError.unprocessable(
+      "L'église est obligatoire pour consulter une caisse.",
+      { church: "Sélectionnez une église." }
+    );
+  }
 
-  return {
-    church: hasChurch ? Number(church) : null,
-    openingBalance,
-    totalCotisations,
-    currentBalance: openingBalance + totalCotisations,
-  };
+  const settings = await SocialFundSettings.findOne({
+    church: churchNumber,
+  }).lean();
+
+  // Église sans module Service Social actif : `null` plutôt que des
+  // zéros, pour que l'écran distingue « caisse vide » de « module pas
+  // encore configuré » (il affiche déjà les deux différemment).
+  if (!settings) return null;
+
+  const exercice = Number.isInteger(Number(year))
+    ? Number(year)
+    : currentYear();
+
+  return computeYearBalance(churchNumber, exercice);
 };
 
-export const ledgerMovements = async ({ church, page = 1, limit = 20 } = {}) => {
+export const ledgerMovements = async ({
+  church,
+  year,
+  page = 1,
+  limit = 20,
+} = {}) => {
   const filter = {};
 
   if (isChurch(Number(church))) filter.church = Number(church);
+
+  // Les mouvements appartiennent à un exercice : sans ce filtre, la
+  // caisse 2027 afficherait aussi les lignes de 2024.
+  if (Number.isInteger(Number(year))) filter.year = Number(year);
 
   const perPage = Math.min(Math.max(Number(limit) || 20, 1), 100);
   const current = Math.max(Number(page) || 1, 1);

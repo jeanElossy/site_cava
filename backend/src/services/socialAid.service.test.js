@@ -9,8 +9,10 @@ import SocialAid from "../models/SocialAid.js";
 import SocialAidType from "../models/SocialAidType.js";
 import SocialContribution from "../models/SocialContribution.js";
 import SocialLedgerEntry from "../models/SocialLedgerEntry.js";
+import SocialFundYear from "../models/SocialFundYear.js";
 import * as socialAidService from "./socialAid.service.js";
 import * as socialContributionService from "./socialContribution.service.js";
+import * as socialFundYearService from "./socialFundYear.service.js";
 
 // ------------------------------------------------------------------
 // ÉGLISE DE TEST : 4, PAS 5
@@ -48,6 +50,11 @@ let aidType;
 const cleanup = async () => {
   await SocialAid.deleteMany({ church: TEST_CHURCH });
   await SocialLedgerEntry.deleteMany({ church: TEST_CHURCH });
+  // Les exercices de caisse sont créés à la volée par le premier
+  // encaissement (socialFundYear.service.js#ensureFundYear) : ils
+  // doivent être nettoyés comme le reste, sinon l'église de test
+  // garde un solde reporté d'une exécution sur l'autre.
+  await SocialFundYear.deleteMany({ church: TEST_CHURCH });
   // Ce fichier crée un `SocialFundSettings(church: 4)` pendant toute sa
   // durée : si le serveur de dev tourne en parallèle (même base
   // partagée, voir CLAUDE.md), son job planifié
@@ -101,8 +108,20 @@ describe("socialAid.service (intégration MongoDB)", () => {
     await SocialFundSettings.create({
       church: TEST_CHURCH,
       monthlyContributionAmount: 1000,
-      openingBalance: OPENING_BALANCE,
     });
+
+    // Le solde de caisse n'est plus un réglage d'église : il appartient
+    // à un exercice annuel (voir socialFundYear.service.js). C'est donc
+    // l'exercice EN COURS qu'il faut approvisionner pour que les
+    // décaissements de cette suite aient de quoi être payés.
+    await socialFundYearService.openFundYear(
+      TEST_CHURCH,
+      {
+        year: socialFundYearService.currentYear(),
+        openingBalance: OPENING_BALANCE,
+      },
+      admin
+    );
 
     aidType = await SocialAidType.create({
       name: `${AID_TYPE_NAME_PREFIX} ${Math.random().toString(36).slice(2, 8)}`,
@@ -161,7 +180,7 @@ describe("socialAid.service (intégration MongoDB)", () => {
       admin
     );
 
-    const balanceBefore = await socialContributionService.computeCashBalance(TEST_CHURCH);
+    const balanceBefore = await socialFundYearService.computeCurrentBalance(TEST_CHURCH);
 
     const result = await socialAidService.validateAid(aid._id, admin);
 
@@ -178,13 +197,13 @@ describe("socialAid.service (intégration MongoDB)", () => {
     assert.equal(ledgerEntry.type, "aide");
     assert.equal(ledgerEntry.amount, -amount);
 
-    const balanceAfter = await socialContributionService.computeCashBalance(TEST_CHURCH);
+    const balanceAfter = await socialFundYearService.computeCurrentBalance(TEST_CHURCH);
     assert.equal(balanceAfter, balanceBefore - amount);
   });
 
   it("validation refusée si le solde est insuffisant (409, aucune écriture, statut inchangé)", async () => {
     const member = await makeMember();
-    const balance = await socialContributionService.computeCashBalance(TEST_CHURCH);
+    const balance = await socialFundYearService.computeCurrentBalance(TEST_CHURCH);
 
     const aid = await socialAidService.createAid(
       {
@@ -278,7 +297,7 @@ describe("socialAid.service (intégration MongoDB)", () => {
       admin
     );
 
-    const balanceBeforeDecaissement = await socialContributionService.computeCashBalance(
+    const balanceBeforeDecaissement = await socialFundYearService.computeCurrentBalance(
       TEST_CHURCH
     );
 
@@ -309,7 +328,7 @@ describe("socialAid.service (intégration MongoDB)", () => {
     }).lean();
     assert.equal(original.amount, -amount);
 
-    const balanceAfterCancel = await socialContributionService.computeCashBalance(TEST_CHURCH);
+    const balanceAfterCancel = await socialFundYearService.computeCurrentBalance(TEST_CHURCH);
     assert.equal(balanceAfterCancel, balanceBeforeDecaissement);
   });
 

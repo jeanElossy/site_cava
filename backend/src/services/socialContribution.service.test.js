@@ -7,6 +7,7 @@ import User from "../models/User.js";
 import SocialFundSettings from "../models/SocialFundSettings.js";
 import SocialContribution from "../models/SocialContribution.js";
 import SocialLedgerEntry from "../models/SocialLedgerEntry.js";
+import SocialFundYear from "../models/SocialFundYear.js";
 import * as socialContributionService from "./socialContribution.service.js";
 
 // ------------------------------------------------------------------
@@ -27,7 +28,7 @@ import * as socialContributionService from "./socialContribution.service.js";
 // l'église 1 est actuellement active en pratique, voir la spec
 // Phase 1).
 //
-// generateDueContributionsForCurrentMonth() DOIT être appelée avec
+// generateDueContributions() DOIT être appelée avec
 // `{ church: TEST_CHURCH }` ci-dessous : sans ce filtre, elle balaie
 // TOUTES les églises dotées d'un SocialFundSettings, y compris l'église
 // 1 réelle — bug constaté concrètement (des offrandes réellement
@@ -39,17 +40,36 @@ const AMOUNT = 1500;
 
 let admin;
 
+// Préfixe de nom porté par les seuls membres créés ICI.
+//
+// Le nettoyage NE DOIT PAS supprimer tous les membres de l'église de
+// test : `agent.service.test.js` utilise la même église 5, sur la même
+// base (ce projet n'a pas de base de test dédiée, voir CLAUDE.md), et
+// `node --test` exécute les fichiers en parallèle. Un `deleteMany({
+// church })` global effaçait donc ses fixtures en plein milieu de ses
+// assertions — d'où un échec intermittent, invisible quand on relance
+// le fichier seul.
+const MEMBER_PREFIX = "Social";
+
 const cleanup = async () => {
   await SocialContribution.deleteMany({ church: TEST_CHURCH });
   await SocialLedgerEntry.deleteMany({ church: TEST_CHURCH });
-  await Member.deleteMany({ church: TEST_CHURCH });
+  // Les exercices de caisse sont créés à la volée par le premier
+  // encaissement (socialFundYear.service.js#ensureFundYear) : ils
+  // doivent être nettoyés comme le reste, sinon l'église de test
+  // garde un solde reporté d'une exécution sur l'autre.
+  await SocialFundYear.deleteMany({ church: TEST_CHURCH });
+  await Member.deleteMany({
+    church: TEST_CHURCH,
+    lastName: new RegExp(`^${MEMBER_PREFIX} `),
+  });
   await SocialFundSettings.deleteMany({ church: TEST_CHURCH });
 };
 
 const makeMember = (overrides = {}) =>
   Member.create({
     firstName: "Test",
-    lastName: `Social ${Math.random().toString(36).slice(2, 8)}`,
+    lastName: `${MEMBER_PREFIX} ${Math.random().toString(36).slice(2, 8)}`,
     church: TEST_CHURCH,
     status: "actif",
     ...overrides,
@@ -90,7 +110,7 @@ describe("socialContribution.service (intégration MongoDB)", () => {
     const m1 = await makeMember();
     const m2 = await makeMember();
 
-    await socialContributionService.generateDueContributionsForCurrentMonth({
+    await socialContributionService.generateDueContributions({
       church: TEST_CHURCH,
     });
 
@@ -107,7 +127,7 @@ describe("socialContribution.service (intégration MongoDB)", () => {
     assert.equal(firstPass.length, 2);
 
     // Deuxième appel : aucune ligne supplémentaire, aucune erreur.
-    await socialContributionService.generateDueContributionsForCurrentMonth({
+    await socialContributionService.generateDueContributions({
       church: TEST_CHURCH,
     });
 
@@ -320,9 +340,12 @@ describe("socialContribution.service (intégration MongoDB)", () => {
 
     const expectedBalance = totalLedger[0]?.total ?? 0;
 
+    // La caisse est désormais celle de l'EXERCICE en cours ; tous les
+    // mouvements créés par cette suite datent de maintenant, ils y
+    // tombent donc tous.
     const caisse = await socialContributionService.caisse({ church: TEST_CHURCH });
     assert.equal(caisse.openingBalance, 0);
-    assert.equal(caisse.totalCotisations, expectedBalance);
+    assert.equal(caisse.totalIn - caisse.totalOut, expectedBalance);
     assert.equal(caisse.currentBalance, expectedBalance);
 
     const dashboard = await socialContributionService.dashboard({ church: TEST_CHURCH });
@@ -345,7 +368,15 @@ describe("socialContribution.service (intégration MongoDB)", () => {
   });
 
   it("recherche des membres actifs par nom et rattache l'église", async () => {
-    const member = await makeMember({ firstName: "Unique", lastName: "Chercheur" });
+    // Le nom GARDE le préfixe des fixtures de ce fichier : c'est lui
+    // que vise le nettoyage (voir `MEMBER_PREFIX`). Un nom libre
+    // survivrait au `after()` et laisserait un membre fantôme dans
+    // l'annuaire réel — constaté avec un « Unique Chercheur » resté en
+    // base après une exécution.
+    const member = await makeMember({
+      firstName: "Unique",
+      lastName: `${MEMBER_PREFIX} Chercheur`,
+    });
 
     const results = await socialContributionService.searchMembers({
       q: "Chercheur",

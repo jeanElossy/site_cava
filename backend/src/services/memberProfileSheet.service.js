@@ -286,10 +286,23 @@ const drawIdentityBlock = async (doc, member, top, churchName) => {
     try {
       doc.save();
       doc.roundedRect(left + 3, top + 3, photoW - 6, photoH - 6, 6).clip();
+
+      // `cover`, JAMAIS `width` + `height` ensemble : donner les deux à
+      // PDFKit étire l'image pour remplir exactement le cadre sans
+      // respecter ses proportions — une photo portrait s'y écrasait,
+      // une photo paysage s'y allongeait. C'était la déformation
+      // constatée sur les fiches imprimées.
+      //
+      // `cover` remplit le cadre en RECADRANT, et `valign: "top"`
+      // ancre ce recadrage vers le haut, exactement comme la carte de
+      // membre (memberCardSvg.service.js) : sans détection de visage,
+      // un ancrage centré coupe régulièrement le sommet de la tête.
       doc.image(photoBuffer, left + 3, top + 3, {
-        width: photoW - 6,
-        height: photoH - 6,
+        cover: [photoW - 6, photoH - 6],
+        align: "center",
+        valign: "top",
       });
+
       doc.restore();
     } catch {
       // Image récupérée mais illisible (format inattendu, fichier

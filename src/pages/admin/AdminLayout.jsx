@@ -17,6 +17,7 @@ import {
   ExternalLink,
   HandCoins,
   HandHelping,
+  AlertTriangle,
   HeartHandshake,
   Heart,
   Image,
@@ -152,6 +153,11 @@ const NAV_GROUPS = [
     items: [
       { to: "/admin/social", label: "Aperçu", icon: HeartHandshake, end: true },
       { to: "/admin/social/cotisations", label: "Offrandes", icon: Banknote },
+      {
+        to: "/admin/social/arrieres",
+        label: "Arriérés",
+        icon: AlertTriangle,
+      },
       { to: "/admin/social/membres", label: "Membres", icon: Search },
       { to: "/admin/social/caisse", label: "Caisse", icon: PiggyBank },
       { to: "/admin/social/aides", label: "Aides sociales", icon: HandHelping, end: true },

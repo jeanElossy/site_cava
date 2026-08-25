@@ -195,14 +195,20 @@
   }
 
   // Variante utilisée pour la photo de membre : l'aperçu reproduit le
-  // recadrage carré appliqué sur la carte (voir
-  // memberCardSvg.service.js#buildMemberPhotoDataUri côté backend),
-  // ancré en haut plutôt qu'au centre pour laisser de la marge sous le
-  // menton plutôt que de risquer de couper le sommet de la tête.
+  // cadre réel de la carte — PORTRAIT (63,8 × 80,76 dans
+  // `public/cards/recto.svg`), et non carré comme ici jusqu'à présent.
+  // Un aperçu carré annonçait un cadrage que la carte n'appliquait
+  // pas : l'administrateur validait une photo qui se retrouvait
+  // rognée sur les côtés à l'impression.
+  //
+  // Ancré en haut, comme le recadrage du backend
+  // (memberCardSvg.service.js#buildMemberPhotoDataUri) : ça laisse de
+  // la marge sous le menton plutôt que de risquer de couper le sommet
+  // de la tête.
   &__preview--square {
     img,
     video {
-      width: 96px;
+      width: 76px;
       height: 96px;
 
       object-position: center top;

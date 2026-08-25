@@ -3,6 +3,7 @@ import { Router } from "express";
 import * as socialContributionService from "../services/socialContribution.service.js";
 import * as socialReceiptService from "../services/socialReceipt.service.js";
 import * as socialAidService from "../services/socialAid.service.js";
+import * as socialFundYearService from "../services/socialFundYear.service.js";
 import * as audit from "../services/audit.service.js";
 
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -48,6 +49,17 @@ const parseYear = (value) => {
   const n = Number(value);
 
   return Number.isInteger(n) && n >= 2000 && n <= 2100 ? n : undefined;
+};
+
+// Année d'EXERCICE : bornée plus bas que `parseYear`, qui sert aux
+// cotisations. Aucune caisse n'existe avant 2024 (voir
+// socialFundYear.service.js#SOCIAL_START_YEAR).
+const parseExerciceYear = (value) => {
+  const n = parseYear(value);
+
+  return n !== undefined && n >= socialFundYearService.SOCIAL_START_YEAR
+    ? n
+    : undefined;
 };
 
 const parseMonth = (value) => {
@@ -175,7 +187,15 @@ export const buildSocialRouter = () => {
 
       sendSuccess(res, {
         data: data.items,
-        meta: { total: data.total, page: data.page, perPage: data.perPage },
+        meta: {
+          total: data.total,
+          page: data.page,
+          perPage: data.perPage,
+          // Totaux de la PÉRIODE entière (filtre de statut et
+          // pagination exclus) : la barre de totaux de l'écran doit
+          // décrire le mois, pas la page affichée.
+          totals: data.totals,
+        },
       });
     })
   );
@@ -186,6 +206,7 @@ export const buildSocialRouter = () => {
     asyncHandler(async (req, res) => {
       const data = await socialContributionService.listUnpaid({
         church: parseChurch(req.query.church),
+        year: parseExerciceYear(req.query.year),
       });
 
       sendSuccess(res, { data });
@@ -245,6 +266,7 @@ export const buildSocialRouter = () => {
     asyncHandler(async (req, res) => {
       const data = await socialContributionService.caisse({
         church: parseChurch(req.query.church),
+        year: parseExerciceYear(req.query.year),
       });
 
       sendSuccess(res, { data });
@@ -257,6 +279,7 @@ export const buildSocialRouter = () => {
     asyncHandler(async (req, res) => {
       const data = await socialContributionService.ledgerMovements({
         church: parseChurch(req.query.church),
+        year: parseExerciceYear(req.query.year),
         page: parsePositiveInt(req.query.page),
         limit: parsePositiveInt(req.query.limit),
       });
@@ -264,6 +287,127 @@ export const buildSocialRouter = () => {
       sendSuccess(res, {
         data: data.items,
         meta: { total: data.total, page: data.page, perPage: data.perPage },
+      });
+    })
+  );
+
+  // ---- Exercices annuels de la caisse ---------------------------
+  //
+  // Une caisse par église ET par année : les mouvements, le solde et
+  // la clôture appartiennent à un exercice, plus à l'église entière
+  // depuis toujours (voir socialFundYear.service.js).
+
+  router.get(
+    "/exercices",
+    requireRole(...SOCIAL_READ_ROLES),
+    asyncHandler(async (req, res) => {
+      const data = await socialFundYearService.listFundYears({
+        church: parseChurch(req.query.church),
+      });
+
+      sendSuccess(res, { data });
+    })
+  );
+
+  router.post(
+    "/exercices",
+    requireRole(...SOCIAL_ADMIN_ROLES),
+    asyncHandler(async (req, res) => {
+      const data = await socialFundYearService.openFundYear(
+        req.body?.church,
+        {
+          year: req.body?.year,
+          openingBalance: req.body?.openingBalance,
+        },
+        req.user
+      );
+
+      await audit.record(req, {
+        action: "create",
+        resource: "socialFundYear",
+        resourceId: `${data.church}-${data.year}`,
+      });
+
+      sendCreated(res, {
+        message: `Exercice ${data.year} ouvert.`,
+        data,
+      });
+    })
+  );
+
+  router.patch(
+    "/exercices/:church/:year/cloturer",
+    requireRole(...SOCIAL_ADMIN_ROLES),
+    asyncHandler(async (req, res) => {
+      const data = await socialFundYearService.closeFundYear(
+        req.params.church,
+        req.params.year,
+        req.user
+      );
+
+      await audit.record(req, {
+        action: "update",
+        resource: "socialFundYear",
+        resourceId: `${req.params.church}-${req.params.year}`,
+      });
+
+      sendSuccess(res, {
+        message: `Exercice ${data.closed.year} clôturé. Le solde est reporté sur ${
+          data.next ? data.next.year : "l'exercice suivant"
+        }.`,
+        data,
+      });
+    })
+  );
+
+  // Rouvrir est plus sensible que clôturer : ça rend de nouveau
+  // modifiable une caisse déjà arrêtée. Réservé aux mêmes rôles que la
+  // clôture, et journalisé.
+  router.patch(
+    "/exercices/:church/:year/rouvrir",
+    requireRole(...SOCIAL_ADMIN_ROLES),
+    asyncHandler(async (req, res) => {
+      const data = await socialFundYearService.reopenFundYear(
+        req.params.church,
+        req.params.year,
+        req.user
+      );
+
+      await audit.record(req, {
+        action: "update",
+        resource: "socialFundYear",
+        resourceId: `${req.params.church}-${req.params.year}`,
+      });
+
+      sendSuccess(res, { message: `Exercice ${data.year} rouvert.`, data });
+    })
+  );
+
+  // Rattrapage manuel des lignes dues, sans attendre le job quotidien.
+  // Idempotent : ne crée que ce qui manque, ne réécrit jamais une ligne
+  // existante (index unique {member, year, month}).
+  router.post(
+    "/contributions/generer",
+    requireRole(...SOCIAL_ADMIN_ROLES),
+    asyncHandler(async (req, res) => {
+      const church = parseChurch(req.body?.church);
+
+      const created = await socialContributionService.generateDueContributions(
+        church ? { church } : {}
+      );
+
+      await audit.record(req, {
+        action: "update",
+        resource: "socialContribution",
+        resourceId: church ? String(church) : "toutes",
+      });
+
+      sendSuccess(res, {
+        message:
+          created > 0
+            ? `${created} ligne(s) d'offrande générée(s).`
+            : "Aucune ligne manquante : tout est déjà à jour.",
+        data: { created },
       });
     })
   );

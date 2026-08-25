@@ -161,6 +161,27 @@
     line-height: 1.55;
   }
 
+  // Message de validation propre à UN champ, affiché juste sous lui.
+  &__field-error {
+    margin: 0;
+
+    color: $admin-danger;
+
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  // Le contrôle lui-même se souligne en rouge : sans repère visuel, il
+  // faut lire tout le formulaire pour trouver le champ fautif.
+  &__field--invalid {
+    input,
+    select,
+    textarea {
+      border-color: $admin-danger;
+    }
+  }
+
   &__error {
     margin: 18px 0 0;
     padding: 13px 16px;
@@ -174,6 +195,20 @@
 
     font-size: 0.87rem;
     line-height: 1.55;
+
+    p {
+      margin: 0;
+      font-weight: 600;
+    }
+
+    ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+    }
+
+    li {
+      font-weight: 500;
+    }
   }
 
   &__actions {

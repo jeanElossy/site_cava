@@ -3,6 +3,7 @@ import Member from "../models/Member.js";
 import Flock from "../models/Flock.js";
 
 import { ApiError } from "../utils/ApiError.js";
+import { syncMemberContributionsQuietly } from "./socialContribution.service.js";
 import { isTrustedMemberPhotoUrl } from "../utils/cloudinaryUrl.js";
 import {
   normalizeRegistrationNumber,
@@ -415,6 +416,14 @@ export const approve = async (id, { overrides = {}, user } = {}) => {
   submission.processedAt = new Date();
 
   await submission.save();
+
+  // Le membre doit apparaître IMMÉDIATEMENT dans le Service Social —
+  // ses lignes de cotisation sont créées ici plutôt qu'au prochain
+  // passage du job quotidien, qui pouvait le faire attendre 24 h.
+  // Variante « au mieux » : une indisponibilité du module social ne
+  // doit jamais invalider une inscription déjà approuvée, et le job
+  // rattrapera de toute façon.
+  await syncMemberContributionsQuietly(member);
 
   return { member: member.toJSON(), submission: submission.toJSON() };
 };

@@ -5,10 +5,7 @@ import ExcelJS from "exceljs";
 import PDFDocument from "pdfkit";
 
 import Member from "../models/Member.js";
-import {
-  formatRegistrationNumber,
-  parseRegistrationNumber,
-} from "./registrationNumber.service.js";
+import { formatRegistrationNumber } from "./registrationNumber.service.js";
 import { excelSafeCell } from "../utils/excelSafeCell.js";
 
 const STATUS_LABELS = { actif: "Actif", inactif: "Inactif" };
@@ -54,37 +51,21 @@ const fetchMembers = async (filter = {}) => {
   if (filter.church) criteria.church = Number(filter.church);
   if (filter.flock) criteria.flock = filter.flock;
 
-  const members = await Member.find(criteria)
+  // Ordre chronologique réel d'inscription, trié PAR MONGO sur
+  // `registrationOrder` (le rang extrait du matricule — voir
+  // Member.js). Un tri alphabétique sur le matricule complet
+  // classerait d'abord par code de bergerie et mélangerait les rangs.
+  //
+  // Ce module portait sa propre copie du comparateur, en JavaScript ;
+  // elle a disparu avec l'ajout du champ dérivé, qui donne le même
+  // ordre à l'export, à l'annuaire d'administration et à l'API — au
+  // lieu de trois implémentations à garder synchronisées. Les membres
+  // sans matricule gardent leur place en fin de liste
+  // (`registrationOrder` vaut alors UNRANKED), départagés par nom.
+  return Member.find(criteria)
     .populate("flock", "name code")
+    .sort({ church: 1, registrationOrder: 1, lastName: 1, firstName: 1 })
     .lean();
-
-  return members.sort(compareByRegistrationOrder);
-};
-
-// Ordre chronologique réel d'inscription (numéro de séquence dans le
-// matricule), PAS l'ordre alphabétique du matricule complet — même
-// logique que `compareByRegistrationOrder` côté frontend
-// (`src/utils/registrationNumber.js`), dupliquée ici faute de code
-// partagé entre le site et l'API dans ce dépôt. Les membres sans
-// matricule sont placés à la fin, triés par nom entre eux.
-const compareByRegistrationOrder = (a, b) => {
-  const parsedA = parseRegistrationNumber(a.registrationNumber);
-  const parsedB = parseRegistrationNumber(b.registrationNumber);
-
-  if (parsedA && parsedB) {
-    if (parsedA.church !== parsedB.church) {
-      return parsedA.church - parsedB.church;
-    }
-
-    return parsedA.number - parsedB.number;
-  }
-
-  if (parsedA) return -1;
-  if (parsedB) return 1;
-
-  return `${a.lastName} ${a.firstName}`.localeCompare(
-    `${b.lastName} ${b.firstName}`
-  );
 };
 
 export const buildMembersXlsx = async (filter = {}) => {

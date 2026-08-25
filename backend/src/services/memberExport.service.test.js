@@ -50,7 +50,7 @@ describe("memberExport.service (intégration MongoDB)", () => {
         lastName: TEST_LAST_NAME,
         church: 1,
         flock: testFlock._id,
-        registrationNumber: "1XM26099Z",
+        registrationNumber: "1XM26099U",
       },
       {
         firstName: "NumeroA",

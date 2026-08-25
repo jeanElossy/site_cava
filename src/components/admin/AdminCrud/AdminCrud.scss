@@ -161,6 +161,69 @@
     line-height: 1.55;
   }
 
+  // ---------------- Pagination ----------------
+  //
+  // Entièrement imbriquée sous `.admin-crud` : ce projet n'a pas de CSS
+  // modules, une classe déclarée à la racine d'un fichier s'appliquerait
+  // à tout le site (voir CLAUDE.md, « Piège majeur »).
+
+  &__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+
+    margin-top: 18px;
+
+    span {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+
+      color: $admin-ink-soft;
+      font-size: 0.85rem;
+      font-weight: 600;
+
+      small {
+        color: $admin-ink-soft;
+        font-size: 0.75rem;
+        font-weight: 500;
+        opacity: 0.75;
+      }
+    }
+
+    button {
+      padding: 8px 16px;
+
+      border: 1px solid $admin-border;
+      border-radius: $admin-radius-sm;
+
+      background: $admin-surface;
+
+      color: $admin-ink;
+
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+
+      cursor: pointer;
+
+      transition: border-color $admin-ease, color $admin-ease;
+
+      &:hover:not(:disabled) {
+        border-color: $admin-accent;
+        color: $admin-accent;
+      }
+
+      &:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+    }
+  }
+
   // ---------------- Tableau ----------------
 
   &__table-wrapper {

@@ -106,20 +106,51 @@ const initialsOf = (firstName, lastName) =>
 // Repli quand le membre n'a pas encore envoyé de photo : une pastille
 // à initiales, rendue en PNG puis injectée exactement comme une vraie
 // photo — le gabarit ne voit jamais la différence.
-const buildInitialsAvatarPng = (firstName, lastName, size = 240) => {
-  const canvas = createCanvas(size, size);
+//
+// `ratio` (largeur / hauteur) suit celui du cadre du gabarit, comme la
+// vraie photo : un repli carré dans un cadre portrait se ferait
+// recadrer sur les côtés par le `preserveAspectRatio="slice"` du SVG.
+const buildInitialsAvatarPng = (firstName, lastName, width = 320, ratio = 1) => {
+  const height = Math.round(width / ratio);
+
+  const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d");
 
   ctx.fillStyle = "#faf8f3";
-  ctx.fillRect(0, 0, size, size);
+  ctx.fillRect(0, 0, width, height);
 
   ctx.fillStyle = "#083b2a";
-  ctx.font = `bold ${Math.round(size * 0.4)}px sans-serif`;
+  ctx.font = `bold ${Math.round(Math.min(width, height) * 0.4)}px sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(initialsOf(firstName, lastName), size / 2, size / 2 + 2);
+  ctx.fillText(initialsOf(firstName, lastName), width / 2, height / 2 + 2);
 
   return canvas.toBuffer("image/png");
+};
+
+// Proportions du cadre photo tel qu'il est réellement dessiné dans le
+// gabarit (`<rect id="field-photo">` de recto.svg).
+//
+// Lues sur le gabarit plutôt que codées en dur : le cadre est PORTRAIT
+// (63,8 × 80,76 aujourd'hui), alors que la photo était jusqu'ici
+// recadrée en CARRÉ. Le SVG rattrapait la différence avec un
+// `preserveAspectRatio="xMidYMid slice"`, c'est-à-dire un SECOND
+// recadrage, centré celui-là — qui annulait l'ancrage vers le haut et
+// coupait le sommet des têtes. En produisant directement l'image au
+// bon rapport, ce second recadrage n'a plus rien à retirer.
+const PHOTO_FRAME_FALLBACK_RATIO = 63.8 / 80.76;
+
+const photoFrameRatio = (document) => {
+  const frame = document.getElementById("field-photo");
+
+  const width = Number(frame?.getAttribute("width"));
+  const height = Number(frame?.getAttribute("height"));
+
+  if (!Number.isFinite(width) || !Number.isFinite(height) || height <= 0) {
+    return PHOTO_FRAME_FALLBACK_RATIO;
+  }
+
+  return width / height;
 };
 
 const loadMemberForCard = async (memberId) => {
@@ -146,29 +177,53 @@ const loadMemberForCard = async (memberId) => {
   return member;
 };
 
-const buildMemberPhotoDataUri = async (member) => {
+const PHOTO_OUTPUT_WIDTH = 320;
+
+const buildMemberPhotoDataUri = async (member, ratio) => {
+  const targetWidth = PHOTO_OUTPUT_WIDTH;
+  const targetHeight = Math.round(targetWidth / ratio);
+
   if (member.photo && isTrustedMemberPhotoUrl(member.photo)) {
     try {
       // `loadImage` sait aussi bien décoder qu'aller chercher l'URL :
       // on s'en sert uniquement pour valider que la photo est bien
-      // accessible et décodable avant de la ré-encoder en PNG carré
-      // (recadrage "cover"), taille cohérente avec le repli initiales.
+      // accessible et décodable avant de la ré-encoder au format du
+      // cadre (recadrage « cover », JAMAIS d'étirement).
       const photoImage = await loadImage(member.photo);
-      const size = Math.min(photoImage.width, photoImage.height);
-      const sourceX = (photoImage.width - size) / 2;
+
+      // Plus grande zone de la source ayant le rapport du cadre.
+      let sourceWidth = photoImage.width;
+      let sourceHeight = Math.round(sourceWidth / ratio);
+
+      if (sourceHeight > photoImage.height) {
+        sourceHeight = photoImage.height;
+        sourceWidth = Math.round(sourceHeight * ratio);
+      }
+
+      const sourceX = (photoImage.width - sourceWidth) / 2;
+
       // Recadrage vertical ancré vers le haut plutôt que centré : sans
       // détection de visage, un centrage strict coupait régulièrement
       // le sommet de la tête sur les photos portrait (où le visage
       // occupe surtout la moitié haute du cadre, avec de l'espace
       // libre sous les épaules). Ne retire qu'une fraction modeste de
       // l'excédent vertical en haut, le reste en bas.
-      const excessHeight = photoImage.height - size;
-      const sourceY = excessHeight * 0.15;
+      const sourceY = (photoImage.height - sourceHeight) * 0.15;
 
-      const canvas = createCanvas(320, 320);
+      const canvas = createCanvas(targetWidth, targetHeight);
       const ctx = canvas.getContext("2d");
 
-      ctx.drawImage(photoImage, sourceX, sourceY, size, size, 0, 0, 320, 320);
+      ctx.drawImage(
+        photoImage,
+        sourceX,
+        sourceY,
+        sourceWidth,
+        sourceHeight,
+        0,
+        0,
+        targetWidth,
+        targetHeight
+      );
 
       return toDataUri(canvas.toBuffer("image/png"), "image/png");
     } catch {
@@ -178,7 +233,12 @@ const buildMemberPhotoDataUri = async (member) => {
   }
 
   return toDataUri(
-    buildInitialsAvatarPng(member.firstName, member.lastName),
+    buildInitialsAvatarPng(
+      member.firstName,
+      member.lastName,
+      targetWidth,
+      ratio
+    ),
     "image/png"
   );
 };
@@ -297,7 +357,10 @@ const injectRectoFields = async (document, member) => {
     );
   }
 
-  const photoDataUri = await buildMemberPhotoDataUri(member);
+  const photoDataUri = await buildMemberPhotoDataUri(
+    member,
+    photoFrameRatio(document)
+  );
   setElementImageSource(
     requireElementById(document, "field-photo", "recto.svg"),
     photoDataUri

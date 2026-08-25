@@ -27,6 +27,7 @@ import * as submissionService from "../services/submission.service.js";
 import * as memberExportService from "../services/memberExport.service.js";
 import * as memberCardService from "../services/memberCardSvg.service.js";
 import { buildMemberProfileSheetPdf } from "../services/memberProfileSheet.service.js";
+import { syncMemberContributionsQuietly } from "../services/socialContribution.service.js";
 import * as guestBadgeService from "../services/guestBadgeSvg.service.js";
 import * as presenceQrService from "../services/presenceQr.service.js";
 import * as presenceService from "../services/presence.service.js";
@@ -101,9 +102,23 @@ const medias = createCrudService(Media, {
 // que même une erreur de montage ne les rende pas accessibles.
 const members = createCrudService(Member, {
   label: "Membre",
-  defaultSort: { lastName: 1, firstName: 1 },
+  // Ordre RÉEL d'inscription (église, puis rang extrait du matricule —
+  // voir Member.js#registrationOrder), et non l'ordre alphabétique des
+  // noms. C'est l'ordre attendu de l'annuaire, et le seul qui reste
+  // juste page après page : trier côté navigateur ne réordonnait que la
+  // tranche déjà découpée par l'API, ce qui faisait « sauter » les
+  // matricules. `lastName` ne sert plus que de départage entre membres
+  // sans matricule.
+  defaultSort: { church: 1, registrationOrder: 1, lastName: 1 },
   publicFilter: { _id: null },
   searchableFields: ["firstName", "lastName", "registrationNumber"],
+  // `notes` est `select: false` au niveau du modèle (données
+  // pastorales, jamais publiques) — mais l'administration doit les
+  // LIRE pour pouvoir les modifier. Sans ce `+notes`, le formulaire
+  // d'édition affichait un champ vide et le renvoyait tel quel :
+  // chaque enregistrement d'un membre effaçait ses notes.
+  // La route est déjà réservée à admin/editor (`readRoles` plus bas).
+  adminSelect: "+notes",
 });
 
 // Un matricule saisi à la main depuis cette administration (ajout d'un
@@ -131,6 +146,14 @@ members.create = async (payload, user) => {
 
   await syncCounterWithMember(doc);
 
+  // Le membre doit apparaître IMMÉDIATEMENT dans le Service Social,
+  // avec ses arriérés depuis son arrivée (voir
+  // socialContribution.service.js#ensureMemberContributions) — sans
+  // ça, il fallait attendre le passage du job quotidien. Variante « au
+  // mieux » : un module social en panne ne doit pas empêcher
+  // d'enregistrer un membre.
+  await syncMemberContributionsQuietly(doc);
+
   return doc;
 };
 
@@ -138,6 +161,12 @@ members.update = async (id, payload) => {
   const doc = await updateMember(id, payload);
 
   await syncCounterWithMember(doc);
+
+  // Réactiver un membre (ou le rattacher à une autre église) doit
+  // aussi lui rendre ses lignes de cotisation. L'opération est
+  // idempotente : sur une simple correction de numéro de téléphone,
+  // elle ne crée rien.
+  await syncMemberContributionsQuietly(doc);
 
   return doc;
 };

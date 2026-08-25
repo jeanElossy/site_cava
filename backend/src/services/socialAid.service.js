@@ -2,13 +2,16 @@ import mongoose from "mongoose";
 
 import SocialAid from "../models/SocialAid.js";
 import SocialAidType from "../models/SocialAidType.js";
-import SocialLedgerEntry from "../models/SocialLedgerEntry.js";
 import SocialCounter from "../models/SocialCounter.js";
 import Member from "../models/Member.js";
 
 import { ApiError } from "../utils/ApiError.js";
 import { normalizeRegistrationNumber } from "./registrationNumber.service.js";
-import { computeCashBalance } from "./socialContribution.service.js";
+import {
+  assertExerciceOpen,
+  computeCurrentBalance,
+  recordLedgerEntry,
+} from "./socialFundYear.service.js";
 
 // Logique métier des aides sociales (décaissements de la caisse du
 // Service Social) — Phase 2. Voir
@@ -231,10 +234,16 @@ export const validateAid = async (aidId, user) => {
   }
 
   // Solde ACTUEL de la caisse de l'église du bénéficiaire, recalculé
-  // côté serveur — jamais reçu du client. Réutilise la même agrégation
-  // que caisse()/dashboard() (voir computeCashBalance dans
-  // socialContribution.service.js) : un seul endroit calcule le solde.
-  const balance = await computeCashBalance(aid.church);
+  // côté serveur — jamais reçu du client. C'est le solde de l'EXERCICE
+  // EN COURS : une aide se décaisse sur la caisse de l'année, pas sur
+  // le cumul de toutes les années (voir socialFundYear.service.js, un
+  // seul endroit calcule un solde).
+  // Contrôle de l'exercice AVANT de marquer l'aide « payée » : sans
+  // lui, une caisse clôturée ferait échouer la seule écriture de
+  // journal et laisserait une aide décaissée sans sortie de caisse.
+  await assertExerciceOpen(aid.church, user);
+
+  const balance = await computeCurrentBalance(aid.church);
 
   if (aid.amount > balance) {
     throw ApiError.conflict(
@@ -269,15 +278,17 @@ export const validateAid = async (aidId, user) => {
     ? `${aid.member.firstName} ${aid.member.lastName}`
     : "bénéficiaire";
 
-  await SocialLedgerEntry.create({
-    church: updated.church,
-    type: "aide",
-    reference,
-    description: `Aide — ${updated.aidType.name} — ${beneficiary}`,
-    // Montant NÉGATIF : sortie de caisse.
-    amount: -updated.amount,
-    recordedBy: user.id,
-  });
+  await recordLedgerEntry(
+    {
+      church: updated.church,
+      type: "aide",
+      reference,
+      description: `Aide — ${updated.aidType.name} — ${beneficiary}`,
+      // Montant NÉGATIF : sortie de caisse.
+      amount: -updated.amount,
+    },
+    user
+  );
 
   const result = updated.toObject();
 
@@ -377,14 +388,16 @@ export const cancelAid = async (aidId, { motif } = {}, user) => {
   // supprimée — c'est cette écriture de COMPENSATION, positive, qui
   // rétablit le solde. Règle « jamais de suppression d'une opération
   // financière validée » (section 27 du cahier des charges).
-  await SocialLedgerEntry.create({
-    church: updated.church,
-    type: "aide_annulation",
-    reference: updated.reference,
-    description: `Annulation — ${updated.reference}`,
-    amount: updated.amount,
-    recordedBy: user.id,
-  });
+  await recordLedgerEntry(
+    {
+      church: updated.church,
+      type: "aide_annulation",
+      reference: updated.reference,
+      description: `Annulation — ${updated.reference}`,
+      amount: updated.amount,
+    },
+    user
+  );
 
   return updated.toObject();
 };

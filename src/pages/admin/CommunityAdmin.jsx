@@ -30,7 +30,7 @@ import SubmissionsPanel from "../../components/admin/SubmissionsPanel";
 import { churchLabelFrom, GENDERS, MARITAL_STATUSES } from "../../components/registration/RegistrationForm/data";
 import {
   formatRegistrationNumber,
-  compareByRegistrationOrder,
+  normalizeRegistrationNumber,
 } from "../../utils/registrationNumber";
 
 import "./CommunityAdmin.scss";
@@ -212,7 +212,7 @@ const buildMemberFields = (flockOptions, churchSelectOptions) => [
     name: "registrationNumber",
     label: "Matricule",
     placeholder: "1OL16005E (facultatif)",
-    help: "Laissez vide pour les membres inscrits depuis le site : le matricule est alors attribué automatiquement à la validation de leur inscription.",
+    help: "Laissez vide pour les membres inscrits depuis le site : le matricule est alors attribué automatiquement à la validation de leur inscription. Les espaces et tirets sont acceptés à la saisie.",
   },
   {
     name: "church",
@@ -340,7 +340,13 @@ const memberToPayload = (values) => ({
   role: values.role || "membre",
   status: values.status || "actif",
   joinedAt: values.arrivalYear !== "" ? `${values.arrivalYear}-01-01` : undefined,
-  registrationNumber: values.registrationNumber.trim() || undefined,
+  // `normalizeRegistrationNumber` et pas un simple `trim()` : la liste
+  // AFFICHE le matricule mis en forme (« 1OL 25-045 S »), et c'est
+  // cette forme-là que l'administrateur recopie. Le modèle, lui, exige
+  // la forme canonique sans espace ni tiret — d'où un « Les données
+  // envoyées sont invalides » incompréhensible à chaque copier-coller.
+  registrationNumber:
+    normalizeRegistrationNumber(values.registrationNumber) || undefined,
   church: values.church ? Number(values.church) : undefined,
   flock: values.flock || undefined,
   whatsapp: values.whatsapp.trim() || undefined,
@@ -1171,6 +1177,13 @@ const CommunityAdmin = () => {
               fields={memberFields}
               columns={memberColumns}
               tableClassName="admin-crud__table--fixed"
+              // L'annuaire compte plusieurs centaines de membres :
+              // l'API les renvoie déjà triés par ordre réel
+              // d'inscription (voir routes/index.js#members), page par
+              // page. Retrier ici ne réordonnerait que la page
+              // affichée — c'est précisément ce qui faisait « sauter »
+              // les matricules.
+              pageSize={50}
               searchable
               searchPlaceholder="Rechercher par nom ou matricule…"
               listParams={{
@@ -1202,8 +1215,7 @@ const CommunityAdmin = () => {
               }}
               toValues={memberToValues}
               toPayload={memberToPayload}
-              sortItems={(items) => [...items].sort(compareByRegistrationOrder)}
-            />
+              />
           </>
         )}
       </div>

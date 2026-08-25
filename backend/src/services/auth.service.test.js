@@ -10,7 +10,7 @@ import * as authService from "./auth.service.js";
 // docs/superpowers/specs/2026-08-11-agents-matricule-login-design.md.
 // Église 5 fictive, matricule improbable en production réelle,
 // nettoyage par identifiant exact.
-const MATRICULE = "5AA00801A";
+const MATRICULE = "5AA00801U";
 const PASSWORD = "MotDePasseTemporaire123!";
 
 // Compte admin JETABLE, dédié à ce test — jamais le vrai compte admin
@@ -63,7 +63,9 @@ describe("auth.service#login (intégration MongoDB)", () => {
 
   it("le matricule est insensible à la casse et aux espaces/tirets", async () => {
     const result = await authService.login({
-      identifier: "5aa 008-01a",
+      // Même matricule que la fixture (5AA00801U), écrit comme un
+      // humain le recopie : minuscules, espace et tiret.
+      identifier: "5aa 008-01u",
       password: PASSWORD,
     });
 
@@ -75,7 +77,7 @@ describe("auth.service#login (intégration MongoDB)", () => {
     await assert.rejects(
       () =>
         authService.login({
-          identifier: "5AA00899Z",
+          identifier: "5AA00899O",
           password: PASSWORD,
         }),
       /Identifiants incorrects/

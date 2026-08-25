@@ -30,7 +30,7 @@ describe("Restriction d'accès des comptes agents aux modules hors Nouvelles Âm
     const soaUser = await User.create({
       name: "Agent SOA Restrictions Test",
       email: `${EMAIL_PREFIX}${EMAIL_SUFFIX}`,
-      registrationNumber: "5AA00601A",
+      registrationNumber: "5AA00601C",
       password: "MotDePasseTemporaire123!",
       role: "soa",
     });

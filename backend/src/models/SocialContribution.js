@@ -14,7 +14,7 @@ const exemptionSchema = new mongoose.Schema(
 // Générée automatiquement par le job quotidien
 // (socialContributionsGenerator.js) pour chaque membre actif d'une
 // église dotée de `SocialFundSettings`, au montant en vigueur à cet
-// instant — voir generateDueContributionsForCurrentMonth().
+// instant — voir generateDueContributions().
 //
 // « En retard » n'est PAS un statut stocké : c'est une valeur dérivée
 // au moment de la requête (status dans [non_paye, partiel] ET

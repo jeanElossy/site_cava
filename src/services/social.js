@@ -20,7 +20,10 @@ const cleanParams = (params = {}) =>
 
 const qs = (params) => new URLSearchParams(cleanParams(params)).toString();
 
-// ---- Réglages (montant de cotisation + solde initial par église) --
+// ---- Réglages (montant de cotisation par église) ------------------
+//
+// Le solde de caisse n'est plus un réglage d'église : il appartient à
+// un exercice annuel (voir la section « Exercices » plus bas).
 
 export const fetchSocialSettings = () =>
   request("/api/admin/social/settings", { auth: true });
@@ -92,6 +95,46 @@ export const fetchContributionReceipt = async (id) => {
     filename: `recu-offrande-sociale-${id}.pdf`,
   };
 };
+
+// ---- Exercices annuels de la caisse ---------------------------------
+//
+// Une caisse par église ET par année. `fetchSocialCaisse` et
+// `fetchSocialLedger` prennent donc un paramètre `year` : sans lui, la
+// caisse 2027 afficherait aussi les mouvements de 2024.
+
+export const fetchSocialExercices = (params = {}) =>
+  request(`/api/admin/social/exercices?${qs(params)}`, { auth: true });
+
+export const openSocialExercice = (payload) =>
+  request("/api/admin/social/exercices", {
+    method: "POST",
+    body: payload,
+    auth: true,
+  });
+
+// Clôture l'exercice ET ouvre le suivant au solde reporté — c'est le
+// serveur qui enchaîne les deux, pour qu'un solde ne puisse jamais se
+// perdre entre les deux appels.
+export const closeSocialExercice = (church, year) =>
+  request(`/api/admin/social/exercices/${church}/${year}/cloturer`, {
+    method: "PATCH",
+    auth: true,
+  });
+
+export const reopenSocialExercice = (church, year) =>
+  request(`/api/admin/social/exercices/${church}/${year}/rouvrir`, {
+    method: "PATCH",
+    auth: true,
+  });
+
+// Rattrapage manuel des lignes d'offrande dues (depuis 2024), sans
+// attendre le passage du job quotidien. Idempotent côté serveur.
+export const generateSocialContributions = (payload = {}) =>
+  request("/api/admin/social/contributions/generer", {
+    method: "POST",
+    body: payload,
+    auth: true,
+  });
 
 // ---- Caisse ---------------------------------------------------------
 

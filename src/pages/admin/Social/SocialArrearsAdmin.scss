@@ -1,0 +1,298 @@
+@use "../../../styles/admin" as *;
+
+// TOUT est imbriqué sous `.admin-social-arrears` : ce projet n'a pas de
+// CSS modules, une classe déclarée à la racine d'un fichier
+// s'appliquerait à l'ensemble du site (voir CLAUDE.md, « Piège
+// majeur »).
+.admin-social-arrears {
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+
+    margin-bottom: 24px;
+
+    h1 {
+      margin: 0 0 6px;
+
+      color: $admin-ink;
+
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      max-width: 620px;
+      margin: 0;
+
+      color: $admin-ink-soft;
+
+      font-size: 0.87rem;
+      line-height: 1.6;
+    }
+  }
+
+  &__header-actions {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  &__select {
+    display: grid;
+    gap: 5px;
+
+    span {
+      color: $admin-ink-soft;
+
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    select {
+      min-width: 160px;
+      padding: 9px 12px;
+
+      border: 1px solid $admin-border;
+      border-radius: $admin-radius-sm;
+
+      background: $admin-surface;
+
+      color: $admin-ink;
+
+      font-family: inherit;
+      font-size: 0.87rem;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  &__refresh,
+  &__generate {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 10px 16px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius-sm;
+
+    background: $admin-surface;
+
+    color: $admin-ink;
+
+    font-family: inherit;
+    font-size: 0.87rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: border-color $admin-ease, color $admin-ease;
+
+    &:hover:not(:disabled) {
+      border-color: $admin-accent;
+      color: $admin-accent;
+    }
+
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+  }
+
+  &__generate {
+    border-color: $admin-accent;
+
+    background: $admin-accent;
+
+    color: #ffffff;
+
+    &:hover:not(:disabled) {
+      border-color: $admin-accent-strong;
+      background: $admin-accent-strong;
+      color: #ffffff;
+    }
+  }
+
+  &__notice {
+    margin: 0 0 16px;
+    padding: 11px 15px;
+
+    border: 1px solid $admin-border;
+    border-left: 4px solid $admin-success;
+    border-radius: $admin-radius-sm;
+
+    background: $admin-surface;
+
+    color: $admin-ink;
+
+    font-size: 0.86rem;
+  }
+
+  &__alert {
+    margin: 0 0 16px;
+    padding: 11px 15px;
+
+    border: 1px solid $admin-border;
+    border-left: 4px solid $admin-danger;
+    border-radius: $admin-radius-sm;
+
+    background: $admin-surface;
+
+    color: $admin-danger;
+
+    font-size: 0.86rem;
+    font-weight: 600;
+  }
+
+  &__totals {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    margin: 0 0 22px;
+    padding: 0;
+
+    list-style: none;
+
+    li {
+      display: grid;
+      gap: 4px;
+
+      min-width: 170px;
+      padding: 14px 18px;
+
+      border: 1px solid $admin-border;
+      border-radius: $admin-radius;
+
+      background: $admin-surface;
+    }
+
+    span {
+      color: $admin-ink-soft;
+
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    strong {
+      color: $admin-ink;
+
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+  }
+
+  &__table-wrap {
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius;
+
+    background: $admin-surface;
+
+    // Le tableau défile DANS son cadre : sans cela, une colonne large
+    // ferait défiler la page entière horizontalement.
+    overflow-x: auto;
+  }
+
+  &__table {
+    width: 100%;
+    min-width: 860px;
+
+    border-collapse: collapse;
+
+    th,
+    td {
+      padding: 12px 16px;
+
+      border-bottom: 1px solid $admin-border;
+
+      text-align: left;
+      vertical-align: middle;
+
+      font-size: 0.86rem;
+    }
+
+    th {
+      color: $admin-ink-soft;
+
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    td {
+      color: $admin-ink;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+  }
+
+  &__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 30px;
+    padding: 3px 9px;
+
+    border-radius: 999px;
+
+    background: $admin-warning-bg;
+
+    color: $admin-warning;
+
+    font-size: 0.8rem;
+    font-weight: 800;
+  }
+
+  &__amount {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+
+    &--due {
+      color: $admin-danger;
+      font-weight: 800;
+    }
+  }
+
+  &__whatsapp {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 6px 11px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius-sm;
+
+    color: $admin-ink-soft;
+
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+
+    transition: border-color $admin-ease, color $admin-ease;
+
+    &:hover {
+      border-color: $admin-accent;
+      color: $admin-accent;
+    }
+  }
+}

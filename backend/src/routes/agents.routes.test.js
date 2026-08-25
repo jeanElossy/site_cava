@@ -13,8 +13,8 @@ const { createApp } = await import("../app.js");
 // réellement enregistré pour ce matricule — d'où le membre fixture
 // ci-dessous, sur une église/bergerie improbable en production réelle,
 // nettoyé par identifiant exact.
-const SOA_MATRICULE = "5ZZ99101A";
-const CANA_MATRICULE = "5ZZ99102A";
+const SOA_MATRICULE = "5ZZ99101W";
+const CANA_MATRICULE = "5ZZ99102X";
 
 let server;
 let baseUrl;
@@ -165,7 +165,7 @@ describe("Routes des agents (intégration HTTP)", () => {
       },
       body: JSON.stringify({
         name: "Tentative Admin",
-        registrationNumber: "5ZZ99199Z",
+        registrationNumber: "5ZZ99199Q",
         password: "MotDePasseTemporaire123!",
         role: "admin",
       }),

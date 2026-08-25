@@ -24,6 +24,7 @@ import NewSoulsListPage from "../pages/admin/NewSouls/NewSoulsListPage";
 import NewSoulDetailPage from "../pages/admin/NewSouls/NewSoulDetailPage";
 import SocialDashboard from "../pages/admin/Social/SocialDashboard";
 import SocialContributionsAdmin from "../pages/admin/Social/SocialContributionsAdmin";
+import SocialArrearsAdmin from "../pages/admin/Social/SocialArrearsAdmin";
 import SocialMemberSearch from "../pages/admin/Social/SocialMemberSearch";
 import SocialCaisse from "../pages/admin/Social/SocialCaisse";
 import SocialAidsAdmin from "../pages/admin/Social/SocialAidsAdmin";
@@ -222,6 +223,15 @@ const AdminRoutes = () => {
           element={
             <RequireRole allow={SOCIAL_ROLES}>
               <SocialContributionsAdmin />
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="social/arrieres"
+          element={
+            <RequireRole allow={SOCIAL_ROLES}>
+              <SocialArrearsAdmin />
             </RequireRole>
           }
         />

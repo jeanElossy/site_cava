@@ -292,7 +292,7 @@ describe("submission.service (intégration MongoDB)", () => {
 
   it("lookup() ne renvoie rien pour un matricule inexistant", async () => {
     const result = await submissionService.lookup({
-      registrationNumber: "2ZZ99998Y",
+      registrationNumber: "2ZZ99998J",
       lastName: TEST_LAST_NAME,
     });
 

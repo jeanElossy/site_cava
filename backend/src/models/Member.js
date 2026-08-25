@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 
 import { isTrustedMemberPhotoUrl } from "../utils/cloudinaryUrl.js";
+import {
+  hasValidControlLetter,
+  letterForNumber,
+  parseRegistrationNumber,
+  registrationOrderOf,
+  UNRANKED,
+} from "../utils/registrationFormat.js";
 
 const baptismSchema = new mongoose.Schema(
   {
@@ -125,6 +132,56 @@ const memberSchema = new mongoose.Schema(
         /^[1-5][A-Z]{2}\d{2}\d{3}[A-Z]$/,
         "Matricule invalide.",
       ],
+      // La lettre finale n'est PAS libre : elle se déduit du numéro
+      // (voir utils/registrationFormat.js). Un matricule saisi à la
+      // main dont la lettre ne correspond pas au numéro passait
+      // jusqu'ici sans le moindre avertissement — c'est ce qui a mis
+      // deux membres du registre hors séquence de lettres alors que
+      // leurs numéros, eux, s'enchaînaient correctement.
+      //
+      // On REFUSE plutôt que de corriger en silence : une lettre
+      // fausse peut tout aussi bien signaler une faute de frappe dans
+      // le NUMÉRO, et c'est à un humain de trancher lequel des deux
+      // est le bon.
+      validate: {
+        validator: (value) => !value || hasValidControlLetter(value),
+        message: (props) => {
+          const parsed = parseRegistrationNumber(props.value);
+
+          if (!parsed) return "Matricule invalide.";
+
+          const expected = letterForNumber(parsed.number);
+          const number = String(parsed.number).padStart(3, "0");
+
+          return (
+            `Lettre de contrôle incohérente : le numéro ${number} correspond ` +
+            `à la lettre « ${expected} », pas « ${parsed.letter} ». ` +
+            `Le matricule attendu est donc ${props.value.slice(0, 8)}${expected} — ` +
+            "vérifiez le numéro autant que la lettre."
+          );
+        },
+      },
+    },
+
+    // Rang d'inscription dans l'église, extrait du matricule
+    // (« 1OL25045S » → 45). DÉRIVÉ, jamais saisi : les hooks plus bas
+    // le recalculent à chaque écriture du matricule.
+    //
+    // Dénormalisé pour que l'API puisse TRIER par ordre réel
+    // d'inscription. Trier sur `registrationNumber` lui-même classerait
+    // d'abord par code de bergerie (positions 2-3) et mélangerait les
+    // rangs ; et retrier dans le navigateur ne réordonnait que la page
+    // affichée — d'où des matricules qui semblaient sauter dans
+    // l'annuaire dès que l'église a dépassé une page de membres.
+    //
+    // `UNRANKED` (1000, au-dessus du plafond de 999 du format) pour un
+    // membre sans matricule : il se range ainsi à la fin de son église
+    // au lieu de remonter en tête comme le ferait un champ absent.
+    registrationOrder: {
+      type: Number,
+      default: UNRANKED,
+      min: 1,
+      max: UNRANKED,
     },
 
     church: { type: Number, min: 1, max: 5 },
@@ -210,9 +267,46 @@ const memberSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Le rang d'inscription est DÉRIVÉ du matricule : il se recalcule à
+// chaque écriture, sur les deux chemins possibles (`save()` pour une
+// création, `findOneAndUpdate()` pour le CRUD d'administration et la
+// validation d'inscription). Le poser dans le service appelant aurait
+// laissé passer les scripts d'amorçage, qui écrivent en direct.
+const applyRegistrationOrder = function (next) {
+  if (this.isNew || this.isModified("registrationNumber")) {
+    this.registrationOrder = registrationOrderOf(this.registrationNumber);
+  }
+
+  next();
+};
+
+memberSchema.pre("save", applyRegistrationOrder);
+
+memberSchema.pre("findOneAndUpdate", function (next) {
+  const update = this.getUpdate();
+
+  if (!update) return next();
+
+  // Mongoose accepte les deux formes : `{ champ: valeur }` (utilisée
+  // par crud.service.js et submission.service.js) et `{ $set: {...} }`.
+  const target = update.$set ?? update;
+
+  if (Object.prototype.hasOwnProperty.call(target, "registrationNumber")) {
+    target.registrationOrder = registrationOrderOf(target.registrationNumber);
+
+    this.setUpdate(update);
+  }
+
+  next();
+});
+
 // Recherche par nom depuis l'administration.
 memberSchema.index({ lastName: 1, firstName: 1 });
 memberSchema.index({ church: 1, flock: 1 });
+
+// Ordre d'affichage de l'annuaire : ordre réel d'inscription, église
+// par église (voir `registrationOrder` ci-dessus).
+memberSchema.index({ church: 1, registrationOrder: 1 });
 
 memberSchema.virtual("fullName").get(function () {
   return `${this.firstName} ${this.lastName}`.trim();

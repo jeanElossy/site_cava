@@ -82,28 +82,28 @@ describe("newSoul.service (intégration MongoDB)", () => {
       User.create({
         name: "Agent SOA Test",
         email: `soa.testsuite.newsoul${EMAIL_SUFFIX}`,
-        registrationNumber: "5AA00201A",
+        registrationNumber: "5AA00201S",
         password: "MotDePasseTemporaire123!",
         role: "soa",
       }),
       User.create({
         name: "Responsable CANA Test",
         email: `cana.testsuite.newsoul${EMAIL_SUFFIX}`,
-        registrationNumber: "5AA00202A",
+        registrationNumber: "5AA00202T",
         password: "MotDePasseTemporaire123!",
         role: "cana",
       }),
       User.create({
         name: "Coordonnateur Bergeries Test",
         email: `coordinateur.testsuite.newsoul${EMAIL_SUFFIX}`,
-        registrationNumber: "5AA00203A",
+        registrationNumber: "5AA00203U",
         password: "MotDePasseTemporaire123!",
         role: "coordinateur_bergeries",
       }),
       User.create({
         name: "Pasteur Test",
         email: `pasteur.testsuite.newsoul${EMAIL_SUFFIX}`,
-        registrationNumber: "5AA00204A",
+        registrationNumber: "5AA00204V",
         password: "MotDePasseTemporaire123!",
         role: "pasteur",
       }),
@@ -161,7 +161,7 @@ describe("newSoul.service (intégration MongoDB)", () => {
     const otherSoa = await User.create({
       name: "Autre Agent SOA",
       email: `soa2.testsuite.newsoul${EMAIL_SUFFIX}`,
-      registrationNumber: "5AA00205A",
+      registrationNumber: "5AA00205W",
       password: "MotDePasseTemporaire123!",
       role: "soa",
     });
@@ -207,7 +207,7 @@ describe("newSoul.service (intégration MongoDB)", () => {
       lastName: "Présence Visibilité",
       church: TEST_CHURCH,
       flock: flock._id,
-      registrationNumber: "1AN26099P",
+      registrationNumber: "1AN26099U",
       role: "serviteur",
       status: "actif",
     });
@@ -224,7 +224,7 @@ describe("newSoul.service (intégration MongoDB)", () => {
         lastName: "Agent Présence",
         church: TEST_CHURCH,
         flock: flock._id,
-        registrationNumber: "1AN26100P",
+        registrationNumber: "1AN26100V",
         role: "serviteur",
         status: "actif",
       });
@@ -601,7 +601,7 @@ describe("newSoul.service (intégration MongoDB)", () => {
       lastName: "Présence Test",
       church: TEST_CHURCH,
       flock: flock._id,
-      registrationNumber: "1AN26098P",
+      registrationNumber: "1AN26098T",
       role: "serviteur",
       status: "actif",
     });
@@ -744,7 +744,7 @@ describe("newSoul.service (intégration MongoDB)", () => {
       lastName: "Présence Notif",
       church: TEST_CHURCH,
       flock: flock._id,
-      registrationNumber: "1AN26101P",
+      registrationNumber: "1AN26101W",
       role: "serviteur",
       status: "actif",
     });

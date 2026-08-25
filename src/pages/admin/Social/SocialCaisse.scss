@@ -229,6 +229,148 @@
     }
   }
 
+  // Entrées / sorties de l'exercice, dans le résumé et dans le tableau
+  // des exercices. Reprend le vert/rouge déjà utilisé par `&__amount`
+  // pour les mouvements, pour que la lecture reste la même partout.
+  &__in {
+    color: $admin-success;
+  }
+
+  &__out {
+    color: $admin-danger;
+  }
+
+  &__closed-note {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-wrap: wrap;
+
+    max-width: 720px;
+    margin: 0 0 20px;
+    padding: 12px 16px;
+
+    border: 1px solid $admin-border;
+    border-left: 4px solid $admin-warning;
+    border-radius: $admin-radius-sm;
+
+    background: $admin-surface;
+
+    color: $admin-ink-soft;
+
+    font-size: 0.85rem;
+    line-height: 1.55;
+
+    svg {
+      flex-shrink: 0;
+      color: $admin-warning;
+    }
+  }
+
+  // ---------------- Exercices (fenêtre de gestion) ----------------
+
+  &__exercices {
+    display: grid;
+    gap: 18px;
+  }
+
+  &__open-first {
+    display: grid;
+    gap: 12px;
+
+    padding: 16px;
+
+    border: 1px dashed $admin-border;
+    border-radius: $admin-radius-sm;
+
+    background: $admin-surface-muted;
+
+    p {
+      margin: 0;
+
+      color: $admin-ink-soft;
+
+      font-size: 0.84rem;
+      line-height: 1.6;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+
+      color: $admin-ink-soft;
+
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    input {
+      padding: 9px 12px;
+
+      border: 1px solid $admin-border;
+      border-radius: $admin-radius-sm;
+
+      background: $admin-surface;
+
+      color: $admin-ink;
+
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+  }
+
+  &__row-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 6px 11px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius-sm;
+
+    background: $admin-surface;
+
+    color: $admin-ink-soft;
+
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+
+    white-space: nowrap;
+    cursor: pointer;
+
+    transition: border-color $admin-ease, color $admin-ease;
+
+    &:hover:not(:disabled) {
+      border-color: $admin-accent;
+      color: $admin-accent;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__config-hint {
+    margin: 0;
+
+    color: $admin-ink-soft;
+
+    font-size: 0.8rem;
+    line-height: 1.55;
+  }
+
+  &__config-notice {
+    margin: 0;
+
+    color: $admin-success;
+
+    font-size: 0.83rem;
+    font-weight: 600;
+  }
+
   &__pagination {
     display: flex;
     align-items: center;

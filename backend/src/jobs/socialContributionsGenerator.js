@@ -1,15 +1,21 @@
 import * as socialContributionService from "../services/socialContribution.service.js";
 
-// Génération quotidienne des lignes de cotisation sociale du mois
-// courant, pour chaque église dotée de `SocialFundSettings` — calque
-// exact de followUpReminders.js (voir ce fichier pour la justification
-// du `setInterval` plutôt qu'une dépendance de cron).
+// Génération quotidienne des lignes de cotisation sociale, pour chaque
+// église dotée de `SocialFundSettings` — calque exact de
+// followUpReminders.js (voir ce fichier pour la justification du
+// `setInterval` plutôt qu'une dépendance de cron).
+//
+// Le balayage rattrape TOUS les mois dus depuis 2024, pas seulement le
+// mois courant : un membre ajouté hors ligne, ou pendant une panne du
+// filet de sécurité ci-dessous, récupère ainsi son historique complet
+// au passage suivant. L'opération est idempotente, donc sans effet
+// quand il n'y a rien à rattraper (cas de très loin le plus fréquent).
 const SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 const runSweep = async () => {
   try {
     const created =
-      await socialContributionService.generateDueContributionsForCurrentMonth();
+      await socialContributionService.generateDueContributions();
 
     if (created > 0) {
       console.log(

@@ -52,7 +52,6 @@ const AdminCrud = ({
   toValues,
   toPayload,
   rowKey = "id",
-  sortItems,
   // Optionnel : `admin-crud__table--fixed` fige la largeur des
   // colonnes (voir `column.width` ci-dessous) au lieu de les laisser
   // s'ajuster au contenu — utile quand certaines colonnes wrappent
@@ -86,9 +85,14 @@ const AdminCrud = ({
   // aucune requête à chaque frappe.
   searchable = false,
   searchPlaceholder = "Rechercher…",
+  // Nombre de lignes par page. L'API plafonne à 100
+  // (crud.service.js#MAX_LIMIT) : au-delà, elle tronquerait sans le
+  // dire.
+  pageSize = 20,
 }) => {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearch(search), 300);
@@ -96,30 +100,58 @@ const AdminCrud = ({
     return () => window.clearTimeout(timer);
   }, [search]);
 
+  // Changer de recherche ou de filtre remet à la première page : rester
+  // page 4 sur un résultat qui n'en compte que 2 afficherait un tableau
+  // vide sans explication. Ajusté PENDANT le rendu (et non dans un
+  // effet) pour ne jamais afficher, même un instant, la mauvaise page —
+  // même pattern que `SocialCaisse.jsx#church`.
+  const filtersKey = JSON.stringify({ listParams, debouncedSearch });
+  const [lastFiltersKey, setLastFiltersKey] = useState(filtersKey);
+
+  if (filtersKey !== lastFiltersKey) {
+    setLastFiltersKey(filtersKey);
+    setPage(1);
+  }
+
   const listAdminParams = {
     ...listParams,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    page,
+    limit: pageSize,
   };
 
   const {
     items: rawItems,
+    meta,
     loading,
     error,
     reload,
     busy,
     actionError,
+    actionDetails,
     clearActionError,
     create,
     update,
     remove,
   } = useCrud(resource, listAdminParams);
 
-  // Optionnel : certains écrans ont besoin d'un ordre d'affichage que
-  // l'API ne fournit pas telle quelle (ex. tri des membres par ordre
-  // réel d'inscription plutôt que par ordre alphabétique du matricule).
-  // Sans cette prop, le comportement est strictement identique à avant
-  // : la liste s'affiche dans l'ordre renvoyé par l'API.
-  const items = sortItems ? sortItems(rawItems) : rawItems;
+  // L'ORDRE VIENT DU SERVEUR, jamais d'un retri local.
+  //
+  // Un tri appliqué ici ne porterait que sur la page affichée : la
+  // liste des membres, triée dans le navigateur par ordre de
+  // matricule, réordonnait en réalité une tranche déjà découpée par
+  // l'API selon un tout autre critère — d'où des numéros qui
+  // paraissaient sauter. Chaque ressource déclare donc son
+  // `defaultSort` côté API (voir routes/index.js).
+  const items = rawItems;
+
+  const totalItems = meta?.total ?? rawItems.length;
+  const totalPages = Math.max(meta?.pages ?? 1, 1);
+
+  // Supprimer le dernier élément d'une page peut laisser la pagination
+  // au-delà de la dernière page existante : on y revient plutôt que
+  // d'afficher un tableau vide.
+  if (page > totalPages) setPage(totalPages);
 
   const [editing, setEditing] = useState(null);
   const [values, setValues] = useState({});
@@ -259,8 +291,9 @@ const AdminCrud = ({
               }
             >
               <caption className="sr-only">
-                {labels.plural} — {items.length} élément
-                {items.length > 1 ? "s" : ""}
+                {labels.plural} — {totalItems} élément
+                {totalItems > 1 ? "s" : ""}
+                {totalPages > 1 ? ` (page ${page} sur ${totalPages})` : ""}
               </caption>
 
               <thead>
@@ -341,6 +374,36 @@ const AdminCrud = ({
             </table>
           </div>
         )}
+
+        {!loading && !error && totalPages > 1 && (
+          <nav
+            className="admin-crud__pagination"
+            aria-label={`Pagination — ${labels.plural}`}
+          >
+            <button
+              type="button"
+              onClick={() => setPage((previous) => Math.max(previous - 1, 1))}
+              disabled={page <= 1}
+            >
+              Précédent
+            </button>
+
+            <span aria-live="polite">
+              Page {page} sur {totalPages}
+              <small>{totalItems} au total</small>
+            </span>
+
+            <button
+              type="button"
+              onClick={() =>
+                setPage((previous) => Math.min(previous + 1, totalPages))
+              }
+              disabled={page >= totalPages}
+            >
+              Suivant
+            </button>
+          </nav>
+        )}
       </div>
 
       {editing && (
@@ -361,6 +424,7 @@ const AdminCrud = ({
             onCancel={closeForm}
             busy={busy}
             error={actionError}
+            errorDetails={actionDetails}
           />
         </AdminModal>
       )}

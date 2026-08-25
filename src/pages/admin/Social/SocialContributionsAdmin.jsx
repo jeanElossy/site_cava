@@ -79,6 +79,10 @@ const YEAR_OPTIONS = [now.getFullYear() - 2, now.getFullYear() - 1, now.getFullY
 
 const canWrite = () => SOCIAL_WRITE_ROLES.includes(currentUser()?.role);
 
+// L'API plafonne une page à 100 lignes (socialContribution.service.js) :
+// demander davantage tronquerait silencieusement.
+const PAGE_SIZE = 50;
+
 const SocialContributionsAdmin = () => {
   usePageMeta({
     title: "Service Social — Offrandes sociales",
@@ -92,6 +96,7 @@ const SocialContributionsAdmin = () => {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
 
   const [newOpen, setNewOpen] = useState(false);
   const [exempting, setExempting] = useState(null);
@@ -99,42 +104,50 @@ const SocialContributionsAdmin = () => {
   const [downloadingId, setDownloadingId] = useState(null);
   const [downloadError, setDownloadError] = useState("");
 
-  // La barre de totaux doit refléter TOUT le mois affiché, pas
-  // seulement le filtre de statut actif : le chargement ne passe donc
-  // jamais `status` à l'API, et le filtrage par statut (y compris «
-  // en retard », qui n'existe pas côté API) se fait entièrement ici.
+  // TOUT se filtre et se totalise côté serveur, pagination comprise.
+  //
+  // Avant : `limit: 300` — que l'API plafonne à 100 —, filtrage par
+  // statut dans le navigateur et totaux calculés sur les lignes
+  // chargées. Passé 100 membres, la liste était donc tronquée sans
+  // le dire, le filtre « en retard » ne voyait pas les retardataires
+  // des pages suivantes, et la barre de totaux affichait des montants
+  // faux. Le serveur renvoie maintenant `meta.totals`, calculé sur le
+  // mois entier quel que soit le filtre de statut ou la page.
   const load = useCallback(
     () =>
       fetchSocialContributions({
         ...(church ? { church } : {}),
+        ...(statusFilter ? { status: statusFilter } : {}),
         year,
         month,
-        limit: 300,
+        page,
+        limit: PAGE_SIZE,
       }),
-    [church, year, month]
+    [church, year, month, statusFilter, page]
   );
 
   const { data, loading, error, reload } = useAsyncData(load);
   const items = data?.items ?? [];
 
-  const displayItems = statusFilter
-    ? items.filter((item) =>
-        statusFilter === "retard" ? isLate(item) : item.status === statusFilter
-      )
-    : items;
-
-  const totals = items.reduce(
-    (acc, item) => {
-      acc.due += Number(item.amountDue) || 0;
-      acc.paid += Number(item.amountPaid) || 0;
-
-      return acc;
-    },
-    { due: 0, paid: 0 }
+  const meta = data?.meta ?? {};
+  const totals = meta.totals ?? { amountDue: 0, amountPaid: 0, remaining: 0, rate: 0 };
+  const totalRows = meta.total ?? items.length;
+  const totalPages = Math.max(
+    Math.ceil(totalRows / (meta.perPage || PAGE_SIZE)) || 1,
+    1
   );
 
-  totals.remaining = Math.max(totals.due - totals.paid, 0);
-  totals.rate = totals.due > 0 ? Math.round((totals.paid / totals.due) * 100) : 0;
+  // Changer de période, d'église ou de filtre remet à la première page :
+  // rester page 5 sur un résultat qui n'en compte que 2 afficherait un
+  // tableau vide sans explication. Ajusté pendant le rendu, comme
+  // ailleurs dans l'administration.
+  const filtersKey = `${church}|${year}|${month}|${statusFilter}`;
+  const [lastFiltersKey, setLastFiltersKey] = useState(filtersKey);
+
+  if (filtersKey !== lastFiltersKey) {
+    setLastFiltersKey(filtersKey);
+    setPage(1);
+  }
 
   const handleDownloadReceipt = async (item) => {
     setDownloadingId(item.id);
@@ -240,11 +253,11 @@ const SocialContributionsAdmin = () => {
         <ul className="admin-social-contributions__totals">
           <li>
             <span>Attendu</span>
-            <strong>{money(totals.due)}</strong>
+            <strong>{money(totals.amountDue)}</strong>
           </li>
           <li>
             <span>Collecté</span>
-            <strong>{money(totals.paid)}</strong>
+            <strong>{money(totals.amountPaid)}</strong>
           </li>
           <li>
             <span>Reste à collecter</span>
@@ -284,7 +297,7 @@ const SocialContributionsAdmin = () => {
       {loading && <AdminLoading />}
       {error && <AdminError message={error} onRetry={reload} />}
 
-      {!loading && !error && displayItems.length === 0 && (
+      {!loading && !error && items.length === 0 && (
         <AdminEmpty
           message={
             statusFilter
@@ -294,7 +307,7 @@ const SocialContributionsAdmin = () => {
         />
       )}
 
-      {!loading && !error && displayItems.length > 0 && (
+      {!loading && !error && items.length > 0 && (
         <div className="admin-social-contributions__table-wrap">
           <table className="admin-social-contributions__table">
             <thead>
@@ -314,8 +327,8 @@ const SocialContributionsAdmin = () => {
             </thead>
 
             <tbody>
-              {displayItems.map((item) => {
-                const meta = STATUS[item.status] ?? STATUS.non_paye;
+              {items.map((item) => {
+                const statusMeta = STATUS[item.status] ?? STATUS.non_paye;
                 const Icon = STATUS_ICON[item.status] ?? X;
                 const late = isLate(item);
 
@@ -335,7 +348,7 @@ const SocialContributionsAdmin = () => {
                         className={`admin-social-contributions__status admin-social-contributions__status--${item.status}`}
                       >
                         <Icon size={13} aria-hidden="true" />
-                        {meta.label}
+                        {statusMeta.label}
                       </span>
 
                       {late && (
@@ -367,6 +380,36 @@ const SocialContributionsAdmin = () => {
             </tbody>
           </table>
         </div>
+      )}
+
+      {!loading && !error && totalPages > 1 && (
+        <nav
+          className="admin-social-contributions__pagination"
+          aria-label="Pagination des offrandes"
+        >
+          <button
+            type="button"
+            onClick={() => setPage((previous) => Math.max(previous - 1, 1))}
+            disabled={page <= 1}
+          >
+            Précédent
+          </button>
+
+          <span aria-live="polite">
+            Page {page} sur {totalPages}
+            <small>{totalRows} ligne(s)</small>
+          </span>
+
+          <button
+            type="button"
+            onClick={() =>
+              setPage((previous) => Math.min(previous + 1, totalPages))
+            }
+            disabled={page >= totalPages}
+          >
+            Suivant
+          </button>
+        </nav>
       )}
 
       {newOpen && (
