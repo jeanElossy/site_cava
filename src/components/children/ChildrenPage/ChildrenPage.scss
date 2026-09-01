@@ -1,0 +1,205 @@
+@use "../../../styles/admin" as *;
+
+// PIÈGE PROJET : une seule feuille de style pour tout le site (voir
+// CLAUDE.md). Toutes les règles de ce fichier sont imbriquées sous
+// `.children-page`, et aucun nom générique (`.stat`, `.panel`,
+// `.card`, `.head`…) n'apparaît à sa racine.
+//
+// Les couleurs viennent des jetons `--admin-*` déclarés sous
+// `.admin-shell` (AdminLayout.scss) : le module hérite du thème clair
+// ou sombre de l'administration sans définir une seconde palette.
+.children-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+
+    h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: $admin-ink;
+      letter-spacing: -0.01em;
+    }
+  }
+
+  &__crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 0.82rem;
+    color: $admin-ink-faint;
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    a {
+      color: $admin-ink-soft;
+      text-decoration: none;
+
+      &:hover,
+      &:focus-visible {
+        color: $admin-accent;
+        text-decoration: underline;
+      }
+    }
+
+    svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.6;
+    }
+  }
+
+  &__action {
+    display: flex;
+    gap: 8px;
+  }
+
+  // ---- Cartes de statistiques ----
+
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+
+  &__stat {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: $admin-surface;
+    border: 1px solid $admin-border;
+    border-radius: 12px;
+  }
+
+  &__stat-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: $admin-accent-soft;
+    color: $admin-accent;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  &__stat--success &__stat-icon {
+    background: $admin-success-bg;
+    color: $admin-success;
+  }
+
+  &__stat--warning &__stat-icon {
+    background: $admin-warning-bg;
+    color: $admin-warning;
+  }
+
+  &__stat--danger &__stat-icon {
+    background: $admin-danger-bg;
+    color: $admin-danger;
+  }
+
+  &__stat-body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.1;
+    color: $admin-ink;
+    // Les chiffres s'alignent d'une carte à l'autre.
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__stat-label {
+    font-size: 0.82rem;
+    color: $admin-ink-soft;
+  }
+
+  &__stat-hint {
+    margin-top: 2px;
+    font-size: 0.74rem;
+    color: $admin-ink-faint;
+  }
+
+  // ---- Filtres ----
+
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 10px;
+    padding: 12px 14px;
+    background: $admin-surface;
+    border: 1px solid $admin-border;
+    border-radius: 12px;
+  }
+
+  // ---- Corps ----
+
+  &__body {
+    display: grid;
+    gap: 16px;
+  }
+
+  &__body--split {
+    // La colonne latérale passe SOUS le tableau en dessous de 1180 px :
+    // sur une tablette, deux colonnes rendraient le tableau illisible
+    // avant même de servir la colonne d'appoint.
+    @media (min-width: 1180px) {
+      grid-template-columns: minmax(0, 1fr) 300px;
+      align-items: start;
+    }
+  }
+
+  &__main {
+    min-width: 0;
+  }
+
+  &__aside {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  &__panel {
+    padding: 14px 16px;
+    background: $admin-surface;
+    border: 1px solid $admin-border;
+    border-radius: 12px;
+  }
+
+  &__panel-title {
+    margin: 0 0 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: $admin-ink;
+  }
+
+  &__panel-foot {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid $admin-border;
+    font-size: 0.8rem;
+  }
+}

@@ -55,6 +55,13 @@ const Presence = ADMIN_ENABLED
   ? lazy(() => import("../pages/Presence/Presence"))
   : null;
 
+// Espace moniteur de l'École du dimanche — même raisonnement que le
+// badgeage : un outil interne, réservé aux moniteurs, qui n'a rien à
+// faire dans le tronc commun téléchargé par chaque visiteur du site.
+const Monitor = ADMIN_ENABLED
+  ? lazy(() => import("../pages/Monitor/Monitor"))
+  : null;
+
 const AdminFallback = () => (
   <div
     className="admin-route-fallback"
@@ -160,6 +167,22 @@ const AppRoutes = () => {
           element={
             <Suspense fallback={<AdminFallback />}>
               <Presence />
+            </Suspense>
+          }
+        />
+      )}
+
+      {/* Espace moniteur de l'École du dimanche — outil interne, même
+          interrupteur. La connexion y est la MÊME que celle de
+          l'administration (matricule + mot de passe) : c'est l'API qui
+          restreint ce qu'un moniteur obtient, pas un second mécanisme
+          d'authentification. Voir docs/SUIVI-MODULE-ENFANTS.md. */}
+      {ADMIN_ENABLED && (
+        <Route
+          path="/monitorat"
+          element={
+            <Suspense fallback={<AdminFallback />}>
+              <Monitor />
             </Suspense>
           }
         />

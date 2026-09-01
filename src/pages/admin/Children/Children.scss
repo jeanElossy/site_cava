@@ -1,0 +1,987 @@
+@use "../../../styles/admin" as *;
+
+// PIÈGE PROJET — une seule feuille de style pour tout le site (voir
+// CLAUDE.md, « Piège majeur »). Chaque bloc ci-dessous est un nom
+// PRÉFIXÉ (`children-*`) et propriétaire unique dans tout le projet.
+// Aucun nom générique (`.card`, `.badge`, `.table`, `.field`,
+// `.button`, `.pagination`) n'est déclaré ici — ce sont exactement les
+// noms qui ont déjà cassé quatre pages par le passé.
+//
+// Ces classes sont partagées par tous les écrans du module Enfants,
+// d'où un fichier commun plutôt qu'une copie par écran.
+
+// ---- Boutons -------------------------------------------------------
+
+.children-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border: 1px solid $admin-border-strong;
+  border-radius: 9px;
+  background: $admin-surface;
+  color: $admin-ink;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    background: $admin-surface-hover;
+    border-color: $admin-accent;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    background: $admin-accent;
+    border-color: $admin-accent;
+    color: #fff;
+
+    &:hover:not(:disabled),
+    &:focus-visible {
+      background: $admin-accent-strong;
+      border-color: $admin-accent-strong;
+    }
+  }
+
+  &--danger {
+    color: $admin-danger;
+    border-color: $admin-danger;
+
+    &:hover:not(:disabled),
+    &:focus-visible {
+      background: $admin-danger-bg;
+      border-color: $admin-danger;
+    }
+  }
+
+  &--ghost {
+    border-color: transparent;
+    background: transparent;
+  }
+}
+
+// ---- Champs de filtre ----------------------------------------------
+
+.children-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: $admin-ink-soft;
+
+  > span:first-child {
+    font-weight: 500;
+  }
+
+  input,
+  select {
+    padding: 8px 10px;
+    border: 1px solid $admin-border-strong;
+    border-radius: 8px;
+    background: $admin-surface;
+    color: $admin-ink;
+    font: inherit;
+    font-size: 0.86rem;
+    min-width: 150px;
+
+    &:focus-visible {
+      outline: 2px solid $admin-accent;
+      outline-offset: 1px;
+    }
+  }
+
+  &--search {
+    flex: 1 1 240px;
+  }
+
+  &__control {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    svg {
+      position: absolute;
+      left: 10px;
+      width: 16px;
+      height: 16px;
+      color: $admin-ink-faint;
+      pointer-events: none;
+    }
+
+    input {
+      width: 100%;
+      padding-left: 32px;
+    }
+  }
+
+  &--check {
+    flex-direction: row;
+    align-items: center;
+    gap: 7px;
+    padding-bottom: 8px;
+
+    input {
+      min-width: 0;
+      width: 16px;
+      height: 16px;
+      accent-color: $admin-accent;
+    }
+  }
+}
+
+// ---- Tableaux ------------------------------------------------------
+
+.children-table-wrap {
+  // Le tableau défile DANS son conteneur : la page elle-même ne doit
+  // jamais défiler horizontalement.
+  overflow-x: auto;
+  background: $admin-surface;
+  border: 1px solid $admin-border;
+  border-radius: 12px;
+}
+
+.children-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+
+  th,
+  td {
+    padding: 11px 14px;
+    text-align: left;
+    border-bottom: 1px solid $admin-border;
+    vertical-align: middle;
+  }
+
+  th {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: $admin-ink-faint;
+    background: $admin-surface-muted;
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr:hover {
+    background: $admin-surface-hover;
+  }
+
+  &__name {
+    color: $admin-ink;
+    font-weight: 500;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: $admin-accent;
+      text-decoration: underline;
+    }
+  }
+
+  &__mono {
+    font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+    font-size: 0.8rem;
+    color: $admin-ink-soft;
+    white-space: nowrap;
+  }
+
+  &__muted {
+    color: $admin-ink-faint;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+}
+
+// ---- Pastilles -----------------------------------------------------
+
+.children-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: $admin-surface-muted;
+  border: 1px solid $admin-border;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: $admin-ink-soft;
+  white-space: nowrap;
+
+  & + & {
+    margin-left: 6px;
+  }
+
+  &--success {
+    background: $admin-success-bg;
+    border-color: transparent;
+    color: $admin-success;
+  }
+
+  &--warning {
+    background: $admin-warning-bg;
+    border-color: transparent;
+    color: $admin-warning;
+  }
+
+  &--danger {
+    background: $admin-danger-bg;
+    border-color: transparent;
+    color: $admin-danger;
+  }
+
+  &--info {
+    background: $admin-info-bg;
+    border-color: transparent;
+    color: $admin-info;
+  }
+
+  &--muted {
+    color: $admin-ink-faint;
+  }
+}
+
+// ---- Pagination ----------------------------------------------------
+
+.children-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 0.82rem;
+  color: $admin-ink-soft;
+
+  button {
+    padding: 7px 14px;
+    border: 1px solid $admin-border-strong;
+    border-radius: 8px;
+    background: $admin-surface;
+    color: $admin-ink;
+    font: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    &:hover:not(:disabled) {
+      border-color: $admin-accent;
+    }
+  }
+}
+
+// ---- Listes de liens (colonne latérale) ----------------------------
+
+.children-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.84rem;
+
+  a {
+    color: $admin-ink-soft;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: $admin-accent;
+      text-decoration: underline;
+    }
+  }
+}
+
+// ---- Grille de classes (tableau de bord) ---------------------------
+
+.children-classes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+
+  &__empty {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 22px;
+    background: $admin-surface;
+    border: 1px dashed $admin-border-strong;
+    border-radius: 12px;
+    color: $admin-ink-soft;
+    font-size: 0.88rem;
+
+    a {
+      color: $admin-accent;
+    }
+  }
+
+  &__card {
+    padding: 14px 16px;
+    background: $admin-surface;
+    border: 1px solid $admin-border;
+    border-radius: 12px;
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      h2 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: $admin-ink;
+      }
+
+      p {
+        margin: 2px 0 0;
+        font-size: 0.76rem;
+        color: $admin-ink-faint;
+      }
+    }
+
+    dl {
+      display: flex;
+      gap: 18px;
+      margin: 12px 0 0;
+
+      div {
+        display: flex;
+        flex-direction: column;
+      }
+
+      dt {
+        font-size: 0.72rem;
+        color: $admin-ink-faint;
+      }
+
+      dd {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: $admin-ink;
+        font-variant-numeric: tabular-nums;
+      }
+    }
+  }
+
+  &__icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: $admin-accent-soft;
+    font-size: 1.1rem;
+  }
+
+  &__monitors {
+    margin: 10px 0 0;
+    font-size: 0.78rem;
+    color: $admin-ink-soft;
+  }
+}
+
+// ---- Encadré du mot de passe temporaire ----------------------------
+//
+// Affiché UNE SEULE FOIS après la création d'un accès. Volontairement
+// très visible : ce mot de passe n'est plus jamais consultable, et
+// fermer la fenêtre sans l'avoir noté oblige à le réinitialiser.
+.children-secret {
+  padding: 14px 16px;
+  border: 1px solid $admin-warning;
+  border-radius: 12px;
+  background: $admin-warning-bg;
+
+  h3 {
+    margin: 0 0 6px;
+    font-size: 0.9rem;
+    color: $admin-ink;
+  }
+
+  p {
+    margin: 0 0 10px;
+    font-size: 0.82rem;
+    color: $admin-ink-soft;
+  }
+
+  &__value {
+    display: block;
+    padding: 12px 14px;
+    border-radius: 9px;
+    background: $admin-surface;
+    border: 1px solid $admin-border-strong;
+    font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+    font-size: 1.15rem;
+    letter-spacing: 0.06em;
+    color: $admin-ink;
+    word-break: break-all;
+  }
+}
+
+// ---- Formulaires du module ------------------------------------------
+
+.children-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  &__row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+  }
+
+  &__error {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 9px;
+    background: $admin-danger-bg;
+    color: $admin-danger;
+    font-size: 0.84rem;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: 0.78rem;
+    color: $admin-ink-faint;
+  }
+}
+
+.children-note {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: $admin-ink-soft;
+}
+
+// ---- Onglets d'état --------------------------------------------------
+
+.children-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+
+  &__tab {
+    padding: 7px 14px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: $admin-ink-soft;
+    font: inherit;
+    font-size: 0.84rem;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: $admin-surface-hover;
+    }
+
+    &--active {
+      background: $admin-accent-soft;
+      border-color: $admin-accent;
+      color: $admin-accent;
+      font-weight: 500;
+    }
+  }
+}
+
+// ---- Graphiques et encadrés du tableau de bord ------------------------
+
+.children-charts {
+  display: grid;
+  gap: 14px;
+
+  @media (min-width: 780px) {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+}
+
+.children-empty-card {
+  margin: 0;
+  padding: 24px;
+  background: $admin-surface;
+  border: 1px dashed $admin-border-strong;
+  border-radius: 12px;
+  color: $admin-ink-soft;
+  font-size: 0.88rem;
+
+  a {
+    color: $admin-accent;
+  }
+}
+
+.children-alerts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 0.82rem;
+
+  li {
+    display: flex;
+    flex-direction: column;
+    padding-left: 10px;
+    // Le jaune de l'église, dans son rôle de MISE EN AVANT — jamais
+    // comme couleur de série (voir ChildrenChart/palette.js).
+    border-left: 3px solid #f4c41d;
+    color: $admin-ink-soft;
+
+    strong {
+      color: $admin-ink;
+      font-weight: 500;
+    }
+  }
+}
+
+// ---- Cellules composées des tableaux ---------------------------------
+//
+// Les maquettes empilent deux niveaux d'information dans une même
+// cellule : le nom et sa qualité, la date et son repère relatif, la
+// classe et sa salle. Ces trois blocs le rendent, en gardant le second
+// niveau nettement plus discret que le premier.
+
+.children-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+
+  > span {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  strong {
+    font-weight: 500;
+    font-size: 0.86rem;
+    color: $admin-ink;
+    white-space: nowrap;
+  }
+
+  em {
+    font-style: normal;
+    font-size: 0.72rem;
+    color: $admin-ink-faint;
+  }
+}
+
+.children-classcell {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+
+  > span {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  strong {
+    font-weight: 500;
+    font-size: 0.86rem;
+    color: $admin-ink;
+    white-space: nowrap;
+  }
+
+  em {
+    font-style: normal;
+    font-size: 0.72rem;
+    color: $admin-ink-faint;
+  }
+
+  &__icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: $admin-accent-soft;
+    font-size: 0.95rem;
+  }
+}
+
+.children-daycell {
+  display: flex;
+  flex-direction: column;
+
+  &__date {
+    font-size: 0.85rem;
+    color: $admin-ink;
+    white-space: nowrap;
+  }
+
+  // « Aujourd'hui » ressort en vert : c'est la ligne que le
+  // responsable cherche en ouvrant l'écran.
+  &__relative {
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: $admin-accent;
+  }
+
+  &__range {
+    font-size: 0.74rem;
+    color: $admin-ink-faint;
+    white-space: nowrap;
+  }
+}
+
+// ---- Fiche enfant ---------------------------------------------------
+
+.children-subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid $admin-border;
+
+  &__tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 14px;
+    // Onglets SOULIGNÉS, comme les maquettes — pas des pastilles :
+    // la ligne de base commune fait lire la rangée d'un seul coup.
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: $admin-ink-soft;
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    white-space: nowrap;
+
+    svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    &:hover,
+    &:focus-visible {
+      color: $admin-ink;
+    }
+
+    &--active {
+      border-bottom-color: $admin-accent;
+      color: $admin-accent;
+      font-weight: 500;
+    }
+  }
+}
+
+.children-panel-block {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.children-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 20px;
+  margin: 0;
+  padding: 16px;
+  background: $admin-surface;
+  border: 1px solid $admin-border;
+  border-radius: 12px;
+
+  dt {
+    font-size: 0.74rem;
+    color: $admin-ink-faint;
+  }
+
+  dd {
+    margin: 3px 0 0;
+    font-size: 0.88rem;
+    color: $admin-ink;
+
+    code {
+      font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+      font-size: 0.85rem;
+    }
+  }
+}
+
+.children-internal-note {
+  padding: 13px 15px;
+  // Le jaune de l'église, dans son rôle de mise en avant.
+  border-left: 3px solid #f4c41d;
+  border-radius: 0 10px 10px 0;
+  background: $admin-warning-bg;
+
+  strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.78rem;
+    color: $admin-ink;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.83rem;
+    line-height: 1.55;
+    color: $admin-ink-soft;
+  }
+}
+
+.children-profile__summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+
+  strong {
+    display: block;
+    font-size: 0.92rem;
+    color: $admin-ink;
+  }
+
+  code {
+    font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+    font-size: 0.76rem;
+    color: $admin-ink-faint;
+  }
+}
+
+.children-profile__facts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+
+  dt {
+    font-size: 0.73rem;
+    color: $admin-ink-faint;
+  }
+
+  dd {
+    margin: 3px 0 0;
+    font-size: 0.85rem;
+    color: $admin-ink;
+  }
+}
+
+.children-profile__warn-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 5px;
+  vertical-align: -2px;
+  color: $admin-warning;
+}
+
+.children-missing {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 0.82rem;
+  color: $admin-ink-soft;
+}
+
+// ---- Documents ------------------------------------------------------
+
+.children-storage {
+  padding: 14px 16px;
+  background: $admin-surface;
+  border: 1px solid $admin-border;
+  border-radius: 12px;
+
+  > div:first-child {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 9px;
+
+    strong {
+      font-size: 1.05rem;
+      color: $admin-ink;
+      font-variant-numeric: tabular-nums;
+    }
+
+    span {
+      font-size: 0.8rem;
+      color: $admin-ink-faint;
+    }
+  }
+
+  &__track {
+    height: 8px;
+    border-radius: 999px;
+    background: $admin-surface-hover;
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      border-radius: 0 4px 4px 0;
+      background: $admin-accent;
+    }
+  }
+}
+
+.children-confidential {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: $admin-info-bg;
+  color: $admin-ink-soft;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+// ---- Responsables de la fiche ---------------------------------------
+
+.children-guardians {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+
+  &__card {
+    padding: 14px 16px;
+    background: $admin-surface;
+    border: 1px solid $admin-border;
+    border-radius: 12px;
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+
+      strong {
+        display: block;
+        font-size: 0.9rem;
+        color: $admin-ink;
+      }
+
+      em {
+        font-style: normal;
+        font-size: 0.76rem;
+        color: $admin-ink-faint;
+      }
+    }
+
+    dl {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0;
+
+      div {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      dt {
+        font-size: 0.78rem;
+        color: $admin-ink-soft;
+      }
+
+      dd {
+        margin: 0;
+      }
+    }
+  }
+
+  &__contact {
+    margin: 11px 0 0;
+    padding-top: 10px;
+    border-top: 1px solid $admin-border;
+    font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+    font-size: 0.8rem;
+    color: $admin-ink-soft;
+  }
+}
+
+// ---- Historique de présence -----------------------------------------
+
+.children-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    background: $admin-surface;
+    border: 1px solid $admin-border;
+    border-radius: 10px;
+  }
+
+  &__date {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    min-width: 140px;
+    font-size: 0.83rem;
+    color: $admin-ink;
+
+    em {
+      font-style: normal;
+      font-size: 0.73rem;
+      color: $admin-accent;
+    }
+  }
+
+  &__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    strong {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: $admin-ink;
+    }
+
+    em {
+      font-style: normal;
+      font-size: 0.75rem;
+      color: $admin-ink-faint;
+    }
+  }
+}

@@ -45,3 +45,30 @@ export const SOCIAL_DECISION_ROLES = ["admin", "social_admin", "social_approver"
 // rôles vers /admin/social exactement comme AGENT_ROLES est redirigé
 // vers /admin/nouvelles-ames).
 export const SOCIAL_ONLY_ROLES = ["social_admin", "social_agent", "social_approver", "social_viewer"];
+
+// ---- Module Enfants / École du dimanche ---------------------------
+
+// Rôles qui ADMINISTRENT le module (enfants, classes, moniteurs,
+// remplacements). Miroir exact de `CHILDREN_ADMIN_ROLES` côté API
+// (backend/src/routes/children.routes.js) — la vraie barrière reste
+// là-bas, comme toujours.
+export const CHILDREN_ROLES = ["admin", "responsable_ecole_dimanche"];
+
+// Sous-ensemble autorisé à ouvrir un accès moniteur et à réinitialiser
+// un mot de passe. Le responsable de l'École du dimanche affecte les
+// moniteurs, il ne distribue pas les accès — même découpage que
+// « Moyens de paiement » pour les dons.
+export const CHILDREN_ACCESS_ROLES = ["admin"];
+
+// Comptes dont l'espace moniteur est le SEUL espace (à l'exclusion de
+// `admin` et du responsable, qui gardent l'administration) — même
+// principe qu'AGENT_ROLES pour Nouvelles Âmes et SOCIAL_ONLY_ROLES
+// pour le Service Social : ces comptes se connectent depuis leur
+// téléphone et doivent atterrir directement dans /monitorat, jamais
+// sur le tableau de bord général.
+export const MONITOR_ONLY_ROLES = ["moniteur"];
+
+// Rôles qui peuvent entrer dans l'espace moniteur. Le responsable y
+// entre aussi : il encadre parfois une classe, et doit pouvoir faire
+// l'appel comme les autres.
+export const MONITOR_ROLES = ["moniteur", "responsable_ecole_dimanche", "admin"];

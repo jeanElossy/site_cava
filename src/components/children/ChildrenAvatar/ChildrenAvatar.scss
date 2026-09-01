@@ -1,0 +1,61 @@
+@use "../../../styles/admin" as *;
+
+// PIÈGE PROJET : tout sous `.children-avatar`, aucun nom générique.
+.children-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  // Les initiales sont un repère, pas une donnée : elles restent
+  // discrètes et ne concurrencent jamais les couleurs des graphiques.
+  color: $admin-ink-soft;
+  background: $admin-surface-hover;
+
+  &--sm {
+    width: 28px;
+    height: 28px;
+    font-size: 0.68rem;
+  }
+
+  &--md {
+    width: 34px;
+    height: 34px;
+    font-size: 0.75rem;
+  }
+
+  &--lg {
+    width: 48px;
+    height: 48px;
+    font-size: 0.95rem;
+  }
+
+  // Teintes dérivées du nom : la même personne garde la même pastille
+  // d'un écran à l'autre.
+  //
+  // Uniquement du VERT et du JAUNE de l'église, très désaturés. Ce
+  // sont des repères de lecture, pas des données : ils ne doivent
+  // jamais entrer en concurrence avec la rampe des graphiques (voir
+  // ChildrenChart/palette.js), ni se lire comme un statut.
+  &--tone-a {
+    background: rgba(13, 91, 62, 0.12);
+  }
+
+  &--tone-b {
+    background: rgba(34, 161, 115, 0.14);
+  }
+
+  &--tone-c {
+    background: rgba(244, 196, 29, 0.2);
+  }
+
+  &--tone-d {
+    background: rgba(92, 199, 154, 0.18);
+  }
+
+  &--tone-e {
+    background: rgba(21, 122, 86, 0.13);
+  }
+}

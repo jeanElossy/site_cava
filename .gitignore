@@ -26,3 +26,10 @@ dist-ssr
 # Variables d environnement locales
 .env
 .env.local
+
+# Maquettes de référence du module Enfants (27 Mo de PNG) : utiles au
+# travail, sans valeur pour le dépôt et jamais déployées.
+design-page-enfant/
+
+# Transcriptions de session déposées à la racine
+/20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]-*.txt

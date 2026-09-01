@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 
 import {
+  Baby,
   Banknote,
   Bell,
   BellOff,
@@ -20,6 +21,8 @@ import {
   AlertTriangle,
   HeartHandshake,
   Heart,
+  History,
+  GraduationCap,
   Image,
   LayoutDashboard,
   LogOut,
@@ -29,6 +32,7 @@ import {
   Moon,
   PiggyBank,
   RefreshCw,
+  Repeat,
   ScanLine,
   Search,
   Send,
@@ -36,13 +40,19 @@ import {
   ShieldCheck,
   Sun,
   Tag,
+  UserCog,
   Users,
   Wallet,
   X,
 } from "lucide-react";
 
 import { currentUser, signOut } from "../../services/auth";
-import { AGENT_ROLES, SOCIAL_ROLES, STAFF_ROLES } from "../../routes/roleGroups";
+import {
+  AGENT_ROLES,
+  CHILDREN_ROLES,
+  SOCIAL_ROLES,
+  STAFF_ROLES,
+} from "../../routes/roleGroups";
 
 import usePendingSubmissionsCount from "../../hooks/usePendingSubmissionsCount";
 import useNewSoulsBadgeCount from "../../hooks/useNewSoulsBadgeCount";
@@ -144,6 +154,31 @@ const NAV_GROUPS = [
         icon: Heart,
         badgeKey: "newSouls",
         roles: [...AGENT_ROLES, "admin"],
+      },
+    ],
+  },
+  {
+    title: "Enfants",
+    roles: CHILDREN_ROLES,
+    items: [
+      { to: "/admin/enfants", label: "Tableau de bord", icon: Baby, end: true },
+      { to: "/admin/enfants/liste", label: "Enfants", icon: Users },
+      {
+        to: "/admin/enfants/responsables",
+        label: "Parents / Responsables",
+        icon: HeartHandshake,
+      },
+      { to: "/admin/enfants/classes", label: "Classes", icon: GraduationCap },
+      { to: "/admin/enfants/moniteurs", label: "Moniteurs", icon: UserCog },
+      {
+        to: "/admin/enfants/remplacements",
+        label: "Remplacements",
+        icon: Repeat,
+      },
+      {
+        to: "/admin/enfants/historique",
+        label: "Historique",
+        icon: History,
       },
     ],
   },

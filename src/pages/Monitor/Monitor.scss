@@ -1,0 +1,653 @@
+@use "../../styles/variables" as *;
+
+// PIÈGE PROJET — une seule feuille de style pour tout le site (voir
+// CLAUDE.md). Chaque écran est imbriqué sous sa propre classe racine
+// (`.monitor-login`, `.monitor-home`, `.monitor-roll`, `.monitor-class`),
+// et aucun nom générique n'apparaît à la racine de ce fichier.
+//
+// L'espace moniteur vit HORS de `.admin-shell` : les jetons
+// `--admin-*` n'y sont donc pas définis. Il porte sa propre palette,
+// déclarée ici sur `.monitor-app` (`display: contents` — il ne prend
+// aucune place, il ne fait que porter les variables), exactement comme
+// `.presence-app` pour le badgeage.
+//
+// Les valeurs reprennent le vert du back office : c'est le même
+// produit, vu depuis un téléphone.
+.monitor-app {
+  display: contents;
+
+  --monitor-bg: #f2f6f3;
+  --monitor-surface: #ffffff;
+  --monitor-surface-soft: #e9efeb;
+  --monitor-border: #dde6e1;
+  --monitor-ink: #14211b;
+  --monitor-ink-soft: #55635c;
+  --monitor-ink-faint: #84978e;
+  --monitor-accent: #0d5b3e;
+  --monitor-accent-strong: #16a06a;
+  --monitor-accent-soft: rgba(13, 91, 62, 0.08);
+  --monitor-rail: #08251a;
+  --monitor-present: #0f7a4f;
+  --monitor-present-bg: rgba(15, 122, 79, 0.12);
+  --monitor-absent: #b42318;
+  --monitor-absent-bg: rgba(180, 35, 24, 0.1);
+  --monitor-excuse: #a05a00;
+  --monitor-excuse-bg: rgba(251, 191, 36, 0.18);
+
+  color-scheme: light;
+
+  @media (prefers-color-scheme: dark) {
+    --monitor-bg: #0c1813;
+    --monitor-surface: #14241d;
+    --monitor-surface-soft: #0f1d17;
+    --monitor-border: #23382e;
+    --monitor-ink: #e6efe9;
+    --monitor-ink-soft: #9db0a6;
+    --monitor-ink-faint: #74877d;
+    --monitor-accent: #4cc78d;
+    --monitor-accent-strong: #6bdda6;
+    --monitor-accent-soft: rgba(76, 199, 141, 0.12);
+    --monitor-present: #6bdda6;
+    --monitor-present-bg: rgba(76, 199, 141, 0.16);
+    --monitor-absent: #f08a7e;
+    --monitor-absent-bg: rgba(240, 138, 126, 0.14);
+    --monitor-excuse: #e0a850;
+    --monitor-excuse-bg: rgba(224, 168, 80, 0.16);
+
+    color-scheme: dark;
+  }
+}
+
+// ---- Connexion et changement de mot de passe ------------------------
+
+.monitor-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px 16px;
+  background: var(--monitor-bg);
+  font-family: "Poppins", system-ui, sans-serif;
+
+  &__card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    max-width: 380px;
+    padding: 28px 24px;
+    background: var(--monitor-surface);
+    border: 1px solid var(--monitor-border);
+    border-radius: 18px;
+
+    h1 {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--monitor-ink);
+      text-align: center;
+    }
+  }
+
+  &__logo {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto;
+    object-fit: contain;
+  }
+
+  &__seal {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: var(--monitor-accent-soft);
+    color: var(--monitor-accent);
+
+    svg {
+      width: 26px;
+      height: 26px;
+    }
+  }
+
+  &__lede {
+    margin: 0;
+    font-size: 0.86rem;
+    line-height: 1.55;
+    color: var(--monitor-ink-soft);
+    text-align: center;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--monitor-ink-soft);
+
+    input {
+      // 16 px minimum : en dessous, iOS zoome automatiquement au focus
+      // et l'écran se décale sous les doigts.
+      padding: 13px 14px;
+      font-size: 1rem;
+      font-family: inherit;
+      color: var(--monitor-ink);
+      background: var(--monitor-surface);
+      border: 1px solid var(--monitor-border);
+      border-radius: 11px;
+
+      &:focus-visible {
+        outline: 2px solid var(--monitor-accent);
+        outline-offset: 1px;
+      }
+    }
+  }
+
+  &__submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 52px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 12px;
+    background: var(--monitor-accent);
+    color: #fff;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: progress;
+    }
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  &__link {
+    padding: 8px;
+    border: none;
+    background: none;
+    color: var(--monitor-ink-faint);
+    font: inherit;
+    font-size: 0.8rem;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  &__hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin: 0;
+    font-size: 0.76rem;
+    line-height: 1.5;
+    color: var(--monitor-ink-faint);
+
+    svg {
+      flex: none;
+      width: 14px;
+      height: 14px;
+      margin-top: 2px;
+    }
+  }
+
+  &__error {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--monitor-absent-bg);
+    color: var(--monitor-absent);
+    font-size: 0.84rem;
+  }
+
+  &__spinner {
+    animation: monitor-spin 0.9s linear infinite;
+  }
+}
+
+@keyframes monitor-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monitor-login__spinner,
+  .monitor-roll__spinner {
+    animation: none;
+  }
+}
+
+// ---- Accueil --------------------------------------------------------
+
+.monitor-home {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 20px 16px 40px;
+  background: var(--monitor-bg);
+  color: var(--monitor-ink);
+  font-family: "Poppins", system-ui, sans-serif;
+
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+
+  &__greeting {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  &__role {
+    margin: 2px 0 0;
+    font-size: 0.82rem;
+    color: var(--monitor-ink-soft);
+  }
+
+  &__signout {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--monitor-border);
+    border-radius: 12px;
+    background: var(--monitor-surface);
+    color: var(--monitor-ink-soft);
+    cursor: pointer;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  &__classes {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    h2 {
+      margin: 0 0 2px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--monitor-ink-faint);
+    }
+  }
+
+  &__loading,
+  &__empty,
+  &__note {
+    margin: 16px 0 0;
+    font-size: 0.86rem;
+    color: var(--monitor-ink-soft);
+  }
+
+  &__note {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    svg {
+      width: 15px;
+      height: 15px;
+    }
+  }
+
+  &__error {
+    margin: 0 0 14px;
+    padding: 11px 13px;
+    border-radius: 10px;
+    background: var(--monitor-absent-bg);
+    color: var(--monitor-absent);
+    font-size: 0.85rem;
+  }
+}
+
+// ---- Carte de classe ------------------------------------------------
+
+.monitor-class {
+  padding: 16px;
+  background: var(--monitor-surface);
+  border: 1px solid var(--monitor-border);
+  border-radius: 16px;
+
+  // Le remplacement est visuellement distinct de la classe principale :
+  // le moniteur doit voir d'un coup d'œil qu'il agit à titre
+  // temporaire, et pour le compte de quelqu'un d'autre.
+  &--substitute {
+    border-color: var(--monitor-excuse);
+    background: linear-gradient(
+      180deg,
+      var(--monitor-excuse-bg) 0%,
+      var(--monitor-surface) 46%
+    );
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--monitor-ink);
+    }
+
+    p {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin: 3px 0 0;
+      font-size: 0.78rem;
+      color: var(--monitor-ink-soft);
+
+      svg {
+        width: 13px;
+        height: 13px;
+      }
+    }
+  }
+
+  &__icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: var(--monitor-accent-soft);
+    font-size: 1.35rem;
+  }
+
+  &__count {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 14px 0;
+    font-size: 0.88rem;
+    color: var(--monitor-ink-soft);
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  &__action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    // 56 px : cible confortable au pouce, debout, dans une salle.
+    min-height: 56px;
+    border: none;
+    border-radius: 13px;
+    background: var(--monitor-accent);
+    color: #fff;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
+// ---- Faire l'appel --------------------------------------------------
+
+.monitor-roll {
+  min-height: 100vh;
+  min-height: 100dvh;
+  // Marge basse généreuse : la barre de validation est collée en bas,
+  // elle ne doit jamais recouvrir le dernier enfant de la liste.
+  padding: 16px 16px 200px;
+  background: var(--monitor-bg);
+  color: var(--monitor-ink);
+  font-family: "Poppins", system-ui, sans-serif;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+
+    h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 2px 0 0;
+      font-size: 0.79rem;
+      color: var(--monitor-ink-soft);
+    }
+  }
+
+  &__back {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--monitor-border);
+    border-radius: 12px;
+    background: var(--monitor-surface);
+    color: var(--monitor-ink);
+    cursor: pointer;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  &__all {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 100%;
+    min-height: 56px;
+    margin-bottom: 16px;
+    border: 1px solid var(--monitor-present);
+    border-radius: 13px;
+    background: var(--monitor-present-bg);
+    color: var(--monitor-present);
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    svg {
+      width: 19px;
+      height: 19px;
+    }
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  &__row {
+    padding: 13px 14px;
+    background: var(--monitor-surface);
+    border: 1px solid var(--monitor-border);
+    border-radius: 14px;
+  }
+
+  &__child {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  &__choices {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 7px;
+  }
+
+  &__choice {
+    // 52 px de haut, trois colonnes : trois cibles franches sur la
+    // largeur d'un téléphone, sans risque d'appuyer à côté.
+    min-height: 52px;
+    border: 1px solid var(--monitor-border);
+    border-radius: 11px;
+    background: var(--monitor-surface-soft);
+    color: var(--monitor-ink-soft);
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 500;
+    cursor: pointer;
+
+    &--on {
+      font-weight: 600;
+    }
+
+    &--present#{&}--on {
+      background: var(--monitor-present-bg);
+      border-color: var(--monitor-present);
+      color: var(--monitor-present);
+    }
+
+    &--absent#{&}--on {
+      background: var(--monitor-absent-bg);
+      border-color: var(--monitor-absent);
+      color: var(--monitor-absent);
+    }
+
+    &--excuse#{&}--on {
+      background: var(--monitor-excuse-bg);
+      border-color: var(--monitor-excuse);
+      color: var(--monitor-excuse);
+    }
+  }
+
+  &__foot {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    // `env(safe-area-inset-bottom)` : sur un iPhone, la barre de
+    // navigation du système recouvrirait sinon le bouton.
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+    background: var(--monitor-surface);
+    border-top: 1px solid var(--monitor-border);
+  }
+
+  &__counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    font-size: 0.78rem;
+  }
+
+  &__count {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--monitor-surface-soft);
+    color: var(--monitor-ink-soft);
+
+    &--present {
+      background: var(--monitor-present-bg);
+      color: var(--monitor-present);
+    }
+
+    &--absent {
+      background: var(--monitor-absent-bg);
+      color: var(--monitor-absent);
+    }
+
+    &--excuse {
+      background: var(--monitor-excuse-bg);
+      color: var(--monitor-excuse);
+    }
+  }
+
+  &__submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 56px;
+    border: none;
+    border-radius: 13px;
+    background: var(--monitor-accent);
+    color: #fff;
+    font: inherit;
+    font-size: 0.98rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  &__saved {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--monitor-present);
+    text-align: center;
+  }
+
+  &__loading,
+  &__empty {
+    margin: 20px 0;
+    font-size: 0.88rem;
+    color: var(--monitor-ink-soft);
+  }
+
+  &__error {
+    margin: 0 0 14px;
+    padding: 11px 13px;
+    border-radius: 10px;
+    background: var(--monitor-absent-bg);
+    color: var(--monitor-absent);
+    font-size: 0.85rem;
+  }
+
+  &__spinner {
+    animation: monitor-spin 0.9s linear infinite;
+  }
+}

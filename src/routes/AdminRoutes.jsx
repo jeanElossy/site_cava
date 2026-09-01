@@ -2,7 +2,12 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import RequireAuth from "./RequireAuth";
 import RequireRole from "./RequireRole";
-import { AGENT_ROLES, SOCIAL_ROLES, STAFF_ROLES } from "./roleGroups";
+import {
+  AGENT_ROLES,
+  CHILDREN_ROLES,
+  SOCIAL_ROLES,
+  STAFF_ROLES,
+} from "./roleGroups";
 
 import AdminLayout from "../pages/admin/AdminLayout";
 import Login from "../pages/admin/Login";
@@ -29,6 +34,14 @@ import SocialMemberSearch from "../pages/admin/Social/SocialMemberSearch";
 import SocialCaisse from "../pages/admin/Social/SocialCaisse";
 import SocialAidsAdmin from "../pages/admin/Social/SocialAidsAdmin";
 import SocialAidTypesAdmin from "../pages/admin/Social/SocialAidTypesAdmin";
+import ChildrenDashboard from "../pages/admin/Children/ChildrenDashboard";
+import ChildrenList from "../pages/admin/Children/ChildrenList";
+import ClassesAdmin from "../pages/admin/Children/ClassesAdmin";
+import MonitorsAdmin from "../pages/admin/Children/MonitorsAdmin";
+import SubstitutionsAdmin from "../pages/admin/Children/SubstitutionsAdmin";
+import GuardiansAdmin from "../pages/admin/Children/GuardiansAdmin";
+import ChildProfile from "../pages/admin/Children/ChildProfile";
+import HistoryAdmin from "../pages/admin/Children/HistoryAdmin";
 
 /**
  * Toutes les routes de l'espace d'administration.
@@ -275,6 +288,89 @@ const AdminRoutes = () => {
           element={
             <RequireRole allow={["admin", "social_admin"]}>
               <SocialAidTypesAdmin />
+            </RequireRole>
+          }
+        />
+
+        {/* Module Enfants / École du dimanche.
+            CHILDREN_ROLES = admin + responsable_ecole_dimanche, miroir
+            exact de CHILDREN_ADMIN_ROLES côté API. Les actions plus
+            restreintes (ouvrir un accès, réinitialiser un mot de passe)
+            sont masquées DANS les pages via CHILDREN_ACCESS_ROLES, et
+            refusées par l'API — même approche que SOCIAL_ROLES pour le
+            Service Social. */}
+        <Route
+          path="enfants"
+          element={
+            <RequireRole allow={CHILDREN_ROLES}>
+              <ChildrenDashboard />
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="enfants/liste"
+          element={
+            <RequireRole allow={CHILDREN_ROLES}>
+              <ChildrenList />
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="enfants/classes"
+          element={
+            <RequireRole allow={CHILDREN_ROLES}>
+              <ClassesAdmin />
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="enfants/moniteurs"
+          element={
+            <RequireRole allow={CHILDREN_ROLES}>
+              <MonitorsAdmin />
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="enfants/remplacements"
+          element={
+            <RequireRole allow={CHILDREN_ROLES}>
+              <SubstitutionsAdmin />
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="enfants/responsables"
+          element={
+            <RequireRole allow={CHILDREN_ROLES}>
+              <GuardiansAdmin />
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="enfants/historique"
+          element={
+            <RequireRole allow={CHILDREN_ROLES}>
+              <HistoryAdmin />
+            </RequireRole>
+          }
+        />
+
+        {/* Fiche d'un enfant. Déclarée APRÈS les routes fixes
+            (`liste`, `classes`, `moniteurs`…) : sans quoi `:id`
+            capterait « classes » et afficherait « Enfant introuvable »
+            à la place de l'écran des classes. */}
+        <Route
+          path="enfants/:id"
+          element={
+            <RequireRole allow={CHILDREN_ROLES}>
+              <ChildProfile />
             </RequireRole>
           }
         />

@@ -1,0 +1,199 @@
+@use "../../../styles/admin" as *;
+
+// PIÈGE PROJET : feuille de style unique (voir CLAUDE.md). Tout est
+// imbriqué sous `.children-chart`, aucun nom générique à la racine.
+//
+// RÈGLE DE DATAVIZ appliquée ici : le TEXTE porte toujours les jetons
+// de texte (`$admin-ink`, `$admin-ink-soft`), jamais la couleur de la
+// série. Seule la pastille de légende et la barre elle-même portent la
+// couleur — un chiffre coloré se lirait comme une alerte.
+.children-chart {
+  margin: 0;
+  padding: 16px;
+  background: $admin-surface;
+  border: 1px solid $admin-border;
+  border-radius: 12px;
+
+  &__title {
+    margin: 0 0 14px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: $admin-ink;
+  }
+
+  &__empty {
+    margin: 0;
+    font-size: 0.82rem;
+    color: $admin-ink-faint;
+  }
+
+  // ---- Anneau ----
+
+  &__donut-layout {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+  }
+
+  &__donut {
+    position: relative;
+    flex: none;
+    width: 150px;
+    height: 150px;
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    circle {
+      transition: opacity 0.15s ease;
+    }
+  }
+
+  // Piste de fond : grise et discrète, elle ne doit jamais se lire
+  // comme une cinquième catégorie.
+  &__track {
+    stroke: $admin-surface-hover;
+  }
+
+  &__center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+
+    strong {
+      font-size: 1.55rem;
+      font-weight: 600;
+      line-height: 1;
+      color: $admin-ink;
+      font-variant-numeric: tabular-nums;
+    }
+
+    span {
+      margin-top: 2px;
+      font-size: 0.72rem;
+      color: $admin-ink-faint;
+    }
+  }
+
+  &__legend {
+    flex: 1 1 180px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.82rem;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+
+  &__swatch {
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+  }
+
+  &__legend-label {
+    flex: 1;
+    min-width: 0;
+    color: $admin-ink-soft;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__legend-value {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    color: $admin-ink;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+
+    em {
+      font-style: normal;
+      font-weight: 400;
+      font-size: 0.76rem;
+      color: $admin-ink-faint;
+    }
+  }
+
+  // ---- Barres ----
+
+  &__bars {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  &__bar-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 5px;
+    font-size: 0.82rem;
+  }
+
+  &__bar-label {
+    color: $admin-ink-soft;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__bar-value {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    color: $admin-ink;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+
+    em {
+      font-style: normal;
+      font-weight: 400;
+      font-size: 0.76rem;
+      color: $admin-ink-faint;
+    }
+  }
+
+  &__bar-track {
+    height: 8px;
+    border-radius: 999px;
+    background: $admin-surface-hover;
+    overflow: hidden;
+  }
+
+  &__bar-fill {
+    display: block;
+    height: 100%;
+    // Extrémité arrondie ancrée à la base : la barre part franchement
+    // du bord gauche et s'arrondit à son extrémité, plutôt que de
+    // flotter en pilule détachée de son origine.
+    border-radius: 0 4px 4px 0;
+    transition: width 0.3s ease;
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+}

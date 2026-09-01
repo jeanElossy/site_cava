@@ -67,6 +67,28 @@ const eventSchema = new mongoose.Schema(
 
     audience: { type: String, trim: true, maxlength: 120 },
 
+    // Classes de l'École du dimanche concernées par cet événement.
+    //
+    // MODULE ENFANTS — champ ajouté volontairement ICI plutôt que dans
+    // un second modèle d'événement : « Noël des enfants » est un
+    // événement de l'église comme un autre, annoncé sur le site public,
+    // qui vise en plus certaines classes. Le dupliquer dans une
+    // collection « événements enfants » obligerait à le saisir deux
+    // fois et à tenir deux calendriers.
+    //
+    // Vide (le cas de tous les événements existants) : l'événement ne
+    // concerne pas spécifiquement l'École du dimanche. Le champ n'a
+    // donc aucun effet sur les pages publiques, qui l'ignorent.
+    //
+    // L'APPEL, lui, n'est pas fait ici : une `ChildSession` rattachée à
+    // l'événement le porte, classe par classe (voir ChildSession.js).
+    childClasses: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "SundaySchoolClass",
+      },
+    ],
+
     theme: { type: String, trim: true, maxlength: 240 },
 
     // Intervenant : embarqué car il n'a pas de cycle de vie propre

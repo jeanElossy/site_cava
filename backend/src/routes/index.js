@@ -42,6 +42,8 @@ import {
 
 import { resourceRouter } from "./resource.routes.js";
 import { buildSocialRouter } from "./social.routes.js";
+import { buildChildrenRouter } from "./children.routes.js";
+import { buildMonitorRouter } from "./monitor.routes.js";
 
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -1443,6 +1445,21 @@ export const buildRoutes = () => {
   // (montants figés, génération de référence, calcul de solde) est
   // trop spécifique pour le CRUD générique `resourceRouter`.
   api.use("/admin/social", buildSocialRouter());
+
+  // ---- Enfants et École du dimanche -----------------------------
+  //
+  // Deux routeurs, deux publics, deux jeux de règles :
+  //
+  //   /api/admin/enfants  administration du module (admin,
+  //                       responsable_ecole_dimanche)
+  //   /api/monitorat      espace d'un moniteur — chaque route y
+  //                       recalcule les classes auxquelles il a droit
+  //                       à CET instant (voir middlewares/monitorAuth.js)
+  //
+  // Montés depuis leurs propres fichiers, comme le Service Social :
+  // ce fichier dépasse déjà les deux mille lignes.
+  api.use("/admin/enfants", buildChildrenRouter());
+  api.use("/monitorat", buildMonitorRouter());
 
   // ---- Statistiques publiques de la communauté ----------------
   //

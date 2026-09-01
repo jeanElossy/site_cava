@@ -1,7 +1,11 @@
 import { Navigate } from "react-router-dom";
 
 import { currentUser } from "../services/auth";
-import { AGENT_ROLES, SOCIAL_ONLY_ROLES } from "./roleGroups";
+import {
+  AGENT_ROLES,
+  MONITOR_ONLY_ROLES,
+  SOCIAL_ONLY_ROLES,
+} from "./roleGroups";
 
 /**
  * Garde de route par rôle, complémentaire à `RequireAuth` (qui ne
@@ -21,7 +25,12 @@ const RequireRole = ({ allow, children }) => {
     ? "/admin/nouvelles-ames"
     : SOCIAL_ONLY_ROLES.includes(role)
       ? "/admin/social"
-      : "/admin";
+      : // Un moniteur n'a rien à faire dans l'administration : son
+        // espace est une coquille mobile distincte, hors de /admin
+        // (voir src/pages/Monitor/).
+        MONITOR_ONLY_ROLES.includes(role)
+        ? "/monitorat"
+        : "/admin";
 
   return (
     <Navigate
