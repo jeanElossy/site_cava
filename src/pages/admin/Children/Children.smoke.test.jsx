@@ -75,6 +75,7 @@ vi.mock("../../../services/children", () => ({
   archiveClass: vi.fn(() => Promise.resolve(CLASSES[0])),
   listMonitors: vi.fn(() => Promise.resolve(list([]))),
   assignMonitor: vi.fn(() => Promise.resolve(null)),
+  searchAssignableMembers: vi.fn(() => Promise.resolve([])),
   updateMonitor: vi.fn(() => Promise.resolve(null)),
   withdrawMonitor: vi.fn(() => Promise.resolve(null)),
   createMonitorAccount: vi.fn(() => Promise.resolve(null)),

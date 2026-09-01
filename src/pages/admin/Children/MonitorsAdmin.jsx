@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   KeyRound,
   Pencil,
+  Plus,
   RefreshCw,
   ShieldCheck,
   UserMinus,
@@ -27,10 +28,12 @@ import { currentUser } from "../../../services/auth";
 import { CHILDREN_ACCESS_ROLES } from "../../../routes/roleGroups";
 
 import {
+  assignMonitor,
   listClasses,
   listMonitors,
   openMonitorAccess,
   resetMonitorPassword,
+  searchAssignableMembers,
   updateMonitor,
   withdrawMonitor,
 } from "../../../services/children";
@@ -164,6 +167,78 @@ const MonitorsAdmin = () => {
     }
   };
 
+  // ---- Affectation d'un nouveau moniteur --------------------------
+  //
+  // L'écran ne savait que MODIFIER une affectation existante : il n'y
+  // avait aucun moyen d'en créer une, donc la liste restait vide et la
+  // recherche ne pouvait rien trouver.
+  const [assigning, setAssigning] = useState(null);
+  const [memberQuery, setMemberQuery] = useState("");
+  const [candidates, setCandidates] = useState([]);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    if (!assigning) return undefined;
+
+    const needle = memberQuery.trim();
+
+    // Sous deux caractères on ne cherche pas — et on ne vide pas non
+    // plus l'état ici : un `setState` synchrone dans un effet
+    // déclenche un rendu en cascade. La liste affichée est DÉRIVÉE
+    // (`visibleCandidates` plus bas), ce qui rend l'effacement inutile.
+    if (needle.length < 2) return undefined;
+
+    // Recherche différée : chaque frappe déclencherait sinon une
+    // requête, et les réponses pourraient revenir dans le désordre.
+    const timer = window.setTimeout(async () => {
+      setSearching(true);
+
+      try {
+        setCandidates(await searchAssignableMembers({ search: needle }));
+      } catch {
+        setCandidates([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [assigning, memberQuery]);
+
+  // Ce que l'on montre réellement : les résultats ne valent que pour
+  // une recherche encore assez longue pour les avoir produits.
+  const visibleCandidates =
+    memberQuery.trim().length >= 2 ? candidates : [];
+
+  const openAssign = () => {
+    setAssigning({ member: null, classId: "", level: "moniteur" });
+    setMemberQuery("");
+    setCandidates([]);
+    setFormError(null);
+  };
+
+  const submitAssign = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setFormError(null);
+
+    try {
+      await assignMonitor({
+        memberId: assigning.member.id,
+        classId: assigning.classId,
+        level: assigning.level,
+      });
+
+      setAssigning(null);
+
+      await load();
+    } catch (caught) {
+      setFormError(caught);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const submitClassChange = async (event) => {
     event.preventDefault();
     setSaving(true);
@@ -197,6 +272,18 @@ const MonitorsAdmin = () => {
         { label: "Enfants", to: "/admin/enfants" },
         { label: "Moniteurs" },
       ]}
+      action={
+        canManageAccess && (
+          <button
+            type="button"
+            className="children-button children-button--primary"
+            onClick={openAssign}
+          >
+            <Plus aria-hidden="true" />
+            Affecter un moniteur
+          </button>
+        )
+      }
       stats={
         <>
           <ChildrenStat
@@ -486,6 +573,172 @@ const MonitorsAdmin = () => {
               J&apos;ai noté le mot de passe
             </button>
           </div>
+        </AdminModal>
+      )}
+
+      {assigning && (
+        <AdminModal
+          title="Affecter un moniteur"
+          description="Un moniteur est toujours un membre adulte déjà enregistré : il n'y a pas de second compte à créer."
+          onClose={() => setAssigning(null)}
+        >
+          <form
+            className="children-form"
+            onSubmit={submitAssign}
+          >
+            {formError && (
+              <p className="children-form__error">{formError.message}</p>
+            )}
+
+            <label className="children-field">
+              <span>Rechercher le membre *</span>
+
+              <input
+                type="search"
+                value={memberQuery}
+                onChange={(event) => {
+                  setMemberQuery(event.target.value);
+
+                  // Changer la recherche annule le choix précédent :
+                  // sinon on pourrait valider un membre qui n'est plus
+                  // affiché à l'écran.
+                  setAssigning((current) => ({ ...current, member: null }));
+                }}
+                placeholder="Nom ou matricule (1ME 19-016 P)"
+                autoComplete="off"
+              />
+            </label>
+
+            {memberQuery.trim().length > 0 && memberQuery.trim().length < 2 && (
+              <p className="children-note">Saisissez au moins deux caractères.</p>
+            )}
+
+            {searching && <AdminLoading />}
+
+            {!searching && memberQuery.trim().length >= 2 && visibleCandidates.length === 0 && (
+              <p className="children-note">
+                Aucun membre actif ne correspond. Le moniteur doit d'abord être
+                enregistré dans l'annuaire des membres.
+              </p>
+            )}
+
+            {visibleCandidates.length > 0 && (
+              <ul className="children-picker">
+                {visibleCandidates.map((member) => (
+                  <li key={member.id}>
+                    <button
+                      type="button"
+                      className={
+                        assigning.member?.id === member.id
+                          ? "children-picker__item children-picker__item--on"
+                          : "children-picker__item"
+                      }
+                      // Un membre déjà moniteur reste VISIBLE mais non
+                      // sélectionnable : le masquer ferait conclure à
+                      // tort qu'il n'est pas dans l'annuaire.
+                      disabled={member.alreadyMonitor}
+                      onClick={() =>
+                        setAssigning((current) => ({ ...current, member }))
+                      }
+                    >
+                      <ChildrenAvatar
+                        photo={member.photo}
+                        firstName={member.firstName}
+                        lastName={member.lastName}
+                      />
+
+                      <span>
+                        <strong>
+                          {member.firstName} {member.lastName}
+                        </strong>
+
+                        <small className="children-table__muted">
+                          {member.registrationNumber
+                            ? formatRegistrationNumber(member.registrationNumber)
+                            : "—"}
+
+                          {member.alreadyMonitor &&
+                            ` · déjà moniteur${
+                              member.currentClassName
+                                ? ` (${member.currentClassName})`
+                                : ""
+                            }`}
+                        </small>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <label className="children-field">
+              <span>Classe principale *</span>
+
+              <select
+                value={assigning.classId}
+                onChange={(event) =>
+                  setAssigning((current) => ({
+                    ...current,
+                    classId: event.target.value,
+                  }))
+                }
+                required
+              >
+                <option value="">Choisir une classe</option>
+
+                {classes.map((item) => (
+                  <option
+                    key={item.id}
+                    value={item.id}
+                  >
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="children-field">
+              <span>Niveau</span>
+
+              <select
+                value={assigning.level}
+                onChange={(event) =>
+                  setAssigning((current) => ({
+                    ...current,
+                    level: event.target.value,
+                  }))
+                }
+              >
+                <option value="moniteur">Moniteur</option>
+                <option value="assistant">Assistant</option>
+                <option value="responsable">Responsable de classe</option>
+              </select>
+            </label>
+
+            <p className="children-note">
+              L'affectation ne crée pas l'accès à l'espace moniteur : elle
+              donne la fonction. L'accès s'ouvre ensuite depuis la liste, et
+              c'est là qu'apparaît le mot de passe temporaire.
+            </p>
+
+            <div className="children-form__actions">
+              <button
+                type="button"
+                className="children-button"
+                onClick={() => setAssigning(null)}
+              >
+                Annuler
+              </button>
+
+              <button
+                type="submit"
+                className="children-button children-button--primary"
+                disabled={saving || !assigning.member || !assigning.classId}
+              >
+                {saving ? "Enregistrement…" : "Affecter"}
+              </button>
+            </div>
+          </form>
         </AdminModal>
       )}
 

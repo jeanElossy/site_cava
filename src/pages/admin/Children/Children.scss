@@ -491,6 +491,55 @@
   }
 }
 
+// Liste de choix d'un membre dans la fenetre d'affectation.
+// Entierement imbriquee sous sa racine, comme tout ce fichier.
+.children-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid $admin-border;
+  border-radius: 10px;
+  background: $admin-surface-muted;
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: $admin-ink;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    small {
+      display: block;
+    }
+
+    &:hover:not(:disabled) {
+      background: $admin-surface;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    &--on {
+      border-color: $admin-accent;
+      background: $admin-surface;
+    }
+  }
+}
+
 .children-note {
   margin: 0;
   font-size: 0.82rem;

@@ -290,6 +290,23 @@ export const buildChildrenRouter = () => {
     )
   );
 
+  // Recherche de membres a nommer moniteur.
+  //
+  // Declaree AVANT `/:id` et `/:memberId/acces` : « membres » est un
+  // chemin litteral, il doit gagner sur les chemins parametres du meme
+  // routeur (voir le lot 10 du suivi).
+  monitors.get(
+    "/membres",
+    asyncHandler(async (req, res) =>
+      sendSuccess(res, {
+        data: await monitorService.searchAssignableMembers({
+          search: asString(req.query.search, 80),
+          church: parsePositiveInt(req.query.church),
+        }),
+      })
+    )
+  );
+
   monitors.post(
     "/",
     asyncHandler(async (req, res) => {

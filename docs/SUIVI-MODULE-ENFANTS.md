@@ -7,7 +7,7 @@ sur des défauts que la suite de tests ne voyait pas**. Voir le lot 10.
 
 | Vérification | Résultat |
 |---|---|
-| Tests backend | **420 / 420** (334 avant le chantier, **+86 neufs**) |
+| Tests backend | **425 / 425** (334 avant le chantier, **+91 neufs**) |
 | Tests frontend | **108 / 108** (87 avant, **+21 neufs**) |
 | `npm run build` | ✅ |
 | `eslint src` | ✅ aucun avertissement |
@@ -592,6 +592,31 @@ faisait tomber sur `enfants/:id`, la fiche s'ouvrait avec
       « absent »** : personne ne s'est prononcé sur lui
 - [x] Taux moyen calculé sur les seules séances réellement appelées
 
+### 10.4 — L'écran Moniteurs ne savait pas affecter ✅ corrigé
+
+Signalé comme « la recherche ne passe pas ». La recherche fonctionnait :
+**la liste était forcément vide**. `MonitorsAdmin` ne savait que MODIFIER
+une affectation existante — `assignMonitor` était exporté par le service
+frontend et appelé nulle part, et l'API n'offrait aucun moyen de retrouver
+un membre à nommer.
+
+Troisième écran du module annoncé terminé sans l'être.
+
+- [x] `GET /api/admin/enfants/moniteurs/membres` + `searchAssignableMembers()`
+      — recherche **cloisonnée** : quelques champs d'identification, et rien
+      tant que la saisie fait moins de deux caractères. Ouvrir l'annuaire
+      complet des membres au responsable de l'École du dimanche aurait été
+      disproportionné
+- [x] Le matricule est cherché **normalisé** : stocké `2ZZ00703A`, tapé
+      `2ZZ 00-703 A`. Chercher la chaîne telle quelle ne trouvait jamais
+      rien — et la confusion O/0 se répare au passage
+- [x] Un membre **déjà moniteur** reste visible et marqué, jamais masqué :
+      ne pas le voir ferait conclure qu'il est absent de l'annuaire
+- [x] Fenêtre « Affecter un moniteur » : recherche différée (350 ms),
+      liste affichée **dérivée** de la longueur de saisie — un `setState`
+      synchrone dans l'effet déclenchait un rendu en cascade, refusé par ESLint
+- [x] 5 tests d'intégration sur la recherche
+
 ### 10.3 — Ce que cet épisode apprend
 
 **Les tests vérifiaient des règles, pas des écrans.** 86 tests couvraient les
@@ -668,6 +693,9 @@ Rappels tirés de l'audit, à ne pas perdre de vue à chaque lot :
 - Consigne reçue : **suivre ce fichier désormais**. Les deux tâches ouvertes
   du lot 10.3 traitées dans la foulée (test des liens, test de fumée),
   chacune vérifiée capable d'échouer avant d'être cochée.
+- Troisième écran incomplet trouvé (lot 10.4) : Moniteurs, sans aucun moyen
+  d'affecter qui que ce soit. Le point commun des trois : un service exporté
+  et jamais appelé.
 
 
 ### 27 août 2026 — Phases 1 et 2

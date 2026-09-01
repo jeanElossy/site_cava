@@ -300,3 +300,78 @@ export const findMemberForAccount = async (user) => {
 
   return Member.findOne({ registrationNumber }).lean();
 };
+
+// Membres que l'on peut nommer moniteur.
+//
+// ------------------------------------------------------------------
+// UNE RECHERCHE CLOISONNÉE, PAS L'ANNUAIRE COMPLET
+// ------------------------------------------------------------------
+// Nommer un moniteur suppose de retrouver un membre adulte, ce que le
+// module Enfants n'avait aucun moyen de faire : l'écran listait les
+// affectations existantes sans jamais permettre d'en créer une.
+//
+// Plutôt que d'ouvrir l'annuaire des membres au responsable de l'École
+// du dimanche, cette fonction ne renvoie que les quelques champs
+// nécessaires à l'identification, et seulement sur une recherche
+// explicite — pas de listing complet à vide.
+export const searchAssignableMembers = async ({ search, church, limit = 15 } = {}) => {
+  const needle = String(search ?? "").trim();
+
+  // Deux caractères au minimum : sans cela, la première frappe
+  // ramènerait un échantillon arbitraire de l'annuaire.
+  if (needle.length < 2) return [];
+
+  // Le matricule est stocké sans séparateur (`1ME19016P`) alors que
+  // l'utilisateur le lit et le tape espacé (`1ME 19-016 P`). Chercher
+  // la chaîne saisie telle quelle ne trouverait jamais rien : on la
+  // normalise d'abord, ce qui répare au passage les confusions O/0 et
+  // I/1.
+  const asRegistration = normalizeRegistrationNumber(needle);
+
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(escaped, "i");
+
+  const filter = {
+    status: "actif",
+    $or: [
+      { firstName: pattern },
+      { lastName: pattern },
+      { registrationNumber: new RegExp(`^${asRegistration}`, "i") },
+    ],
+  };
+
+  if (church) filter.church = church;
+
+  const members = await Member.find(filter)
+    .select("firstName lastName registrationNumber photo church phone")
+    .sort({ lastName: 1, firstName: 1 })
+    .limit(Math.min(Math.max(Number(limit) || 15, 1), 50))
+    .lean();
+
+  // Les membres DÉJÀ moniteurs sont marqués plutôt que masqués :
+  // l'utilisateur qui cherche « Sarah » et ne la voit pas conclurait
+  // qu'elle n'est pas dans l'annuaire, alors qu'elle encadre déjà une
+  // classe. Le service `assign` refuse de toute façon une seconde
+  // affectation.
+  const assignments = await MonitorAssignment.find({
+    member: { $in: members.map((item) => item._id) },
+    status: { $ne: "retiree" },
+  })
+    .populate("primaryClass", "name")
+    .lean();
+
+  const byMember = new Map(
+    assignments.map((item) => [String(item.member), item])
+  );
+
+  return members.map((member) => {
+    const assignment = byMember.get(String(member._id));
+
+    return {
+      ...member,
+      id: String(member._id),
+      alreadyMonitor: Boolean(assignment),
+      currentClassName: assignment?.primaryClass?.name ?? null,
+    };
+  });
+};

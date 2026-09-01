@@ -268,4 +268,96 @@ describe("monitor.service#resolveMonitorAccess (intégration MongoDB)", () => {
       []
     );
   });
+
+  // ---- searchAssignableMembers ----
+  //
+  // La recherche de membres a nommer moniteur n'existait pas : l'ecran
+  // ne savait que modifier une affectation, jamais en creer une, donc
+  // la liste restait vide et la recherche ne pouvait rien trouver.
+
+  it("ne renvoie rien sous deux caracteres — pas d'echantillon arbitraire de l'annuaire", async () => {
+    assert.deepEqual(await monitorService.searchAssignableMembers({ search: "S" }), []);
+    assert.deepEqual(await monitorService.searchAssignableMembers({ search: " " }), []);
+    assert.deepEqual(await monitorService.searchAssignableMembers({}), []);
+  });
+
+  it("trouve un membre par son nom", async () => {
+    const found = await monitorService.searchAssignableMembers({
+      search: MARKER,
+      church: TEST_CHURCH,
+    });
+
+    const names = found.map((item) => item.firstName);
+
+    assert.ok(names.includes("Sarah"), "Sarah devrait etre trouvee");
+    assert.ok(names.includes("Jean"), "Jean devrait etre trouve");
+  });
+
+  it("trouve un membre par son matricule SAISI DANS SA FORME AFFICHEE", async () => {
+    // Le matricule est stocke sans separateur (`2ZZ00703A`) et lu
+    // espace (`2ZZ 00-703 A`). Chercher la chaine telle quelle ne
+    // trouverait jamais rien — c'est le piege que ce test verrouille.
+    const cible = await Member.create({
+      firstName: "Awa",
+      lastName: MARKER,
+      church: TEST_CHURCH,
+      status: "actif",
+      registrationNumber: "2ZZ00703A",
+    });
+
+    createdMembers.push(cible._id);
+
+    const espace = await monitorService.searchAssignableMembers({
+      search: "2ZZ 00-703 A",
+      church: TEST_CHURCH,
+    });
+
+    assert.equal(espace.length, 1);
+    assert.equal(String(espace[0].id), String(cible._id));
+
+    // Et la confusion O/0 se repare par position.
+    const confus = await monitorService.searchAssignableMembers({
+      search: "2ZZ OO7O3A",
+      church: TEST_CHURCH,
+    });
+
+    assert.equal(confus.length, 1, "la confusion O/0 doit etre reparee");
+  });
+
+  it("signale un membre deja moniteur au lieu de le masquer", async () => {
+    const found = await monitorService.searchAssignableMembers({
+      search: MARKER,
+      church: TEST_CHURCH,
+    });
+
+    const trouvee = found.find((item) => item.firstName === "Sarah");
+
+    // Sarah porte une affectation creee par ce fichier : elle doit
+    // rester VISIBLE et marquee. La masquer ferait conclure a tort
+    // qu'elle n'est pas dans l'annuaire.
+    assert.ok(trouvee, "Sarah doit rester visible");
+    assert.equal(trouvee.alreadyMonitor, true);
+  });
+
+  it("ignore un membre inactif", async () => {
+    const inactif = await Member.create({
+      firstName: "Zoe",
+      lastName: MARKER,
+      church: TEST_CHURCH,
+      status: "inactif",
+    });
+
+    createdMembers.push(inactif._id);
+
+    const found = await monitorService.searchAssignableMembers({
+      search: MARKER,
+      church: TEST_CHURCH,
+    });
+
+    assert.ok(
+      !found.some((item) => item.firstName === "Zoe"),
+      "un membre inactif ne peut pas recevoir une classe"
+    );
+  });
+
 });

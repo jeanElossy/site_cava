@@ -128,6 +128,14 @@ export const archiveClass = (id) =>
 export const listMonitors = (params) =>
   request(`/api/admin/enfants/moniteurs${query(params)}`, { auth: true });
 
+// Membres que l'on peut nommer moniteur. Recherche cloisonnée au
+// module : ne renvoie que de quoi identifier une personne, et rien
+// tant que la saisie fait moins de deux caractères.
+export const searchAssignableMembers = (params) =>
+  request(`/api/admin/enfants/moniteurs/membres${query(params)}`, {
+    auth: true,
+  });
+
 export const assignMonitor = (body) =>
   request("/api/admin/enfants/moniteurs", {
     method: "POST",
