@@ -473,4 +473,59 @@ describe("routes Enfants — sécurité et cloisonnement", () => {
 
     assert.equal(response.status, 403);
   });
+
+  // ---- Ordre de resolution des routes ----
+  //
+  // REGRESSION. Express resout les routes dans leur ordre de
+  // declaration, et `router.get("/:id")` etait declare AVANT les
+  // montages `/classes`, `/moniteurs`, `/remplacements`,
+  // `/responsables`, `/seances` et `/historique`. Chaque chemin
+  // litteral partait donc en identifiant d'enfant, et
+  // `Child.findById("remplacements")` levait un CastError que le
+  // navigateur recevait en « Identifiant invalide. » — le module etait
+  // inutilisable en production alors que toute la suite passait au vert.
+  //
+  // Ce test ne verifie pas le contenu des reponses : il verifie qu'un
+  // sous-chemin n'est jamais confondu avec un identifiant. C'est ce qui
+  // manquait.
+  const LITERAL_PATHS = [
+    "/api/admin/enfants/dashboard",
+    "/api/admin/enfants/classes",
+    "/api/admin/enfants/moniteurs",
+    "/api/admin/enfants/remplacements",
+    "/api/admin/enfants/responsables",
+    "/api/admin/enfants/seances",
+    "/api/admin/enfants/historique",
+  ];
+
+  for (const path of LITERAL_PATHS) {
+    it(`${path} n'est pas confondu avec un identifiant d'enfant`, async () => {
+      const response = await call("GET", path, { token: adminToken });
+
+      // 404 reste acceptable pour un chemin sans verbe GET (`/seances`
+      // n'expose qu'un POST) : ce qu'on refuse, c'est le CastError.
+      assert.notEqual(response.status, 400);
+
+      if (response.status === 400) return;
+
+      const payload = await response.json().catch(() => ({}));
+
+      assert.notEqual(payload.message, "Identifiant invalide.");
+    });
+  }
+
+  it("les sous-ressources qui exposent une liste repondent bien 200", async () => {
+    for (const path of [
+      "/api/admin/enfants/classes",
+      "/api/admin/enfants/moniteurs",
+      "/api/admin/enfants/remplacements",
+      "/api/admin/enfants/responsables",
+      "/api/admin/enfants/historique",
+    ]) {
+      const response = await call("GET", path, { token: adminToken });
+
+      assert.equal(response.status, 200, `${path} devrait repondre 200`);
+    }
+  });
+
 });

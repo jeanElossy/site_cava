@@ -1,4 +1,5 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 
 import * as childService from "../services/child.service.js";
 import * as guardianService from "../services/childGuardian.service.js";
@@ -52,6 +53,26 @@ export const buildChildrenRouter = () => {
 
   router.use(requireAuth, requireRole(...CHILDREN_ADMIN_ROLES));
 
+  // Un `:id` de ce routeur designe TOUJOURS un enfant.
+  //
+  // Garde-fou d'ordre de routage : `router.use("/seances", ...)` ne
+  // repond qu'au POST, donc un GET sur ce chemin traverse le montage
+  // sans handler et poursuit jusqu'aux routes `/:id` declarees plus
+  // bas. Sans ce controle, `Child.findById("seances")` levait un
+  // CastError rendu en « Identifiant invalide. » — un message qui
+  // n'apprend rien et qui a fait passer un defaut d'ordre pour un
+  // probleme de donnees.
+  //
+  // Le refus est donc un 404 explicite, et tout chemin litteral ajoute
+  // plus tard sans verbe correspondant echouera lisiblement.
+  router.param("id", (req, _res, next, value) => {
+    if (!mongoose.isValidObjectId(value)) {
+      return next(ApiError.notFound("Enfant introuvable."));
+    }
+
+    next();
+  });
+
   // ---- Tableau de bord ------------------------------------------
   router.get(
     "/dashboard",
@@ -101,199 +122,6 @@ export const buildChildrenRouter = () => {
     })
   );
 
-  router.get(
-    "/:id",
-    asyncHandler(async (req, res) =>
-      sendSuccess(res, { data: await childService.getById(req.params.id) })
-    )
-  );
-
-  router.patch(
-    "/:id",
-    asyncHandler(async (req, res) => {
-      const data = await childService.update(req.params.id, req.body ?? {});
-
-      await audit.record(req, {
-        action: "update",
-        resource: "child",
-        resourceId: req.params.id,
-      });
-
-      sendSuccess(res, { message: "Fiche mise à jour.", data });
-    })
-  );
-
-  router.patch(
-    "/:id/statut",
-    asyncHandler(async (req, res) => {
-      const data = await childService.setStatus(req.params.id, req.body?.status);
-
-      await audit.record(req, {
-        action: "update",
-        resource: "childStatus",
-        resourceId: req.params.id,
-      });
-
-      sendSuccess(res, { message: "Statut mis à jour.", data });
-    })
-  );
-
-  // Changement de classe — route à part parce qu'elle est tracée
-  // séparément : « quand cet enfant a-t-il changé de classe » est une
-  // question qu'on pose souvent, et qu'un `update` générique noierait.
-  router.patch(
-    "/:id/classe",
-    asyncHandler(async (req, res) => {
-      const data = await childService.assignClass(req.params.id, req.body?.classId);
-
-      await audit.record(req, {
-        action: "update",
-        resource: "childClass",
-        resourceId: req.params.id,
-      });
-
-      sendSuccess(res, {
-        message: data.warning ?? "Classe mise à jour.",
-        data,
-      });
-    })
-  );
-
-  router.get(
-    "/:id/presences",
-    asyncHandler(async (req, res) => {
-      const data = await childService.attendanceHistory(req.params.id, {
-        page: req.query.page,
-        limit: req.query.limit,
-      });
-
-      sendSuccess(res, { data: data.items, meta: data.meta, stats: data.stats });
-    })
-  );
-
-  // ---- Responsables d'un enfant ----------------------------------
-  router.post(
-    "/:id/responsables",
-    asyncHandler(async (req, res) => {
-      const data = await childService.attachGuardian(req.params.id, req.body ?? {});
-
-      await audit.record(req, {
-        action: "update",
-        resource: "childGuardianLink",
-        resourceId: req.params.id,
-      });
-
-      sendCreated(res, { message: "Responsable rattaché.", data });
-    })
-  );
-
-  router.delete(
-    "/:id/responsables/:guardianId",
-    asyncHandler(async (req, res) => {
-      await childService.detachGuardian(req.params.id, req.params.guardianId);
-
-      await audit.record(req, {
-        action: "update",
-        resource: "childGuardianLink",
-        resourceId: req.params.id,
-      });
-
-      sendNoContent(res);
-    })
-  );
-
-  // ---- Documents -------------------------------------------------
-  router.get(
-    "/:id/documents",
-    asyncHandler(async (req, res) =>
-      sendSuccess(res, { data: await documentService.list(req.params.id) })
-    )
-  );
-
-  router.post(
-    "/:id/documents",
-    asyncHandler(async (req, res) => {
-      const author = documentService.authorFromUser(req.user);
-
-      const data = await documentService.attach(req.params.id, req.body ?? {}, author);
-
-      await audit.record(req, {
-        action: "document_upload",
-        resource: "childDocument",
-        resourceId: data.id,
-      });
-
-      sendCreated(res, { message: "Document ajouté.", data });
-    })
-  );
-
-  // CONSULTATION D'UN DOCUMENT SENSIBLE.
-  //
-  // Délivre une URL signée valable quelques minutes, et JOURNALISE
-  // l'accès. C'est cette trace qui permet de répondre, des mois plus
-  // tard, à « qui a consulté l'acte de naissance de cet enfant » —
-  // exigence explicite du cahier des charges, et seul moyen de repérer
-  // une consultation anormale.
-  //
-  // La journalisation est faite ici plutôt que dans le service : la
-  // route dispose de l'adresse IP et du navigateur, que le service
-  // ignore (même découpage que partout ailleurs dans le projet).
-  router.get(
-    "/:id/documents/:documentId/lien",
-    asyncHandler(async (req, res) => {
-      const data = await documentService.openLink(
-        req.params.id,
-        req.params.documentId,
-        { attachment: req.query.telecharger === "true" }
-      );
-
-      await audit.record(req, {
-        action: "document_view",
-        resource: "childDocument",
-        resourceId: req.params.documentId,
-      });
-
-      sendSuccess(res, {
-        data: { url: data.url, expiresAt: data.expiresAt, name: data.name },
-      });
-    })
-  );
-
-  router.patch(
-    "/:id/documents/:documentId/validation",
-    asyncHandler(async (req, res) => {
-      const data = await documentService.review(
-        req.params.id,
-        req.params.documentId,
-        { status: req.body?.status, note: req.body?.note },
-        req.user
-      );
-
-      await audit.record(req, {
-        action: "update",
-        resource: "childDocument",
-        resourceId: req.params.documentId,
-      });
-
-      sendSuccess(res, { message: "Document mis à jour.", data });
-    })
-  );
-
-  router.delete(
-    "/:id/documents/:documentId",
-    requireRole(...ACCESS_ADMIN_ROLES),
-    asyncHandler(async (req, res) => {
-      await documentService.remove(req.params.id, req.params.documentId);
-
-      await audit.record(req, {
-        action: "document_delete",
-        resource: "childDocument",
-        resourceId: req.params.documentId,
-      });
-
-      sendNoContent(res);
-    })
-  );
 
   // ---- Responsables (annuaire) -----------------------------------
   const guardians = Router();
@@ -766,6 +594,214 @@ export const buildChildrenRouter = () => {
         data: items,
         meta: { page, limit, total, pages: Math.ceil(total / limit) || 1 },
       });
+    })
+  );
+
+  // ---- Fiche d un enfant -----------------------------------------
+  //
+  // DECLARE EN DERNIER, ET CE N EST PAS UN DETAIL DE PRESENTATION.
+  //
+  // Express resout les routes dans leur ordre de declaration. Place
+  // avant les montages ci-dessus, `/:id` capturait `/classes`,
+  // `/moniteurs`, `/remplacements`, `/seances`, `/responsables` et
+  // `/historique` : le chemin litteral partait en identifiant, et
+  // `Child.findById("remplacements")` levait un CastError rendu au
+  // navigateur en « Identifiant invalide ».
+  //
+  // Toute nouvelle sous-ressource se monte DONC au-dessus de ce bloc.
+  // children.routes.test.js verrouille cet ordre.
+
+  router.get(
+    "/:id",
+    asyncHandler(async (req, res) =>
+      sendSuccess(res, { data: await childService.getById(req.params.id) })
+    )
+  );
+
+  router.patch(
+    "/:id",
+    asyncHandler(async (req, res) => {
+      const data = await childService.update(req.params.id, req.body ?? {});
+
+      await audit.record(req, {
+        action: "update",
+        resource: "child",
+        resourceId: req.params.id,
+      });
+
+      sendSuccess(res, { message: "Fiche mise à jour.", data });
+    })
+  );
+
+  router.patch(
+    "/:id/statut",
+    asyncHandler(async (req, res) => {
+      const data = await childService.setStatus(req.params.id, req.body?.status);
+
+      await audit.record(req, {
+        action: "update",
+        resource: "childStatus",
+        resourceId: req.params.id,
+      });
+
+      sendSuccess(res, { message: "Statut mis à jour.", data });
+    })
+  );
+
+  // Changement de classe — route à part parce qu'elle est tracée
+  // séparément : « quand cet enfant a-t-il changé de classe » est une
+  // question qu'on pose souvent, et qu'un `update` générique noierait.
+  router.patch(
+    "/:id/classe",
+    asyncHandler(async (req, res) => {
+      const data = await childService.assignClass(req.params.id, req.body?.classId);
+
+      await audit.record(req, {
+        action: "update",
+        resource: "childClass",
+        resourceId: req.params.id,
+      });
+
+      sendSuccess(res, {
+        message: data.warning ?? "Classe mise à jour.",
+        data,
+      });
+    })
+  );
+
+  router.get(
+    "/:id/presences",
+    asyncHandler(async (req, res) => {
+      const data = await childService.attendanceHistory(req.params.id, {
+        page: req.query.page,
+        limit: req.query.limit,
+      });
+
+      sendSuccess(res, { data: data.items, meta: data.meta, stats: data.stats });
+    })
+  );
+
+  // ---- Responsables d'un enfant ----------------------------------
+  router.post(
+    "/:id/responsables",
+    asyncHandler(async (req, res) => {
+      const data = await childService.attachGuardian(req.params.id, req.body ?? {});
+
+      await audit.record(req, {
+        action: "update",
+        resource: "childGuardianLink",
+        resourceId: req.params.id,
+      });
+
+      sendCreated(res, { message: "Responsable rattaché.", data });
+    })
+  );
+
+  router.delete(
+    "/:id/responsables/:guardianId",
+    asyncHandler(async (req, res) => {
+      await childService.detachGuardian(req.params.id, req.params.guardianId);
+
+      await audit.record(req, {
+        action: "update",
+        resource: "childGuardianLink",
+        resourceId: req.params.id,
+      });
+
+      sendNoContent(res);
+    })
+  );
+
+  // ---- Documents -------------------------------------------------
+  router.get(
+    "/:id/documents",
+    asyncHandler(async (req, res) =>
+      sendSuccess(res, { data: await documentService.list(req.params.id) })
+    )
+  );
+
+  router.post(
+    "/:id/documents",
+    asyncHandler(async (req, res) => {
+      const author = documentService.authorFromUser(req.user);
+
+      const data = await documentService.attach(req.params.id, req.body ?? {}, author);
+
+      await audit.record(req, {
+        action: "document_upload",
+        resource: "childDocument",
+        resourceId: data.id,
+      });
+
+      sendCreated(res, { message: "Document ajouté.", data });
+    })
+  );
+
+  // CONSULTATION D'UN DOCUMENT SENSIBLE.
+  //
+  // Délivre une URL signée valable quelques minutes, et JOURNALISE
+  // l'accès. C'est cette trace qui permet de répondre, des mois plus
+  // tard, à « qui a consulté l'acte de naissance de cet enfant » —
+  // exigence explicite du cahier des charges, et seul moyen de repérer
+  // une consultation anormale.
+  //
+  // La journalisation est faite ici plutôt que dans le service : la
+  // route dispose de l'adresse IP et du navigateur, que le service
+  // ignore (même découpage que partout ailleurs dans le projet).
+  router.get(
+    "/:id/documents/:documentId/lien",
+    asyncHandler(async (req, res) => {
+      const data = await documentService.openLink(
+        req.params.id,
+        req.params.documentId,
+        { attachment: req.query.telecharger === "true" }
+      );
+
+      await audit.record(req, {
+        action: "document_view",
+        resource: "childDocument",
+        resourceId: req.params.documentId,
+      });
+
+      sendSuccess(res, {
+        data: { url: data.url, expiresAt: data.expiresAt, name: data.name },
+      });
+    })
+  );
+
+  router.patch(
+    "/:id/documents/:documentId/validation",
+    asyncHandler(async (req, res) => {
+      const data = await documentService.review(
+        req.params.id,
+        req.params.documentId,
+        { status: req.body?.status, note: req.body?.note },
+        req.user
+      );
+
+      await audit.record(req, {
+        action: "update",
+        resource: "childDocument",
+        resourceId: req.params.documentId,
+      });
+
+      sendSuccess(res, { message: "Document mis à jour.", data });
+    })
+  );
+
+  router.delete(
+    "/:id/documents/:documentId",
+    requireRole(...ACCESS_ADMIN_ROLES),
+    asyncHandler(async (req, res) => {
+      await documentService.remove(req.params.id, req.params.documentId);
+
+      await audit.record(req, {
+        action: "document_delete",
+        resource: "childDocument",
+        resourceId: req.params.documentId,
+      });
+
+      sendNoContent(res);
     })
   );
 
