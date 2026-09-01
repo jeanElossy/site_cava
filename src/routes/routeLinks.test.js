@@ -112,3 +112,57 @@ describe("liens internes et routes déclarées", () => {
     expect(dead).toEqual([]);
   });
 });
+
+describe("ordre de déclaration des routes", () => {
+  // Un chemin LITTÉRAL déclaré après un chemin PARAMÉTRÉ de même
+  // longueur ne sera jamais atteint : React Router rend le premier
+  // élément dont le motif correspond, dans l'ordre du fichier.
+  //
+  // C'est le défaut 10.2 du suivi : `/admin/enfants/nouveau` tombait
+  // sur `enfants/:id`, la fiche s'ouvrait avec `id = "nouveau"` et
+  // affichait « Enfant introuvable ». Le test des liens ne peut pas le
+  // voir — le lien existe bel et bien, il mène simplement ailleurs.
+  it("aucun chemin littéral n'est masqué par un chemin paramétré", () => {
+    const masques = [];
+
+    for (const file of ROUTE_FILES) {
+      const source = readFileSync(file, "utf8");
+
+      // L'ordre du fichier EST l'ordre de résolution.
+      const paths = [...source.matchAll(/path="([^"]+)"/g)].map(
+        (match) => match[1]
+      );
+
+      const parametres = [];
+
+      for (const path of paths) {
+        const parts = path.split("/");
+
+        if (parts.some((segment) => segment.startsWith(":"))) {
+          parametres.push({ path, parts });
+
+          continue;
+        }
+
+        // Un chemin sans paramètre : est-il capté par un motif déjà
+        // déclaré plus haut ?
+        const capteur = parametres.find(
+          (candidate) =>
+            candidate.parts.length === parts.length &&
+            candidate.parts.every(
+              (segment, index) =>
+                segment.startsWith(":") || segment === parts[index]
+            )
+        );
+
+        if (capteur) {
+          masques.push(
+            `${file} : "${path}" est capté par "${capteur.path}", déclaré avant`
+          );
+        }
+      }
+    }
+
+    expect(masques).toEqual([]);
+  });
+});

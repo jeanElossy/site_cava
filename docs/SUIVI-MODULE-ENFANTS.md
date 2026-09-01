@@ -5,13 +5,14 @@ Dernière mise à jour : 1ᵉʳ septembre 2026 (6ᵉ passe).
 État global : **module déployé en production**, puis **corrigé cinq fois**
 sur des défauts que la suite de tests ne voyait pas (lot 10.1 → 10.5).
 
-**Ce fichier n'est pas clos** : la couverture de tests reste partielle sur
-trois domaines, et 4 questions de conception attendent votre arbitrage.
+**Couverture de tests close** : les trois domaines partiels ou non couverts
+le sont désormais. Restent 4 questions de conception qui attendent votre
+arbitrage, et une confirmation à obtenir du responsable.
 
 | Vérification | Résultat |
 |---|---|
-| Tests backend | **427 / 427** (334 avant le chantier, **+93 neufs**) |
-| Tests frontend | **110 / 110** (87 avant, **+23 neufs**) |
+| Tests backend | **476 / 476** (334 avant le chantier, **+142 neufs**) |
+| Tests frontend | **118 / 118** (87 avant, **+31 neufs**) |
 | `npm run build` | ✅ |
 | `eslint src` | ✅ aucun avertissement |
 | Fuite de classe SCSS générique | ✅ aucune (vérifié sur le CSS compilé) |
@@ -541,16 +542,18 @@ vérifiaient des règles métier, jamais qu'une page se charge. Un module peut
 
 | Domaine | État | Preuve |
 |---|---|---|
-| **Permissions** | ✅ couvert | 6 tests : editor, Service Social, moniteur et responsable refusés là où il faut ; le moniteur ne voit pas les enfants d'une autre classe |
-| **Sécurité** | ✅ couvert | requête sans jeton, mauvais rôle, classe interdite, **classe après expiration**, dépôt de document refusé au moniteur et à l'editor, contournement par l'identifiant de séance |
-| **Remplacements** | ✅ couvert | 20 tests de fenêtre (3 modes, bornes, jours intercalaires, annulation) + accès refusé le lendemain **sans job** |
+| **Permissions** | ✅ couvert | 6 tests : editor, Service Social, moniteur et responsable refusés là où il faut |
+| **Sécurité** | ✅ couvert | requête sans jeton, mauvais rôle, classe interdite, **classe après expiration**, dépôt refusé, contournement par identifiant de séance |
+| **Remplacements** | ✅ couvert | 20 tests de fenêtre + accès refusé le lendemain **sans job** |
 | **Mot de passe temporaire** | ✅ couvert | 12 tests : aucune session délivrée, jeton non réutilisable, ordre 2FA |
-| **Présences** | 🟡 partiel | appel idempotent, auteur retenu, statut inconnu refusé, « tous présents » refusé hors classe. **Manque** : correction d'un pointage, historique, présence en classe remplacée |
-| **Moniteurs** | 🟡 partiel | affectation (niveau valide/invalide), recherche de membres. **Manque** : ouverture d'accès, réinitialisation, désactivation d'un compte |
-| **Enfants** | 🔴 non couvert | aucun test de création, modification, désactivation, recherche, rattachement d'un parent ou d'un document côté service |
+| **Enfants** | ✅ couvert | `child.service.test.js`, **26 tests** : création et champs obligatoires, numéro de dossier, âge non stocké, bornes de date, modification, classe (archivée refusée, avertissement hors tranche), statut, responsables, recherche par nom et par numéro mal recopié, filtre d'incomplétude, pagination |
+| **Présences** | ✅ couvert | `childAttendance.service.test.js`, **11 tests** : correction (auteur de l'appel préservé), création par correction, statut invalide, classe interdite, **double identité en remplacement**, extinction calculée, historique et son taux, taux `null` sans pointage |
+| **Comptes moniteur** | ✅ couvert | `monitorAccount.service.test.js`, **12 tests** : ouverture, alphabet sans O/0/I/l/1, hachage, connexion par matricule, refus sans classe / sans matricule / rôle étranger / compte d'un autre métier, réinitialisation, désactivation, révocation qui détache sans retirer la classe |
+| **Ordre des routes** | ✅ couvert | des **deux** côtés : Express (`children.routes.test.js`) et React Router (`routeLinks.test.js`) |
 
-- [ ] Compléter les trois domaines ci-dessus — le plus utile en premier :
-      **les enfants**, puisque c'est le cœur du module et la seule ligne rouge
+Chaque nouveau test a été **vérifié capable d'échouer** avant d'être compté :
+le test d'ordre des routes a été confronté au défaut 10.2 reconstitué (route
+de création replacée après `:id`), et il l'a bien signalé.
 
 ---
 
@@ -688,14 +691,20 @@ boutons pointaient déjà.
 Le module **fonctionne et est déployé**. Ce qui suit ne bloque personne, mais
 n'est pas fait.
 
-### Travail technique (à ma charge)
+### Travail technique (à ma charge) — ✅ terminé
 
-| # | Reste | Pourquoi ça compte |
-|---|---|---|
-| 1 | **Tests des enfants** — création, modification, désactivation, recherche, parent, document | Seule ligne rouge de la couverture, et c'est le cœur du module |
-| 2 | Tests des présences : correction d'un pointage, historique, présence en classe remplacée | La correction d'un appel est l'opération la plus délicate du module |
-| 3 | Tests des comptes moniteur : ouverture d'accès, réinitialisation, désactivation | Chemin par lequel passe chaque moniteur |
-| 4 | Ordre des routes **côté React Router** | Les trois tests actuels laisseraient passer un chemin littéral déclaré après `:id` — c'est le lot 10.2 qui pourrait revenir |
+Les quatre chantiers ouverts le 1ᵉʳ septembre sont faits : tests des enfants,
+des présences, des comptes moniteur, et ordre des routes côté React Router.
+**+49 tests backend, +8 frontend** dans cette passe.
+
+Deux enseignements consignés au passage :
+
+- Un test qui n'échoue que **seul** ment sur ce qu'il vérifie. Le premier test
+  de séquence des numéros de dossier exigeait une continuité (`+1`) : vraie en
+  isolation, fausse dès la suite complète, puisque le compteur est global et
+  que `node --test` exécute les fichiers en parallèle.
+- La lettre de contrôle d'un matricule **se calcule**, elle ne se devine pas.
+  Deux fichiers ont échoué au premier essai sur une lettre inventée.
 
 ### Décisions qui vous appartiennent
 
@@ -762,6 +771,8 @@ Rappels tirés de l'audit, à ne pas perdre de vue à chaque lot :
 - Consigne reçue : **suivre ce fichier désormais**. Les deux tâches ouvertes
   du lot 10.3 traitées dans la foulée (test des liens, test de fumée),
   chacune vérifiée capable d'échouer avant d'être cochée.
+- Couverture de tests close : enfants (26), présences (11), comptes moniteur
+  (12), ordre des routes React Router. Chaque test vérifié capable d'échouer.
 - Troisième écran incomplet trouvé (lot 10.4) : Moniteurs, sans aucun moyen
   d'affecter qui que ce soit. Le point commun des trois : un service exporté
   et jamais appelé.
