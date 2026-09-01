@@ -8,7 +8,7 @@ sur des défauts que la suite de tests ne voyait pas**. Voir le lot 10.
 | Vérification | Résultat |
 |---|---|
 | Tests backend | **420 / 420** (334 avant le chantier, **+86 neufs**) |
-| Tests frontend | **87 / 87** |
+| Tests frontend | **108 / 108** (87 avant, **+21 neufs**) |
 | `npm run build` | ✅ |
 | `eslint src` | ✅ aucun avertissement |
 | Fuite de classe SCSS générique | ✅ aucune (vérifié sur le CSS compilé) |
@@ -603,10 +603,23 @@ entièrement inutilisable.
 coché « terminé, 5 écrans » ; il en manquait deux, dont un vers lequel deux
 boutons pointaient déjà.
 
-- [ ] À faire : un test de fumée qui monte chaque écran d'administration et
-      vérifie qu'il ne plante pas au premier rendu
-- [ ] À faire : vérifier qu'aucun `Link`/`navigate` du module ne pointe vers
-      une route absente de `AdminRoutes.jsx`
+- [x] `routeLinks.test.js` — aucun lien écrit en dur ne pointe vers une route
+      absente. ⚠️ **La première version de ce test était creuse** : elle
+      laissait un segment `:param` absorber n'importe quoi, si bien que
+      `/admin/enfants/nouveau` était « trouvé » par `enfants/:id` — le
+      mécanisme même du bug. Corrigée : un lien statique doit correspondre à
+      une route **littérale**. Vérifié en insérant un lien mort, qui fait bien
+      échouer le test.
+- [x] `Children.smoke.test.jsx` — les 10 écrans du module montés deux fois
+      chacun, avec et **sans aucune donnée** (le cas d'une église qui démarre,
+      là où un `items[0]` non gardé casse). Vérifié en retirant une fonction
+      du mock : le test échoue bien.
+- [ ] Reste ouvert : ces deux tests n'auraient PAS attrapé les pannes 10.1 et
+      10.2, toutes deux dues à l'**ordre** des routes. `routeLinks` couvre
+      désormais le second cas ; le premier (ordre côté Express) est couvert
+      par `children.routes.test.js`. Aucun test ne vérifie encore l'ordre
+      **côté React Router** — un chemin littéral déclaré après `:id` passerait
+      les trois.
 
 ---
 
@@ -652,6 +665,9 @@ Rappels tirés de l'audit, à ne pas perdre de vue à chaque lot :
   n'avait aucun moyen de consulter un appel.
 - Ce fichier de suivi remis en accord avec la réalité : il déclarait
   « terminé » un lot qui ne l'était pas.
+- Consigne reçue : **suivre ce fichier désormais**. Les deux tâches ouvertes
+  du lot 10.3 traitées dans la foulée (test des liens, test de fumée),
+  chacune vérifiée capable d'échouer avant d'être cochée.
 
 
 ### 27 août 2026 — Phases 1 et 2
