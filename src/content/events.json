@@ -8,13 +8,13 @@
       "Un culte spécial placé sous le thème « S'offrir à Dieu ». Une invitation à remettre à Dieu non seulement nos activités, mais notre vie entière.",
       "La matinée articule un temps de louange conduit par l'équipe d'adoration, un message centré sur les Écritures, puis un moment de prière et de consécration personnelle."
     ],
-    "day": "15",
-    "month": "JUIN",
-    "dateLong": "Dimanche 15 Juin 2025 - 08h30",
+    "day": "09",
+    "month": "AOÛT",
+    "dateLong": "Dimanche 9 Août 2026 - 08h30",
     "time": "08h30",
     "endTime": "11h30",
     "location": "CAVA, Abidjan",
-    "address": "Angré château, non loin de l'institut des jésuites",
+    "address": "Cocody Angré, Rue Domolon Villa 72",
     "audience": "Ouvert à tous",
     "theme": "",
     "speaker": null,
@@ -30,42 +30,38 @@
       "Un enseignement structuré pour affermir les bases de la foi et apprendre à lire les Écritures par soi-même.",
       "Chaque séance associe un temps d'enseignement et un temps d'échange, afin que les questions trouvent une réponse concrète."
     ],
-    "day": "17",
-    "month": "JUIN",
-    "dateLong": "Mardi 17 Juin 2025 - 19h30",
-    "time": "19h30",
+    "day": "12",
+    "month": "AOÛT",
+    "dateLong": "Mercredi 12 Août 2026 - 18h30",
+    "time": "18h30",
     "endTime": "20h30",
     "location": "CAVA, Abidjan",
-    "address": "Angré château, non loin de l'institut des jésuites",
+    "address": "Cocody Angré, Rue Domolon Villa 72",
     "audience": "Ouvert à tous",
     "theme": "",
     "speaker": null,
     "image": "/images/events/event-2.jpg",
     "color": "yellow"
   },
-  "camp-de-formation-spirituelle": {
-    "id": "6a5e4da15532ad9570cfd511",
-    "slug": "camp-de-formation-spirituelle",
-    "title": "Camp de Formation",
-    "description": "Deux journées de formation, de prière et de communion fraternelle.",
+  "seminaire": {
+    "id": "6a75a2b8e70199f564331bd3",
+    "slug": "seminaire",
+    "title": "SÉMINAIRE BIBLIQUE EXCEPTIONNEL",
+    "description": "Pendant plusieurs semaines, nous entreprendrons un voyage au cœur des Écritures afin de redécouvrir le projet originel du Créateur.",
     "content": [
-      "Deux journées pour se former, prier ensemble et approfondir sa marche avec Christ, loin des sollicitations du quotidien.",
-      "Le camp alterne enseignements, ateliers en petits groupes et temps de prière."
+      "À travers 12 grandes révélations bibliques, nous découvrirons les fondements du mariage selon Dieu, les mystères qu'il renferme et les clés d'une vie conjugale transformée par Jésus-Christ."
     ],
-    "day": "27",
-    "month": "JUIN",
-    "dateLong": "Vendredi 27 Juin 2025 - 09h00",
-    "time": "09h00",
-    "endTime": "17h00",
+    "day": "02",
+    "month": "SEPTEMBRE",
+    "dateLong": "Mercredi 2 Septembre 2026 - 08h30",
+    "time": "08h30",
+    "endTime": "11h30",
     "location": "CAVA, Abidjan",
-    "address": "Angré château, non loin de l'institut des jésuites",
+    "address": "Cocody Angré, Rue Domolon Villa 72",
     "audience": "Ouvert à tous",
-    "theme": "Persévérer dans la discipline spirituelle",
-    "speaker": {
-      "name": "Pasteur Israël Liaide",
-      "role": "Orateur invité"
-    },
-    "image": "/images/events/event-3.jpg",
-    "color": "yellow"
+    "theme": "LE MARIAGE : REVENIR AU PROJET DE DIEU",
+    "speaker": null,
+    "image": "https://res.cloudinary.com/dbrqr0x6y/image/upload/v1786094200/cava/events/xbrfxbayobcmaaaakq9w.png",
+    "color": "green"
   }
 }
