@@ -2,8 +2,11 @@
 
 Dernière mise à jour : 1ᵉʳ septembre 2026 (6ᵉ passe).
 
-État global : **module déployé en production**, puis **corrigé deux fois
-sur des défauts que la suite de tests ne voyait pas**. Voir le lot 10.
+État global : **module déployé en production**, puis **corrigé cinq fois**
+sur des défauts que la suite de tests ne voyait pas (lot 10.1 → 10.5).
+
+**Ce fichier n'est pas clos** : la couverture de tests reste partielle sur
+trois domaines, et 4 questions de conception attendent votre arbitrage.
 
 | Vérification | Résultat |
 |---|---|
@@ -392,7 +395,8 @@ la suite backend complète exécutée avant de continuer.
       table `FOLDER_ROLES` dans le service ferme les dossiers sensibles. Les
       dossiers historiques restent ouverts comme avant
 - [x] 16 tests : `services/upload.service.test.js`
-- [ ] Journalisation `document_view` — câblée avec les routes (lot 5)
+- [x] Journalisation `document_view` — câblée (`children.routes.js`, route du
+      lien signé)
 
 ### Lot 4 — Services backend ✅ TERMINÉ
 
@@ -418,7 +422,7 @@ la suite backend complète exécutée avant de continuer.
       `url` ni `publicId` : ensemble, ils permettraient de fabriquer un lien
       hors de tout contrôle
 - [x] 14 tests d'intégration : `services/monitor.service.test.js`
-- [ ] `childStats.service.js` — avec les tableaux de bord (lot 8)
+- [x] `childStats.service.js` — utilisé par la route `/dashboard`
 
 ### Lot 5 — API ✅ TERMINÉ
 
@@ -531,20 +535,22 @@ URL signée **et** datée), `monitor.service` (accès aux classes),
 vérifiaient des règles métier, jamais qu'une page se charge. Un module peut
 être entièrement vert et entièrement inutilisable.
 
-#### Reste à couvrir
+#### Couverture réelle, domaine par domaine
 
-- [ ] Enfants : création, modification, désactivation, recherche, classe,
-      parent, document
-- [ ] Moniteurs : attribution de fonction, création d'accès, connexion
-      matricule, mot de passe temporaire, première connexion, désactivation
-- [ ] Remplacements : les 3 modes, accès temporaire, **expiration**, refus
-      après expiration, audit
-- [ ] Présences : présent / absent / excusé, tous présents, correction,
-      historique, présence en classe remplacée
-- [ ] Permissions : un moniteur ne voit ni les autres classes ni les données
-      interdites
-- [ ] Sécurité : API sans authentification, mauvais rôle, classe interdite,
-      classe après expiration, document interdit, envoi invalide
+Établie en relisant les intitulés des tests, pas de mémoire.
+
+| Domaine | État | Preuve |
+|---|---|---|
+| **Permissions** | ✅ couvert | 6 tests : editor, Service Social, moniteur et responsable refusés là où il faut ; le moniteur ne voit pas les enfants d'une autre classe |
+| **Sécurité** | ✅ couvert | requête sans jeton, mauvais rôle, classe interdite, **classe après expiration**, dépôt de document refusé au moniteur et à l'editor, contournement par l'identifiant de séance |
+| **Remplacements** | ✅ couvert | 20 tests de fenêtre (3 modes, bornes, jours intercalaires, annulation) + accès refusé le lendemain **sans job** |
+| **Mot de passe temporaire** | ✅ couvert | 12 tests : aucune session délivrée, jeton non réutilisable, ordre 2FA |
+| **Présences** | 🟡 partiel | appel idempotent, auteur retenu, statut inconnu refusé, « tous présents » refusé hors classe. **Manque** : correction d'un pointage, historique, présence en classe remplacée |
+| **Moniteurs** | 🟡 partiel | affectation (niveau valide/invalide), recherche de membres. **Manque** : ouverture d'accès, réinitialisation, désactivation d'un compte |
+| **Enfants** | 🔴 non couvert | aucun test de création, modification, désactivation, recherche, rattachement d'un parent ou d'un document côté service |
+
+- [ ] Compléter les trois domaines ci-dessus — le plus utile en premier :
+      **les enfants**, puisque c'est le cœur du module et la seule ligne rouge
 
 ---
 
@@ -674,6 +680,40 @@ boutons pointaient déjà.
       par `children.routes.test.js`. Aucun test ne vérifie encore l'ordre
       **côté React Router** — un chemin littéral déclaré après `:id` passerait
       les trois.
+
+---
+
+## Ce qui reste à faire — état au 1ᵉʳ septembre 2026
+
+Le module **fonctionne et est déployé**. Ce qui suit ne bloque personne, mais
+n'est pas fait.
+
+### Travail technique (à ma charge)
+
+| # | Reste | Pourquoi ça compte |
+|---|---|---|
+| 1 | **Tests des enfants** — création, modification, désactivation, recherche, parent, document | Seule ligne rouge de la couverture, et c'est le cœur du module |
+| 2 | Tests des présences : correction d'un pointage, historique, présence en classe remplacée | La correction d'un appel est l'opération la plus délicate du module |
+| 3 | Tests des comptes moniteur : ouverture d'accès, réinitialisation, désactivation | Chemin par lequel passe chaque moniteur |
+| 4 | Ordre des routes **côté React Router** | Les trois tests actuels laisseraient passer un chemin littéral déclaré après `:id` — c'est le lot 10.2 qui pourrait revenir |
+
+### Décisions qui vous appartiennent
+
+Les quatre questions du tableau plus haut (Q1, Q4, Q5, Q6) tournent avec un
+défaut appliqué. Aucune n'empêche d'utiliser le module ; chacune serait plus
+coûteuse à changer plus tard qu'aujourd'hui.
+
+### À confirmer auprès du responsable
+
+Le rattachement de **trois enfants** (ADJAFFI Jean David, LIADE Abdullam,
+LIADE Rehoboth Isaac), placés en « 06 à 08 ans » sur un raisonnement inscrit
+dans leurs notes internes.
+
+### Fonctionnalités non demandées, non construites
+
+Sortie/récupération des enfants (§28, modèle en place, désactivé partout) et
+écran « Événements enfants » (le champ `Event.childClasses[]` existe, aucun
+écran ne l'utilise).
 
 ---
 
