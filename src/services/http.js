@@ -52,11 +52,34 @@ export class HttpError extends Error {
 
 // MongoDB expose `_id` ; les composants du front attendent `id`.
 // La conversion est faite ici plutôt que dans chaque écran.
+//
+// ------------------------------------------------------------------
+// LA CONVERSION EST RÉCURSIVE, ET ELLE DOIT L'ÊTRE
+// ------------------------------------------------------------------
+// Elle ne l'était pas : seul le premier niveau recevait son `id`. Les
+// références jointes — le membre d'une affectation, la classe d'une
+// séance — n'en avaient donc jamais. `assignment.member.id` valait
+// `undefined`, et l'écran envoyait cette valeur à l'API, qui répondait
+// « Identifiant invalide ».
+//
+// Trois écrans en dépendaient : ouverture d'un accès moniteur, choix
+// du remplaçant, préselection de la classe principale. Deux autres
+// s'en tiraient parce qu'ils écrivaient `item.class.id ?? item.class._id`
+// — un contournement qui disait déjà que quelque chose n'allait pas.
+//
+// Aucun `Date` ne peut se trouver ici : la donnée sort de
+// `response.json()`, donc uniquement des objets, tableaux, chaînes,
+// nombres, booléens et `null`. Une date y est une chaîne, jamais un
+// objet à recopier.
 const normalize = (value) => {
   if (Array.isArray(value)) return value.map(normalize);
 
   if (value && typeof value === "object") {
-    const out = { ...value };
+    const out = {};
+
+    for (const [key, nested] of Object.entries(value)) {
+      out[key] = normalize(nested);
+    }
 
     if (out._id && !out.id) out.id = String(out._id);
 
