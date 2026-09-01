@@ -271,7 +271,42 @@ export const buildRoutes = () => {
         actorId: data.user.id,
       });
 
+      // Mot de passe temporaire : le mot de passe était bon — d'où la
+      // trace de connexion réussie juste au-dessus — mais aucune
+      // session n'est ouverte tant qu'il n'a pas été remplacé (voir
+      // auth.service.js#completeLogin).
+      if (data.passwordChangeRequired) {
+        return sendSuccess(res, {
+          message:
+            "Votre mot de passe est temporaire. Choisissez-en un nouveau pour continuer.",
+          data,
+        });
+      }
+
       sendSuccess(res, { message: "Connexion réussie.", data });
+    })
+  );
+
+  // Première connexion : remplacement d'un mot de passe temporaire.
+  //
+  // Sous `loginLimiter` comme la connexion elle-même : cette route
+  // accepte un mot de passe, elle est donc exposée à la même force
+  // brute et doit être freinée de la même façon.
+  auth.post(
+    "/first-password",
+    loginLimiter,
+    asyncHandler(async (req, res) => {
+      const data = await authService.changeFirstPassword(req.body ?? {});
+
+      await audit.record(req, {
+        action: "password_change",
+        actor: data.user,
+      });
+
+      sendSuccess(res, {
+        message: "Mot de passe modifié. Bienvenue.",
+        data,
+      });
     })
   );
 
@@ -308,6 +343,18 @@ export const buildRoutes = () => {
         await audit.record(req, {
           action: "2fa_recovery_used",
           actor: data.user,
+        });
+      }
+
+      // Même cas qu'à l'étape précédente : un compte à mot de passe
+      // temporaire qui porte aussi un second facteur franchit d'abord
+      // la 2FA, et n'obtient qu'ensuite le jeton de changement (voir
+      // le commentaire d'ordre dans auth.service.js#login).
+      if (data.passwordChangeRequired) {
+        return sendSuccess(res, {
+          message:
+            "Votre mot de passe est temporaire. Choisissez-en un nouveau pour continuer.",
+          data,
         });
       }
 

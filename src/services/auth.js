@@ -54,6 +54,45 @@ export const signIn = async ({ identifier, password }) => {
     };
   }
 
+  // MOT DE PASSE TEMPORAIRE — le serveur n'a délivré AUCUN jeton de
+  // session, seulement un jeton de portée « password_change » qui
+  // n'ouvre que la route de changement (voir middlewares/auth.js côté
+  // backend). Il reste donc en mémoire du composant, exactement comme
+  // le jeton de 2FA, et ne va jamais dans le stockage local.
+  if (data.passwordChangeRequired) {
+    return {
+      passwordChangeRequired: true,
+      changeToken: data.changeToken,
+      user: data.user,
+    };
+  }
+
+  setToken(data.token);
+  db.write(USER_KEY, data.user);
+
+  return { user: data.user };
+};
+
+/**
+ * Première connexion : remplace un mot de passe temporaire.
+ *
+ * Le serveur exige les DEUX preuves — le jeton reçu à la connexion, et
+ * le mot de passe temporaire lui-même : le jeton seul transite par le
+ * navigateur, et le mot de passe seul est connu de l'administrateur qui
+ * l'a créé.
+ *
+ * La session ne s'ouvre qu'à l'issue de cet appel.
+ */
+export const changeFirstPassword = async ({
+  changeToken,
+  currentPassword,
+  newPassword,
+}) => {
+  const data = await request("/api/auth/first-password", {
+    method: "POST",
+    body: { changeToken, currentPassword, newPassword },
+  });
+
   setToken(data.token);
   db.write(USER_KEY, data.user);
 
@@ -74,6 +113,17 @@ export const verifyTwoFactor = async ({
     method: "POST",
     body: { challengeToken, code: code.trim() },
   });
+
+  // Même cas qu'à la première étape : un compte à mot de passe
+  // temporaire franchit d'abord la 2FA, et n'obtient qu'ensuite le
+  // jeton de changement.
+  if (data.passwordChangeRequired) {
+    return {
+      passwordChangeRequired: true,
+      changeToken: data.changeToken,
+      user: data.user,
+    };
+  }
 
   setToken(data.token);
   db.write(USER_KEY, data.user);

@@ -4,6 +4,8 @@ import {
   signToken,
   signChallengeToken,
   verifyChallengeToken,
+  signPasswordChangeToken,
+  verifyPasswordChangeToken,
 } from "../middlewares/auth.js";
 import {
   generateSecret,
@@ -38,8 +40,34 @@ const publicUser = (user) => ({
   email: user.email,
   registrationNumber: user.registrationNumber,
   role: user.role,
+  church: user.church,
   twoFactorEnabled: Boolean(user.twoFactor?.enabled),
 });
+
+// Fin de connexion — POINT DE SORTIE UNIQUE des deux chemins qui
+// aboutissent à une session (avec ou sans second facteur).
+//
+// Un mot de passe temporaire n'ouvre PAS de session : il ne délivre
+// qu'un jeton de portée `password_change`, qui n'accepte qu'une seule
+// route (voir middlewares/auth.js). Centraliser ce choix ici garantit
+// qu'aucun des deux chemins ne puisse l'oublier — c'est exactement
+// l'erreur que la portée des jetons sert à rendre impossible.
+//
+// Le compteur d'échecs est remis à zéro dans les deux cas : le mot de
+// passe présenté ÉTAIT le bon, quelle que soit la suite.
+const completeLogin = async (user) => {
+  await user.registerSuccessfulLogin();
+
+  if (user.passwordChangeRequired) {
+    return {
+      passwordChangeRequired: true,
+      changeToken: signPasswordChangeToken(user),
+      user: publicUser(user),
+    };
+  }
+
+  return { token: signToken(user), user: publicUser(user) };
+};
 
 // Charge un compte avec tout ce que la 2FA nécessite. Ces champs sont
 // `select: false` dans le modèle : il faut les demander explicitement.
@@ -119,6 +147,13 @@ export const login = async ({ identifier, password }) => {
   // facteur n'a pas été validé : sinon, un attaquant en possession du
   // mot de passe pourrait le réinitialiser indéfiniment et ne jamais
   // déclencher le verrouillage du compte.
+  //
+  // Le second facteur passe AVANT le mot de passe temporaire, et cet
+  // ordre est un point de sécurité : délivrer le jeton de changement
+  // dès le mot de passe validé permettrait à quiconque le connaît —
+  // à commencer par l'administrateur qui vient de le créer — de poser
+  // un nouveau mot de passe sans franchir le second facteur, et donc
+  // de s'approprier le compte.
   if (user.twoFactor?.enabled && user.twoFactor?.secret) {
     return {
       twoFactorRequired: true,
@@ -126,12 +161,7 @@ export const login = async ({ identifier, password }) => {
     };
   }
 
-  await user.registerSuccessfulLogin();
-
-  return {
-    token: signToken(user),
-    user: publicUser(user),
-  };
+  return completeLogin(user);
 };
 
 // ------------------------------------------------------------------
@@ -194,20 +224,15 @@ export const verifyLoginTwoFactor = async ({
       { "twoFactor.lastUsedStep": step }
     );
 
-    await user.registerSuccessfulLogin();
-
-    return { token: signToken(user), user: publicUser(user) };
+    return completeLogin(user);
   }
 
   // Pas un code TOTP valide : peut-être un code de secours.
   const consumed = await consumeRecoveryCode(user, code);
 
   if (consumed) {
-    await user.registerSuccessfulLogin();
-
     return {
-      token: signToken(user),
-      user: publicUser(user),
+      ...(await completeLogin(user)),
       recoveryCodeUsed: true,
       recoveryCodesLeft: consumed.remaining,
     };
@@ -464,10 +489,122 @@ export const changePassword = async (
     );
   }
 
+  assertNewPasswordAcceptable({ currentPassword, newPassword });
+
   // Le hook `pre('save')` du modèle se charge du hachage.
   user.password = String(newPassword);
+  user.passwordChangeRequired = false;
+  user.passwordChangedAt = new Date();
 
   await user.save();
 
   return true;
+};
+
+// ------------------------------------------------------------------
+// Première connexion : changement d'un mot de passe TEMPORAIRE
+// ------------------------------------------------------------------
+
+// Règles communes aux deux chemins de changement. La longueur minimale
+// est déjà portée par le schéma (12 caractères) : on la vérifie ici
+// pour renvoyer un message utile AVANT que Mongoose ne renvoie le sien,
+// et surtout pour refuser le cas que le schéma ne voit pas — reposer
+// le mot de passe qu'on vient de saisir.
+const assertNewPasswordAcceptable = ({ currentPassword, newPassword }) => {
+  const next = String(newPassword);
+
+  if (next.length < 12) {
+    throw ApiError.unprocessable(
+      "Le nouveau mot de passe doit faire au moins 12 caractères.",
+      { newPassword: "12 caractères minimum." }
+    );
+  }
+
+  if (next === String(currentPassword)) {
+    throw ApiError.unprocessable(
+      "Le nouveau mot de passe doit être différent de l'ancien.",
+      { newPassword: "Choisissez un mot de passe différent." }
+    );
+  }
+};
+
+// Le titulaire d'un compte dont le mot de passe est temporaire pose
+// lui-même son mot de passe définitif.
+//
+// Trois preuves sont exigées, pas deux : le jeton de portée
+// `password_change` (qui prouve que la connexion vient d'aboutir), ET
+// le mot de passe temporaire lui-même. Le jeton seul ne suffirait pas —
+// il transite par le navigateur et pourrait être intercepté ; le mot de
+// passe seul ne suffirait pas non plus, puisque l'administrateur qui
+// l'a créé le connaît.
+//
+// Le drapeau retombe et le mot de passe temporaire cesse d'exister au
+// même instant : il n'y a jamais deux mots de passe valides à la fois.
+export const changeFirstPassword = async ({
+  changeToken,
+  currentPassword,
+  newPassword,
+}) => {
+  const payload = verifyPasswordChangeToken(changeToken);
+
+  if (!payload) {
+    throw ApiError.unauthorized(
+      "Délai dépassé. Reprenez la connexion depuis le début."
+    );
+  }
+
+  if (!currentPassword || !newPassword) {
+    throw ApiError.badRequest(
+      "Le mot de passe temporaire et le nouveau mot de passe sont requis."
+    );
+  }
+
+  const user = await User.findById(payload.sub).select(
+    "+password +failedLoginAttempts +lockedUntil"
+  );
+
+  if (!user || !user.isActive) {
+    throw ApiError.unauthorized(INVALID);
+  }
+
+  // Le drapeau est déjà retombé : le jeton a donc déjà servi, ou
+  // l'administration a annulé l'exigence entre-temps. Dans les deux
+  // cas, cette route n'a plus rien à faire — refuser plutôt que de
+  // laisser un jeton de changement rester utilisable.
+  if (!user.passwordChangeRequired) {
+    throw ApiError.badRequest(
+      "Ce mot de passe a déjà été modifié. Connectez-vous normalement."
+    );
+  }
+
+  if (user.isLocked()) {
+    const minutes = Math.ceil((user.lockedUntil - Date.now()) / 60000);
+
+    throw ApiError.unauthorized(
+      `Compte temporairement verrouillé. Réessayez dans ${minutes} minute(s).`
+    );
+  }
+
+  if (!(await user.comparePassword(String(currentPassword)))) {
+    // Même politique de verrouillage qu'à la connexion : cette route
+    // accepte un mot de passe, elle est donc attaquable de la même
+    // façon et doit se défendre pareil.
+    await user.registerFailedLogin();
+
+    throw ApiError.unauthorized("Le mot de passe temporaire est incorrect.");
+  }
+
+  assertNewPasswordAcceptable({ currentPassword, newPassword });
+
+  user.password = String(newPassword);
+  user.passwordChangeRequired = false;
+  user.passwordChangedAt = new Date();
+
+  await user.save();
+
+  await user.registerSuccessfulLogin();
+
+  // La session n'est ouverte qu'ICI : le titulaire enchaîne sur son
+  // espace sans avoir à ressaisir le mot de passe qu'il vient de créer.
+  return { token: signToken(user), user: publicUser(user) };
 };

@@ -22,20 +22,30 @@ export const extractToken = (req) => {
 
 // PORTÉE DES JETONS — à ne pas retirer.
 //
-// Deux jetons circulent désormais, signés avec le même secret :
+// Trois jetons circulent désormais, signés avec le même secret :
 //
-//   session   plein accès à l'administration
-//   2fa       preuve que le mot de passe est bon, RIEN DE PLUS,
-//             valable le temps de saisir le code
+//   session          plein accès à l'administration
+//   2fa              preuve que le mot de passe est bon, RIEN DE PLUS,
+//                    valable le temps de saisir le code
+//   password_change  preuve qu'un mot de passe TEMPORAIRE est bon —
+//                    n'ouvre QUE le changement de ce mot de passe
 //
-// Sans la portée, les deux seraient interchangeables et la double
+// Sans la portée, les trois seraient interchangeables et la double
 // authentification serait contournable : il suffirait de présenter le
 // jeton intermédiaire à une route d'administration. C'est l'erreur
 // classique des implémentations 2FA maison, et elle annule tout le
 // bénéfice de la fonctionnalité.
+//
+// Même raisonnement pour `password_change` : délivrer un vrai jeton de
+// session et se contenter de bloquer les routes par un middleware
+// laisserait un jeton pleinement valide en circulation — il suffirait
+// d'oublier ce middleware sur UNE route pour ouvrir tout l'accès à un
+// compte dont le mot de passe est encore connu de l'administrateur qui
+// l'a créé.
 export const TOKEN_SCOPE = {
   SESSION: "session",
   TWO_FACTOR: "2fa",
+  PASSWORD_CHANGE: "password_change",
 };
 
 export const signToken = (user) =>
@@ -86,6 +96,44 @@ export const verifyChallengeToken = (token) => {
   return payload;
 };
 
+// Jeton du changement de mot de passe forcé — même principe que le
+// jeton 2FA ci-dessus : il n'ouvre RIEN d'autre que la route qui pose
+// le nouveau mot de passe.
+//
+// 15 minutes plutôt que 5 : contrairement à la saisie d'un code TOTP
+// affiché sur un téléphone, le titulaire doit ici choisir un mot de
+// passe d'au moins 12 caractères, le saisir deux fois, et le plus
+// souvent le noter quelque part. Cinq minutes le mettraient dehors au
+// milieu de sa première connexion.
+export const signPasswordChangeToken = (user) =>
+  jwt.sign(
+    {
+      sub: String(user._id),
+      scope: TOKEN_SCOPE.PASSWORD_CHANGE,
+    },
+    env.JWT_SECRET,
+    {
+      expiresIn: "15m",
+      issuer: env.JWT_ISSUER,
+    }
+  );
+
+export const verifyPasswordChangeToken = (token) => {
+  let payload;
+
+  try {
+    payload = jwt.verify(token, env.JWT_SECRET, {
+      issuer: env.JWT_ISSUER,
+    });
+  } catch {
+    return null;
+  }
+
+  if (payload.scope !== TOKEN_SCOPE.PASSWORD_CHANGE) return null;
+
+  return payload;
+};
+
 
 // Vérifie le jeton PUIS recharge l'utilisateur en base.
 //
@@ -127,12 +175,28 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
     throw ApiError.unauthorized("Session invalide ou expirée.");
   }
 
+  // Un mot de passe redevenu temporaire coupe la session EN COURS.
+  //
+  // Le cas visé : un administrateur réinitialise le mot de passe d'un
+  // compte qu'il pense compromis. Sans cette vérification, le jeton
+  // déjà délivré resterait valide jusqu'à sept jours — la
+  // réinitialisation n'aurait fermé aucune porte. Même raisonnement que
+  // le rechargement en base juste au-dessus, pour la désactivation.
+  if (user.passwordChangeRequired) {
+    throw ApiError.unauthorized(
+      "Votre mot de passe est temporaire : reconnectez-vous pour en définir un nouveau."
+    );
+  }
+
   req.user = {
     id: String(user._id),
     name: user.name,
     email: user.email,
     registrationNumber: user.registrationNumber,
     role: user.role,
+    // Portée facultative (voir User.js) : `undefined` pour tous les
+    // comptes existants, donc aucun filtre appliqué.
+    church: user.church,
     twoFactorEnabled: Boolean(user.twoFactor?.enabled),
   };
 

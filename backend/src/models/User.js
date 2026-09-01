@@ -73,6 +73,12 @@ const userSchema = new mongoose.Schema(
     // concret (réservé au futur workflow de validation des aides
     // sociales) : ajouté dès maintenant pour éviter une seconde
     // migration d'enum quand ce workflow arrivera.
+    // "responsable_ecole_dimanche"/"moniteur" : rôles du module Enfants
+    // (École du dimanche — voir Child.js, MonitorAssignment.js). Un
+    // moniteur est TOUJOURS un membre adulte existant : ce compte porte
+    // uniquement sa connexion, son identité reste sa fiche `Member`,
+    // retrouvée par `registrationNumber` (même montage que les comptes
+    // agents ci-dessus).
     role: {
       type: String,
       enum: [
@@ -86,9 +92,25 @@ const userSchema = new mongoose.Schema(
         "social_agent",
         "social_approver",
         "social_viewer",
+        "responsable_ecole_dimanche",
+        "moniteur",
       ],
       default: "editor",
     },
+
+    // PORTÉE PAR ÉGLISE — facultative, et c'est délibéré.
+    //
+    // Renseignée, elle PLAFONNE ce que le compte peut voir ; vide, elle
+    // ne restreint rien. Les comptes existants n'en ont pas, donc ce
+    // champ n'a aucun effet sur eux : un `admin` continue de voir les
+    // cinq églises.
+    //
+    // N'ÉLARGIT JAMAIS un droit : c'est un filtre appliqué en plus du
+    // rôle, jamais à sa place. Un `moniteur` dont la portée serait
+    // l'église 1 n'a pas pour autant accès à toutes les classes de
+    // cette église — l'accès aux classes reste décidé par
+    // `resolveMonitorAccess` (voir monitor.service.js).
+    church: { type: Number, min: 1, max: 5 },
 
     isActive: {
       type: Boolean,
@@ -96,6 +118,33 @@ const userSchema = new mongoose.Schema(
     },
 
     lastLoginAt: Date,
+
+    // MOT DE PASSE TEMPORAIRE
+    //
+    // Levé quand un administrateur crée l'accès d'un moniteur ou
+    // réinitialise son mot de passe : la valeur posée est connue de
+    // l'administrateur, elle ne peut donc pas rester le mot de passe
+    // du titulaire.
+    //
+    // Tant qu'il est levé, `login` ne délivre PAS de jeton de session
+    // (voir auth.service.js) mais un jeton de portée
+    // `password_change`, qui n'ouvre qu'une seule route. Le drapeau
+    // n'est donc pas une simple invite affichée par l'interface : rien
+    // d'autre n'est accessible tant qu'il n'est pas retombé.
+    //
+    // `default: false` : les comptes existants (admin, editor, agents,
+    // Service Social) ne sont pas concernés et se connectent
+    // exactement comme avant.
+    passwordChangeRequired: {
+      type: Boolean,
+      default: false,
+    },
+
+    // Dernier changement de mot de passe PAR SON TITULAIRE. Ni une
+    // création de compte ni une réinitialisation par l'administration
+    // ne le renseignent — c'est précisément ce qui permet à
+    // l'administration d'afficher « mot de passe jamais changé ».
+    passwordChangedAt: Date,
 
     // VERROUILLAGE DE COMPTE
     //
