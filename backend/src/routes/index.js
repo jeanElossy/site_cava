@@ -1661,6 +1661,11 @@ export const buildRoutes = () => {
       sendSuccess(res, {
         data: uploadService.createSignature({
           folder: req.body?.folder,
+          // Le rôle décide des dossiers accessibles — voir
+          // FOLDER_ROLES dans upload.service.js. Sans lui, tout compte
+          // authentifié pourrait déposer dans l'espace des documents
+          // d'enfants.
+          user: req.user,
         }),
       })
     )

@@ -18,7 +18,18 @@ import { env } from "../config/env.js";
 // d'écriture) et avant tout appel à `loadImage` en défense en
 // profondeur (memberCardSvg.service.js), et à l'ingestion d'une
 // soumission publique (submission.service.js).
-export const isTrustedMemberPhotoUrl = (value) => {
+// Vérification commune : NOTRE compte Cloudinary, en HTTPS, dans un
+// mode de livraison et un dossier attendus.
+//
+// `deliveryTypes` : « upload » livre un fichier PUBLIC, « authenticated »
+// exige une URL signée à durée limitée. Les deux existent côté
+// Cloudinary et produisent des chemins différents ; confondre les deux
+// reviendrait à accepter une URL publique là où l'on croyait exiger
+// une URL protégée.
+const isTrustedCloudinaryUrl = (
+  value,
+  { folder, deliveryTypes = ["upload"], resourceTypes = ["image"] }
+) => {
   if (typeof value !== "string" || !value) return false;
 
   let parsed;
@@ -32,14 +43,50 @@ export const isTrustedMemberPhotoUrl = (value) => {
   if (parsed.protocol !== "https:") return false;
   if (parsed.hostname.toLowerCase() !== "res.cloudinary.com") return false;
 
-  // Restreint à NOTRE compte Cloudinary (pas n'importe quel compte
-  // Cloudinary) et au dossier réservé aux membres — cohérent avec
-  // `FOLDERS.members` dans upload.service.js.
+  // Restreint à NOTRE compte Cloudinary, pas n'importe quel compte.
   if (!env.CLOUDINARY_CLOUD_NAME) return false;
 
-  const expectedPrefix = `/${env.CLOUDINARY_CLOUD_NAME}/image/upload/`;
+  const matchesPrefix = resourceTypes.some((resourceType) =>
+    deliveryTypes.some((deliveryType) =>
+      parsed.pathname.startsWith(
+        `/${env.CLOUDINARY_CLOUD_NAME}/${resourceType}/${deliveryType}/`
+      )
+    )
+  );
 
-  if (!parsed.pathname.startsWith(expectedPrefix)) return false;
+  if (!matchesPrefix) return false;
 
-  return parsed.pathname.includes("/cava/members/");
+  return parsed.pathname.includes(folder);
 };
+
+export const isTrustedMemberPhotoUrl = (value) =>
+  // Cohérent avec `FOLDERS.members` dans upload.service.js.
+  isTrustedCloudinaryUrl(value, { folder: "/cava/members/" });
+
+// Photo d'un enfant. Même contrainte que pour un membre, et pour la
+// même raison : le serveur peut avoir à la récupérer lui-même pour
+// composer une fiche PDF, donc une URL libre l'exposerait à une requête
+// vers une adresse choisie par un attaquant (SSRF).
+//
+// Reste en mode `upload` (public) : c'est un portrait affiché dans
+// l'administration, pas une pièce d'état civil. Les documents, eux,
+// sont protégés — voir ci-dessous.
+export const isTrustedChildPhotoUrl = (value) =>
+  isTrustedCloudinaryUrl(value, { folder: "/cava/children/" });
+
+// Document d'un enfant : acte de naissance, autorisation parentale…
+//
+// EXIGE le mode `authenticated`. Une URL en `upload` serait publique et
+// permanente : quiconque l'obtiendrait — un journal de serveur, un
+// historique de navigateur, une capture d'écran partagée — pourrait
+// lire l'acte de naissance d'un mineur, sans authentification et pour
+// toujours. C'est exactement ce que ce validateur rend impossible,
+// quel que soit le chemin qui a écrit le champ.
+//
+// `raw` en plus d'`image` : un PDF n'est pas une image pour Cloudinary.
+export const isTrustedChildDocumentUrl = (value) =>
+  isTrustedCloudinaryUrl(value, {
+    folder: "/cava/children-documents/",
+    deliveryTypes: ["authenticated"],
+    resourceTypes: ["image", "raw"],
+  });

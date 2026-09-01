@@ -30,6 +30,12 @@ const auditLogSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // ⚠️ ENUM FERMÉ, et l'écriture de ce journal avale ses erreurs
+    // (voir audit.service.js — un journal indisponible ne doit pas
+    // faire échouer l'action métier). Une valeur oubliée ici ne
+    // provoque donc AUCUN message : la trace disparaît simplement.
+    // Toute nouvelle action doit être ajoutée à cette liste ET
+    // couverte par un test qui l'écrit puis la relit.
     action: {
       type: String,
       enum: [
@@ -45,6 +51,28 @@ const auditLogSchema = new mongoose.Schema(
         "2fa_disabled",
         "2fa_failed",
         "2fa_recovery_used",
+        // ---- Module Enfants ----
+        //
+        // Les créations, modifications et suppressions ordinaires
+        // passent par `create`/`update`/`delete` avec un `resource`
+        // distinct (child, childClass, monitorAssignment…). Seules les
+        // actions ci-dessous méritent une valeur propre, parce qu'elles
+        // répondent à une question qu'aucune autre ne permet de poser.
+        //
+        // « Qui a consulté l'acte de naissance de cet enfant ? » —
+        // exigence explicite pour les documents sensibles, et le seul
+        // moyen de détecter une consultation anormale.
+        "document_view",
+        "document_upload",
+        "document_delete",
+        // « Cette présence a-t-elle été corrigée après l'appel ? » —
+        // distinguer la correction de la saisie initiale, qui est un
+        // `create`.
+        "attendance_update",
+        // « Qui a ouvert cet accès temporaire à une autre classe, et
+        // quand a-t-il été retiré ? »
+        "substitution_create",
+        "substitution_cancel",
       ],
       required: true,
       index: true,
