@@ -9,20 +9,75 @@ import SocialFundSettings from "../models/SocialFundSettings.js";
 import SocialContribution from "../models/SocialContribution.js";
 import SocialLedgerEntry from "../models/SocialLedgerEntry.js";
 import SocialAid from "../models/SocialAid.js";
+import SocialFundYear from "../models/SocialFundYear.js";
 import SocialAidType from "../models/SocialAidType.js";
 import Member from "../models/Member.js";
 
 const { createApp } = await import("../app.js");
 
-// Église 5 : voir l'écart assumé documenté en tête de
-// socialContribution.service.test.js — Member.church rejette 9, donc
-// l'église 5 (dans la vraie plage 1-5, sans membre actif réel ni
-// SocialFundSettings existant à ce jour) sert d'église de test isolée.
-const TEST_CHURCH = 5;
+// Église 2, et surtout PAS la 5 : voir l'écart assumé documenté en tête
+// de socialContribution.service.test.js — Member.church rejette 9, une
+// église réelle est donc indispensable.
+//
+// Pourquoi pas la 5, que ce fichier utilisait : `SocialFundSettings`
+// porte un index UNIQUE sur `church`, et socialContribution.service.test.js
+// y crée déjà les siens. Deux fichiers `node --test` s'exécutant en
+// parallèle sur la MÊME base (voir CLAUDE.md), le second à démarrer
+// échouait sur une clé dupliquée ou effaçait les réglages du premier.
+// L'église 5 est par ailleurs la plus encombrée du dépôt (Flock, agents,
+// nouvelles âmes). L'église 2 n'est utilisée que par
+// submission.service.test.js, qui nettoie proprement par marqueur.
+const TEST_CHURCH = 2;
 
 const EMAIL_SUFFIX = "@example.invalid";
 const EMAIL_PREFIX = "social.testsuite.routes";
 const AID_TYPE_NAME_PREFIX = "Test Route Aide Sociale";
+
+// Préfixe porté par les seuls membres créés ICI. Le nettoyage vise ce
+// marqueur et jamais l'église entière : un `deleteMany({ church })`
+// emporte les fixtures d'un autre fichier en plein vol — c'est
+// exactement ce qui s'est produit, agent.service.test.js perdant ses
+// membres au milieu de ses assertions (voir CLAUDE.md, section Tests).
+const MEMBER_PREFIX = "RouteSocial";
+
+// Nettoyage CIBLÉ, partagé par `before` et `after`.
+//
+// Les cotisations, aides et mouvements sont retrouvés par les membres
+// de ce fichier, jamais par l'église : un autre fichier de test peut
+// travailler sur la même au même instant.
+//
+// `SocialFundSettings` et `SocialFundYear` restent nettoyés par église,
+// et c'est volontaire — ils sont uniques par église, et l'église 2 est
+// désormais réservée à ce fichier (voir TEST_CHURCH plus haut).
+const cleanupFixtures = async () => {
+  const mine = await Member.find({
+    church: TEST_CHURCH,
+    lastName: new RegExp(`^${MEMBER_PREFIX}`),
+  })
+    .select("_id")
+    .lean();
+
+  const ids = mine.map((member) => member._id);
+
+  await SocialContribution.deleteMany({ member: { $in: ids } });
+  await SocialAid.deleteMany({ member: { $in: ids } });
+
+  // Le journal ne porte pas de référence au membre : son libellé, lui,
+  // reprend le nom — donc le marqueur (voir recordLedgerEntry).
+  await SocialLedgerEntry.deleteMany({
+    church: TEST_CHURCH,
+    description: new RegExp(MEMBER_PREFIX),
+  });
+
+  await Member.deleteMany({ _id: { $in: ids } });
+
+  await SocialFundSettings.deleteMany({ church: TEST_CHURCH });
+  await SocialFundYear.deleteMany({ church: TEST_CHURCH });
+
+  await SocialAidType.deleteMany({
+    name: { $regex: `^${AID_TYPE_NAME_PREFIX}` },
+  });
+};
 
 let server;
 let baseUrl;
@@ -53,21 +108,12 @@ describe("Routes du Service Social (intégration HTTP)", () => {
     await User.deleteMany({
       email: { $regex: `${EMAIL_PREFIX}.*${EMAIL_SUFFIX}$` },
     });
-    await SocialFundSettings.deleteMany({ church: TEST_CHURCH });
-    await SocialContribution.deleteMany({ church: TEST_CHURCH });
-    await SocialLedgerEntry.deleteMany({ church: TEST_CHURCH });
-    await SocialAid.deleteMany({ church: TEST_CHURCH });
-    await Member.deleteMany({ church: TEST_CHURCH });
-    // SocialAidType est global (pas de champ church) : nettoyage par
-    // préfixe de nom, comme dans socialAid.service.test.js.
-    await SocialAidType.deleteMany({
-      name: { $regex: `^${AID_TYPE_NAME_PREFIX}` },
-    });
+    await cleanupFixtures();
 
     viewerUser = await User.create({
       name: "Viewer Test Service Social",
       email: `${EMAIL_PREFIX}.viewer${EMAIL_SUFFIX}`,
-      registrationNumber: "5AA00701Y",
+      registrationNumber: "2AA00701Y",
       password: "MotDePasseTemporaire123!",
       role: "social_viewer",
     });
@@ -76,7 +122,7 @@ describe("Routes du Service Social (intégration HTTP)", () => {
     agentUser = await User.create({
       name: "Agent Test Service Social",
       email: `${EMAIL_PREFIX}.agent${EMAIL_SUFFIX}`,
-      registrationNumber: "5AA00702Z",
+      registrationNumber: "2AA00702Z",
       password: "MotDePasseTemporaire123!",
       role: "social_agent",
     });
@@ -85,7 +131,7 @@ describe("Routes du Service Social (intégration HTTP)", () => {
     approverUser = await User.create({
       name: "Approver Test Service Social",
       email: `${EMAIL_PREFIX}.approver${EMAIL_SUFFIX}`,
-      registrationNumber: "5AA00703A",
+      registrationNumber: "2AA00703A",
       password: "MotDePasseTemporaire123!",
       role: "social_approver",
     });
@@ -119,14 +165,7 @@ describe("Routes du Service Social (intégration HTTP)", () => {
   });
 
   after(async () => {
-    await SocialFundSettings.deleteMany({ church: TEST_CHURCH });
-    await SocialContribution.deleteMany({ church: TEST_CHURCH });
-    await SocialLedgerEntry.deleteMany({ church: TEST_CHURCH });
-    await SocialAid.deleteMany({ church: TEST_CHURCH });
-    await Member.deleteMany({ church: TEST_CHURCH });
-    await SocialAidType.deleteMany({
-      name: { $regex: `^${AID_TYPE_NAME_PREFIX}` },
-    });
+    await cleanupFixtures();
     await User.deleteMany({
       _id: { $in: [viewerUser._id, agentUser._id, approverUser._id] },
     });
@@ -197,7 +236,7 @@ describe("Routes du Service Social (intégration HTTP)", () => {
   it("social_agent peut enregistrer un paiement", async () => {
     const member = await Member.create({
       firstName: "Route",
-      lastName: "TestSocial",
+      lastName: `${MEMBER_PREFIX} TestSocial`,
       church: TEST_CHURCH,
       status: "actif",
     });
@@ -225,7 +264,7 @@ describe("Routes du Service Social (intégration HTTP)", () => {
   it("social_viewer reçoit 403 sur POST /aids", async () => {
     const member = await Member.create({
       firstName: "Route",
-      lastName: "AideViewer",
+      lastName: `${MEMBER_PREFIX} AideViewer`,
       church: TEST_CHURCH,
       status: "actif",
     });
@@ -257,7 +296,7 @@ describe("Routes du Service Social (intégration HTTP)", () => {
   it("social_agent peut créer une demande d'aide", async () => {
     const member = await Member.create({
       firstName: "Route",
-      lastName: "AideAgent",
+      lastName: `${MEMBER_PREFIX} AideAgent`,
       church: TEST_CHURCH,
       status: "actif",
     });
@@ -306,7 +345,7 @@ describe("Routes du Service Social (intégration HTTP)", () => {
   it("social_approver peut valider une aide en attente (décision, pas d'écriture)", async () => {
     const member = await Member.create({
       firstName: "Route",
-      lastName: "AideApprover",
+      lastName: `${MEMBER_PREFIX} AideApprover`,
       church: TEST_CHURCH,
       status: "actif",
     });

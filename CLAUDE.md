@@ -234,6 +234,10 @@ Les tests d'intégration tournent sur la **base de développement**, et `node --
 
 Les églises 2 à 5 servent de bacs à sable (l'église 1 est la seule réelle). L'église fictive « 9 » évoquée dans certains commentaires est **inutilisable dès qu'un `Member` est en jeu** : le schéma valide `church` entre 1 et 5.
 
+Comme il n'y a que quatre bacs à sable pour une vingtaine de fichiers, ils sont **partagés** — d'où la règle de nettoyage ci-dessus. Une ressource **unique par église** ne se partage en revanche pas du tout : `SocialFundSettings` porte un index unique sur `church`, donc deux fichiers qui en créent un pour la même église s'excluent (clé dupliquée, ou réglages effacés selon l'ordre). Répartition actuelle des fichiers qui créent un `SocialFundSettings` : **3** `socialFundYear`, **4** `socialAid`, **5** `socialContribution`, **2** `social.routes`. Un nouveau fichier de ce type a besoin de sa propre église, ou d'aucune.
+
+Symptôme typique d'un nettoyage trop large : un test qui échoue sur une donnée qu'il vient lui-même de créer (« Aucun membre trouvé avec ce matricule » juste après un `Member.create`). Le fichier fautif n'est pas celui qui échoue — c'est celui qui a supprimé, en parallèle, par un critère qui ne lui appartenait pas.
+
 ## Conventions du dépôt
 
 Le dossier `.claude/` contient des agents, skills et docs de standards partagés entre projets ; ils décrivent une stack backend Node/Express/MongoDB — qui, depuis l'ajout du backend documenté ci-dessus, correspond bien à ce dépôt (auparavant ce n'était pas le cas, et cette note l'excluait explicitement : si un document plus ancien du projet affirme encore l'inverse, il est obsolète). `.claude/memory/` (decisions, known-issues, roadmap) est prévu pour consigner les décisions importantes au fil du projet.
