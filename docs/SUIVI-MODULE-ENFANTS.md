@@ -1,17 +1,23 @@
 # Suivi des travaux — Module Enfants & École du dimanche
 
-Dernière mise à jour : 1ᵉʳ septembre 2026 (5ᵉ passe).
+Dernière mise à jour : 1ᵉʳ septembre 2026 (6ᵉ passe).
 
-État global : **Phase 3 terminée.** Les 8 lots sont livrés, et les
-**25 enfants du registre papier sont en base de production**.
+État global : **module déployé en production**, puis **corrigé deux fois
+sur des défauts que la suite de tests ne voyait pas**. Voir le lot 10.
 
 | Vérification | Résultat |
 |---|---|
-| Tests backend | **412 / 412** (334 avant le chantier, **+78 neufs**) |
+| Tests backend | **420 / 420** (334 avant le chantier, **+86 neufs**) |
 | Tests frontend | **87 / 87** |
 | `npm run build` | ✅ |
 | `eslint src` | ✅ aucun avertissement |
 | Fuite de classe SCSS générique | ✅ aucune (vérifié sur le CSS compilé) |
+
+> ⚠️ **Ce fichier a déjà menti une fois.** Il déclarait le lot 6
+> « ✅ TERMINÉ — 5 écrans » alors que l'écran de création d'un enfant
+> n'existait pas : le bouton « Nouvel enfant » du tableau de bord
+> pointait vers une route absente. Une case cochée ici ne vaut que si
+> l'écran a été **ouvert**, pas seulement écrit.
 
 Ce fichier suit le chantier d'ajout au Back Office d'un module de gestion
 des enfants, des classes de l'École du dimanche, des moniteurs et de leurs
@@ -29,9 +35,10 @@ consultable ici :
 |---|---|---|
 | 1 | Audit du projet existant | ✅ terminée |
 | 2 | Diagnostic et architecture proposée (A → T) | ✅ terminée |
-| 3 | Implémentation (9 lots) | ✅ **terminée — lots 1 à 8** |
-| 4 | Tests | ⏸️ non démarrée |
-| 5 | Rapport final | ⏸️ non démarrée |
+| 3 | Implémentation (9 lots) | ✅ terminée — lots 1 à 8 |
+| 4 | Tests | ✅ terminée — 94 tests neufs |
+| 5 | Rapport final | ✅ rendu le 1ᵉʳ septembre |
+| — | **Lot 10 — défauts trouvés en production** | 🔧 **en cours** |
 
 ---
 
@@ -449,6 +456,12 @@ la suite backend complète exécutée avant de continuer.
       maquettes répètent la même structure douze fois ; la recopier
       garantirait qu'elles divergent au premier ajustement
 - [x] 5 écrans : tableau de bord, liste, classes, moniteurs, remplacements
+- [x] **Création d'un enfant** (`ChildForm.jsx`) — ⚠️ **manquait**, alors que
+      ce lot était coché « terminé » et que deux écrans pointaient déjà vers
+      `/admin/enfants/nouveau`. Ajouté au lot 10.
+- [x] **Séances et appel** (`SessionsAdmin.jsx`) — ⚠️ **manquait aussi** :
+      l'administration n'avait aucun moyen de consulter un appel ni d'en
+      planifier un. Ajouté au lot 10.
 - [x] `utils/childFileNumber.js` — miroir frontend du format
 - [x] **Reprise du design des maquettes** (`design-page-enfant/`) :
       - `ChildrenChart/` — anneau de répartition et barres de progression,
@@ -506,7 +519,19 @@ la suite backend complète exécutée avant de continuer.
 - [x] Tableau de bord : anneau de répartition + présence du jour
 - [x] `Event.childClasses[]` en place (pas de second système d'événements)
 
-### Lot 9 — Tests (Phase 4) ⏸️
+### Lot 9 — Tests (Phase 4) ✅ TERMINÉ
+
+86 tests neufs, en 6 fichiers : `substitutionWindow` (fenêtres et conflits),
+`childFileNumber` (format et réparation O/0, I/1), `firstPassword.service`
+(mot de passe temporaire, ordre 2FA), `upload.service` (dossiers par rôle,
+URL signée **et** datée), `monitor.service` (accès aux classes),
+`children.routes` (permissions, cloisonnement, **ordre de routage**).
+
+**Ce que ces tests n'ont pas attrapé, et pourquoi** — voir le lot 10 : ils
+vérifiaient des règles métier, jamais qu'une page se charge. Un module peut
+être entièrement vert et entièrement inutilisable.
+
+#### Reste à couvrir
 
 - [ ] Enfants : création, modification, désactivation, recherche, classe,
       parent, document
@@ -520,6 +545,68 @@ la suite backend complète exécutée avant de continuer.
       interdites
 - [ ] Sécurité : API sans authentification, mauvais rôle, classe interdite,
       classe après expiration, document interdit, envoi invalide
+
+---
+
+## Lot 10 — Défauts découverts APRÈS la mise en production 🔧
+
+Le module a été déployé le 1ᵉʳ septembre avec 412 tests au vert. Il était
+**inutilisable**. Cette section existe pour que la raison ne se perde pas.
+
+### 10.1 — Les sous-chemins pris pour des identifiants ✅ corrigé (`77dbf69`)
+
+`router.get("/:id")` était déclaré AVANT les montages `/classes`,
+`/moniteurs`, `/remplacements`, `/responsables`, `/seances` et
+`/historique`. Express résout dans l'ordre de déclaration : chaque chemin
+littéral partait donc en identifiant d'enfant, `Child.findById("remplacements")`
+levait un `CastError`, rendu au navigateur en **« Identifiant invalide. »**.
+
+Toutes les pages du module étaient touchées, pas seulement les remplacements.
+
+- [x] Le bloc `/:id` passe après tous les chemins littéraux
+- [x] Garde `router.param("id")` : un identifiant non conforme répond
+      **404 « Enfant introuvable »** au lieu d'un 400 illisible. Nécessaire
+      en plus du réordonnancement — `/seances` n'exposait qu'un POST, donc un
+      GET traversait le montage sans handler et repartait vers `/:id`
+- [x] 8 tests qui appellent chaque chemin littéral. **Le test qui verrouille
+      réellement l'ordre est celui qui exige un 200 sur les listes** : la
+      garde seule ferait passer un simple contrôle du message
+
+### 10.2 — Deux écrans annoncés mais jamais construits ✅ corrigé
+
+Le tableau de bord et la liste pointaient tous deux vers
+`/admin/enfants/nouveau`, une route qui n'existait pas. React Router la
+faisait tomber sur `enfants/:id`, la fiche s'ouvrait avec
+`id = "nouveau"` — et affichait « Enfant introuvable ».
+
+- [x] `ChildForm.jsx` — création d'un enfant. Erreurs affichées **sous le
+      champ concerné** (`details` de l'API), champs vides non envoyés plutôt
+      qu'enregistrés à blanc, date bornée à aujourd'hui côté navigateur
+- [x] Route `enfants/nouveau` déclarée **avant** `enfants/:id` — le même
+      piège qu'en 10.1, côté React Router cette fois
+- [x] `SessionsAdmin.jsx` — séances et appel côté administration : filtres
+      classe/période, planification, consultation d'une feuille d'appel
+- [x] `GET /api/admin/enfants/seances` + `listSessions()` — n'existaient pas.
+      Compteurs obtenus par **une** agrégation groupée sur toute la page
+- [x] Un enfant sans ligne d'appel s'affiche « Non pointé », **jamais
+      « absent »** : personne ne s'est prononcé sur lui
+- [x] Taux moyen calculé sur les seules séances réellement appelées
+
+### 10.3 — Ce que cet épisode apprend
+
+**Les tests vérifiaient des règles, pas des écrans.** 86 tests couvraient les
+permissions, l'expiration des remplacements, le cloisonnement des classes —
+et pas un seul n'ouvrait une page. Un module peut être entièrement vert et
+entièrement inutilisable.
+
+**Un fichier de suivi qui n'est pas relu ne sert à rien.** Le lot 6 était
+coché « terminé, 5 écrans » ; il en manquait deux, dont un vers lequel deux
+boutons pointaient déjà.
+
+- [ ] À faire : un test de fumée qui monte chaque écran d'administration et
+      vérifie qu'il ne plante pas au premier rendu
+- [ ] À faire : vérifier qu'aucun `Link`/`navigate` du module ne pointe vers
+      une route absente de `AdminRoutes.jsx`
 
 ---
 
@@ -551,6 +638,21 @@ Rappels tirés de l'audit, à ne pas perdre de vue à chaque lot :
 ---
 
 ## Journal
+
+### 1ᵉʳ septembre 2026 — Mise en production, et deux corrections
+
+- Les 22 commits en attente poussés sur `origin/main` (dont 17 antérieurs au
+  chantier, jamais publiés). Render redéploie automatiquement.
+- **Première panne** : toutes les pages du module renvoyaient
+  « Identifiant invalide ». Cause : ordre de déclaration des routes
+  (lot 10.1). Corrigé et republié le jour même.
+- **Seconde panne** : le bouton « Nouvel enfant » renvoyait
+  « Enfant introuvable ». Cause : l'écran n'existait pas (lot 10.2).
+- Écran « Séances et appel » construit dans la foulée — l'administration
+  n'avait aucun moyen de consulter un appel.
+- Ce fichier de suivi remis en accord avec la réalité : il déclarait
+  « terminé » un lot qui ne l'était pas.
+
 
 ### 27 août 2026 — Phases 1 et 2
 

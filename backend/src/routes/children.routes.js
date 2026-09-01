@@ -506,6 +506,27 @@ export const buildChildrenRouter = () => {
   // ---- Séances et présences (vue administration) -----------------
   const sessions = Router();
 
+  // Liste des seances, toutes classes confondues.
+  //
+  // Declaree EN PREMIER dans ce sous-routeur, et surtout presente :
+  // sans verbe GET sur "/", un GET /seances traversait le montage sans
+  // handler et poursuivait jusqu'aux routes `/:id` du routeur parent.
+  sessions.get(
+    "/",
+    asyncHandler(async (req, res) => {
+      const { items, meta } = await attendanceService.listSessions({
+        church: parsePositiveInt(req.query.church),
+        classId: asString(req.query.classId, 40),
+        from: asString(req.query.from, 30),
+        to: asString(req.query.to, 30),
+        page: req.query.page,
+        limit: req.query.limit,
+      });
+
+      sendSuccess(res, { data: items, meta });
+    })
+  );
+
   sessions.post(
     "/",
     asyncHandler(async (req, res) => {

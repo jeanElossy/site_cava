@@ -103,6 +103,15 @@
     }
   }
 
+  // Message d'erreur renvoye par l'API pour CE champ (`details`).
+  // Imbrique sous `.children-field` comme tout le reste du fichier :
+  // le projet n'a pas de CSS modules, une classe declaree a la racine
+  // s'appliquerait a tout le site.
+  &__error {
+    color: $admin-danger;
+    font-size: 0.74rem;
+  }
+
   &--search {
     flex: 1 1 240px;
   }

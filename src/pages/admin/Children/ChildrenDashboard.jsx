@@ -172,6 +172,9 @@ const ChildrenDashboard = () => {
                 <Link to="/admin/enfants/liste">Voir tous les enfants</Link>
               </li>
               <li>
+                <Link to="/admin/enfants/seances">Séances et appel</Link>
+              </li>
+              <li>
                 <Link to="/admin/enfants/classes">Gérer les classes</Link>
               </li>
               <li>

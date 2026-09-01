@@ -314,3 +314,121 @@ export const sessionStats = async (sessionId) => {
     rate: total > 0 ? Math.round((counts.present / total) * 100) : null,
   };
 };
+
+// Liste des séances pour l'ADMINISTRATION.
+//
+// L'espace moniteur a sa propre liste (monitor.routes.js), bornée aux
+// classes qu'il encadre aujourd'hui. Celle-ci ne connaît pas cette
+// restriction : elle sert au responsable, qui suit toutes les classes.
+//
+// Les compteurs de présence sont obtenus par UNE agrégation groupée
+// sur l'ensemble des séances renvoyées, pas par une requête par
+// séance : le nombre de requêtes ne doit pas croître avec la taille
+// de la page.
+export const listSessions = async ({
+  church,
+  classId,
+  from,
+  to,
+  page = 1,
+  limit = 30,
+} = {}) => {
+  const filter = {};
+
+  if (classId) filter.class = classId;
+
+  if (from || to) {
+    filter.date = {};
+
+    if (from) filter.date.$gte = new Date(from);
+    if (to) filter.date.$lte = new Date(to);
+  }
+
+  // `church` est denormalise sur la seance elle-meme (ChildSession.js) :
+  // le filtre est direct, sans passer par les classes.
+  if (church) filter.church = church;
+
+  const safePage = Math.max(Number(page) || 1, 1);
+  const safeLimit = Math.min(Math.max(Number(limit) || 30, 1), 100);
+
+  const [sessions, total] = await Promise.all([
+    ChildSession.find(filter)
+      .populate("class", "name icon room church")
+      .populate("responsibleMonitor", "firstName lastName")
+      .sort({ date: -1 })
+      .skip((safePage - 1) * safeLimit)
+      .limit(safeLimit)
+      .lean(),
+    ChildSession.countDocuments(filter),
+  ]);
+
+  const sessionIds = sessions.map((item) => item._id);
+
+  const [counts, sizes] = await Promise.all([
+    ChildAttendance.aggregate([
+      { $match: { session: { $in: sessionIds } } },
+      { $group: { _id: { session: "$session", status: "$status" }, count: { $sum: 1 } } },
+    ]),
+    // Effectif actuel de chaque classe concernée : c'est le
+    // dénominateur du taux, et il ne se déduit pas des présences —
+    // une séance sans aucun appel n'a aucune ligne.
+    Child.aggregate([
+      {
+        $match: {
+          currentClass: { $in: sessions.map((item) => item.class?._id).filter(Boolean) },
+          status: "actif",
+        },
+      },
+      { $group: { _id: "$currentClass", count: { $sum: 1 } } },
+    ]),
+  ]);
+
+  const bySession = new Map();
+
+  for (const row of counts) {
+    const key = String(row._id.session);
+    const current = bySession.get(key) ?? { present: 0, absent: 0, excuse: 0 };
+
+    current[row._id.status] = row.count;
+    bySession.set(key, current);
+  }
+
+  const byClass = new Map(sizes.map((row) => [String(row._id), row.count]));
+
+  const items = sessions.map((session) => {
+    const tally = bySession.get(String(session._id)) ?? {
+      present: 0,
+      absent: 0,
+      excuse: 0,
+    };
+
+    const recorded = tally.present + tally.absent + tally.excuse;
+    const expected = byClass.get(String(session.class?._id)) ?? 0;
+
+    return {
+      ...session,
+      id: String(session._id),
+      attendance: {
+        ...tally,
+        recorded,
+        expected,
+        // `null` et non `0` tant que personne n'a fait l'appel : « 0 % »
+        // se lirait comme « personne n'est venu », alors que la séance
+        // n'a simplement pas encore été pointée. Même règle que le
+        // tableau de bord.
+        rate: recorded > 0 ? Math.round((tally.present / recorded) * 100) : null,
+        done: recorded > 0,
+      },
+    };
+  });
+
+  return {
+    items,
+    meta: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      pages: Math.ceil(total / safeLimit) || 1,
+    },
+  };
+};

@@ -520,6 +520,7 @@ describe("routes Enfants — sécurité et cloisonnement", () => {
       "/api/admin/enfants/moniteurs",
       "/api/admin/enfants/remplacements",
       "/api/admin/enfants/responsables",
+      "/api/admin/enfants/seances",
       "/api/admin/enfants/historique",
     ]) {
       const response = await call("GET", path, { token: adminToken });

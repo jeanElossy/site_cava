@@ -36,6 +36,8 @@ import SocialAidsAdmin from "../pages/admin/Social/SocialAidsAdmin";
 import SocialAidTypesAdmin from "../pages/admin/Social/SocialAidTypesAdmin";
 import ChildrenDashboard from "../pages/admin/Children/ChildrenDashboard";
 import ChildrenList from "../pages/admin/Children/ChildrenList";
+import ChildForm from "../pages/admin/Children/ChildForm";
+import SessionsAdmin from "../pages/admin/Children/SessionsAdmin";
 import ClassesAdmin from "../pages/admin/Children/ClassesAdmin";
 import MonitorsAdmin from "../pages/admin/Children/MonitorsAdmin";
 import SubstitutionsAdmin from "../pages/admin/Children/SubstitutionsAdmin";
@@ -358,6 +360,29 @@ const AdminRoutes = () => {
           element={
             <RequireRole allow={CHILDREN_ROLES}>
               <HistoryAdmin />
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="enfants/seances"
+          element={
+            <RequireRole allow={CHILDREN_ROLES}>
+              <SessionsAdmin />
+            </RequireRole>
+          }
+        />
+
+        {/* Création. DOIT rester avant `enfants/:id`, sinon « nouveau »
+            part en identifiant et la fiche affiche « Enfant
+            introuvable » — c'est exactement ce qui est arrivé, le
+            bouton « Nouvel enfant » du tableau de bord pointant vers
+            une route qui n'existait pas encore. */}
+        <Route
+          path="enfants/nouveau"
+          element={
+            <RequireRole allow={CHILDREN_ROLES}>
+              <ChildForm />
             </RequireRole>
           }
         />

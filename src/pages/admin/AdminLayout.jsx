@@ -9,6 +9,7 @@ import {
 
 import {
   Baby,
+  CalendarCheck,
   Banknote,
   Bell,
   BellOff,
@@ -163,6 +164,11 @@ const NAV_GROUPS = [
     items: [
       { to: "/admin/enfants", label: "Tableau de bord", icon: Baby, end: true },
       { to: "/admin/enfants/liste", label: "Enfants", icon: Users },
+      {
+        to: "/admin/enfants/seances",
+        label: "Séances et appel",
+        icon: CalendarCheck,
+      },
       {
         to: "/admin/enfants/responsables",
         label: "Parents / Responsables",

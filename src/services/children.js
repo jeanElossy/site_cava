@@ -211,6 +211,9 @@ export const cancelSubstitution = (id, reason) =>
 
 // ---- Séances -------------------------------------------------------
 
+export const listSessions = (params) =>
+  requestWithMeta(`/api/admin/enfants/seances${query(params)}`, { auth: true });
+
 export const createSession = (body) =>
   request("/api/admin/enfants/seances", { method: "POST", body, auth: true });
 
