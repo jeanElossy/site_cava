@@ -39,6 +39,10 @@ import {
 } from "../../../services/children";
 
 import { formatRegistrationNumber } from "../../../utils/registrationNumber";
+import {
+  MONITOR_LEVELS,
+  monitorLevelLabel,
+} from "../../../utils/monitorLevels";
 
 import "./Children.scss";
 
@@ -211,7 +215,7 @@ const MonitorsAdmin = () => {
     memberQuery.trim().length >= 2 ? candidates : [];
 
   const openAssign = () => {
-    setAssigning({ member: null, classId: "", level: "moniteur" });
+    setAssigning({ member: null, classId: "", level: "principal" });
     setMemberQuery("");
     setCandidates([]);
     setFormError(null);
@@ -406,9 +410,7 @@ const MonitorsAdmin = () => {
                         </strong>
 
                         <em>
-                          {assignment.level === "secondaire"
-                            ? "Moniteur secondaire"
-                            : "Moniteur principal"}
+                          {monitorLevelLabel(assignment.level)}
                         </em>
                       </span>
                     </span>
@@ -709,9 +711,18 @@ const MonitorsAdmin = () => {
                   }))
                 }
               >
-                <option value="moniteur">Moniteur</option>
-                <option value="assistant">Assistant</option>
-                <option value="responsable">Responsable de classe</option>
+                {/* Les SEULES valeurs admises par le schéma. La liste
+                    vient du miroir `utils/monitorLevels.js`, comparé au
+                    modèle Mongoose par son propre test : l'écran ne peut
+                    plus proposer une valeur que l'API refusera. */}
+                {MONITOR_LEVELS.map((level) => (
+                  <option
+                    key={level}
+                    value={level}
+                  >
+                    {monitorLevelLabel(level)}
+                  </option>
+                ))}
               </select>
             </label>
 

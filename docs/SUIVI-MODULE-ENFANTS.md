@@ -7,8 +7,8 @@ sur des défauts que la suite de tests ne voyait pas**. Voir le lot 10.
 
 | Vérification | Résultat |
 |---|---|
-| Tests backend | **425 / 425** (334 avant le chantier, **+91 neufs**) |
-| Tests frontend | **108 / 108** (87 avant, **+21 neufs**) |
+| Tests backend | **427 / 427** (334 avant le chantier, **+93 neufs**) |
+| Tests frontend | **110 / 110** (87 avant, **+23 neufs**) |
 | `npm run build` | ✅ |
 | `eslint src` | ✅ aucun avertissement |
 | Fuite de classe SCSS générique | ✅ aucune (vérifié sur le CSS compilé) |
@@ -617,6 +617,35 @@ Troisième écran du module annoncé terminé sans l'être.
       synchrone dans l'effet déclenchait un rendu en cascade, refusé par ESLint
 - [x] 5 tests d'intégration sur la recherche
 
+### 10.5 — Un formulaire qui proposait des valeurs inexistantes ✅ corrigé
+
+Le formulaire d'affectation que je venais d'écrire (10.4) offrait trois
+niveaux — « Moniteur », « Assistant », « Responsable de classe ». Le schéma
+n'en accepte que **deux** : `principal` et `secondaire`. L'enregistrement
+échouait sur **« Les données envoyées sont invalides. »**, un message qui ne
+désigne aucun champ.
+
+Le reste de l'écran parlait pourtant déjà le bon vocabulaire (le tableau
+affiche « Moniteur secondaire ») : c'est ma fenêtre neuve qui a inventé.
+
+- [x] `MONITOR_LEVELS` **exporté** par `MonitorAssignment.js`, et le schéma
+      s'en sert comme énumération
+- [x] Miroir frontend `src/utils/monitorLevels.js`, sur le modèle de
+      `registrationFormat.js` ↔ `registrationNumber.js` — le dépôt n'a pas de
+      code partagé entre le site et l'API
+- [x] `monitorLevels.test.js` **lit le modèle Mongoose sur le disque** et
+      compare les deux listes. Vérifié capable d'échouer : ajouter un niveau
+      d'un seul côté fait tomber le test
+- [x] Le `<select>` est **engendré** par la liste, il ne peut plus proposer
+      une valeur que l'API refusera
+- [x] 2 tests backend : `assign` refuse un niveau hors énumération, accepte
+      les deux réels
+
+**Le motif se répète** : trois fois sur cinq, le défaut vient d'un écran qui
+parle une langue que le backend ne comprend pas — une route absente, une
+fonction jamais appelée, une valeur inventée. Le miroir testé est la
+première parade structurelle, et non un simple correctif.
+
 ### 10.3 — Ce que cet épisode apprend
 
 **Les tests vérifiaient des règles, pas des écrans.** 86 tests couvraient les
@@ -696,6 +725,17 @@ Rappels tirés de l'audit, à ne pas perdre de vue à chaque lot :
 - Troisième écran incomplet trouvé (lot 10.4) : Moniteurs, sans aucun moyen
   d'affecter qui que ce soit. Le point commun des trois : un service exporté
   et jamais appelé.
+- Le formulaire d'affectation neuf proposait des niveaux inexistants
+  (lot 10.5). Parade : constante exportée par le schéma + miroir frontend
+  comparé par un test qui lit le modèle sur le disque.
+- **Incident de base partagée.** La suite backend s'est figée une heure sur
+  une requête Mongo bloquée (`firstPassword.service.test.js`, hook `before`).
+  Le processus a dû être tué — ses hooks `after()` n'ont donc pas tourné et
+  ont laissé **deux comptes fantômes** (`5ZZ00901Z`, `5ZZ00902A`) qui
+  faisaient ensuite échouer 12 tests sur une clé dupliquée. Supprimés à la
+  main, puis 427/427. C'est exactement le scénario décrit dans CLAUDE.md :
+  après toute interruption, vérifier les résidus avant de conclure à une
+  régression.
 
 
 ### 27 août 2026 — Phases 1 et 2

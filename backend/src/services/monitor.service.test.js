@@ -360,4 +360,50 @@ describe("monitor.service#resolveMonitorAccess (intégration MongoDB)", () => {
     );
   });
 
+
+  it("assign refuse un niveau hors de l'enumeration", async () => {
+    const membre = await Member.create({
+      firstName: "Kofi",
+      lastName: MARKER,
+      church: TEST_CHURCH,
+      status: "actif",
+    });
+
+    createdMembers.push(membre._id);
+
+    // « moniteur » etait propose par le formulaire d'affectation, et
+    // n'existe pas : l'enregistrement echouait sur « Les donnees
+    // envoyees sont invalides », sans designer le champ fautif.
+    await assert.rejects(
+      () =>
+        monitorService.assign({
+          memberId: String(membre._id),
+          classId: String(classeSarah._id),
+          level: "moniteur",
+        }),
+      (error) => /invalide|validation/i.test(error.message) || error.name === "ValidationError"
+    );
+  });
+
+  it("assign accepte les deux niveaux reels", async () => {
+    const membre = await Member.create({
+      firstName: "Ama",
+      lastName: MARKER,
+      church: TEST_CHURCH,
+      status: "actif",
+    });
+
+    createdMembers.push(membre._id);
+
+    const created = await monitorService.assign({
+      memberId: String(membre._id),
+      classId: String(classeSarah._id),
+      level: "secondaire",
+    });
+
+    assert.equal(created.level, "secondaire");
+
+    await MonitorAssignment.deleteOne({ member: membre._id });
+  });
+
 });

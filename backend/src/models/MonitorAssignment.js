@@ -1,5 +1,12 @@
 import mongoose from "mongoose";
 
+// Niveaux d'affectation. EXPORTES parce que le formulaire d'affectation
+// doit proposer exactement ces valeurs : un ecran qui envoyait
+// « moniteur » se heurtait a « Les donnees envoyees sont invalides ».
+// Le miroir frontend vit dans src/utils/monitorLevels.js, et un test y
+// compare les deux listes.
+export const MONITOR_LEVELS = ["principal", "secondaire"];
+
 // Fonction « moniteur / monitrice de l'École du dimanche » attribuée à
 // un membre adulte.
 //
@@ -65,7 +72,7 @@ const monitorAssignmentSchema = new mongoose.Schema(
     // les mêmes), mais pas le même rôle d'organisation.
     level: {
       type: String,
-      enum: ["principal", "secondaire"],
+      enum: MONITOR_LEVELS,
       default: "principal",
     },
 
