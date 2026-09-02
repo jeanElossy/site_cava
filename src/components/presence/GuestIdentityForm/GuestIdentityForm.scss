@@ -1,0 +1,104 @@
+@use "../../../styles/variables" as *;
+
+// PIÈGE PROJET : feuille de style unique. Tout imbriqué sous
+// `.guest-identity-form`, aucun nom générique à la racine du fichier.
+//
+// Les variables `--presence-*` sont posées par la page de badgeage
+// (voir Presence.scss) : ce formulaire n'est rendu que là, dans la
+// bulle de confirmation du scan ou dans la liste des visiteurs, donc
+// il suit le thème clair/sombre de l'écran sans rien redéfinir.
+.guest-identity-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  &__intro {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    margin: 0;
+
+    color: var(--presence-ink);
+
+    font-size: 0.86rem;
+    font-weight: 600;
+
+    svg {
+      flex-shrink: 0;
+
+      width: 18px;
+      height: 18px;
+
+      color: var(--presence-gold);
+    }
+  }
+
+  input {
+    width: 100%;
+
+    padding: 11px 12px;
+
+    border: 1.5px solid var(--presence-border-strong);
+    border-radius: 10px;
+
+    background: var(--presence-surface-strong);
+
+    color: var(--presence-ink);
+
+    font-family: inherit;
+    font-size: 0.87rem;
+
+    &:focus {
+      outline: none;
+      border-color: var(--presence-gold);
+    }
+
+    &::placeholder {
+      color: var(--presence-ink-subtle);
+    }
+  }
+
+  &__error {
+    margin: 0;
+
+    color: var(--presence-danger);
+    font-size: 0.8rem;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+
+    button {
+      flex: 1;
+
+      padding: 10px;
+
+      border-radius: 10px;
+
+      font-family: inherit;
+      font-size: 0.83rem;
+      font-weight: 600;
+
+      cursor: pointer;
+
+      &[type="submit"] {
+        border: 0;
+        background: $primary;
+        color: #fff;
+      }
+
+      &[type="button"] {
+        border: 1px solid var(--presence-border-strong);
+        background: transparent;
+        color: var(--presence-ink-soft);
+      }
+
+      &[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+}

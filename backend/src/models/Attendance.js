@@ -75,6 +75,16 @@ const attendanceSchema = new mongoose.Schema(
       // une identité de visiteur comme `firstName`/`lastName`.
       badgeCode: { type: String, trim: true, uppercase: true, maxlength: 40 },
 
+      // Posé quand l'agent remplace l'identité fictive d'un badge
+      // ("Invité Homme 1") par celle de la personne qui le porte —
+      // voir presence.service.js#identifyVisitor. C'est ce qui
+      // distingue un badge simplement compté d'un invité réellement
+      // identifié, sans avoir à deviner d'après le prénom : les
+      // documents partagés ne nomment que les seconds
+      // (buildVisitorsPdf), et un dossier SOA n'a de sens que pour
+      // eux (VisitorsPanel).
+      identifiedAt: { type: Date },
+
       // Déduit du badge scanné (voir presence.service.js#parseGuestBadgeCode)
       // ou saisi explicitement pour un visiteur ajouté à la main — sert
       // aux totaux femme/homme des exports (presenceExport.service.js,

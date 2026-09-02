@@ -33,6 +33,29 @@ const serializeMember = (member) => ({
   area: member.area,
 });
 
+// `identified` : porte une identité RÉELLE, par opposition à
+// l'identité fictive d'un badge invité pré-imprimé ("Invité Homme 1",
+// voir recordGuestBadgeAttendance). Un visiteur saisi à la main l'est
+// par construction — il n'existe que parce que l'agent a tapé son nom ;
+// un badge ne l'est qu'une fois `identifiedAt` posé par
+// `identifyVisitor`. Calculé ici plutôt que déduit du prénom côté
+// appelant : c'est ce booléen qui décide qui est nommé dans le PDF
+// partagé et qui peut ouvrir un dossier SOA.
+const serializeVisitor = (attendance) => {
+  const visitor = attendance.visitor ?? {};
+  const isBadge = Boolean(visitor.badgeCode);
+
+  return {
+    id: String(attendance._id),
+    firstName: visitor.firstName,
+    lastName: visitor.lastName,
+    phone: visitor.phone,
+    gender: visitor.gender,
+    isBadge,
+    identified: !isBadge || Boolean(visitor.identifiedAt),
+  };
+};
+
 // Authentification d'un agent : QR de sécurité + matricule.
 //
 // Revérifie le QR même si le front vient tout juste de le faire via
@@ -207,9 +230,14 @@ export const scan = async ({ registrationNumber }, presenceAgent, presenceQr, re
       req,
     });
 
+    // Le visiteur est renvoyé ENTIER (identifiant compris), pas
+    // seulement son nom d'affichage : l'écran de scan enchaîne
+    // aussitôt sur la saisie de l'identité réelle du porteur du badge
+    // (voir identifyVisitor), qui a besoin de l'identifiant de la
+    // présence qui vient d'être créée.
     return {
       kind: "visitor",
-      visitor: { firstName: attendance.visitor.firstName, lastName: attendance.visitor.lastName },
+      visitor: serializeVisitor(attendance),
       alreadyRecorded,
       recordedAt: attendance.recordedAt,
     };
@@ -310,40 +338,81 @@ export const markVisitor = async (
   });
 
   return {
-    visitor: {
-      firstName: cleanFirstName,
-      lastName: cleanLastName,
-      phone: attendance.visitor.phone,
-      gender: cleanGender,
-    },
+    visitor: serializeVisitor(attendance),
     alreadyRecorded: false,
     recordedAt: attendance.recordedAt,
   };
 };
 
+// Remplace l'identité fictive d'un badge invité pré-imprimé par celle
+// de la personne qui le porte — appelé juste après le scan, depuis la
+// bulle de confirmation, ou plus tard depuis la liste des visiteurs du
+// service.
+//
+// Restreint au QR de la session : un agent ne peut renseigner que les
+// présences du service auquel il est connecté, jamais celles d'un
+// autre culte dont il aurait deviné l'identifiant.
+//
+// Ré-appelable (l'agent corrige une faute de frappe) : la présence
+// n'est pas dupliquée, sa seule identité est réécrite — le badge
+// physique reste rattaché via `badgeCode`, donc le dédoublonnage par
+// l'index unique continue de fonctionner si la même carte repasse
+// devant la caméra.
+export const identifyVisitor = async (
+  { attendanceId, firstName, lastName, phone },
+  presenceAgent,
+  presenceQr
+) => {
+  const cleanFirstName = String(firstName ?? "").trim();
+  const cleanLastName = String(lastName ?? "").trim();
+  const cleanPhone = String(phone ?? "").trim();
+
+  if (!cleanFirstName || !cleanLastName) {
+    throw ApiError.badRequest("Le prénom et le nom de l'invité sont obligatoires.");
+  }
+
+  const attendance = await Attendance.findOne({
+    _id: attendanceId,
+    securityQr: presenceQr._id,
+    kind: "visitor",
+  });
+
+  if (!attendance) {
+    throw ApiError.notFound("Visiteur introuvable pour ce service.");
+  }
+
+  attendance.visitor.firstName = cleanFirstName;
+  attendance.visitor.lastName = cleanLastName;
+  attendance.visitor.phone = cleanPhone || undefined;
+  attendance.visitor.identifiedAt = new Date();
+
+  await attendance.save();
+
+  return { visitor: serializeVisitor(attendance), recordedAt: attendance.recordedAt };
+};
+
 // Visiteurs enregistrés pour LE service en cours (un seul QR) —
 // utilisé par l'écran de scan lui-même pour afficher la liste à
-// l'agent (export PDF, démarrage d'un dossier SOA) : uniquement
-// nom/prénom, jamais le téléphone ni l'identité de l'agent qui a
-// badgé, non pertinents pour cet usage.
+// l'agent (export PDF, identification d'un badge, démarrage d'un
+// dossier SOA). L'identité de l'agent qui a badgé n'y figure pas, elle
+// n'a pas d'usage ici ; le téléphone, si — c'est la coordonnée que
+// l'agent vient de saisir et qui part telle quelle dans le dossier SOA
+// (voir VisitorsPanel#startSoaDossier), pour ne pas la lui faire
+// retaper. Elle ne sort pas pour autant du poste de badgeage : le PDF
+// partagé, lui, reste au nom et prénom (buildVisitorsPdf).
 //
-// `isBadge` distingue un badge invité pré-imprimé (identité fictive
-// "Invité Homme 1", scanné pour le seul comptage) d'un visiteur
-// réellement enregistré par l'agent avec son nom — SEUL ce dernier cas
-// doit proposer de démarrer un dossier SOA côté front (voir
-// VisitorsPanel : le même invité, une fois identifié, est ensuite
-// ré-enregistré à la main sous son vrai nom pour amorcer le suivi).
+// `isBadge` distingue un badge invité pré-imprimé d'un visiteur saisi
+// à la main ; `identified` dit si la ligne porte une identité RÉELLE
+// (voir serializeVisitor). Un badge non identifié n'est qu'un jeton de
+// comptage : pas de dossier SOA à ouvrir dessus, et le front propose à
+// la place de saisir qui le porte.
 export const listVisitors = async (securityQr) => {
   const records = await Attendance.find({ securityQr, kind: "visitor" })
     .sort({ recordedAt: -1 })
     .lean();
 
   return records.map((record) => ({
-    id: String(record._id),
-    firstName: record.visitor?.firstName,
-    lastName: record.visitor?.lastName,
-    gender: record.visitor?.gender,
-    isBadge: Boolean(record.visitor?.badgeCode),
+    ...serializeVisitor(record),
     recordedAt: record.recordedAt,
   }));
 };
@@ -373,16 +442,18 @@ export const buildVisitorsPdf = async (securityQr) => {
   const women = visitors.filter((visitor) => visitor.gender === "femme").length;
   const men = visitors.filter((visitor) => visitor.gender === "homme").length;
 
-  // Un badge invité pré-imprimé porte une identité fictive ("Invité
-  // Homme 1", voir isBadge dans listVisitors ci-dessus) destinée au
-  // seul comptage : le même invité est ensuite, le plus souvent,
-  // ré-enregistré à la main sous son vrai nom. Lister les deux ferait
-  // apparaître deux lignes pour la même personne — seuls les
-  // visiteurs identifiés par leur vrai nom apparaissent donc dans la
-  // liste nominative ci-dessous ; les totaux ci-dessus restent basés
-  // sur TOUS les visiteurs (badges compris), pour ne pas perdre le
-  // décompte de ceux jamais ré-enregistrés à la main.
-  const namedVisitors = visitors.filter((visitor) => !visitor.isBadge);
+  // Un badge invité pré-imprimé qui n'a pas été identifié ne porte
+  // qu'une identité fictive ("Invité Homme 1", voir
+  // recordGuestBadgeAttendance) : le nommer ici ne dirait rien à
+  // l'équipe des nouvelles âmes qui reçoit ce document. Depuis que
+  // l'agent renseigne le porteur du badge juste après le scan (voir
+  // identifyVisitor), ces lignes-là ont un vrai nom et rejoignent la
+  // liste nominative — d'où le filtre sur `identified` et non plus sur
+  // `isBadge`, qui les excluait toutes.
+  //
+  // Les totaux ci-dessus restent basés sur TOUS les visiteurs, badges
+  // non identifiés compris, pour ne pas perdre leur décompte.
+  const namedVisitors = visitors.filter((visitor) => visitor.identified);
 
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: "A4", margin: 40 });

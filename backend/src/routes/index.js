@@ -722,6 +722,32 @@ export const buildRoutes = () => {
     })
   );
 
+  // Identité réelle du porteur d'un badge invité pré-imprimé, saisie
+  // par l'agent juste après le scan (ou plus tard depuis la liste des
+  // visiteurs du service). PATCH et non POST : la présence existe déjà
+  // — c'est son identité fictive qui est remplacée, aucune ligne n'est
+  // ajoutée. Le service vérifie que la présence appartient bien au QR
+  // de la session avant d'écrire.
+  presencesPublic.patch(
+    "/visitors/:id",
+    presenceScanLimiter,
+    requirePresenceSession,
+    asyncHandler(async (req, res) => {
+      const result = await presenceService.identifyVisitor(
+        {
+          attendanceId: req.params.id,
+          firstName: req.body?.firstName,
+          lastName: req.body?.lastName,
+          phone: req.body?.phone,
+        },
+        req.presenceAgent,
+        req.presenceQr
+      );
+
+      sendSuccess(res, { data: result });
+    })
+  );
+
   presencesPublic.get(
     "/visitors",
     requirePresenceSession,

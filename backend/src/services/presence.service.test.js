@@ -521,7 +521,13 @@ describe("presence.service (intégration MongoDB)", () => {
   });
 
   describe("listVisitors / buildVisitorsPdf", () => {
-    it("liste uniquement nom/prénom, jamais le téléphone ni l'agent", async () => {
+    // Le téléphone EST renvoyé — il repart tel quel dans le dossier
+    // SOA ouvert depuis cette liste, pour ne pas le faire retaper à
+    // l'agent. Ce qui reste hors du document PARTAGÉ (visitors.pdf),
+    // c'est autre chose : voir la décision produit dans
+    // buildVisitorsPdf. L'identité de l'agent, elle, n'a aucun usage
+    // ici et ne sort pas.
+    it("renvoie le téléphone du visiteur (repris par le dossier SOA), jamais l'agent", async () => {
       await presenceService.markVisitor(
         { firstName: "Awa", lastName: "Traoré", phone: "0700000099", gender: "femme" },
         { id: agent._id },
@@ -534,8 +540,30 @@ describe("presence.service (intégration MongoDB)", () => {
       assert.equal(visitors.length, 1);
       assert.equal(visitors[0].firstName, "Awa");
       assert.equal(visitors[0].lastName, "Traoré");
-      assert.equal("phone" in visitors[0], false);
+      assert.equal(visitors[0].phone, "0700000099");
       assert.equal("agent" in visitors[0], false);
+    });
+
+    // Un visiteur saisi à la main porte une identité réelle par
+    // construction ; un badge n'en porte une qu'après identifyVisitor.
+    it("marque comme identifié un visiteur saisi à la main, pas un badge fraîchement scanné", async () => {
+      await presenceService.scan(
+        { registrationNumber: "INV-FEMME-04" },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+      await presenceService.markVisitor(
+        { firstName: "Awa", lastName: "Traoré", gender: "femme" },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+
+      const visitors = await presenceService.listVisitors(qr._id);
+
+      assert.equal(visitors.find((visitor) => visitor.firstName === "Invité").identified, false);
+      assert.equal(visitors.find((visitor) => visitor.firstName === "Awa").identified, true);
     });
 
     it("distingue un badge invité scanné (isBadge: true) d'un visiteur enregistré à la main (isBadge: false)", async () => {
@@ -584,6 +612,124 @@ describe("presence.service (intégration MongoDB)", () => {
       const buffer = await presenceService.buildVisitorsPdf(qr);
 
       assert.ok(Buffer.isBuffer(buffer));
+      assert.equal(buffer.subarray(0, 5).toString("latin1"), "%PDF-");
+    });
+  });
+
+  describe("identifyVisitor", () => {
+    const scanBadge = async (code = "INV-HOMME-03") => {
+      const result = await presenceService.scan(
+        { registrationNumber: code },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+
+      return result.visitor;
+    };
+
+    it("remplace l'identité fictive d'un badge par celle de son porteur", async () => {
+      const badge = await scanBadge();
+
+      assert.equal(badge.isBadge, true);
+      assert.equal(badge.identified, false);
+
+      const { visitor } = await presenceService.identifyVisitor(
+        {
+          attendanceId: badge.id,
+          firstName: "Awa",
+          lastName: "Traoré",
+          phone: "0700000099",
+        },
+        { id: agent._id },
+        qr
+      );
+
+      assert.equal(visitor.firstName, "Awa");
+      assert.equal(visitor.lastName, "Traoré");
+      assert.equal(visitor.phone, "0700000099");
+      assert.equal(visitor.identified, true);
+      // Le genre vient du badge scanné, jamais ressaisi.
+      assert.equal(visitor.gender, "homme");
+      // Toujours un badge : c'est ce que la personne porte, et ce que
+      // la feuille de présence doit continuer d'indiquer.
+      assert.equal(visitor.isBadge, true);
+    });
+
+    it("ne crée pas de seconde présence : la même ligne est réécrite", async () => {
+      const badge = await scanBadge("INV-FEMME-05");
+
+      await presenceService.identifyVisitor(
+        { attendanceId: badge.id, firstName: "Awa", lastName: "Traoré" },
+        { id: agent._id },
+        qr
+      );
+      await presenceService.identifyVisitor(
+        { attendanceId: badge.id, firstName: "Awa", lastName: "Traore" },
+        { id: agent._id },
+        qr
+      );
+
+      const visitors = await presenceService.listVisitors(qr._id);
+
+      assert.equal(visitors.length, 1);
+      assert.equal(visitors[0].lastName, "Traore");
+    });
+
+    it("refuse un nom ou un prénom vide", async () => {
+      const badge = await scanBadge();
+
+      await assert.rejects(
+        presenceService.identifyVisitor(
+          { attendanceId: badge.id, firstName: "  ", lastName: "Traoré" },
+          { id: agent._id },
+          qr
+        ),
+        /obligatoires/
+      );
+    });
+
+    // Un agent ne doit pouvoir renseigner que les présences du service
+    // auquel il est connecté — pas celles d'un autre culte dont il
+    // aurait deviné l'identifiant.
+    it("refuse une présence rattachée à un autre QR de sécurité", async () => {
+      const badge = await scanBadge();
+      const otherQr = await PresenceSecurityQr.create({
+        label: QR_LABEL,
+        durationMinutes: 120,
+      });
+
+      await assert.rejects(
+        presenceService.identifyVisitor(
+          { attendanceId: badge.id, firstName: "Awa", lastName: "Traoré" },
+          { id: agent._id },
+          otherQr
+        ),
+        /introuvable/
+      );
+
+      // Ce QR-ci n'appartient pas aux fixtures partagées du fichier :
+      // supprimé tout de suite plutôt que laissé aux hooks de fin.
+      await PresenceSecurityQr.deleteOne({ _id: otherQr._id });
+    });
+
+    // Le PDF partagé ne nommait que les visiteurs saisis à la main :
+    // un badge identifié doit désormais y figurer aussi.
+    it("fait entrer le badge identifié dans la liste nominative du PDF partagé", async () => {
+      const badge = await scanBadge();
+
+      await presenceService.identifyVisitor(
+        { attendanceId: badge.id, firstName: "Awa", lastName: "Traoré" },
+        { id: agent._id },
+        qr
+      );
+
+      const visitors = await presenceService.listVisitors(qr._id);
+
+      assert.equal(visitors.filter((visitor) => visitor.identified).length, 1);
+
+      const buffer = await presenceService.buildVisitorsPdf(qr);
+
       assert.equal(buffer.subarray(0, 5).toString("latin1"), "%PDF-");
     });
   });

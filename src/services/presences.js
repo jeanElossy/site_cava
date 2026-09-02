@@ -73,6 +73,20 @@ export const markVisitorPresence = ({ firstName, lastName, gender }, sessionToke
     token: sessionToken,
   });
 
+// Identité réelle du porteur d'un badge invité pré-imprimé — la
+// présence existe déjà (créée au scan), seule son identité fictive est
+// remplacée, d'où le PATCH.
+export const identifyPresenceVisitor = (
+  visitorId,
+  { firstName, lastName, phone },
+  sessionToken
+) =>
+  request(`/api/presences/visitors/${visitorId}`, {
+    method: "PATCH",
+    body: { firstName, lastName, phone },
+    token: sessionToken,
+  });
+
 export const presenceStats = (sessionToken) =>
   request("/api/presences/stats", { token: sessionToken });
 

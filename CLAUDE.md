@@ -111,7 +111,7 @@ Un backend Node.js + Express 5 + MongoDB/Mongoose vit dans [backend/](backend/),
 Le projet n'est plus un simple site vitrine : `/admin` porte plusieurs modules métier, chacun avec ses modèles, son service et ses écrans.
 
 - **Communauté** (`/admin/communaute`) — annuaire des membres, bergeries, églises, et validation des inscriptions envoyées depuis `/inscription`. Génère cartes de membre (PDF/JPEG), fiches individuelles (PDF) et exports (XLSX/PDF).
-- **Présences** (`/admin/presences`, badgeage sur `/presences`) — pointage par scan du QR de la carte de membre, réservé aux agents du Service d'Ordre.
+- **Présences** (`/admin/presences`, badgeage sur `/presences`) — pointage par scan du QR de la carte de membre, réservé aux agents du Service d'Ordre. Les **badges invités pré-imprimés** (`INV-HOMME-01`…, voir `guestBadgeSvg.service.js`) n'enregistrent qu'une identité fictive au scan : l'écran enchaîne aussitôt sur la saisie du porteur (nom, prénom, téléphone), qui alimente la feuille de présence, la liste partagée et le dossier SOA. Un badge non identifié reste un simple jeton de comptage — il compte dans les totaux mais n'est nommé nulle part.
 - **Nouvelles âmes** (`/admin/nouvelles-ames`) — suivi des nouveaux convertis, du premier contact à la clôture (qui crée le membre). Circuit à plusieurs rôles : SOA, CANA, coordonnateur de bergeries.
 - **Dons** (`/admin/dons`) — voir ci-dessous.
 - **Service Social** (`/admin/social`) — voir plus bas.

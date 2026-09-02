@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import {
+  identifyPresenceVisitor,
   markPresenceManually,
   markVisitorPresence,
   presenceStats,
@@ -23,6 +24,7 @@ import {
 import { extractQrParam } from "../../utils/qrLink";
 import { formatRegistrationNumber } from "../../utils/registrationNumber";
 
+import GuestIdentityForm from "../../components/presence/GuestIdentityForm/GuestIdentityForm";
 import QrCameraScanner from "../../components/presence/QrCameraScanner/QrCameraScanner";
 import ThemeToggle from "../../components/presence/ThemeToggle/ThemeToggle";
 import VisitorsPanel from "../../components/presence/VisitorsPanel";
@@ -116,6 +118,15 @@ const PresenceScanner = ({
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
 
+  // Badge invité scanné dont on ne connaît pas encore le porteur : tant
+  // qu'il est posé, la bulle reste ouverte et la caméra en pause (voir
+  // showToast/scheduleResume) — l'agent a la personne devant lui, c'est
+  // le seul moment où il peut lui demander son nom.
+  const [pendingGuest, setPendingGuest] = useState(null);
+  const [identifyBusy, setIdentifyBusy] = useState(false);
+  const [identifyError, setIdentifyError] = useState("");
+  const [visitorsRefreshKey, setVisitorsRefreshKey] = useState(0);
+
   const [visitorFormOpen, setVisitorFormOpen] = useState(false);
   const [visitorFirstName, setVisitorFirstName] = useState("");
   const [visitorLastName, setVisitorLastName] = useState("");
@@ -138,10 +149,16 @@ const PresenceScanner = ({
   // seule — l'agent reste sur l'écran du scanner en permanence, sans
   // avoir à faire défiler la page pour voir le résultat (voir
   // __result-toast dans Presence.scss).
-  const showToast = () => {
+  // `sticky` : la bulle ne se referme pas toute seule. Réservé au cas
+  // où elle porte quelque chose à remplir (identification d'un badge
+  // invité) — une bulle qui disparaît sous les doigts de l'agent au
+  // milieu d'une saisie lui ferait perdre ce qu'il a tapé.
+  const showToast = ({ sticky = false } = {}) => {
     if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
 
     setToastVisible(true);
+
+    if (sticky) return;
 
     toastTimerRef.current = window.setTimeout(() => {
       if (mountedRef.current) setToastVisible(false);
@@ -170,12 +187,12 @@ const PresenceScanner = ({
     return () => window.clearInterval(timer);
   }, []);
 
-  const applyResult = (result, kind) => {
+  const applyResult = (result, kind, { sticky = false } = {}) => {
     if (!mountedRef.current) return;
 
     setLastResult({ ...result, kind });
     setLastError(null);
-    showToast();
+    showToast({ sticky });
 
     if (!result.alreadyRecorded) {
       setCounts((previous) => {
@@ -221,18 +238,86 @@ const PresenceScanner = ({
 
     const registrationNumber = extractQrParam(decoded, "matricule");
 
+    // Un badge invité pré-imprimé n'enregistre qu'une identité fictive
+    // ("Invité Homme 1") : sans cette saisie, la présence est comptée
+    // mais l'invité reste anonyme partout ensuite — feuille de
+    // présence, liste partagée, dossier SOA. On enchaîne donc
+    // directement sur le formulaire, plutôt que de compter sur un
+    // rattrapage ultérieur qui n'arrivait jamais.
+    let awaitingIdentity = false;
+
     try {
       // `result.kind` : un badge invité pré-imprimé (voir
       // guestBadgeSvg.service.js) produit le même code de décodage
       // qu'un matricule membre, mais le serveur y répond par un
       // enregistrement "visitor" — jamais supposé "member" ici.
       const result = await scanMemberCard(registrationNumber, sessionToken);
-      applyResult(result, result.kind ?? "member");
+      const kind = result.kind ?? "member";
+
+      awaitingIdentity =
+        kind === "visitor" && Boolean(result.visitor?.isBadge) && !result.visitor?.identified;
+
+      applyResult(result, kind, { sticky: awaitingIdentity });
+
+      if (awaitingIdentity && mountedRef.current) {
+        setIdentifyError("");
+        setPendingGuest(result.visitor);
+      }
     } catch (error) {
       applyError(error);
     } finally {
       if (mountedRef.current) setBusy(false);
-      scheduleResume();
+
+      // Pas de reprise tant que le formulaire d'identité est ouvert :
+      // un scan de plus le remplacerait par une autre bulle et
+      // effacerait la saisie en cours.
+      if (!awaitingIdentity) scheduleResume();
+    }
+  };
+
+  // Referme le formulaire d'identité et rend la main au scanner —
+  // qu'il ait été rempli ou passé.
+  const closeGuestForm = () => {
+    setPendingGuest(null);
+    setIdentifyError("");
+    showToast();
+    setScanning(true);
+  };
+
+  const handleIdentifyGuest = async (identity) => {
+    if (!pendingGuest) return;
+
+    setIdentifyBusy(true);
+    setIdentifyError("");
+
+    try {
+      const result = await identifyPresenceVisitor(
+        pendingGuest.id,
+        identity,
+        sessionToken
+      );
+
+      if (!mountedRef.current) return;
+
+      // La bulle reste affichée un instant sur le VRAI nom : c'est la
+      // confirmation que la saisie est bien partie, avant que la
+      // caméra ne reprenne.
+      setLastResult((previous) =>
+        previous ? { ...previous, visitor: result.visitor } : previous
+      );
+      setVisitorsRefreshKey((previous) => previous + 1);
+      closeGuestForm();
+    } catch (error) {
+      if (error?.status === 401) {
+        onSessionRejected();
+        return;
+      }
+
+      if (mountedRef.current) {
+        setIdentifyError(error?.message ?? "L'identité n'a pas pu être enregistrée.");
+      }
+    } finally {
+      if (mountedRef.current) setIdentifyBusy(false);
     }
   };
 
@@ -523,7 +608,11 @@ const PresenceScanner = ({
 
       </div>
 
-      <VisitorsPanel sessionToken={sessionToken} />
+      <VisitorsPanel
+        sessionToken={sessionToken}
+        serviceLabel={qr.label}
+        refreshKey={visitorsRefreshKey}
+      />
 
       {/* Bulle flottante : apparaît par-dessus l'écran du scanner à
           chaque badgeage puis se referme toute seule (voir
@@ -602,8 +691,35 @@ const PresenceScanner = ({
                 {lastResult.visitor.firstName} {lastResult.visitor.lastName}
               </strong>
 
-              <span>Visiteur</span>
+              {/* Le type reste « Badge invité » après identification :
+                  c'est ce que porte la personne, et c'est le même
+                  libellé que sur la feuille de présence et l'export
+                  (voir presenceExport.service.js#kindLabel). */}
+              <span>{lastResult.visitor.isBadge ? "Badge invité" : "Visiteur"}</span>
+
+              {lastResult.visitor.phone && (
+                <>
+                  <span>Téléphone</span>
+                  <p>{lastResult.visitor.phone}</p>
+                </>
+              )}
             </div>
+          </div>
+        )}
+
+        {/* Badge invité tout juste scanné : la personne est devant
+            l'agent, c'est le seul instant où son nom peut être
+            recueilli. Ces trois champs alimentent ensuite la feuille
+            de présence, la liste partagée et le dossier SOA. */}
+        {pendingGuest && (
+          <div className="presence-scanner__guest-identity">
+            <GuestIdentityForm
+              key={pendingGuest.id}
+              busy={identifyBusy}
+              error={identifyError}
+              onSubmit={handleIdentifyGuest}
+              onCancel={closeGuestForm}
+            />
           </div>
         )}
       </div>
@@ -652,6 +768,8 @@ const PresenceScanner = ({
             setToastVisible(false);
             setLastResult(null);
             setLastError(null);
+            setPendingGuest(null);
+            setIdentifyError("");
             setScanning(true);
           }}
           disabled={scanning || busy}
