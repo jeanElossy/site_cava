@@ -327,18 +327,23 @@ const NewSoulsListPage = () => {
                       onClick={() => navigate(`/admin/nouvelles-ames/${item.id}`)}
                       style={{ cursor: "pointer" }}
                     >
-                      <td className="new-soul-list__case">{item.caseNumber}</td>
-                      <td>
+                      {/* `data-label` : sous 760 px chaque ligne devient
+                          une carte, cet intitulé remplaçant l'en-tête de
+                          colonne (mixin `admin-stacked-table`). */}
+                      <td className="new-soul-list__case" data-label="Dossier">
+                        {item.caseNumber}
+                      </td>
+                      <td data-label="Nom">
                         {item.soa?.lastName} {item.soa?.firstName}
                       </td>
-                      <td>{item.soa?.phone}</td>
-                      <td>
+                      <td data-label="Téléphone">{item.soa?.phone}</td>
+                      <td data-label="Statut">
                         <StatusBadge status={item.status} />
                         {item.archivedAt && (
                           <span className="new-soul-list__archived-tag">Archivé</span>
                         )}
                       </td>
-                      <td>
+                      <td data-label="Ouvert le">
                         {item.soa?.openedAt
                           ? new Date(item.soa.openedAt).toLocaleDateString("fr-FR")
                           : "—"}

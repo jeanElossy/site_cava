@@ -243,6 +243,10 @@
 
     border-collapse: collapse;
 
+    // Sous 760 px, chaque ligne devient une carte : plus de défilement
+    // horizontal, plus rien à dézoomer.
+    @include admin-stacked-table;
+
     th,
     td {
       padding: 13px 18px;

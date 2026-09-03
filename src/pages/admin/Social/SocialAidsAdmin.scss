@@ -230,6 +230,10 @@
 
     border-collapse: collapse;
 
+    // Dix colonnes : illisibles sur un téléphone, où chaque ligne
+    // devient une carte sous 760 px.
+    @include admin-stacked-table;
+
     th {
       padding: 14px 16px;
 

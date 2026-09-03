@@ -116,3 +116,115 @@ $admin-ease: 0.18s ease;
 
 $admin-rail-width: 264px;
 $admin-header-height: 68px;
+
+// ---- Tableaux sur petit écran ------------------------------------
+//
+// Un MIXIN, pas une règle : ce fichier ne doit émettre aucun CSS à la
+// racine (voir l'en-tête). Il n'existe qu'une fois appelé, à
+// l'intérieur de la classe racine d'un composant.
+//
+// Le problème qu'il traite : les tableaux de l'administration portent
+// un `min-width` (600 à 900 px) dans un cadre à défilement horizontal.
+// Sur un ordinateur, c'est le bon compromis. Sur un téléphone, ça veut
+// dire faire glisser chaque ligne latéralement pour la lire en entier,
+// ou dézoomer jusqu'à ce que le texte devienne illisible — c'est
+// exactement ce que les responsables du Service Social et de la SOA
+// font aujourd'hui, à chaque consultation.
+//
+// En dessous du seuil, chaque ligne devient donc une CARTE : l'en-tête
+// disparaît et chaque cellule porte son intitulé à gauche, sa valeur à
+// droite. Plus aucun défilement horizontal, plus rien à dézoomer.
+//
+// CONTRAT : chaque `<td>` doit porter `data-label="<intitulé de la
+// colonne>"`. Une cellule sans `data-label` (colonne d'actions,
+// case à cocher) s'affiche pleine largeur, sans intitulé — c'est le
+// comportement voulu pour une rangée de boutons.
+@mixin admin-stacked-table($breakpoint: 760px) {
+  @media (max-width: $breakpoint) {
+    // Annule le `min-width` qui forçait le défilement horizontal.
+    min-width: 0;
+    width: 100%;
+
+    thead {
+      // `display: none` et non `sr-only` : les intitulés sont repris
+      // cellule par cellule ci-dessous, les lire deux fois n'aiderait
+      // personne, y compris au lecteur d'écran.
+      display: none;
+    }
+
+    tbody,
+    tr,
+    td {
+      display: block;
+      width: auto;
+    }
+
+    tr {
+      padding: 12px 14px;
+
+      border-bottom: 1px solid $admin-border;
+    }
+
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    td {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+
+      padding: 5px 0;
+
+      // `border: 0` et non `border-bottom: 0` : certains tableaux
+      // bordent chaque cellule sur les quatre côtés (le plan CANA par
+      // exemple). Empilées, ces bordures dessineraient une grille de
+      // boîtes au lieu d'une carte — c'est la ligne qui porte le trait
+      // de séparation, une seule fois.
+      border: 0;
+
+      text-align: right;
+
+      // Cellule de saisie (tableaux du plan CANA, suivi mensuel) : le
+      // champ passe SOUS son intitulé plutôt que de se serrer à côté.
+      // `flex: 1 1 100%` sur un conteneur qui enveloppe : la ligne se
+      // coupe juste après le libellé.
+      > input,
+      > select,
+      > textarea {
+        flex: 1 1 100%;
+        min-width: 0;
+
+        text-align: left;
+      }
+
+      &::before {
+        content: attr(data-label);
+        flex-shrink: 0;
+
+        color: $admin-ink-faint;
+
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        text-align: left;
+      }
+
+      // Cellule sans intitulé (actions, sélection) : pleine largeur,
+      // alignée à gauche comme le reste de la carte.
+      &:not([data-label])::before,
+      &[data-label=""]::before {
+        content: none;
+      }
+
+      &:not([data-label]),
+      &[data-label=""] {
+        justify-content: flex-start;
+        text-align: left;
+      }
+    }
+  }
+}

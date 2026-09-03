@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import jsQR from "jsqr";
 
-import { Camera, RefreshCw } from "lucide-react";
+import { Camera, RefreshCw, SwitchCamera } from "lucide-react";
 
 import "./QrCameraScanner.scss";
 
@@ -20,6 +20,50 @@ const SCAN_INTERVAL_MS = 200;
 // la taille d'affichage réelle (mise à l'échelle par le CSS comme une
 // image) — assez nette pour un aperçu, sans coût de calcul inutile.
 const PREVIEW_SIZE = 480;
+
+// Côté du carré RÉELLEMENT décodé, indépendant de la définition du
+// flux. C'est le correctif de fond pour Android : jsQR travaille en
+// JavaScript sur le fil principal, son coût est proportionnel au
+// nombre de pixels. Beaucoup d'Android livrent du 1080p, voire plus,
+// là où un iPhone reste sur un format modeste — 2 millions de pixels
+// à analyser cinq fois par seconde saturent le fil principal, le
+// décodage prend alors plus longtemps que l'intervalle qui le
+// déclenche et le scan « ne marche pas », caméra pourtant allumée.
+// 512 px suffisent très largement à lire un QR qui occupe le cadre.
+const DECODE_SIZE = 512;
+
+// Repère de la caméra choisie à la main par l'agent. Mémorisé pour la
+// session (appareil partagé, voir services/presences.js) : une fois la
+// bonne caméra trouvée sur un téléphone donné, elle est reprise au
+// scan suivant plutôt que d'être à rechoisir à chaque fois.
+const CAMERA_KEY = "cava:presence-camera";
+
+const readPreferredCamera = () => {
+  try {
+    return window.sessionStorage.getItem(CAMERA_KEY) || "";
+  } catch {
+    return "";
+  }
+};
+
+const writePreferredCamera = (deviceId) => {
+  try {
+    if (deviceId) window.sessionStorage.setItem(CAMERA_KEY, deviceId);
+    else window.sessionStorage.removeItem(CAMERA_KEY);
+  } catch {
+    /* stockage indisponible */
+  }
+};
+
+// Une caméra ARRIÈRE, reconnue à son libellé. `facingMode` ne suffit
+// pas sur Android : beaucoup de téléphones exposent trois ou quatre
+// objectifs arrière (grand-angle, macro, téléobjectif) et le
+// navigateur en choisit un qui ne fait pas la mise au point à 15 cm —
+// la carte reste floue et n'est jamais décodée, alors que l'aperçu
+// s'affiche normalement. C'est le symptôme décrit : « la caméra
+// s'allume mais ne scanne pas », côté Android seulement.
+const isBackCameraLabel = (label = "") =>
+  /back|rear|arrière|arriere|environment/i.test(label);
 
 // Un navigateur intégré à une autre application (le lien ouvert depuis
 // WhatsApp, Facebook, Messenger…) n'a très souvent AUCUN accès à la
@@ -88,6 +132,13 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
 
   const [status, setStatus] = useState("idle");
   const [failure, setFailure] = useState("");
+  const [cameras, setCameras] = useState([]);
+
+  // Caméra imposée par l'agent via « Changer de caméra ». `null` =
+  // choix automatique. Dans une ref plutôt qu'un état : `startCamera`
+  // la lit, et la faire entrer dans ses dépendances relancerait la
+  // caméra en boucle.
+  const preferredCameraRef = useRef(readPreferredCamera());
 
   const stopCamera = useCallback(() => {
     if (intervalRef.current) {
@@ -135,40 +186,67 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
       return;
     }
 
-    // Contraintes de CADRAGE, en `ideal` : voir plus bas pourquoi un
-    // flux non carré s'affichait comme une tranche étirée.
-    let stream;
+    // Trois tentatives, de la plus précise à la plus permissive. Une
+    // seule contrainte est en `exact` — la caméra explicitement
+    // choisie par l'agent : si celle-là n'est pas disponible, il faut
+    // le savoir et retomber sur l'automatique, pas obtenir en silence
+    // une autre caméra que celle demandée.
+    //
+    // Le reste est en `ideal` : une contrainte `exact` sur
+    // `facingMode` fait échouer l'ouverture sur les appareils qui
+    // n'étiquettent pas leurs objectifs, alors qu'ils ont bien une
+    // caméra arrière utilisable.
+    //
+    // Définition demandée en 1280×720 et non plus 720×720 : un QR
+    // occupe une petite part du cadre, et c'est le nombre de pixels
+    // QU'IL couvre qui décide si jsQR le lit. Le coût de calcul, lui,
+    // ne suit plus la définition du flux depuis que le décodage
+    // travaille sur un carré réduit (voir DECODE_SIZE).
+    const attempts = [];
 
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
+    if (preferredCameraRef.current) {
+      attempts.push({
         video: {
-          facingMode: "environment",
-          aspectRatio: { ideal: 1 },
-          width: { ideal: 720 },
+          deviceId: { exact: preferredCameraRef.current },
+          width: { ideal: 1280 },
           height: { ideal: 720 },
         },
         audio: false,
       });
-    } catch (error) {
-      if (isPermissionError(error)) {
-        fail(error);
+    }
 
-        return;
-      }
+    attempts.push({
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
+      audio: false,
+    });
 
-      // Repli sans la moindre contrainte. Des Android refusent le jeu
-      // complet alors qu'ils ont bien une caméra utilisable : mieux
-      // vaut un cadrage imparfait que pas de scanner du tout.
+    attempts.push({ video: true, audio: false });
+
+    let stream;
+    let lastError;
+
+    for (const constraints of attempts) {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: false,
-        });
-      } catch (fallbackError) {
-        fail(fallbackError);
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        break;
+      } catch (error) {
+        lastError = error;
 
-        return;
+        // Un refus d'autorisation ne se rejoue pas : insister ne ferait
+        // que redemander, parfois en réaffichant une invite que
+        // l'utilisateur vient de refuser.
+        if (isPermissionError(error)) break;
       }
+    }
+
+    if (!stream) {
+      fail(lastError);
+
+      return;
     }
 
     if (runId !== runIdRef.current) {
@@ -178,6 +256,54 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
     }
 
     streamRef.current = stream;
+
+    // Mise au point continue, demandée au mieux. Sans elle, plusieurs
+    // Android restent bloqués sur une mise au point à l'infini : la
+    // carte tenue à 15 cm reste floue et jsQR ne trouve jamais les
+    // repères du QR. Non standard partout, d'où le `catch` — un
+    // navigateur qui ne connaît pas la contrainte doit continuer sans,
+    // pas échouer.
+    const [videoTrack] = stream.getVideoTracks();
+
+    try {
+      await videoTrack?.applyConstraints({
+        advanced: [{ focusMode: "continuous" }],
+      });
+    } catch {
+      /* mise au point non pilotable : l'automatique de l'appareil fera. */
+    }
+
+    // Liste des caméras, pour le bouton « Changer de caméra ». Peuplée
+    // seulement MAINTENANT : avant l'autorisation, les libellés sont
+    // vides sur tous les navigateurs, et une liste d'entrées anonymes
+    // ne permettrait à personne de choisir.
+    navigator.mediaDevices
+      .enumerateDevices()
+      .then((devices) => {
+        if (runId !== runIdRef.current) return;
+
+        const videoInputs = devices.filter((device) => device.kind === "videoinput");
+
+        setCameras(videoInputs);
+
+        // Aucune caméra choisie à la main, et celle qu'on a obtenue
+        // n'est pas une arrière : on retient la première arrière
+        // repérée au libellé pour le prochain démarrage plutôt que de
+        // relancer le flux dans le dos de l'agent.
+        if (!preferredCameraRef.current) {
+          const current = videoTrack?.getSettings?.().deviceId;
+          const currentDevice = videoInputs.find((device) => device.deviceId === current);
+          const back = videoInputs.find((device) => isBackCameraLabel(device.label));
+
+          if (back && currentDevice && !isBackCameraLabel(currentDevice.label)) {
+            preferredCameraRef.current = back.deviceId;
+            writePreferredCamera(back.deviceId);
+          }
+        }
+      })
+      .catch(() => {
+        /* énumération refusée : le bouton de changement reste masqué. */
+      });
 
     const video = videoRef.current;
 
@@ -247,6 +373,14 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
 
     rafRef.current = window.requestAnimationFrame(drawPreviewFrame);
 
+    // Un décodage à la fois. jsQR est SYNCHRONE : si une passe dure
+    // plus longtemps que l'intervalle — ce qui arrivait précisément sur
+    // les Android en pleine définition —, les suivantes s'empilent et
+    // le fil principal ne rend plus la main, ni à l'aperçu, ni aux
+    // boutons. Le drapeau borne le travail à ce que l'appareil sait
+    // vraiment tenir.
+    let decoding = false;
+
     intervalRef.current = window.setInterval(() => {
       const source = videoRef.current;
       const canvas = canvasRef.current;
@@ -258,6 +392,7 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
       // sans objet pour du direct. L'égalité stricte empêchait donc tout
       // décodage sur ces appareils, aperçu affiché ou non.
       if (
+        decoding ||
         !source ||
         !canvas ||
         source.readyState < source.HAVE_CURRENT_DATA
@@ -265,24 +400,47 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
         return;
       }
 
-      const width = source.videoWidth;
-      const height = source.videoHeight;
+      const videoWidth = source.videoWidth;
+      const videoHeight = source.videoHeight;
 
-      if (!width || !height) return;
+      if (!videoWidth || !videoHeight) return;
 
-      canvas.width = width;
-      canvas.height = height;
+      decoding = true;
 
-      const context = canvas.getContext("2d", { willReadFrequently: true });
-      context.drawImage(source, 0, 0, width, height);
+      try {
+        // Carré central RÉDUIT : même cadrage que l'aperçu (donc ce que
+        // l'agent voit entre les quatre coins est exactement ce qui est
+        // analysé), ramené à DECODE_SIZE quelle que soit la définition
+        // livrée par l'appareil. C'est ce qui met un Android 1080p au
+        // même coût de calcul qu'un iPhone.
+        const size = Math.min(videoWidth, videoHeight);
+        const sx = (videoWidth - size) / 2;
+        const sy = (videoHeight - size) / 2;
+        const target = Math.min(DECODE_SIZE, size);
 
-      const imageData = context.getImageData(0, 0, width, height);
-      const result = jsQR(imageData.data, width, height, {
-        inversionAttempts: "dontInvert",
-      });
+        canvas.width = target;
+        canvas.height = target;
 
-      if (result?.data) {
-        onDecode(result.data);
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+
+        context.drawImage(source, sx, sy, size, size, 0, 0, target, target);
+
+        const imageData = context.getImageData(0, 0, target, target);
+
+        // `attemptBoth` : le coût d'une seconde passe inversée est
+        // devenu négligeable sur une image réduite, et il fait passer
+        // les QR rendus en clair sur fond sombre — le badge invité est
+        // imprimé vert foncé sur blanc, mais un écran de téléphone en
+        // thème sombre présentant le QR de service, lui, est inversé.
+        const result = jsQR(imageData.data, target, target, {
+          inversionAttempts: "attemptBoth",
+        });
+
+        if (result?.data) {
+          onDecode(result.data);
+        }
+      } finally {
+        decoding = false;
       }
     }, SCAN_INTERVAL_MS);
 
@@ -291,6 +449,25 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
     // relancerait la caméra en boucle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stopCamera]);
+
+  // Bascule vers la caméra suivante. Dernier recours mais recours
+  // réel : sur un Android à plusieurs objectifs arrière, aucune
+  // heuristique ne dit lequel fait la mise au point de près — l'agent,
+  // lui, le voit tout de suite dans l'aperçu. Le choix est retenu pour
+  // la session, donc à faire une seule fois par appareil.
+  const switchCamera = useCallback(() => {
+    if (cameras.length < 2) return;
+
+    const currentIndex = cameras.findIndex(
+      (device) => device.deviceId === preferredCameraRef.current
+    );
+    const next = cameras[(currentIndex + 1) % cameras.length];
+
+    preferredCameraRef.current = next.deviceId;
+    writePreferredCamera(next.deviceId);
+
+    startCamera();
+  }, [cameras, startCamera]);
 
   useEffect(() => {
     if (!active) {
@@ -382,6 +559,23 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
             Activer la caméra
           </button>
         </div>
+      )}
+
+      {/* Proposé dès que l'appareil expose plusieurs caméras, sans
+          attendre un échec : rien ne « rate » visiblement quand c'est
+          le mauvais objectif qui est ouvert — l'aperçu s'affiche, la
+          carte reste simplement floue et le scan n'aboutit jamais.
+          L'agent doit pouvoir corriger ça sans deviner qu'il y a
+          quelque chose à corriger. */}
+      {active && cameras.length > 1 && (
+        <button
+          type="button"
+          className="qr-camera-scanner__switch"
+          onClick={switchCamera}
+        >
+          <SwitchCamera size={16} aria-hidden="true" />
+          Changer de caméra
+        </button>
       )}
 
       {hint && <p className="qr-camera-scanner__hint">{hint}</p>}

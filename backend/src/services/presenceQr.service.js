@@ -4,6 +4,7 @@ import { env } from "../config/env.js";
 import { ApiError } from "../utils/ApiError.js";
 import PresenceSecurityQr from "../models/PresenceSecurityQr.js";
 import PresenceLogin from "../models/PresenceLogin.js";
+import Attendance from "../models/Attendance.js";
 import { getEffectiveWindow } from "../utils/presenceQrWindow.js";
 import {
   signPresenceQrToken,
@@ -120,6 +121,48 @@ export const revoke = async (id, user) => {
   }
 
   return serialize(qr);
+};
+
+// Suppression définitive d'un QR de service, avec tout ce qu'il porte :
+// présences enregistrées et connexions d'agents. C'est la seule façon
+// de faire disparaître une ligne de la liste — la révocation, elle,
+// coupe l'accès mais garde la trace, ce qui est le bon comportement
+// pour un service qui a réellement eu lieu.
+//
+// UN QR EN COURS NE SE SUPPRIME PAS. Des agents sont peut-être en train
+// de badger dessus à l'instant même : leur session serait invalidée en
+// pleine file d'attente, sans que personne côté accueil comprenne
+// pourquoi. Il faut le révoquer d'abord, ce qui est un geste conscient
+// et réversible.
+//
+// `force` est exigé dès qu'il reste des présences : supprimer emporte
+// la feuille de présence du service, définitivement. L'appelant doit
+// avoir vu combien de lignes il détruit — l'écran d'administration
+// affiche le compte avant de confirmer.
+export const remove = async (id, { force = false } = {}) => {
+  const qr = await PresenceSecurityQr.findById(id);
+
+  if (!qr) throw ApiError.notFound("QR de sécurité introuvable.");
+
+  if (computeStatus(qr) === "active") {
+    throw ApiError.badRequest(
+      "Ce QR est en cours de validité : des agents peuvent être en train de badger. Révoquez-le d'abord, puis supprimez-le."
+    );
+  }
+
+  const attendances = await Attendance.countDocuments({ securityQr: qr._id });
+
+  if (attendances > 0 && !force) {
+    throw ApiError.badRequest(
+      `Ce service porte ${attendances} présence${attendances > 1 ? "s" : ""} enregistrée${attendances > 1 ? "s" : ""}. Exportez la feuille de présence avant de confirmer la suppression.`
+    );
+  }
+
+  await Attendance.deleteMany({ securityQr: qr._id });
+  await PresenceLogin.deleteMany({ securityQr: qr._id });
+  await qr.deleteOne();
+
+  return { id: String(qr._id), deletedAttendances: attendances };
 };
 
 export const history = async (id) => {

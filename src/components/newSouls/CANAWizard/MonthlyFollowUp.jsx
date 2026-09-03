@@ -48,7 +48,10 @@ const MonthlyFollowUp = ({ rows = [], onChange, disabled }) => {
 
             return (
               <tr key={row.period || `extra-${index}`}>
-                <td>
+                {/* `data-label` : sous 760 px chaque ligne devient une
+                    carte, cet intitulé remplaçant l'en-tête de colonne
+                    (mixin `admin-stacked-table`). */}
+                <td data-label="Période">
                   {isStandard ? (
                     MONTHLY_PERIODS.find((period) => period.value === row.period)?.label
                   ) : (
@@ -61,7 +64,7 @@ const MonthlyFollowUp = ({ rows = [], onChange, disabled }) => {
                     />
                   )}
                 </td>
-                <td>
+                <td data-label="Objectif">
                   <input
                     type="text"
                     value={row.objective ?? ""}
@@ -69,7 +72,7 @@ const MonthlyFollowUp = ({ rows = [], onChange, disabled }) => {
                     onChange={(event) => updateRow(row.period, "objective", event.target.value)}
                   />
                 </td>
-                <td>
+                <td data-label="Date du bilan">
                   <input
                     type="date"
                     value={toInputDate(row.reviewDate)}
@@ -83,7 +86,7 @@ const MonthlyFollowUp = ({ rows = [], onChange, disabled }) => {
                     }
                   />
                 </td>
-                <td>
+                <td data-label="Situation observée">
                   <input
                     type="text"
                     value={row.observedSituation ?? ""}
@@ -91,7 +94,7 @@ const MonthlyFollowUp = ({ rows = [], onChange, disabled }) => {
                     onChange={(event) => updateRow(row.period, "observedSituation", event.target.value)}
                   />
                 </td>
-                <td>
+                <td data-label="Décision">
                   <input
                     type="text"
                     value={row.decision ?? ""}

@@ -150,6 +150,16 @@ export const adminRevokePresenceQr = (id) =>
     auth: true,
   });
 
+// `force` : confirme la destruction des présences déjà enregistrées.
+// Sans lui, le serveur refuse et indique combien de lignes seraient
+// perdues — c'est ce compte qui est présenté à l'administrateur avant
+// qu'il ne confirme.
+export const adminDeletePresenceQr = (id, { force = false } = {}) =>
+  request(`/api/admin/presences/qrcodes/${id}${force ? "?force=true" : ""}`, {
+    method: "DELETE",
+    auth: true,
+  });
+
 export const adminPresenceQrHistory = (id) =>
   request(`/api/admin/presences/qrcodes/${id}/history`, { auth: true });
 

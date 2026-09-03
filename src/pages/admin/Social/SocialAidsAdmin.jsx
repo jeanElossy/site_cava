@@ -258,9 +258,12 @@ const SocialAidsAdmin = () => {
 
                   return (
                     <tr key={aid.id}>
-                      <td>{aid.reference ?? "—"}</td>
+                      {/* `data-label` : sous 760 px chaque ligne devient
+                          une carte, cet intitulé remplaçant l'en-tête de
+                          colonne (mixin `admin-stacked-table`). */}
+                      <td data-label="Référence">{aid.reference ?? "—"}</td>
 
-                      <td>
+                      <td data-label="Bénéficiaire">
                         <span className="admin-social-aids__member-name">
                           {memberName(aid.member)}
                         </span>
@@ -269,12 +272,16 @@ const SocialAidsAdmin = () => {
                         </span>
                       </td>
 
-                      <td>{churchLabelFrom(churchOptions, aid.church)}</td>
-                      <td>{aid.aidType?.name ?? "—"}</td>
-                      <td className="admin-social-aids__amount">{money(aid.amount)}</td>
-                      <td className="admin-social-aids__motif">{aid.motif ?? "—"}</td>
+                      <td data-label="Église">{churchLabelFrom(churchOptions, aid.church)}</td>
+                      <td data-label="Type d'aide">{aid.aidType?.name ?? "—"}</td>
+                      <td className="admin-social-aids__amount" data-label="Montant">
+                        {money(aid.amount)}
+                      </td>
+                      <td className="admin-social-aids__motif" data-label="Motif">
+                        {aid.motif ?? "—"}
+                      </td>
 
-                      <td>
+                      <td data-label="Statut">
                         <span
                           className={`admin-social-aids__status admin-social-aids__status--${aid.status}`}
                         >
@@ -291,9 +298,9 @@ const SocialAidsAdmin = () => {
                         )}
                       </td>
 
-                      <td>{recordedByLabel(aid.requestedBy)}</td>
+                      <td data-label="Demandé par">{recordedByLabel(aid.requestedBy)}</td>
 
-                      <td>
+                      <td data-label="Décidé par / le">
                         {aid.decidedBy ? (
                           <>
                             <span>{recordedByLabel(aid.decidedBy)}</span>

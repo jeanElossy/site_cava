@@ -579,6 +579,13 @@
 
   margin-bottom: 12px;
 
+  // Liste des dossiers ET tableaux de saisie de la CANA (plan
+  // d'action, suivi mensuel) : sous 760 px, chaque ligne devient une
+  // carte, l'intitulé de colonne passant devant chaque valeur. Sans
+  // ça, un tableau de six colonnes se lit à coups de défilement
+  // latéral sur un téléphone.
+  @include admin-stacked-table;
+
   th,
   td {
     padding: 9px 10px;

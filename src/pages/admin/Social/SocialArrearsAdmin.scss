@@ -212,6 +212,11 @@
 
     border-collapse: collapse;
 
+    // Huit colonnes ne tiennent pas sur un téléphone : sous 760 px,
+    // chaque ligne devient une carte plutôt qu'une bande à faire
+    // glisser latéralement.
+    @include admin-stacked-table;
+
     th,
     td {
       padding: 12px 16px;
@@ -293,6 +298,49 @@
     &:hover {
       border-color: $admin-accent;
       color: $admin-accent;
+    }
+  }
+
+  // Ce fichier n'avait aucun point de rupture : sur un téléphone,
+  // l'en-tête, les filtres et les tuiles de total gardaient leur
+  // gabarit de bureau, d'où la nécessité de dézoomer pour lire l'écran.
+  @media (max-width: 768px) {
+    &__header {
+      flex-direction: column;
+
+      h1 {
+        font-size: 1.22rem;
+      }
+    }
+
+    &__header-actions {
+      width: 100%;
+
+      align-items: stretch;
+    }
+
+    // Les sélecteurs d'église et d'année occupaient chacun leur largeur
+    // minimale, se retrouvant côte à côte et serrés : une ligne chacun.
+    &__select {
+      flex: 1 1 100%;
+
+      select {
+        width: 100%;
+        min-width: 0;
+      }
+    }
+
+    &__refresh,
+    &__generate {
+      flex: 1 1 100%;
+      justify-content: center;
+    }
+
+    // `min-width: 170px` faisait tenir deux tuiles par ligne sur un
+    // écran de 360 px, avec des montants tronqués : une par ligne.
+    &__totals li {
+      flex: 1 1 100%;
+      min-width: 0;
     }
   }
 }

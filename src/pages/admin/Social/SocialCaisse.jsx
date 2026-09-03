@@ -312,14 +312,18 @@ const SocialCaisse = () => {
                   <tbody>
                     {movements.map((movement) => (
                       <tr key={movement.id}>
-                        <td>{formatDateOnly(movement.createdAt)}</td>
-                        <td>{formatTimeOnly(movement.createdAt)}</td>
-                        <td className="admin-social-caisse__type">
+                        {/* `data-label` : sous 760 px chaque ligne devient
+                            une carte, cet intitulé remplaçant l'en-tête
+                            de colonne (mixin `admin-stacked-table`). */}
+                        <td data-label="Date">{formatDateOnly(movement.createdAt)}</td>
+                        <td data-label="Heure">{formatTimeOnly(movement.createdAt)}</td>
+                        <td className="admin-social-caisse__type" data-label="Type">
                           {MOVEMENT_TYPE_LABELS[movement.type] ?? movement.type}
                         </td>
-                        <td>{movement.reference ?? "—"}</td>
-                        <td>{movement.description ?? "—"}</td>
+                        <td data-label="Référence">{movement.reference ?? "—"}</td>
+                        <td data-label="Description">{movement.description ?? "—"}</td>
                         <td
+                          data-label="Montant"
                           className={
                             Number(movement.amount) < 0
                               ? "admin-social-caisse__amount admin-social-caisse__amount--out"
@@ -334,7 +338,7 @@ const SocialCaisse = () => {
                             ? `-${money(Math.abs(movement.amount))}`
                             : `+${money(movement.amount)}`}
                         </td>
-                        <td>
+                        <td data-label="Utilisateur">
                           {(movement.recordedBy &&
                           typeof movement.recordedBy === "object"
                             ? movement.recordedBy.name
@@ -616,20 +620,20 @@ const ExercicesModal = ({
             <tbody>
               {exercices.map((item) => (
                 <tr key={item.year}>
-                  <td>
+                  <td data-label="Exercice">
                     <strong>{item.year}</strong>
                   </td>
-                  <td>{money(item.openingBalance)}</td>
-                  <td className="admin-social-caisse__in">
+                  <td data-label="Report">{money(item.openingBalance)}</td>
+                  <td className="admin-social-caisse__in" data-label="Entrées">
                     +{money(item.totalIn)}
                   </td>
-                  <td className="admin-social-caisse__out">
+                  <td className="admin-social-caisse__out" data-label="Sorties">
                     −{money(item.totalOut)}
                   </td>
-                  <td>
+                  <td data-label="Solde">
                     <strong>{money(item.currentBalance)}</strong>
                   </td>
-                  <td>
+                  <td data-label="État">
                     {item.status === "cloture" ? "Clôturé" : "Ouvert"}
                     {!item.exists && " (pas encore ouvert)"}
                   </td>

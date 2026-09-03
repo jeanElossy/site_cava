@@ -182,6 +182,11 @@
 
     border-collapse: collapse;
 
+    // Les deux tableaux de cet écran (mouvements de caisse et
+    // exercices) partagent cette classe : sous 760 px, chaque ligne
+    // devient une carte.
+    @include admin-stacked-table;
+
     th {
       padding: 14px 16px;
 

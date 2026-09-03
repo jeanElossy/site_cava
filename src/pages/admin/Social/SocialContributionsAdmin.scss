@@ -318,6 +318,10 @@
 
     border-collapse: collapse;
 
+    // Neuf colonnes : sous 760 px, chaque ligne devient une carte
+    // plutôt qu'une bande à faire glisser latéralement.
+    @include admin-stacked-table;
+
     th {
       padding: 12px 10px;
 

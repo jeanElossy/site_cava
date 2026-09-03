@@ -874,6 +874,26 @@ export const buildRoutes = () => {
     })
   );
 
+  // Suppression définitive d'un service badgé. `force=true` n'est
+  // accepté que pour confirmer la destruction des présences déjà
+  // enregistrées — le service refuse sans lui (voir presenceQr.service).
+  adminPresences.delete(
+    "/qrcodes/:id",
+    asyncHandler(async (req, res) => {
+      const data = await presenceQrService.remove(req.params.id, {
+        force: req.query.force === "true",
+      });
+
+      await audit.record(req, {
+        action: "delete",
+        resource: "presenceSecurityQr",
+        resourceId: req.params.id,
+      });
+
+      sendSuccess(res, { data });
+    })
+  );
+
   adminPresences.get(
     "/qrcodes/:id/history",
     asyncHandler(async (req, res) => {

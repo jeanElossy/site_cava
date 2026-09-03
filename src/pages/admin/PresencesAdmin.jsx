@@ -10,6 +10,7 @@ import {
   Plus,
   QrCode as QrCodeIcon,
   RefreshCw,
+  Trash2,
   Users,
 } from "lucide-react";
 
@@ -21,6 +22,7 @@ import {
   adminPresenceQrHistory,
   adminPresenceQrImage,
   adminListPresenceQrs,
+  adminDeletePresenceQr,
   adminRevokePresenceQr,
   downloadAttendancePdf,
   downloadAttendanceXlsx,
@@ -212,6 +214,7 @@ const PresencesAdmin = () => {
           qr={detailQr}
           onClose={() => setDetailQr(null)}
           onRevoked={reload}
+          onDeleted={reload}
         />
       )}
     </div>
@@ -411,7 +414,7 @@ const CreateQrModal = ({ onClose, onCreated }) => {
 // ------------------------------------------------------------------
 // Détail d'un QR : image à imprimer, historique de connexion, révocation
 // ------------------------------------------------------------------
-const QrDetailModal = ({ qr, onClose, onRevoked }) => {
+const QrDetailModal = ({ qr, onClose, onRevoked, onDeleted }) => {
   const imageLoad = useCallback(() => adminPresenceQrImage(qr.id), [qr.id]);
   const { data: image, loading: imageLoading } = useAsyncData(imageLoad);
 
@@ -436,6 +439,39 @@ const QrDetailModal = ({ qr, onClose, onRevoked }) => {
   // exports pouvant être déclenchés indépendamment.
   const [exporting, setExporting] = useState("");
   const [exportError, setExportError] = useState("");
+
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  // Passe à `true` quand le serveur a refusé faute de confirmation :
+  // le bouton demande alors une seconde pression, en annonçant ce qui
+  // sera détruit. Deux gestes pour une suppression irréversible, sans
+  // fenêtre de confirmation supplémentaire par-dessus la modale.
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const handleDelete = async () => {
+    if (deleting) return;
+
+    setDeleting(true);
+    setDeleteError("");
+
+    try {
+      await adminDeletePresenceQr(qr.id, { force: confirmDelete });
+
+      onDeleted();
+      onClose();
+    } catch (caught) {
+      // Refus parce que le service porte des présences : on ne le
+      // présente pas comme une erreur mais comme la question qu'il
+      // est, avec le compte exact renvoyé par le serveur.
+      setDeleteError(caught?.message ?? "La suppression a échoué.");
+
+      if (!confirmDelete && /présence/i.test(caught?.message ?? "")) {
+        setConfirmDelete(true);
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleRevoke = async () => {
     if (revoking) return;
@@ -676,6 +712,38 @@ const QrDetailModal = ({ qr, onClose, onRevoked }) => {
           />
           {revoked ? "QR révoqué" : revoking ? "Révocation…" : "Révoquer ce QR"}
         </button>
+
+        {/* La révocation coupe l'accès mais garde la trace du service —
+            c'est le bon geste pour un culte qui a eu lieu. La
+            suppression, elle, fait disparaître la ligne ET sa feuille
+            de présence : réservée aux QR créés par erreur ou aux essais,
+            et refusée par le serveur tant que le QR est en cours. */}
+        <button
+          type="button"
+          className="admin-presences__delete"
+          onClick={handleDelete}
+          disabled={deleting}
+        >
+          <Trash2
+            size={16}
+            aria-hidden="true"
+          />
+          {deleting
+            ? "Suppression…"
+            : confirmDelete
+              ? "Confirmer la suppression définitive"
+              : "Supprimer ce service"}
+        </button>
+
+        {deleteError && (
+          <p className="admin-presences__delete-error" role="alert">
+            <AlertCircle
+              size={15}
+              aria-hidden="true"
+            />
+            {deleteError}
+          </p>
+        )}
       </div>
     </AdminModal>
   );

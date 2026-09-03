@@ -346,16 +346,29 @@ const SocialContributionsAdmin = () => {
 
                 return (
                   <tr key={item.id}>
-                    <td>{memberMatricule(item.member)}</td>
-                    <td>{memberName(item.member)}</td>
-                    <td>
+                    {/* `data-label` : sous 760 px chaque ligne devient une
+                        carte, cet intitulé remplaçant l'en-tête de colonne
+                        (mixin `admin-stacked-table`). */}
+                    <td data-label="Matricule">{memberMatricule(item.member)}</td>
+                    <td data-label="Nom">{memberName(item.member)}</td>
+                    <td data-label="Mois">
                       {monthLabel(item.month)} {item.year}
                     </td>
-                    <td className="admin-social-contributions__amount">{money(item.amountDue)}</td>
-                    <td className="admin-social-contributions__amount">{money(item.amountPaid)}</td>
-                    <td>{formatDateTime(item.paidAt)}</td>
+                    <td
+                      className="admin-social-contributions__amount"
+                      data-label="Montant dû"
+                    >
+                      {money(item.amountDue)}
+                    </td>
+                    <td
+                      className="admin-social-contributions__amount"
+                      data-label="Montant payé"
+                    >
+                      {money(item.amountPaid)}
+                    </td>
+                    <td data-label="Paiement">{formatDateTime(item.paidAt)}</td>
 
-                    <td>
+                    <td data-label="Statut">
                       <span
                         className={`admin-social-contributions__status admin-social-contributions__status--${item.status}`}
                       >
@@ -371,7 +384,7 @@ const SocialContributionsAdmin = () => {
                       )}
                     </td>
 
-                    <td>{recordedByLabel(item.recordedBy)}</td>
+                    <td data-label="Agent">{recordedByLabel(item.recordedBy)}</td>
 
                     <td className="admin-social-contributions__actions-col">
                       <ContributionRowMenu

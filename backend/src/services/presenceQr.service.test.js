@@ -1,9 +1,11 @@
 import { describe, it, before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
+import mongoose from "mongoose";
 
 import { connectTestDb, disconnectTestDb } from "../test/db.js";
 import PresenceSecurityQr from "../models/PresenceSecurityQr.js";
 import PresenceLogin from "../models/PresenceLogin.js";
+import Attendance from "../models/Attendance.js";
 import { signPresenceQrToken } from "../middlewares/presenceAuth.js";
 import * as presenceQrService from "./presenceQr.service.js";
 
@@ -17,6 +19,7 @@ const cleanup = async () => {
   const ids = qrs.map((qr) => qr._id);
 
   await PresenceLogin.deleteMany({ securityQr: { $in: ids } });
+  await Attendance.deleteMany({ securityQr: { $in: ids } });
   await PresenceSecurityQr.deleteMany({ label: LABEL });
 };
 
@@ -244,6 +247,87 @@ describe("presenceQr.service (intégration MongoDB)", () => {
     const dataUrl = await presenceQrService.getImage(created.id);
 
     assert.match(dataUrl, /^data:image\/png;base64,/);
+  });
+
+  describe("remove()", () => {
+    // Le cas courant : un QR créé par erreur, jamais scanné. Rien à
+    // perdre, donc aucune confirmation à demander.
+    it("supprime un QR en attente qui ne porte aucune présence", async () => {
+      const created = await presenceQrService.generate({
+        label: LABEL,
+        durationMinutes: 60,
+      });
+
+      const result = await presenceQrService.remove(created.id);
+
+      assert.equal(result.deletedAttendances, 0);
+      assert.equal(await PresenceSecurityQr.countDocuments({ _id: created.id }), 0);
+    });
+
+    // Des agents peuvent être en train de badger dessus : leur session
+    // serait invalidée en pleine file d'attente. La révocation, elle,
+    // est un geste conscient et réversible.
+    it("refuse de supprimer un QR en cours de validité", async () => {
+      const created = await presenceQrService.generate({
+        label: LABEL,
+        durationMinutes: 60,
+      });
+
+      // Active le QR comme le ferait le premier scan d'un agent.
+      await presenceQrService.verifyToken(
+        signPresenceQrToken(await PresenceSecurityQr.findById(created.id))
+      );
+
+      await assert.rejects(
+        presenceQrService.remove(created.id),
+        (error) => error.status === 400 && /Révoquez-le d'abord/.test(error.message)
+      );
+
+      assert.equal(await PresenceSecurityQr.countDocuments({ _id: created.id }), 1);
+    });
+
+    // Un QR révoqué se supprime, lui : plus personne ne badge dessus.
+    it("supprime un QR révoqué", async () => {
+      const created = await presenceQrService.generate({
+        label: LABEL,
+        durationMinutes: 60,
+      });
+
+      await presenceQrService.revoke(created.id);
+      await presenceQrService.remove(created.id);
+
+      assert.equal(await PresenceSecurityQr.countDocuments({ _id: created.id }), 0);
+    });
+
+    // Supprimer emporte la feuille de présence du service : l'appelant
+    // doit d'abord voir combien de lignes il détruit.
+    it("exige une confirmation quand des présences sont enregistrées, puis emporte tout", async () => {
+      const created = await presenceQrService.generate({
+        label: LABEL,
+        durationMinutes: 60,
+      });
+
+      await presenceQrService.revoke(created.id);
+
+      await Attendance.create({
+        kind: "visitor",
+        visitor: { firstName: "Awa", lastName: "TestSuiteQr", gender: "femme" },
+        securityQr: created.id,
+        agent: new mongoose.Types.ObjectId(),
+        method: "manual",
+      });
+
+      await assert.rejects(
+        presenceQrService.remove(created.id),
+        (error) => error.status === 400 && /1 présence/.test(error.message)
+      );
+
+      const result = await presenceQrService.remove(created.id, { force: true });
+
+      assert.equal(result.deletedAttendances, 1);
+      assert.equal(await Attendance.countDocuments({ securityQr: created.id }), 0);
+      assert.equal(await PresenceSecurityQr.countDocuments({ _id: created.id }), 0);
+    });
   });
 
   it("history() est vide pour un QR jamais utilisé", async () => {

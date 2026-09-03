@@ -32,7 +32,10 @@ const PlanTable = ({ rows = [], onChange, disabled }) => {
         <tbody>
           {rows.map((row, index) => (
             <tr key={row.id ?? index}>
-              <td>
+              {/* `data-label` : sous 760 px chaque ligne devient une
+                  carte, cet intitulé remplaçant l'en-tête de colonne
+                  (mixin `admin-stacked-table`). */}
+              <td data-label="Besoin identifié">
                 <input
                   type="text"
                   value={row.need ?? ""}
@@ -40,7 +43,7 @@ const PlanTable = ({ rows = [], onChange, disabled }) => {
                   onChange={(event) => updateRow(index, "need", event.target.value)}
                 />
               </td>
-              <td>
+              <td data-label="Action décidée">
                 <input
                   type="text"
                   value={row.action ?? ""}
@@ -48,7 +51,7 @@ const PlanTable = ({ rows = [], onChange, disabled }) => {
                   onChange={(event) => updateRow(index, "action", event.target.value)}
                 />
               </td>
-              <td>
+              <td data-label="Structure ou responsable">
                 <input
                   type="text"
                   value={row.owner ?? ""}
@@ -56,7 +59,7 @@ const PlanTable = ({ rows = [], onChange, disabled }) => {
                   onChange={(event) => updateRow(index, "owner", event.target.value)}
                 />
               </td>
-              <td>
+              <td data-label="Date prévue">
                 <input
                   type="date"
                   value={toInputDate(row.date)}
@@ -70,7 +73,7 @@ const PlanTable = ({ rows = [], onChange, disabled }) => {
                   }
                 />
               </td>
-              <td>
+              <td data-label="Résultat">
                 <input
                   type="text"
                   value={row.result ?? ""}

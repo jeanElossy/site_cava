@@ -321,8 +321,17 @@ const AdminCrud = ({
                     className={rowClassName?.(item) || undefined}
                   >
                     {columns.map((column) => (
+                      // `data-label` : sous 760 px, chaque ligne devient
+                      // une carte et cet intitulé remplace l'en-tête de
+                      // colonne, disparu (voir le mixin
+                      // `admin-stacked-table`). Une chaîne, pas le nœud
+                      // React du libellé : `attr()` en CSS ne sait lire
+                      // qu'une valeur d'attribut.
                       <td
                         key={column.key}
+                        data-label={
+                          typeof column.label === "string" ? column.label : undefined
+                        }
                         style={column.width ? { width: column.width } : undefined}
                       >
                         {column.render

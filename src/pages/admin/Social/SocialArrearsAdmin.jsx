@@ -289,19 +289,30 @@ const SocialArrearsAdmin = () => {
             <tbody>
               {rows.map((row) => (
                 <tr key={row.member?.id ?? rangeLabel(row.unpaidMonths)}>
-                  <td>{memberMatricule(row.member)}</td>
-                  <td>{memberName(row.member)}</td>
-                  <td>{flockLabel(row.member?.flock)}</td>
-                  <td>
+                  {/* `data-label` : sous 760 px, l'en-tête disparaît et
+                      chaque ligne devient une carte où cet intitulé
+                      tient lieu de nom de colonne (mixin
+                      `admin-stacked-table`). La cellule d'action n'en
+                      porte pas : elle s'affiche pleine largeur. */}
+                  <td data-label="Matricule">{memberMatricule(row.member)}</td>
+                  <td data-label="Nom">{memberName(row.member)}</td>
+                  <td data-label="Bergerie">{flockLabel(row.member?.flock)}</td>
+                  <td data-label="Mois dus">
                     <span className="admin-social-arrears__count">
                       {row.monthsCount}
                     </span>
                   </td>
-                  <td>{rangeLabel(row.unpaidMonths)}</td>
-                  <td className="admin-social-arrears__amount">
+                  <td data-label="Période">{rangeLabel(row.unpaidMonths)}</td>
+                  <td
+                    className="admin-social-arrears__amount"
+                    data-label="Déjà versé"
+                  >
                     {money(row.totalPaid)}
                   </td>
-                  <td className="admin-social-arrears__amount admin-social-arrears__amount--due">
+                  <td
+                    className="admin-social-arrears__amount admin-social-arrears__amount--due"
+                    data-label="Reste dû"
+                  >
                     {money(row.remaining)}
                   </td>
                   <td>
