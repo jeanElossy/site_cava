@@ -8,6 +8,15 @@
 .admin-crud {
   max-width: 1240px;
 
+  // Écran « large » (voir la prop `wide`) : le tableau occupe toute la
+  // largeur disponible. 1240 px conviennent à une liste de trois ou
+  // quatre colonnes ; pour celle des membres, qui en compte six plus
+  // les actions, ça revenait à serrer chaque colonne alors qu'un tiers
+  // de l'écran restait vide à droite.
+  &--wide {
+    max-width: none;
+  }
+
   &__header {
     display: flex;
     align-items: flex-start;

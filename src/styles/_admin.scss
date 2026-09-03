@@ -145,6 +145,11 @@ $admin-header-height: 68px;
     min-width: 0;
     width: 100%;
 
+    // Annule aussi `table-layout: fixed` (voir
+    // `.admin-crud__table--fixed`) : des largeurs de colonnes en
+    // pourcentage n'ont plus de sens une fois les cellules empilées.
+    table-layout: auto;
+
     thead {
       // `display: none` et non `sr-only` : les intitulés sont repris
       // cellule par cellule ci-dessous, les lire deux fois n'aiderait
@@ -184,6 +189,14 @@ $admin-header-height: 68px;
       // boîtes au lieu d'une carte — c'est la ligne qui porte le trait
       // de séparation, une seule fois.
       border: 0;
+
+      // Les tableaux à largeurs figées tronquent leurs cellules à
+      // l'ellipse pour tenir dans leur colonne. Empilée, la cellule a
+      // toute la largeur de la carte : tronquer y ferait perdre du
+      // texte sans aucune raison.
+      overflow: visible;
+      white-space: normal;
+      text-overflow: clip;
 
       text-align: right;
 

@@ -275,6 +275,10 @@ const AdminForm = ({
   // (`error.details` — voir backend/src/middlewares/error.js). Le
   // serveur l'envoyait déjà, mais rien ne l'affichait.
   errorDetails = null,
+  // Formulaire ouvert dans une fenêtre large (voir AdminModal#wide) :
+  // trois colonnes au lieu de deux, sinon la place gagnée ne sert qu'à
+  // étirer des champs déjà assez larges.
+  wide = false,
 }) => {
   // Messages qui ne correspondent à aucun champ du formulaire (nom de
   // sous-document Mongoose, champ non éditable ici…) : ils seraient
@@ -287,7 +291,7 @@ const AdminForm = ({
 
   return (
     <form
-      className="admin-form"
+      className={wide ? "admin-form admin-form--wide" : "admin-form"}
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit();

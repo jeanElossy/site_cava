@@ -10,6 +10,15 @@
     gap: 18px;
   }
 
+  // Fenêtre large : trois colonnes, mais seulement quand la place est
+  // réellement là. Le seuil est celui de `AdminModal--wide`, en
+  // dessous duquel la fenêtre reprend sa largeur normale.
+  &--wide &__grid {
+    @media (min-width: 1000px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
   &__field {
     display: flex;
     flex-direction: column;

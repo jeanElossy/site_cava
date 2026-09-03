@@ -1183,6 +1183,11 @@ const CommunityAdmin = () => {
               fields={memberFields}
               columns={memberColumns}
               tableClassName="admin-crud__table--fixed"
+              // Six colonnes plus les actions : le tableau prend toute
+              // la largeur disponible au lieu de s'arrêter à 1240 px en
+              // laissant un tiers de l'écran vide, et la fiche membre
+              // s'ouvre en fenêtre large, sur trois colonnes.
+              wide
               // L'annuaire compte plusieurs centaines de membres :
               // l'API les renvoie déjà triés par ordre réel
               // d'inscription (voir routes/index.js#members), page par

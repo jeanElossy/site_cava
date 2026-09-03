@@ -74,6 +74,12 @@ const AdminCrud = ({
   // membre désactivé, sans imposer cette notion de statut aux autres
   // écrans qui ne la connaissent pas.
   rowClassName,
+  // Optionnel : écran « large ». Lève le plafond de 1240 px du tableau
+  // (une liste à six colonnes n'a aucune raison de s'arrêter au milieu
+  // d'un grand écran, comme celle des membres) et ouvre le formulaire
+  // d'édition dans une fenêtre large, sur trois colonnes au lieu de
+  // deux. Les autres écrans gardent leur gabarit actuel.
+  wide = false,
   // Optionnel : objet fusionné dans les paramètres envoyés à
   // `listAdmin` (ex. `{ church, flock }` pour la liste des membres) —
   // recréer cet objet à chaque rendu ne pose pas de problème, `useCrud`
@@ -205,7 +211,7 @@ const AdminCrud = ({
   };
 
   return (
-    <section className="admin-crud">
+    <section className={wide ? "admin-crud admin-crud--wide" : "admin-crud"}>
       <header className="admin-crud__header">
         <div>
           <h1>{labels.plural}</h1>
@@ -424,8 +430,10 @@ const AdminCrud = ({
           }
           description={labels.formDescription}
           onClose={closeForm}
+          wide={wide}
         >
           <AdminForm
+            wide={wide}
             fields={fields}
             values={values}
             onChange={handleChange}
