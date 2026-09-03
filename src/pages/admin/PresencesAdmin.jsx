@@ -110,7 +110,7 @@ const PresencesAdmin = () => {
   const [detailQr, setDetailQr] = useState(null);
 
   const load = useCallback(() => adminListPresenceQrs(), []);
-  const { data, loading, error, reload } = useAsyncData(load);
+  const { data, loading, error, refreshing, reload } = useAsyncData(load);
 
   const qrs = data ?? [];
 
@@ -136,13 +136,22 @@ const PresencesAdmin = () => {
             Générer un QR
           </button>
 
+          {/* La liste reste affichée pendant le rechargement (voir
+              useAsyncData) : sans l'icône qui tourne et le libellé qui
+              change, un clic sur une liste inchangée ne produit aucun
+              effet visible — le bouton passe pour cassé. */}
           <button
             type="button"
             className="admin-presences__refresh"
             onClick={reload}
+            disabled={refreshing}
           >
-            <RefreshCw size={17} aria-hidden="true" />
-            Actualiser
+            <RefreshCw
+              size={17}
+              aria-hidden="true"
+              className={refreshing ? "admin-presences__spin" : undefined}
+            />
+            {refreshing ? "Actualisation…" : "Actualiser"}
           </button>
         </div>
       </header>

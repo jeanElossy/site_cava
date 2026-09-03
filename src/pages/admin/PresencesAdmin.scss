@@ -41,6 +41,11 @@
 
   &__generate,
   &__refresh {
+    &[disabled] {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
     display: inline-flex;
     align-items: center;
     gap: 9px;

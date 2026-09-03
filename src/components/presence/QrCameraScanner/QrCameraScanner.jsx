@@ -75,9 +75,27 @@ const isInAppBrowser = () => {
   const ua = navigator.userAgent ?? "";
 
   // « wv » marque une WebView Android ; les autres sont les navigateurs
-  // intégrés qui s'annoncent explicitement.
-  return /\bwv\b|FBAN|FBAV|Instagram|Line\/|Twitter|MicroMessenger/i.test(ua);
+  // intégrés qui s'annoncent explicitement. `WhatsApp` s'ajoute à la
+  // liste : c'est par là que circule le QR de service, donc le cas le
+  // plus fréquent ici, et son navigateur interne ne s'annonce pas
+  // toujours comme une WebView.
+  if (/\bwv\b|FBAN|FBAV|Instagram|Line\/|Twitter|MicroMessenger|WhatsApp/i.test(ua)) {
+    return true;
+  }
+
+  // Android sans `mediaDevices` DU TOUT en contexte sécurisé : aucun
+  // navigateur Android à jour n'est dans ce cas, c'est la signature
+  // d'une WebView intégrée qui n'expose tout simplement pas l'API —
+  // et l'agent n'a alors aucun réglage à changer, quoi qu'il autorise.
+  return (
+    /Android/i.test(ua) &&
+    window.isSecureContext &&
+    !navigator.mediaDevices?.getUserMedia
+  );
 };
+
+const IN_APP_BROWSER_MESSAGE =
+  "Cette page est ouverte dans le navigateur interne d'une autre application (WhatsApp, Facebook…), qui bloque la caméra — l'autorisation accordée à Chrome n'y change rien. Touchez le menu ⋮ en haut à droite, puis « Ouvrir dans le navigateur » ou « Ouvrir dans Chrome », et reconnectez-vous.";
 
 // Message d'échec adapté à la CAUSE, et surtout à ce que l'agent doit
 // FAIRE. « Vérifiez l'autorisation » était affiché quoi qu'il arrive, y
@@ -91,9 +109,7 @@ const failureMessage = (error) => {
       // changer redonnera la même erreur, indéfiniment. D'où des
       // consignes concrètes plutôt qu'un « autorisez la caméra » que
       // l'agent croit déjà avoir fait.
-      if (isInAppBrowser()) {
-        return "Cette page est ouverte dans le navigateur interne d'une autre application (WhatsApp, Facebook…), qui bloque la caméra. Touchez le menu ⋮ puis « Ouvrir dans Chrome », et reconnectez-vous.";
-      }
+      if (isInAppBrowser()) return IN_APP_BROWSER_MESSAGE;
 
       return "L'accès à la caméra est bloqué pour ce site. Touchez l'icône à gauche de l'adresse du site, en haut de l'écran, puis Autorisations → Caméra → Autoriser. Vérifiez aussi que la caméra est autorisée pour votre navigateur dans les réglages du téléphone.";
     case "NotFoundError":
@@ -132,7 +148,36 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
 
   const [status, setStatus] = useState("idle");
   const [failure, setFailure] = useState("");
+
+  // Nom technique de l'erreur, affiché en petit sous le message. Ce
+  // n'est pas de la décoration : « ça ne marche pas sur Android » ne
+  // permet de rien conclure, alors que `NotAllowedError` (refus),
+  // `NotReadableError` (caméra prise par une autre application) ou
+  // `mediaDevices indisponible` (navigateur intégré) désignent chacun
+  // un remède différent. L'agent n'a qu'à recopier cette ligne.
+  const [detail, setDetail] = useState("");
   const [cameras, setCameras] = useState([]);
+
+  // "checking" | "granted" | "prompt" | "denied" | "unknown"
+  //
+  // C'EST LE CORRECTIF ANDROID. Chrome Android n'affiche pas de façon
+  // fiable la demande d'autorisation caméra quand `getUserMedia` part
+  // tout seul au chargement de la page : sans geste de l'utilisateur,
+  // la demande peut être écartée en silence — et deux écartements
+  // suffisent à ce que Chrome bloque définitivement le site sans plus
+  // jamais reposer la question. L'agent voit alors un écran qui ne
+  // demande rien et ne scanne rien, tout en étant persuadé d'avoir
+  // autorisé la caméra. Safari/iOS, lui, affiche la demande dans tous
+  // les cas — d'où un scanner qui marchait sur iPhone et pas ailleurs.
+  //
+  // Tant que l'autorisation n'est pas déjà accordée, la caméra ne
+  // démarre donc plus toute seule : elle attend un appui explicite,
+  // geste que tous les navigateurs acceptent comme déclencheur d'une
+  // demande d'autorisation.
+  //
+  // "unknown" = navigateur sans API Permissions pour la caméra
+  // (Safari) : on garde le démarrage automatique, qui y fonctionne.
+  const [permission, setPermission] = useState("checking");
 
   // Caméra imposée par l'agent via « Changer de caméra ». `null` =
   // choix automatique. Dans une ref plutôt qu'un état : `startCamera`
@@ -162,12 +207,14 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
     stopCamera();
     setStatus("starting");
     setFailure("");
+    setDetail("");
 
     const fail = (error) => {
       if (runId !== runIdRef.current) return;
 
       setStatus("failed");
       setFailure(failureMessage(error));
+      setDetail(error?.name || error?.message || "erreur inconnue");
     };
 
     // `getUserMedia` n'existe tout simplement PAS hors contexte
@@ -176,12 +223,24 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
     // avalé par le catch, et l'agent voyait un message d'autorisation
     // alors qu'aucune invite n'avait jamais pu s'afficher.
     if (!navigator.mediaDevices?.getUserMedia) {
-      const message = window.isSecureContext
-        ? "Ce navigateur ne permet pas l'accès à la caméra."
-        : "La caméra exige une connexion sécurisée (https). Ouvrez le site en https, pas par son adresse IP.";
+      let message;
+
+      if (!window.isSecureContext) {
+        message =
+          "La caméra exige une connexion sécurisée (https). Ouvrez le site en https, pas par son adresse IP.";
+      } else if (isInAppBrowser()) {
+        // Le cas le plus fréquent sur Android : l'API n'existe pas du
+        // tout dans le navigateur intégré, donc aucune autorisation ne
+        // peut être demandée — ni accordée. Le dire explicitement, sinon
+        // l'agent cherche indéfiniment un réglage à changer.
+        message = IN_APP_BROWSER_MESSAGE;
+      } else {
+        message = "Ce navigateur ne permet pas l'accès à la caméra.";
+      }
 
       setStatus("failed");
       setFailure(message);
+      setDetail("mediaDevices indisponible");
 
       return;
     }
@@ -450,6 +509,44 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stopCamera]);
 
+  useEffect(() => {
+    if (!active) return undefined;
+
+    let cancelled = false;
+    let subscription;
+
+    const apply = (state) => {
+      if (!cancelled) setPermission(state);
+    };
+
+    // `navigator.permissions.query({ name: "camera" })` n'existe pas
+    // partout, et Safari lève sur ce nom précis plutôt que de renvoyer
+    // une promesse rejetée : le `try` couvre les deux.
+    try {
+      navigator.permissions
+        ?.query({ name: "camera" })
+        .then((result) => {
+          apply(result.state);
+
+          // L'agent peut accorder l'autorisation depuis les réglages du
+          // navigateur, sans repasser par notre bouton : on démarre
+          // alors sans lui demander de recharger la page.
+          subscription = result;
+          result.onchange = () => apply(result.state);
+        })
+        .catch(() => apply("unknown"));
+    } catch {
+      apply("unknown");
+    }
+
+    if (!navigator.permissions?.query) apply("unknown");
+
+    return () => {
+      cancelled = true;
+      if (subscription) subscription.onchange = null;
+    };
+  }, [active]);
+
   // Bascule vers la caméra suivante. Dernier recours mais recours
   // réel : sur un Android à plusieurs objectifs arrière, aucune
   // heuristique ne dit lequel fait la mise au point de près — l'agent,
@@ -480,6 +577,18 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
       return undefined;
     }
 
+    // Rien tant que l'autorisation n'est pas connue, et surtout rien
+    // si elle reste à demander : le démarrage doit alors venir d'un
+    // appui de l'agent (voir `permission` plus haut).
+    if (permission === "checking" || permission === "prompt" || permission === "denied") {
+      return undefined;
+    }
+
+    // Déjà en marche (démarrage manuel qui vient d'aboutir, puis
+    // passage de la permission à « accordée ») : la relancer ne ferait
+    // que couper l'aperçu une fraction de seconde pour rien.
+    if (streamRef.current) return undefined;
+
     // Planifié plutôt qu'appelé directement, pour deux raisons : le
     // démarrage met à jour l'état, ce qui n'a pas sa place dans le corps
     // d'un effet (rendu en cascade) ; et cela laisse au navigateur le
@@ -491,7 +600,7 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
       runIdRef.current += 1;
       stopCamera();
     };
-  }, [active, startCamera, stopCamera]);
+  }, [active, permission, startCamera, stopCamera]);
 
   return (
     <div className="qr-camera-scanner">
@@ -546,6 +655,40 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
         )}
       </div>
 
+      {/* L'appui qui déclenche la demande d'autorisation. Il ne sert pas
+          qu'à « lancer la caméra » : c'est le geste utilisateur sans
+          lequel Chrome Android peut écarter la demande en silence, puis
+          bloquer le site pour de bon. */}
+      {active && permission === "prompt" && status !== "ready" && status !== "failed" && (
+        <div className="qr-camera-scanner__permission">
+          <p>
+            Le badgeage a besoin de la caméra pour lire les cartes.
+            Touchez le bouton, puis répondez <strong>Autoriser</strong> à
+            la question du navigateur.
+          </p>
+
+          <button type="button" onClick={startCamera}>
+            <Camera size={16} aria-hidden="true" />
+            {status === "starting" ? "Démarrage…" : "Autoriser la caméra"}
+          </button>
+        </div>
+      )}
+
+      {/* Autorisation déjà refusée et mémorisée : réessayer ne
+          redemandera rien, le navigateur ne repose plus la question.
+          Seuls ses réglages peuvent la débloquer — d'où des consignes
+          plutôt qu'un bouton qui ne ferait rien. */}
+      {active && permission === "denied" && (
+        <div className="qr-camera-scanner__permission qr-camera-scanner__permission--denied">
+          <p role="alert">
+            La caméra est bloquée pour ce site. Touchez l&apos;icône à
+            gauche de l&apos;adresse, en haut de l&apos;écran, puis
+            <strong> Autorisations → Caméra → Autoriser</strong>, et
+            rechargez la page.
+          </p>
+        </div>
+      )}
+
       {/* Reprise MANUELLE. Un démarrage automatique dépend de règles de
           lecture automatique et d'autorisation que le navigateur peut
           refuser sans rien dire ; un appui de l'agent, lui, est un geste
@@ -553,6 +696,12 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
       {active && status === "failed" && (
         <div className="qr-camera-scanner__recover">
           <p role="alert">{failure}</p>
+
+          {detail && (
+            <small className="qr-camera-scanner__detail">
+              Détail technique : {detail}
+            </small>
+          )}
 
           <button type="button" onClick={startCamera}>
             <RefreshCw size={16} aria-hidden="true" />

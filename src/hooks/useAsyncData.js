@@ -28,6 +28,14 @@ const useAsyncData = (loader) => {
   const [state, setState] = useState(INITIAL);
   const [token, setToken] = useState(0);
 
+  // Rechargement EN COURS, distinct de `loading` (premier chargement).
+  // Sans lui, un bouton « Actualiser » n'a strictement aucun effet
+  // visible quand les données n'ont pas changé : la liste reste
+  // affichée — c'est voulu, voir plus haut — mais l'utilisateur clique
+  // et ne voit rien bouger, donc il conclut que le bouton est cassé.
+  // Vécu tel quel sur l'écran de badgeage.
+  const [refreshing, setRefreshing] = useState(false);
+
   useEffect(() => {
     // Le composant peut être démonté (ou la donnée redemandée) avant
     // que la promesse n'aboutisse : on ignore alors le résultat.
@@ -49,6 +57,9 @@ const useAsyncData = (loader) => {
             caught?.message ??
             "Une erreur est survenue pendant le chargement.",
         });
+      })
+      .finally(() => {
+        if (!cancelled) setRefreshing(false);
       });
 
     return () => {
@@ -58,6 +69,7 @@ const useAsyncData = (loader) => {
 
   const reload = useCallback(() => {
     setState((previous) => ({ ...previous, error: null }));
+    setRefreshing(true);
     setToken((previous) => previous + 1);
   }, []);
 
@@ -65,6 +77,7 @@ const useAsyncData = (loader) => {
     data: state.data,
     loading: state.loading,
     error: state.error,
+    refreshing,
     reload,
   };
 };
