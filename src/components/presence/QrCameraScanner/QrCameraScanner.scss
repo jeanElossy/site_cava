@@ -180,6 +180,37 @@
     text-align: center;
   }
 
+  &__steps {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    margin: 0;
+    padding-left: 20px;
+
+    color: var(--presence-ink-soft);
+
+    font-size: 0.82rem;
+    line-height: 1.5;
+
+    strong {
+      color: var(--presence-ink);
+    }
+  }
+
+  // Second recours, visuellement secondaire : le premier geste utile
+  // est « Réessayer » ; recharger ne sert qu'après avoir changé un
+  // réglage. Deux classes contre une classe et un élément : l'emporte
+  // sur `&__permission button` par spécificité, sans dépendre de
+  // l'ordre des règles.
+  &__permission &__reload {
+    border: 1px solid var(--presence-border-strong);
+
+    background: transparent;
+
+    color: var(--presence-ink-soft);
+  }
+
   &__permission {
     display: flex;
     flex-direction: column;
@@ -231,12 +262,9 @@
       border-color: var(--presence-danger-border);
       background: var(--presence-danger-bg);
 
-      p {
+      > p {
         color: var(--presence-danger);
-      }
-
-      p strong {
-        color: var(--presence-danger);
+        font-weight: 600;
       }
     }
   }

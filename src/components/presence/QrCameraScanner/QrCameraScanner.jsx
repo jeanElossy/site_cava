@@ -678,14 +678,64 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
           redemandera rien, le navigateur ne repose plus la question.
           Seuls ses réglages peuvent la débloquer — d'où des consignes
           plutôt qu'un bouton qui ne ferait rien. */}
-      {active && permission === "denied" && (
+      {active && permission === "denied" && status !== "ready" && (
         <div className="qr-camera-scanner__permission qr-camera-scanner__permission--denied">
           <p role="alert">
-            La caméra est bloquée pour ce site. Touchez l&apos;icône à
-            gauche de l&apos;adresse, en haut de l&apos;écran, puis
-            <strong> Autorisations → Caméra → Autoriser</strong>, et
-            rechargez la page.
+            La caméra est bloquée. Trois réglages différents peuvent en
+            être la cause — vérifiez-les dans cet ordre :
           </p>
+
+          {/* TROIS blocages distincts, et c'est tout le problème : ils
+              donnent le même « denied » côté navigateur, mais ne se
+              débloquent pas au même endroit. L'agent qui a « vérifié
+              les autorisations » n'en a en général vérifié qu'un seul,
+              et conclut que le site est cassé. */}
+          <ol className="qr-camera-scanner__steps">
+            <li>
+              <strong>Le site.</strong> Touchez l&apos;icône à gauche de
+              l&apos;adresse, en haut de l&apos;écran, puis
+              Autorisations → Caméra → <strong>Autoriser</strong>.
+            </li>
+            <li>
+              <strong>Le navigateur lui-même.</strong> Réglages Android →
+              Applications → Chrome → Autorisations →{" "}
+              <strong>Appareil photo</strong>. Un navigateur sans cette
+              autorisation bloque tous les sites, même ceux que vous
+              venez d&apos;autoriser.
+            </li>
+            <li>
+              <strong>Le navigateur intégré.</strong> Si vous avez ouvert
+              ce lien depuis WhatsApp, la page tourne dans le navigateur
+              interne de WhatsApp, qui interdit la caméra quoi que vous
+              autorisiez. Menu ⋮ en haut à droite →{" "}
+              <strong>Ouvrir dans Chrome</strong>.
+            </li>
+          </ol>
+
+          {/* Le bouton reste, même quand l'API annonce un refus : cette
+              réponse est parfois périmée (autorisation tout juste
+              accordée dans les réglages) ou fausse selon les versions
+              d'Android. Un essai coûte moins cher qu'une impasse — et
+              s'il échoue vraiment, le détail technique ci-dessous
+              nomme la cause. */}
+          <button type="button" onClick={startCamera}>
+            <RefreshCw size={16} aria-hidden="true" />
+            {status === "starting" ? "Démarrage…" : "Réessayer"}
+          </button>
+
+          <button
+            type="button"
+            className="qr-camera-scanner__reload"
+            onClick={() => window.location.reload()}
+          >
+            Recharger la page
+          </button>
+
+          {detail && (
+            <small className="qr-camera-scanner__detail">
+              Détail technique : {detail}
+            </small>
+          )}
         </div>
       )}
 
@@ -693,7 +743,11 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
           lecture automatique et d'autorisation que le navigateur peut
           refuser sans rien dire ; un appui de l'agent, lui, est un geste
           utilisateur explicite, que tous les navigateurs acceptent. */}
-      {active && status === "failed" && (
+      {/* `permission !== "denied"` : ce cas a désormais son propre bloc
+          ci-dessus, avec les trois réglages à vérifier et son bouton de
+          reprise. Les afficher tous les deux montrerait deux messages
+          et deux boutons pour un seul problème. */}
+      {active && status === "failed" && permission !== "denied" && (
         <div className="qr-camera-scanner__recover">
           <p role="alert">{failure}</p>
 
