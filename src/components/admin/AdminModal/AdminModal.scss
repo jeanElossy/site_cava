@@ -42,6 +42,13 @@
     animation: adminModalIn 0.22s ease-out;
   }
 
+  // Contenu en colonnes (voir la prop `wide`). Le seuil suit celui de
+  // la mise en colonnes côté page : en dessous, la fenêtre reprend sa
+  // largeur normale et le contenu s'empile.
+  &--wide &__dialog {
+    max-width: 1040px;
+  }
+
   &__header {
     display: flex;
     align-items: flex-start;

@@ -8,8 +8,15 @@ import "./AdminModal.scss";
  * Fenêtre modale accessible : rôle `dialog`, fermeture au clavier
  * (Échap), focus déplacé dans la fenêtre à l'ouverture puis rendu à
  * l'élément qui l'a ouverte, et piège de tabulation simple.
+ *
+ * `wide` élargit la fenêtre pour un contenu qui se lit en COLONNES
+ * plutôt qu'en pile — le détail d'un service badgé, par exemple, où le
+ * QR à imprimer et la liste des présences n'ont aucune raison de se
+ * suivre verticalement sur un écran d'ordinateur. Sans ça, le contenu
+ * s'empile sur 660 px de large et se parcourt au défilement, en
+ * laissant les deux tiers de l'écran vides de chaque côté.
  */
-const AdminModal = ({ title, description, onClose, children }) => {
+const AdminModal = ({ title, description, onClose, wide = false, children }) => {
   const dialogRef = useRef(null);
   const openerRef = useRef(null);
 
@@ -96,7 +103,7 @@ const AdminModal = ({ title, description, onClose, children }) => {
   }, []);
 
   return (
-    <div className="admin-modal">
+    <div className={wide ? "admin-modal admin-modal--wide" : "admin-modal"}>
       <div
         className="admin-modal__backdrop"
         onClick={onClose}

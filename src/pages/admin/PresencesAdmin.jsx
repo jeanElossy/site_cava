@@ -532,180 +532,45 @@ const QrDetailModal = ({ qr, onClose, onRevoked, onDeleted }) => {
       title={qr.label}
       description={describeWindow(qr)}
       onClose={onClose}
+      wide
     >
+      {/* Deux colonnes à partir de 900 px : à gauche ce qui SERT au
+          service (le QR à imprimer) et ce qui le clôt (révocation,
+          suppression) ; à droite ce qu'il PRODUIT (présences, historique
+          des agents), c'est-à-dire les deux listes qui s'allongent. Sur
+          un téléphone, les colonnes s'empilent et l'ordre reste celui
+          du DOM, qui est déjà le bon. */}
       <div className="admin-presences__detail">
-        <section className="admin-presences__detail-section">
-          <h3>
-            <QrCodeIcon
-              size={16}
-              aria-hidden="true"
-            />
-            QR à imprimer
-          </h3>
-
-          {imageLoading && <AdminLoading label="Génération de l'image…" />}
-
-          {image && (
-            <div className="admin-presences__qr-image">
-              <img
-                src={image.dataUrl}
-                alt={`QR de sécurité — ${qr.label}`}
-              />
-
-              <a
-                href={image.dataUrl}
-                download={`qr-securite-${qr.id}.png`}
-              >
-                <Download
-                  size={15}
-                  aria-hidden="true"
-                />
-                Télécharger
-              </a>
-            </div>
-          )}
-        </section>
-
-        <section className="admin-presences__detail-section">
-          <div className="admin-presences__detail-heading">
+        <div className="admin-presences__detail-aside">
+          <section className="admin-presences__detail-section">
             <h3>
-              <Users
+              <QrCodeIcon
                 size={16}
                 aria-hidden="true"
               />
-              Présences enregistrées ({counts?.total ?? attendance?.length ?? 0})
+              QR à imprimer
             </h3>
 
-            <div className="admin-presences__export-group">
-              <button
-                type="button"
-                className="admin-presences__export"
-                onClick={() => handleExport("xlsx")}
-                disabled={Boolean(exporting)}
-              >
-                {exporting === "xlsx" ? (
-                  <Loader2
-                    className="admin-presences__spin"
-                    size={14}
-                    aria-hidden="true"
-                  />
-                ) : (
-                  <Download
-                    size={14}
-                    aria-hidden="true"
-                  />
-                )}
-                {exporting === "xlsx" ? "Génération…" : "Excel (.xlsx)"}
-              </button>
+            {imageLoading && <AdminLoading label="Génération de l'image…" />}
 
-              <button
-                type="button"
-                className="admin-presences__export"
-                onClick={() => handleExport("pdf")}
-                disabled={Boolean(exporting)}
-              >
-                {exporting === "pdf" ? (
-                  <Loader2
-                    className="admin-presences__spin"
-                    size={14}
-                    aria-hidden="true"
-                  />
-                ) : (
+            {image && (
+              <div className="admin-presences__qr-image">
+                <img
+                  src={image.dataUrl}
+                  alt={`QR de sécurité — ${qr.label}`}
+                />
+
+                <a
+                  href={image.dataUrl}
+                  download={`qr-securite-${qr.id}.png`}
+                >
                   <Download
-                    size={14}
+                    size={15}
                     aria-hidden="true"
                   />
-                )}
-                {exporting === "pdf" ? "Génération…" : "PDF"}
-              </button>
+                  Télécharger
+                </a>
             </div>
-          </div>
-
-          {counts && (
-            <p className="admin-presences__counts">
-              {counts.members} membre{counts.members > 1 ? "s" : ""} · {counts.visitors} visiteur
-              {counts.visitors > 1 ? "s" : ""}
-            </p>
-          )}
-
-          {exportError && (
-            <p
-              className="admin-presences__form-error"
-              role="alert"
-            >
-              <AlertCircle
-                size={16}
-                aria-hidden="true"
-              />
-              {exportError}
-            </p>
-          )}
-
-          {attendanceLoading && <AdminLoading label="Chargement…" />}
-
-          {!attendanceLoading && (attendance ?? []).length === 0 && (
-            <p className="admin-presences__detail-empty">
-              Aucune présence enregistrée pour l&apos;instant.
-            </p>
-          )}
-
-          {!attendanceLoading && (attendance ?? []).length > 0 && (
-            <ul className="admin-presences__detail-list">
-              {attendance.map((record) => (
-                <li key={record.id}>
-                  <span>
-                    {record.kind === "visitor"
-                      ? `${record.visitor?.firstName ?? ""} ${record.visitor?.lastName ?? ""}`.trim()
-                      : `${record.member?.firstName ?? ""} ${record.member?.lastName ?? ""}`.trim()}
-                  </span>
-                  <span>
-                    {record.kind === "visitor"
-                      ? "Visiteur"
-                      : record.member?.registrationNumber
-                        ? formatRegistrationNumber(record.member.registrationNumber)
-                        : "—"}
-                  </span>
-                  <span>
-                    {new Date(record.recordedAt).toLocaleTimeString("fr-FR", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className="admin-presences__detail-section">
-          <h3>
-            <History
-              size={16}
-              aria-hidden="true"
-            />
-            Historique de connexion des agents
-          </h3>
-
-          {historyLoading && <AdminLoading label="Chargement…" />}
-
-          {!historyLoading && (history ?? []).length === 0 && (
-            <p className="admin-presences__detail-empty">
-              Aucun agent ne s&apos;est encore connecté avec ce QR.
-            </p>
-          )}
-
-          {!historyLoading && (history ?? []).length > 0 && (
-            <ul className="admin-presences__detail-list">
-              {history.map((entry) => (
-                <li key={entry.id}>
-                  <span>
-                    {entry.agent?.firstName} {entry.agent?.lastName}
-                  </span>
-                  <span>{formatRegistrationNumber(entry.agent?.registrationNumber)}</span>
-                  <span>{formatDateTime(entry.loggedInAt)}</span>
-                </li>
-              ))}
-            </ul>
           )}
         </section>
 
@@ -753,6 +618,152 @@ const QrDetailModal = ({ qr, onClose, onRevoked, onDeleted }) => {
             {deleteError}
           </p>
         )}
+        </div>
+
+        <div className="admin-presences__detail-main">
+          <section className="admin-presences__detail-section">
+            <div className="admin-presences__detail-heading">
+              <h3>
+                <Users
+                  size={16}
+                  aria-hidden="true"
+                />
+                Présences enregistrées ({counts?.total ?? attendance?.length ?? 0})
+              </h3>
+
+              <div className="admin-presences__export-group">
+                <button
+                  type="button"
+                  className="admin-presences__export"
+                  onClick={() => handleExport("xlsx")}
+                  disabled={Boolean(exporting)}
+                >
+                  {exporting === "xlsx" ? (
+                    <Loader2
+                      className="admin-presences__spin"
+                      size={14}
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Download
+                      size={14}
+                      aria-hidden="true"
+                    />
+                  )}
+                  {exporting === "xlsx" ? "Génération…" : "Excel (.xlsx)"}
+                </button>
+
+                <button
+                  type="button"
+                  className="admin-presences__export"
+                  onClick={() => handleExport("pdf")}
+                  disabled={Boolean(exporting)}
+                >
+                  {exporting === "pdf" ? (
+                    <Loader2
+                      className="admin-presences__spin"
+                      size={14}
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Download
+                      size={14}
+                      aria-hidden="true"
+                    />
+                  )}
+                  {exporting === "pdf" ? "Génération…" : "PDF"}
+                </button>
+              </div>
+            </div>
+
+            {counts && (
+              <p className="admin-presences__counts">
+                {counts.members} membre{counts.members > 1 ? "s" : ""} · {counts.visitors} visiteur
+                {counts.visitors > 1 ? "s" : ""}
+              </p>
+            )}
+
+            {exportError && (
+              <p
+                className="admin-presences__form-error"
+                role="alert"
+              >
+                <AlertCircle
+                  size={16}
+                  aria-hidden="true"
+                />
+                {exportError}
+              </p>
+            )}
+
+            {attendanceLoading && <AdminLoading label="Chargement…" />}
+
+            {!attendanceLoading && (attendance ?? []).length === 0 && (
+              <p className="admin-presences__detail-empty">
+                Aucune présence enregistrée pour l&apos;instant.
+              </p>
+            )}
+
+            {!attendanceLoading && (attendance ?? []).length > 0 && (
+              <ul className="admin-presences__detail-list">
+                {attendance.map((record) => (
+                  <li key={record.id}>
+                    <span>
+                      {record.kind === "visitor"
+                        ? `${record.visitor?.firstName ?? ""} ${record.visitor?.lastName ?? ""}`.trim()
+                        : `${record.member?.firstName ?? ""} ${record.member?.lastName ?? ""}`.trim()}
+                    </span>
+                    <span>
+                      {record.kind === "visitor"
+                        ? "Visiteur"
+                        : record.member?.registrationNumber
+                          ? formatRegistrationNumber(record.member.registrationNumber)
+                          : "—"}
+                    </span>
+                    <span>
+                      {new Date(record.recordedAt).toLocaleTimeString("fr-FR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="admin-presences__detail-section">
+            <h3>
+              <History
+                size={16}
+                aria-hidden="true"
+              />
+              Historique de connexion des agents
+            </h3>
+
+            {historyLoading && <AdminLoading label="Chargement…" />}
+
+            {!historyLoading && (history ?? []).length === 0 && (
+              <p className="admin-presences__detail-empty">
+                Aucun agent ne s&apos;est encore connecté avec ce QR.
+              </p>
+            )}
+
+            {!historyLoading && (history ?? []).length > 0 && (
+              <ul className="admin-presences__detail-list">
+                {history.map((entry) => (
+                  <li key={entry.id}>
+                    <span>
+                      {entry.agent?.firstName} {entry.agent?.lastName}
+                    </span>
+                    <span>{formatRegistrationNumber(entry.agent?.registrationNumber)}</span>
+                    <span>{formatDateTime(entry.loggedInAt)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
       </div>
     </AdminModal>
   );

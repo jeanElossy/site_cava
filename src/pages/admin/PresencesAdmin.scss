@@ -314,10 +314,41 @@
 
   // ---------------- Détail d'un QR ----------------
 
+  // Empilé par défaut (téléphone, tablette étroite), deux colonnes dès
+  // que la place existe. `align-items: start` : sans lui, la colonne
+  // courte s'étirerait à la hauteur de la plus longue et le QR
+  // flotterait au milieu d'un grand vide.
   &__detail {
+    display: grid;
+    gap: 22px;
+
+    @media (min-width: 900px) {
+      grid-template-columns: 320px minmax(0, 1fr);
+      align-items: start;
+      gap: 28px;
+    }
+  }
+
+  &__detail-aside,
+  &__detail-main {
     display: flex;
     flex-direction: column;
     gap: 22px;
+
+    // Indispensable dans une grille : sans lui, une liste large
+    // pousserait la colonne au-delà de sa piste au lieu de défiler ou
+    // de se replier.
+    min-width: 0;
+  }
+
+  // Les deux listes de la colonne de droite peuvent s'allonger
+  // beaucoup ; leur donner plus de hauteur qu'en pile évite de
+  // défiler dans un cadre de 220 px à côté d'une colonne gauche
+  // presque vide.
+  &__detail-main &__detail-list {
+    @media (min-width: 900px) {
+      max-height: 320px;
+    }
   }
 
   &__detail-section {
