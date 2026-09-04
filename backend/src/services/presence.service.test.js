@@ -367,23 +367,45 @@ describe("presence.service (intégration MongoDB)", () => {
       assert.equal(first.alreadyRecorded, false);
       assert.equal(first.visitor.firstName, "Invité");
       assert.equal(first.visitor.lastName, "Homme 1");
+    });
 
-      // Le même badge scanné deux fois pendant le même service ne
-      // crée pas une deuxième présence (badge physique réutilisable,
-      // pas une identité de visiteur comme un nom saisi à la main).
+    it("scan() compte un NOUVEL invité à chaque scan du même badge (jeton réutilisable)", async () => {
+      // Le badge invité passe d'une personne à l'autre à l'entrée : on
+      // le scanne, on laisse entrer, on le reprend pour le suivant.
+      // Contrairement à une carte de membre, chaque scan est un invité
+      // de plus — jamais « déjà enregistrée ».
+      const first = await presenceService.scan(
+        { registrationNumber: "INV-HOMME-01" },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
       const second = await presenceService.scan(
         { registrationNumber: "INV-HOMME-01" },
         { id: agent._id },
         qr,
         fakeReq
       );
-      assert.equal(second.alreadyRecorded, true);
+      const third = await presenceService.scan(
+        { registrationNumber: "INV-HOMME-01" },
+        { id: agent._id },
+        qr,
+        fakeReq
+      );
+
+      assert.equal(first.alreadyRecorded, false);
+      assert.equal(second.alreadyRecorded, false);
+      assert.equal(third.alreadyRecorded, false);
+
+      // Trois présences distinctes pour le même badge physique.
+      assert.notEqual(first.visitor.id, second.visitor.id);
+      assert.notEqual(second.visitor.id, third.visitor.id);
 
       const count = await Attendance.countDocuments({
         "visitor.badgeCode": "INV-HOMME-01",
         securityQr: qr._id,
       });
-      assert.equal(count, 1);
+      assert.equal(count, 3);
     });
 
     it("scan() reconnaît un badge invité femme, distinct par genre/index", async () => {
@@ -450,6 +472,30 @@ describe("presence.service (intégration MongoDB)", () => {
       const results = await presenceService.search("a.*b(c");
 
       assert.ok(Array.isArray(results));
+    });
+
+    // Durcissement issu de l'audit de sécurité : une ou deux lettres
+    // renvoyaient une large tranche de l'annuaire, qu'il suffisait de
+    // parcourir lettre par lettre pour le reconstituer.
+    it("ne renvoie rien en dessous de trois caractères", async () => {
+      assert.deepEqual(await presenceService.search("t"), []);
+      assert.deepEqual(await presenceService.search("te"), []);
+      assert.deepEqual(await presenceService.search("  t  "), []);
+
+      const results = await presenceService.search("1xp26004d");
+      assert.ok(results.length >= 1);
+    });
+
+    // Le téléphone reste un CRITÈRE de recherche mais ne fait plus
+    // partie de la réponse : il n'est affiché nulle part dans l'écran
+    // de scan, et le renvoyer permettait de moissonner les numéros de
+    // tout l'annuaire, 15 par appel.
+    it("cherche sur le téléphone sans jamais le renvoyer", async () => {
+      const results = await presenceService.search("0700000004");
+      const found = results.find((m) => m.registrationNumber === "1XP26004D");
+
+      assert.ok(found, "le membre doit être trouvable par son numéro");
+      assert.equal("phone" in found, false);
     });
   });
 

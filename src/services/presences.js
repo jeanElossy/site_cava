@@ -66,10 +66,17 @@ export const markPresenceManually = (memberId, sessionToken) =>
     token: sessionToken,
   });
 
-export const markVisitorPresence = ({ firstName, lastName, gender }, sessionToken) =>
+// `phone` est facultatif mais bien transmis : c'est la coordonnée que
+// l'équipe des nouvelles âmes reprend dans le dossier SOA. Elle était
+// saisie à l'écran puis perdue en route — le corps de la requête ne la
+// portait pas.
+export const markVisitorPresence = (
+  { firstName, lastName, gender, phone },
+  sessionToken
+) =>
   request("/api/presences/mark-visitor", {
     method: "POST",
-    body: { firstName, lastName, gender },
+    body: { firstName, lastName, gender, phone },
     token: sessionToken,
   });
 

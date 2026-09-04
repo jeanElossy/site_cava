@@ -161,6 +161,7 @@ export function validateEnv({ requireSeedAdmin = false } = {}) {
     problems.push("TRUST_PROXY doit être un entier positif ou nul.");
   }
 
+
   // En production, une origine explicite est obligatoire : sans elle on
   // ne saurait pas quoi autoriser, et le réflexe serait d'ouvrir à tous.
   if (env.isProduction && env.CORS_ORIGIN.length === 0) {
@@ -209,6 +210,32 @@ export function validateEnv({ requireSeedAdmin = false } = {}) {
         "SEED_ADMIN_PASSWORD doit faire au moins 10 caractères (contrainte du modèle User)."
       );
     }
+  }
+
+  // Avertissement NON bloquant : signalé fort au démarrage, mais sans
+  // empêcher le serveur de tourner. TRUST_PROXY à 0 en production est
+  // presque toujours un oubli — l'API voit alors l'IP du proxy au lieu
+  // de celle du client, et la limitation de débit compte tout le trafic
+  // sur cette unique adresse, un plafond partagé par le site entier. On
+  // ne REFUSE pas de démarrer (un déploiement bloqué serait pire qu'un
+  // rate limiting mal calibré), mais on le crie dans les logs pour que
+  // le premier coup d'œil au tableau de bord Render le rattrape.
+  const warnings = [];
+
+  if (env.isProduction && env.TRUST_PROXY === 0) {
+    warnings.push(
+      "TRUST_PROXY vaut 0 en production. Derrière Render/Vercel, réglez-la à 1, " +
+        "sinon la limitation de débit compte toutes les requêtes sur l'IP du proxy " +
+        "et peut bloquer le site entier au premier pic de charge."
+    );
+  }
+
+  if (warnings.length > 0) {
+    console.warn(
+      "\n⚠️  Avertissements de configuration :\n" +
+        warnings.map((warning) => `  - ${warning}`).join("\n") +
+        "\n"
+    );
   }
 
   if (problems.length > 0) {

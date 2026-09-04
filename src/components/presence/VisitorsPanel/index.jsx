@@ -58,7 +58,14 @@ const VisitorsPanel = ({ sessionToken, serviceLabel, refreshKey = 0 }) => {
 
   useEffect(() => {
     const initial = setTimeout(load, 0);
-    const interval = setInterval(load, 15000);
+    // 60 s et non 15 : chaque appareil connecté sonde cette liste en
+    // permanence, et tous partagent le quota de l'unique IP publique du
+    // wifi de l'église (voir la limite côté serveur). Un rafraîchissement
+    // toutes les 15 s multipliait ce trafic de fond par quatre sans
+    // bénéfice — la liste des visiteurs se consulte épisodiquement, pas
+    // en continu. Une identification faite au scanner rafraîchit déjà la
+    // liste tout de suite via `refreshKey`.
+    const interval = setInterval(load, 60000);
 
     return () => {
       clearTimeout(initial);

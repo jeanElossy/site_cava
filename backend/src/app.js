@@ -51,14 +51,37 @@ export const createApp = () => {
   // explicites faites dans les services.
   app.use(stripOperators);
 
-  // La notification de paiement échappe à la limite globale.
+  // Routes exemptées de la limite GLOBALE. Elles ne sont pas pour
+  // autant sans limite : chacune a la sienne, adaptée à son usage.
   //
-  // Le prestataire rejoue sa notification jusqu'à obtenir un 200 ; lui
-  // répondre 429 l'arrêterait, et le don resterait « en attente » alors
-  // que l'argent a été prélevé. La route est protégée autrement : par
-  // la signature HMAC, qui rend toute requête non signée sans effet.
+  // 1. La notification de paiement. Le prestataire rejoue sa
+  //    notification jusqu'à obtenir un 200 ; lui répondre 429
+  //    l'arrêterait, et le don resterait « en attente » alors que
+  //    l'argent a été prélevé. Elle est protégée par sa signature
+  //    HMAC, qui rend toute requête non signée sans effet.
+  //
+  // 2. Le badgeage des présences. La limite globale compte 300
+  //    requêtes par quart d'heure et PAR ADRESSE IP — or tous les
+  //    téléphones des agents sortent sur l'unique IP publique du wifi
+  //    de l'église, donc partagent ce quota. Un seul agent qui badge
+  //    200 membres en un quart d'heure en consomme déjà 260 ; deux
+  //    agents dépassent le plafond et se font renvoyer à l'écran de
+  //    connexion en pleine file d'attente. Ces routes ont leurs
+  //    propres limites (voir rateLimit.js : presenceLoginLimiter pour
+  //    la connexion, presenceScanLimiter pour le scan), calibrées sur
+  //    le geste réel d'un agent.
+  const GLOBAL_LIMIT_EXEMPT = [
+    "/api/donations/webhook",
+    "/api/presences",
+  ];
+
+  const isExemptFromGlobalLimit = (path) =>
+    GLOBAL_LIMIT_EXEMPT.some(
+      (prefix) => path === prefix || path.startsWith(`${prefix}/`)
+    );
+
   app.use((req, res, next) =>
-    req.path === "/api/donations/webhook"
+    isExemptFromGlobalLimit(req.path)
       ? next()
       : globalLimiter(req, res, next)
   );

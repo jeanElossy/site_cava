@@ -132,4 +132,32 @@ describe("Attendance (modèle) — idempotence (intégration MongoDB)", () => {
 
     await Attendance.deleteMany({ _id: { $in: [first._id, second._id] } });
   });
+
+  it("autorise plusieurs présences pour le MÊME badge invité (jeton réutilisable)", async () => {
+    // L'ancien index unique sur `visitor.badgeCode` a été retiré : un
+    // badge invité passe d'une personne à l'autre à l'entrée, chaque
+    // scan est un invité de plus. Deux présences portant le même
+    // badgeCode et le même QR doivent coexister.
+    const first = await Attendance.create({
+      kind: "visitor",
+      visitor: { firstName: "Invité", lastName: "Homme 1", gender: "homme", badgeCode: "INV-HOMME-01" },
+      securityQr,
+      agent,
+      method: "scan",
+    });
+
+    const second = await Attendance.create({
+      kind: "visitor",
+      visitor: { firstName: "Invité", lastName: "Homme 1", gender: "homme", badgeCode: "INV-HOMME-01" },
+      securityQr,
+      agent,
+      method: "scan",
+    });
+
+    assert.ok(first._id);
+    assert.ok(second._id);
+    assert.notEqual(String(first._id), String(second._id));
+
+    await Attendance.deleteMany({ _id: { $in: [first._id, second._id] } });
+  });
 });

@@ -177,40 +177,38 @@ export const parseGuestBadgeCode = (normalized) => {
   };
 };
 
-// Même principe que `recordMemberAttendance` (dédoublonnage par
-// l'erreur d'index plutôt qu'une lecture préalable), mais pour un
-// badge invité réutilisable : dédoublonné par `visitor.badgeCode`, pas
-// par une identité de membre.
+// Badge invité RÉUTILISABLE, à l'opposé d'une carte de membre.
+//
+// Un même badge physique passe d'un invité à l'autre à l'entrée : on
+// le scanne, on laisse la personne entrer, on le reprend pour le
+// suivant. CHAQUE scan est donc un invité de plus, jamais un doublon —
+// contrairement à la carte d'un membre, qu'un second scan ne doit pas
+// recompter. Aucune déduplication ici, volontairement : chaque appel
+// crée une nouvelle présence, `alreadyRecorded` est toujours faux.
+//
+// `badgeCode` reste stocké — il porte le genre et le libellé du badge,
+// et permet de retrouver au scanner la présence qu'on vient de créer
+// pour y saisir l'identité réelle du porteur (facultatif, pour le
+// suivi SOA). Ce n'est plus une clé d'unicité : l'index unique qui
+// l'imposait a été retiré du modèle (voir Attendance.js), c'est lui
+// qui faisait répondre « déjà enregistrée » au deuxième invité.
 const recordGuestBadgeAttendance = async ({ badge, securityQr, agentId, req }) => {
-  try {
-    const attendance = await Attendance.create({
-      kind: "visitor",
-      visitor: {
-        firstName: "Invité",
-        lastName: `${GUEST_BADGE_GENDER_LABELS[badge.code.split("-")[1]]} ${badge.index}`,
-        badgeCode: badge.code,
-        gender: badge.gender,
-      },
-      securityQr,
-      agent: agentId,
-      method: "scan",
-      ip: req?.ip,
-      userAgent: req?.headers?.["user-agent"]?.slice(0, 300),
-    });
+  const attendance = await Attendance.create({
+    kind: "visitor",
+    visitor: {
+      firstName: "Invité",
+      lastName: `${GUEST_BADGE_GENDER_LABELS[badge.code.split("-")[1]]} ${badge.index}`,
+      badgeCode: badge.code,
+      gender: badge.gender,
+    },
+    securityQr,
+    agent: agentId,
+    method: "scan",
+    ip: req?.ip,
+    userAgent: req?.headers?.["user-agent"]?.slice(0, 300),
+  });
 
-    return { attendance, alreadyRecorded: false };
-  } catch (error) {
-    if (error.code === 11000) {
-      const existing = await Attendance.findOne({
-        "visitor.badgeCode": badge.code,
-        securityQr,
-      });
-
-      return { attendance: existing, alreadyRecorded: true };
-    }
-
-    throw error;
-  }
+  return { attendance, alreadyRecorded: false };
 };
 
 export const scan = async ({ registrationNumber }, presenceAgent, presenceQr, req) => {
@@ -509,10 +507,27 @@ export const buildVisitorsPdf = async (securityQr) => {
 // Secours « carte oubliée » : nom, prénom, matricule ou téléphone.
 // Fonction dédiée plutôt que `listAdmin` générique du CRUD membres —
 // celui-ci ne cherche pas sur le téléphone, exigé par la spec.
+//
+// DEUX GARDE-FOUS contre l'extraction de l'annuaire :
+//
+//  1. Minimum de 3 caractères. Une lettre seule renverrait une tranche
+//     de l'annuaire ; en enchaînant les lettres de l'alphabet, on le
+//     reconstituait morceau par morceau. Trois caractères imposent de
+//     savoir qui l'on cherche, ce qui est le cas légitime — retrouver
+//     UNE personne qui a oublié sa carte.
+//
+//  2. Le TÉLÉPHONE reste un critère de recherche (on peut retrouver un
+//     membre en tapant son numéro) mais ne fait plus partie de la
+//     RÉPONSE. Il n'est affiché nulle part dans l'écran de scan ; le
+//     renvoyer permettait de moissonner les numéros de tous les
+//     membres, 15 par appel. Un attaquant qui tape déjà un numéro
+//     complet le connaît ; il n'apprend rien de nouveau.
+const SEARCH_MIN_LENGTH = 3;
+
 export const search = async (query) => {
   const safe = String(query ?? "").trim().slice(0, 80);
 
-  if (!safe) return [];
+  if (safe.length < SEARCH_MIN_LENGTH) return [];
 
   const escaped = safe.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const regex = { $regex: escaped, $options: "i" };
@@ -526,7 +541,7 @@ export const search = async (query) => {
       { phone: regex },
     ],
   })
-    .select("firstName lastName photo registrationNumber phone area")
+    .select("firstName lastName photo registrationNumber area")
     .limit(15)
     .lean();
 
@@ -536,7 +551,6 @@ export const search = async (query) => {
     lastName: member.lastName,
     photo: member.photo,
     registrationNumber: member.registrationNumber,
-    phone: member.phone,
     area: member.area,
   }));
 };

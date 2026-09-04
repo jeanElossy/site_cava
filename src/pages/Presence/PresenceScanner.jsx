@@ -131,6 +131,7 @@ const PresenceScanner = ({
   const [visitorFirstName, setVisitorFirstName] = useState("");
   const [visitorLastName, setVisitorLastName] = useState("");
   const [visitorGender, setVisitorGender] = useState("");
+  const [visitorPhone, setVisitorPhone] = useState("");
 
   const resumeTimerRef = useRef(null);
   const toastTimerRef = useRef(null);
@@ -254,8 +255,16 @@ const PresenceScanner = ({
       const result = await scanMemberCard(registrationNumber, sessionToken);
       const kind = result.kind ?? "member";
 
+      // Chaque scan d'un badge invité crée une NOUVELLE présence côté
+      // serveur (le badge est réutilisable, un scan = un invité, jamais
+      // « déjà enregistrée » — voir recordGuestBadgeAttendance). Elle
+      // arrive avec une identité fictive ("Invité Homme 1") ; on
+      // propose aussitôt d'y mettre le vrai nom, pour la feuille de
+      // présence, la liste partagée et le dossier SOA. Facultatif :
+      // « Plus tard » compte l'invité sans le nommer et rend la caméra,
+      // pour une entrée rapide.
       awaitingIdentity =
-        kind === "visitor" && Boolean(result.visitor?.isBadge) && !result.visitor?.identified;
+        kind === "visitor" && Boolean(result.visitor?.isBadge);
 
       applyResult(result, kind, { sticky: awaitingIdentity });
 
@@ -291,6 +300,9 @@ const PresenceScanner = ({
     setIdentifyError("");
 
     try {
+      // La présence a déjà été créée et comptée au scan ; on ne fait
+      // que lui donner l'identité réelle de son porteur (PATCH). On ne
+      // recompte donc rien ici.
       const result = await identifyPresenceVisitor(
         pendingGuest.id,
         identity,
@@ -323,8 +335,13 @@ const PresenceScanner = ({
 
   // Recherche « carte oubliée », avec un léger anti-rebond : chaque
   // frappe ne doit pas déclencher un appel réseau immédiat.
+  //
+  // Trois caractères minimum, comme le serveur (voir
+  // presence.service.js#search) : une ou deux lettres renverraient une
+  // large tranche de l'annuaire, ce qui n'aide pas à retrouver une
+  // personne précise et sert surtout à le parcourir.
   useEffect(() => {
-    if (!searchOpen || !query.trim()) return undefined;
+    if (!searchOpen || query.trim().length < 3) return undefined;
 
     const timer = window.setTimeout(async () => {
       setSearching(true);
@@ -374,6 +391,7 @@ const PresenceScanner = ({
           firstName: visitorFirstName.trim(),
           lastName: visitorLastName.trim(),
           gender: visitorGender,
+          phone: visitorPhone.trim(),
         },
         sessionToken
       );
@@ -383,6 +401,7 @@ const PresenceScanner = ({
       setVisitorFirstName("");
       setVisitorLastName("");
       setVisitorGender("");
+      setVisitorPhone("");
     } catch (error) {
       applyError(error);
     } finally {
@@ -496,7 +515,7 @@ const PresenceScanner = ({
               </button>
             </div>
 
-            {searchOpen && query.trim() && (
+            {searchOpen && query.trim().length >= 3 && (
               <ul className="presence-scanner__results">
                 {searching && <li className="presence-scanner__results-empty">Recherche…</li>}
 
@@ -555,6 +574,18 @@ const PresenceScanner = ({
                   disabled={busy}
                 />
 
+                {/* Facultatif, mais c'est la coordonnée que l'équipe des
+                    nouvelles âmes reprend telle quelle dans le dossier
+                    SOA — la demander ici évite de rappeler la personne
+                    pour l'obtenir. */}
+                <input
+                  type="tel"
+                  value={visitorPhone}
+                  onChange={(event) => setVisitorPhone(event.target.value)}
+                  placeholder="Téléphone (facultatif)"
+                  disabled={busy}
+                />
+
                 <div className="presence-scanner__visitor-gender" role="radiogroup" aria-label="Genre du visiteur">
                   <button
                     type="button"
@@ -584,6 +615,7 @@ const PresenceScanner = ({
                       setVisitorFirstName("");
                       setVisitorLastName("");
                       setVisitorGender("");
+                      setVisitorPhone("");
                     }}
                     disabled={busy}
                   >

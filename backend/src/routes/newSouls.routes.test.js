@@ -9,6 +9,7 @@ import Flock from "../models/Flock.js";
 import NewSoul from "../models/NewSoul.js";
 import Member from "../models/Member.js";
 import RegistrationCounter from "../models/RegistrationCounter.js";
+import PresenceSecurityQr from "../models/PresenceSecurityQr.js";
 
 const { createApp } = await import("../app.js");
 
@@ -215,10 +216,23 @@ describe("Routes des nouvelles âmes (intégration HTTP)", () => {
       status: "actif",
     });
 
+    // Le module Nouvelles Âmes revérifie désormais que le QR de sécurité
+    // de la session est toujours actif (durcissement de l'audit) : il
+    // doit donc exister réellement en base, pas seulement dans le jeton.
+    const presenceQr = await PresenceSecurityQr.create({
+      label: "NewSoulsRouteTestQr",
+      durationMinutes: 60,
+      activatedAt: new Date(),
+    });
+
     try {
       const presenceToken = signPresenceSessionToken({
         agent: presenceMember,
-        qr: { activatedAt: new Date(), durationMinutes: 60, jti: "test-jti-newsouls" },
+        qr: {
+          activatedAt: presenceQr.activatedAt,
+          durationMinutes: presenceQr.durationMinutes,
+          jti: presenceQr.jti,
+        },
       });
 
       const createRes = await fetch(`${baseUrl}/api/admin/new-souls`, {
@@ -237,6 +251,7 @@ describe("Routes des nouvelles âmes (intégration HTTP)", () => {
       assert.equal(created.soa.agentName, "Agent Présence Route Test");
     } finally {
       await Member.deleteOne({ _id: presenceMember._id });
+      await PresenceSecurityQr.deleteOne({ _id: presenceQr._id });
     }
   });
 });

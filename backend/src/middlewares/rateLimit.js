@@ -223,20 +223,53 @@ export const presenceLoginLimiter = rateLimit({
   },
 });
 
-// Scan et recherche pendant une session de badgeage déjà authentifiée.
+// Scan, recherche et saisie pendant une session de badgeage déjà
+// authentifiée.
 //
-// Plafond haut : un agent enchaîne légitimement des dizaines de scans
-// par minute à l'entrée d'un culte. La limite ne sert qu'à borner
-// l'abus d'une session déjà valide (jeton volé, script), pas à freiner
-// l'usage normal.
+// TOUT COMPTEUR EST PAR ADRESSE IP, et c'est ce qui dimensionne cette
+// limite : les téléphones de TOUS les agents d'un même site sortent
+// sur l'unique IP publique du wifi de l'église. Le plafond n'est donc
+// pas « par agent » mais « pour toute l'équipe de badgeage réunie ».
+//
+// L'ancienne valeur de 60/minute correspondait à un seul agent
+// scannant une carte par seconde : deux agents à l'entrée d'un culte
+// la dépassaient, et se faisaient renvoyer à l'écran de connexion en
+// pleine file d'attente.
+//
+// 600/minute laisse une marge confortable à une dizaine d'agents
+// scannant sans interruption, tout en bornant l'abus d'une session
+// volée ou scriptée — la seule chose que cette limite ait à faire ici,
+// l'authentification étant déjà exigée en amont.
 export const presenceScanLimiter = rateLimit({
   ...base,
   windowMs: 60 * 1000,
-  limit: 60,
+  limit: 600,
   handler: (_req, res) => {
     res.status(429).json({
       success: false,
       message: "Trop de scans en peu de temps. Merci de patienter un instant.",
+      error: { status: 429 },
+    });
+  },
+});
+
+// Lectures de l'écran de badgeage : compteurs, liste des visiteurs,
+// documents PDF. Sans elle, ces routes n'auraient AUCUNE limite depuis
+// que le préfixe `/api/presences` est exempté du plafond global (voir
+// app.js) — une exemption ne doit jamais laisser une route nue.
+//
+// Même raisonnement par IP que ci-dessus. La liste des visiteurs est
+// rechargée périodiquement par chaque appareil connecté ; 240/minute
+// couvre largement une équipe entière, y compris les PDF générés en
+// fin de service.
+export const presenceReadLimiter = rateLimit({
+  ...base,
+  windowMs: 60 * 1000,
+  limit: 240,
+  handler: (_req, res) => {
+    res.status(429).json({
+      success: false,
+      message: "Trop de requêtes. Merci de patienter un instant.",
       error: { status: 429 },
     });
   },

@@ -23,6 +23,7 @@ const GuestIdentityForm = ({
   defaultValues,
   busy = false,
   error = "",
+  title = "Qui porte ce badge ?",
   submitLabel = "Enregistrer l'invité",
   cancelLabel = "Plus tard",
   onSubmit,
@@ -50,7 +51,7 @@ const GuestIdentityForm = ({
     <form className="guest-identity-form" onSubmit={handleSubmit}>
       <p className="guest-identity-form__intro">
         <UserCheck aria-hidden="true" />
-        Qui porte ce badge ?
+        {title}
       </p>
 
       <input

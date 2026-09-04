@@ -69,10 +69,12 @@ const attendanceSchema = new mongoose.Schema(
       // Posé UNIQUEMENT quand la présence vient du scan d'un badge
       // invité pré-imprimé (ex. "INV-HOMME-01", voir
       // guestBadgeSvg.service.js) — absent pour un visiteur saisi à la
-      // main. Sert à déduplique le même badge scanné deux fois pendant
-      // le même service (voir l'index partiel ci-dessous), le badge
-      // étant un objet physique réutilisé d'un service à l'autre, pas
-      // une identité de visiteur comme `firstName`/`lastName`.
+      // main. Porte le genre et le libellé du badge, et sert à
+      // retrouver au scanner la présence qu'on vient de créer pour y
+      // saisir l'identité réelle du porteur. Ce n'est PAS une clé
+      // d'unicité : un même badge, réutilisé d'un invité à l'autre à
+      // l'entrée, crée une nouvelle présence à chaque scan (voir
+      // l'absence volontaire d'index unique plus bas).
       badgeCode: { type: String, trim: true, uppercase: true, maxlength: 40 },
 
       // Posé quand l'agent remplace l'identité fictive d'un badge
@@ -139,18 +141,20 @@ attendanceSchema.index(
   { member: 1, securityQr: 1 },
   { unique: true, partialFilterExpression: { kind: "member" } }
 );
-// Même principe que l'index membre ci-dessus, mais pour un badge
-// invité : un même badge physique ne doit compter qu'UNE fois par
-// service, même scanné deux fois par erreur — index PARTIEL, restreint
-// aux visiteurs qui portent un `badgeCode` (un visiteur saisi à la
-// main n'en a pas, et reste volontairement sans contrainte d'unicité).
-attendanceSchema.index(
-  { "visitor.badgeCode": 1, securityQr: 1 },
-  {
-    unique: true,
-    partialFilterExpression: { "visitor.badgeCode": { $exists: true } },
-  }
-);
+// PAS d'index unique sur `visitor.badgeCode` — et c'est délibéré.
+//
+// Un badge invité est un jeton RÉUTILISABLE : à l'entrée, on le scanne,
+// on laisse l'invité entrer, on le reprend pour le suivant. Chaque scan
+// est un invité de plus. Une contrainte d'unicité par badge et par
+// service avait été posée au départ, par symétrie avec la carte de
+// membre — c'était une erreur de conception : elle faisait répondre
+// « déjà enregistrée » au deuxième invité muni du même badge, qui
+// n'était alors compté nulle part. Elle a été retirée.
+//
+// Le commentaire du bloc `badgeCode` plus haut décrit encore l'ancien
+// rôle de dédoublonnage : il ne vaut plus, `badgeCode` ne sert
+// désormais qu'à porter le genre/le libellé du badge et à retrouver la
+// présence tout juste créée pour y saisir l'identité du porteur.
 attendanceSchema.index({ securityQr: 1, recordedAt: -1 });
 
 export default mongoose.model("Attendance", attendanceSchema);

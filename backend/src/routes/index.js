@@ -70,6 +70,7 @@ import {
   publicUploadLimiter,
   presenceLoginLimiter,
   presenceScanLimiter,
+  presenceReadLimiter,
 } from "../middlewares/rateLimit.js";
 
 import QRCode from "qrcode";
@@ -671,6 +672,7 @@ export const buildRoutes = () => {
 
   presencesPublic.get(
     "/stats",
+    presenceReadLimiter,
     requirePresenceSession,
     asyncHandler(async (req, res) => {
       const counts = await presenceService.countAttendance(req.presenceQr._id);
@@ -750,6 +752,7 @@ export const buildRoutes = () => {
 
   presencesPublic.get(
     "/visitors",
+    presenceReadLimiter,
     requirePresenceSession,
     asyncHandler(async (req, res) => {
       const data = await presenceService.listVisitors(req.presenceQr._id);
@@ -760,6 +763,7 @@ export const buildRoutes = () => {
 
   presencesPublic.get(
     "/visitors.pdf",
+    presenceReadLimiter,
     requirePresenceSession,
     asyncHandler(async (req, res) => {
       const buffer = await presenceService.buildVisitorsPdf(req.presenceQr);
@@ -790,6 +794,7 @@ export const buildRoutes = () => {
   // document pour le même service.
   presencesPublic.get(
     "/attendance.pdf",
+    presenceReadLimiter,
     requirePresenceSession,
     asyncHandler(async (req, res) => {
       const buffer = await presenceExportService.buildAttendancePdf(

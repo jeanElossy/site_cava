@@ -53,6 +53,16 @@ const translate = (err) => {
     return ApiError.badRequest("Corps de requête JSON invalide.");
   }
 
+  // Corps de requête au-delà de la limite (100 ko, voir app.js). Sans
+  // ce cas, `express.json` levait une `PayloadTooLargeError` qui
+  // retombait sur le 500 générique : le corps était bien refusé, mais
+  // le code d'erreur laissait croire à une panne serveur au lieu d'un
+  // refus volontaire. 413 est le statut exact pour « charge trop
+  // lourde ».
+  if (err?.type === "entity.too.large" || err?.status === 413) {
+    return new ApiError(413, "Corps de requête trop volumineux.");
+  }
+
   return null;
 };
 
