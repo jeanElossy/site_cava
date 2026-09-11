@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import jsQR from "jsqr";
 
-import { Camera, RefreshCw, SwitchCamera } from "lucide-react";
+import { Camera, RefreshCw } from "lucide-react";
 
 import "./QrCameraScanner.scss";
 
@@ -118,7 +118,7 @@ const failureMessage = (error) => {
     case "NotReadableError":
       return "La caméra est déjà utilisée par une autre application. Fermez-la complètement, puis réessayez.";
     default:
-      return "La caméra n'a pas pu démarrer. Touchez « Activer la caméra » pour réessayer.";
+      return "La caméra n'a pas pu démarrer. Touchez « Réessayer ».";
   }
 };
 
@@ -129,10 +129,15 @@ const isPermissionError = (error) =>
   error?.name === "NotAllowedError" || error?.name === "SecurityError";
 
 // Les échecs de caméra ne remontent PAS au parent : ce composant les
-// affiche lui-même, avec la consigne adaptée et le bouton de reprise.
-// Les faire remonter en plus affichait deux fois le même message à
-// l'écran, celui du parent étant le plus court et le moins utile.
-const QrCameraScanner = ({ active, onDecode, hint }) => {
+// affiche lui-même, en une seule ligne discrète sous le cadre.
+//
+// La caméra démarre TOUTE SEULE dès que le composant est actif : ce
+// premier `getUserMedia` déclenche la demande d'autorisation native du
+// navigateur, l'agent répond « Autoriser », et le scan commence — aucun
+// bouton ni consigne à afficher pour ça. On ne garde sous le cadre
+// qu'un message d'échec avec un bouton « Réessayer », visible seulement
+// quand la caméra n'a vraiment pas pu démarrer.
+const QrCameraScanner = ({ active, onDecode }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const previewCanvasRef = useRef(null);
@@ -156,33 +161,11 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
   // `mediaDevices indisponible` (navigateur intégré) désignent chacun
   // un remède différent. L'agent n'a qu'à recopier cette ligne.
   const [detail, setDetail] = useState("");
-  const [cameras, setCameras] = useState([]);
 
-  // "checking" | "granted" | "prompt" | "denied" | "unknown"
-  //
-  // C'EST LE CORRECTIF ANDROID. Chrome Android n'affiche pas de façon
-  // fiable la demande d'autorisation caméra quand `getUserMedia` part
-  // tout seul au chargement de la page : sans geste de l'utilisateur,
-  // la demande peut être écartée en silence — et deux écartements
-  // suffisent à ce que Chrome bloque définitivement le site sans plus
-  // jamais reposer la question. L'agent voit alors un écran qui ne
-  // demande rien et ne scanne rien, tout en étant persuadé d'avoir
-  // autorisé la caméra. Safari/iOS, lui, affiche la demande dans tous
-  // les cas — d'où un scanner qui marchait sur iPhone et pas ailleurs.
-  //
-  // Tant que l'autorisation n'est pas déjà accordée, la caméra ne
-  // démarre donc plus toute seule : elle attend un appui explicite,
-  // geste que tous les navigateurs acceptent comme déclencheur d'une
-  // demande d'autorisation.
-  //
-  // "unknown" = navigateur sans API Permissions pour la caméra
-  // (Safari) : on garde le démarrage automatique, qui y fonctionne.
-  const [permission, setPermission] = useState("checking");
-
-  // Caméra imposée par l'agent via « Changer de caméra ». `null` =
-  // choix automatique. Dans une ref plutôt qu'un état : `startCamera`
-  // la lit, et la faire entrer dans ses dépendances relancerait la
-  // caméra en boucle.
+  // Caméra arrière retenue automatiquement (voir plus bas). `null` =
+  // laisser le navigateur choisir. Dans une ref plutôt qu'un état :
+  // `startCamera` la lit, et la faire entrer dans ses dépendances
+  // relancerait la caméra en boucle.
   const preferredCameraRef = useRef(readPreferredCamera());
 
   const stopCamera = useCallback(() => {
@@ -332,10 +315,12 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
       /* mise au point non pilotable : l'automatique de l'appareil fera. */
     }
 
-    // Liste des caméras, pour le bouton « Changer de caméra ». Peuplée
-    // seulement MAINTENANT : avant l'autorisation, les libellés sont
-    // vides sur tous les navigateurs, et une liste d'entrées anonymes
-    // ne permettrait à personne de choisir.
+    // Sélection automatique de la caméra arrière. Interrogée seulement
+    // MAINTENANT : avant l'autorisation, les libellés sont vides sur
+    // tous les navigateurs. Si l'objectif obtenu n'est pas une arrière,
+    // on retient la première arrière repérée au libellé pour le
+    // prochain démarrage — silencieusement, sans bouton ni relance
+    // immédiate du flux dans le dos de l'agent.
     navigator.mediaDevices
       .enumerateDevices()
       .then((devices) => {
@@ -343,12 +328,6 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
 
         const videoInputs = devices.filter((device) => device.kind === "videoinput");
 
-        setCameras(videoInputs);
-
-        // Aucune caméra choisie à la main, et celle qu'on a obtenue
-        // n'est pas une arrière : on retient la première arrière
-        // repérée au libellé pour le prochain démarrage plutôt que de
-        // relancer le flux dans le dos de l'agent.
         if (!preferredCameraRef.current) {
           const current = videoTrack?.getSettings?.().deviceId;
           const currentDevice = videoInputs.find((device) => device.deviceId === current);
@@ -361,7 +340,7 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
         }
       })
       .catch(() => {
-        /* énumération refusée : le bouton de changement reste masqué. */
+        /* énumération refusée : on garde l'objectif que le navigateur a choisi. */
       });
 
     const video = videoRef.current;
@@ -510,66 +489,9 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
   }, [stopCamera]);
 
   useEffect(() => {
-    if (!active) return undefined;
-
-    let cancelled = false;
-    let subscription;
-
-    const apply = (state) => {
-      if (!cancelled) setPermission(state);
-    };
-
-    // `navigator.permissions.query({ name: "camera" })` n'existe pas
-    // partout, et Safari lève sur ce nom précis plutôt que de renvoyer
-    // une promesse rejetée : le `try` couvre les deux.
-    try {
-      navigator.permissions
-        ?.query({ name: "camera" })
-        .then((result) => {
-          apply(result.state);
-
-          // L'agent peut accorder l'autorisation depuis les réglages du
-          // navigateur, sans repasser par notre bouton : on démarre
-          // alors sans lui demander de recharger la page.
-          subscription = result;
-          result.onchange = () => apply(result.state);
-        })
-        .catch(() => apply("unknown"));
-    } catch {
-      apply("unknown");
-    }
-
-    if (!navigator.permissions?.query) apply("unknown");
-
-    return () => {
-      cancelled = true;
-      if (subscription) subscription.onchange = null;
-    };
-  }, [active]);
-
-  // Bascule vers la caméra suivante. Dernier recours mais recours
-  // réel : sur un Android à plusieurs objectifs arrière, aucune
-  // heuristique ne dit lequel fait la mise au point de près — l'agent,
-  // lui, le voit tout de suite dans l'aperçu. Le choix est retenu pour
-  // la session, donc à faire une seule fois par appareil.
-  const switchCamera = useCallback(() => {
-    if (cameras.length < 2) return;
-
-    const currentIndex = cameras.findIndex(
-      (device) => device.deviceId === preferredCameraRef.current
-    );
-    const next = cameras[(currentIndex + 1) % cameras.length];
-
-    preferredCameraRef.current = next.deviceId;
-    writePreferredCamera(next.deviceId);
-
-    startCamera();
-  }, [cameras, startCamera]);
-
-  useEffect(() => {
     if (!active) {
       // Pas de `setStatus` ici : l'état n'est lu que sous `active`
-      // (ligne de scan et bloc de reprise), le remettre à zéro
+      // (ligne de scan et message d'échec), le remettre à zéro
       // déclencherait un rendu en cascade pour rien.
       runIdRef.current += 1;
       stopCamera();
@@ -577,16 +499,8 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
       return undefined;
     }
 
-    // Rien tant que l'autorisation n'est pas connue, et surtout rien
-    // si elle reste à demander : le démarrage doit alors venir d'un
-    // appui de l'agent (voir `permission` plus haut).
-    if (permission === "checking" || permission === "prompt" || permission === "denied") {
-      return undefined;
-    }
-
-    // Déjà en marche (démarrage manuel qui vient d'aboutir, puis
-    // passage de la permission à « accordée ») : la relancer ne ferait
-    // que couper l'aperçu une fraction de seconde pour rien.
+    // Déjà en marche : la relancer ne ferait que couper l'aperçu une
+    // fraction de seconde pour rien.
     if (streamRef.current) return undefined;
 
     // Planifié plutôt qu'appelé directement, pour deux raisons : le
@@ -600,7 +514,7 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
       runIdRef.current += 1;
       stopCamera();
     };
-  }, [active, permission, startCamera, stopCamera]);
+  }, [active, startCamera, stopCamera]);
 
   return (
     <div className="qr-camera-scanner">
@@ -655,99 +569,10 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
         )}
       </div>
 
-      {/* L'appui qui déclenche la demande d'autorisation. Il ne sert pas
-          qu'à « lancer la caméra » : c'est le geste utilisateur sans
-          lequel Chrome Android peut écarter la demande en silence, puis
-          bloquer le site pour de bon. */}
-      {active && permission === "prompt" && status !== "ready" && status !== "failed" && (
-        <div className="qr-camera-scanner__permission">
-          <p>
-            Le badgeage a besoin de la caméra pour lire les cartes.
-            Touchez le bouton, puis répondez <strong>Autoriser</strong> à
-            la question du navigateur.
-          </p>
-
-          <button type="button" onClick={startCamera}>
-            <Camera size={16} aria-hidden="true" />
-            {status === "starting" ? "Démarrage…" : "Autoriser la caméra"}
-          </button>
-        </div>
-      )}
-
-      {/* Autorisation déjà refusée et mémorisée : réessayer ne
-          redemandera rien, le navigateur ne repose plus la question.
-          Seuls ses réglages peuvent la débloquer — d'où des consignes
-          plutôt qu'un bouton qui ne ferait rien. */}
-      {active && permission === "denied" && status !== "ready" && (
-        <div className="qr-camera-scanner__permission qr-camera-scanner__permission--denied">
-          <p role="alert">
-            La caméra est bloquée. Trois réglages différents peuvent en
-            être la cause — vérifiez-les dans cet ordre :
-          </p>
-
-          {/* TROIS blocages distincts, et c'est tout le problème : ils
-              donnent le même « denied » côté navigateur, mais ne se
-              débloquent pas au même endroit. L'agent qui a « vérifié
-              les autorisations » n'en a en général vérifié qu'un seul,
-              et conclut que le site est cassé. */}
-          <ol className="qr-camera-scanner__steps">
-            <li>
-              <strong>Le site.</strong> Touchez l&apos;icône à gauche de
-              l&apos;adresse, en haut de l&apos;écran, puis
-              Autorisations → Caméra → <strong>Autoriser</strong>.
-            </li>
-            <li>
-              <strong>Le navigateur lui-même.</strong> Réglages Android →
-              Applications → Chrome → Autorisations →{" "}
-              <strong>Appareil photo</strong>. Un navigateur sans cette
-              autorisation bloque tous les sites, même ceux que vous
-              venez d&apos;autoriser.
-            </li>
-            <li>
-              <strong>Le navigateur intégré.</strong> Si vous avez ouvert
-              ce lien depuis WhatsApp, la page tourne dans le navigateur
-              interne de WhatsApp, qui interdit la caméra quoi que vous
-              autorisiez. Menu ⋮ en haut à droite →{" "}
-              <strong>Ouvrir dans Chrome</strong>.
-            </li>
-          </ol>
-
-          {/* Le bouton reste, même quand l'API annonce un refus : cette
-              réponse est parfois périmée (autorisation tout juste
-              accordée dans les réglages) ou fausse selon les versions
-              d'Android. Un essai coûte moins cher qu'une impasse — et
-              s'il échoue vraiment, le détail technique ci-dessous
-              nomme la cause. */}
-          <button type="button" onClick={startCamera}>
-            <RefreshCw size={16} aria-hidden="true" />
-            {status === "starting" ? "Démarrage…" : "Réessayer"}
-          </button>
-
-          <button
-            type="button"
-            className="qr-camera-scanner__reload"
-            onClick={() => window.location.reload()}
-          >
-            Recharger la page
-          </button>
-
-          {detail && (
-            <small className="qr-camera-scanner__detail">
-              Détail technique : {detail}
-            </small>
-          )}
-        </div>
-      )}
-
-      {/* Reprise MANUELLE. Un démarrage automatique dépend de règles de
-          lecture automatique et d'autorisation que le navigateur peut
-          refuser sans rien dire ; un appui de l'agent, lui, est un geste
-          utilisateur explicite, que tous les navigateurs acceptent. */}
-      {/* `permission !== "denied"` : ce cas a désormais son propre bloc
-          ci-dessus, avec les trois réglages à vérifier et son bouton de
-          reprise. Les afficher tous les deux montrerait deux messages
-          et deux boutons pour un seul problème. */}
-      {active && status === "failed" && permission !== "denied" && (
+      {/* Seul élément conservé sous le cadre : le cas où la caméra n'a
+          vraiment pas pu démarrer. En marche normale, rien ne s'affiche
+          ici — l'agent voit la caméra, il scanne, c'est tout. */}
+      {active && status === "failed" && (
         <div className="qr-camera-scanner__recover">
           <p role="alert">{failure}</p>
 
@@ -759,29 +584,10 @@ const QrCameraScanner = ({ active, onDecode, hint }) => {
 
           <button type="button" onClick={startCamera}>
             <RefreshCw size={16} aria-hidden="true" />
-            Activer la caméra
+            Réessayer
           </button>
         </div>
       )}
-
-      {/* Proposé dès que l'appareil expose plusieurs caméras, sans
-          attendre un échec : rien ne « rate » visiblement quand c'est
-          le mauvais objectif qui est ouvert — l'aperçu s'affiche, la
-          carte reste simplement floue et le scan n'aboutit jamais.
-          L'agent doit pouvoir corriger ça sans deviner qu'il y a
-          quelque chose à corriger. */}
-      {active && cameras.length > 1 && (
-        <button
-          type="button"
-          className="qr-camera-scanner__switch"
-          onClick={switchCamera}
-        >
-          <SwitchCamera size={16} aria-hidden="true" />
-          Changer de caméra
-        </button>
-      )}
-
-      {hint && <p className="qr-camera-scanner__hint">{hint}</p>}
 
       <canvas
         ref={canvasRef}

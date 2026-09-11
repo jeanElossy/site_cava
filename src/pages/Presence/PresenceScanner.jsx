@@ -478,7 +478,6 @@ const PresenceScanner = ({
           <QrCameraScanner
             active={scanning && !busy}
             onDecode={handleDecode}
-            hint="Approchez la carte du lecteur pour un scan plus rapide."
           />
 
           <div className="presence-scanner__divider">

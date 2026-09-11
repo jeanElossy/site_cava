@@ -195,11 +195,6 @@ const PresenceLogin = ({ theme, onToggleTheme, onAuthenticated }) => {
               <QrCameraScanner
                 active={scanning && !verifying}
                 onDecode={handleDecode}
-                hint={
-                  verifying
-                    ? "Vérification du QR…"
-                    : "Placez le QR de sécurité dans le cadre."
-                }
               />
             )}
 
