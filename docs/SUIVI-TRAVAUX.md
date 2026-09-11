@@ -1,6 +1,6 @@
 # Suivi des travaux — Membres & Service Social
 
-Dernière mise à jour : 25 août 2026 (2ᵉ passe).
+Dernière mise à jour : 11 septembre 2026 (badgeage : caméra Android).
 
 Ce fichier suit le chantier ouvert après l'audit du 25 août 2026 : trois
 défauts signalés sur la partie **Membres**, et la refonte de la partie
@@ -373,6 +373,72 @@ isolé). La dépendance est maintenant explicite.
 « Cannot find native binding », c'est la dépendance optionnelle
 `@napi-rs/canvas-linux-x64-gnu` qui manque localement (bug npm connu) —
 `npm i` dans `backend/` la réinstalle. Sans rapport avec le code.
+
+---
+
+## C ter. Badgeage des présences — caméra Android
+
+### P1 — Le scanner ne démarrait pas sur Android ⏳ CORRIGÉ EN LOCAL — ni déployé, ni essayé sur téléphone
+
+**Symptôme.** Sur `/presences`, la caméra démarre sur iPhone ; sur
+Android elle ne démarre pas, souvent sans même afficher la demande
+d'autorisation — y compris caméra autorisée dans les réglages du
+téléphone et du navigateur.
+
+**Cause.** `vercel.json` envoyait `Permissions-Policy: camera=()`, qui
+interdit la caméra **au site lui-même**. Chrome (donc Android, Samsung
+Internet compris) applique cet en-tête et rejette `getUserMedia` en
+`NotAllowedError: Permission denied` avant toute demande ; Safari
+l'ignore — d'où un iPhone qui fonctionnait. L'en-tête datait du premier
+commit (20/07), le badgeage est arrivé le 04/08 : Android n'a **jamais**
+fonctionné en production, et les sept correctifs successifs du
+composant (ac400e7 → 09ec16f) ne pouvaient rien y changer. Relevé sur la
+production le 11/09 : `permissions-policy: camera=(), microphone=(),
+geolocation=()`.
+
+Démontré le 11/09 sur la vraie build servie avec les en-têtes de
+`vercel.json`, Chrome 152 headless, autorisation accordée d'office, code
+**identique** : `camera=()` → Permissions API `denied`, `NotAllowedError`,
+violation « camera is not allowed in this document » ; `camera=(self)` →
+flux 1280×720, scanner prêt.
+
+**Ce qui a été fait.**
+- `vercel.json` : `camera=(self)`, sur tout le site (SPA : la politique
+  est fixée au chargement du document, pas à l'URL courante).
+- `QrCameraScanner`, défauts de cycle de vie trouvés à l'audit : caméra
+  coupée puis rouverte **à chaque badge** (désormais gardée 15 s en
+  pause) ; `onDecode` figé sur celui du premier rendu ; `<video>` absente
+  du DOM tant que le scanner était inactif ; rien pour l'arrière-plan ou
+  l'écran verrouillé, une piste coupée par le système, un `getUserMedia`
+  sans réponse, une vidéo sans image ; `getContext` nul non géré.
+- Bouton « Activer la caméra » (seulement quand une demande va
+  s'afficher) et « Changer de caméra » réintroduits — retirés par 09ec16f
+  parce qu'ils « retenaient le démarrage », ce qui était en réalité
+  l'en-tête. Messages par cause, dont « bloquée par la configuration du
+  site » si l'en-tête régresse. Un QR resté dans le cadre n'est pas relu
+  (sinon un badge invité créerait une présence à chaque reprise).
+- Diagnostic (panneau + journaux `[Camera]`/`[Scanner]`) derrière
+  `VITE_CAMERA_DIAGNOSTICS=true` — absent de la build de production.
+- Tests : 61 dans `QrCameraScanner/` ; suite frontend 179/179.
+
+**Vérifié au banc** (Chrome 152 headless, build réelle, fausse caméra
+diffusant un vrai QR) : QR décodé ; « Réessayer le scan » sans nouvelle
+ouverture de caméra ; QR relu seulement après être sorti du cadre ;
+5 allers-retours de route → 0 piste vivante hors page, 1 au retour, +1
+`getUserMedia` par retour ; autorisation « à demander » → bouton, puis
+demande fermée sans réponse (`NotAllowedError · Permission dismissed`,
+libellé réel de Chrome) → message dédié et **un seul** appel ;
+autorisation ensuite accordée dans les réglages → caméra repartie
+**sans appui**. Avec l'ancien en-tête : une tentative, message « bloquée
+par la configuration du site ».
+
+**Pas encore vérifié — ne cocher qu'après essai réel :**
+- [ ] Déployé ; `curl -sI https://site-cava.vercel.app/presences` montre `camera=(self)`
+- [ ] Android Chrome — Samsung
+- [ ] Android Chrome — Xiaomi / Redmi
+- [ ] Android d'entrée de gamme
+- [ ] iPhone Safari
+- [ ] iPhone Chrome
 
 ---
 

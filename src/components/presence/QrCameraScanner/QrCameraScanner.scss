@@ -34,6 +34,191 @@
     height: 100%;
 
     object-fit: cover;
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  // Au-dessus de l'aperçu : bouton « Activer la caméra » et état
+  // « Activation de la caméra… ».
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    padding: 24px;
+
+    color: var(--presence-ink-soft);
+
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+
+    small {
+      color: var(--presence-ink-subtle);
+
+      font-size: 0.78rem;
+      font-weight: 500;
+    }
+  }
+
+  // Bouton large : l'agent s'en sert debout, à l'entrée, souvent d'une
+  // seule main.
+  &__activate {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    padding: 16px 22px;
+
+    border: 0;
+    border-radius: 14px;
+
+    background: var(--presence-accent, #0d5b3e);
+    color: #fff;
+
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+
+    cursor: pointer;
+  }
+
+  &__retry-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 8px 14px;
+
+    border: 1px solid var(--presence-border-strong);
+    border-radius: 10px;
+
+    background: transparent;
+    color: var(--presence-ink);
+
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+
+    cursor: pointer;
+  }
+
+  &__spinner {
+    width: 34px;
+    height: 34px;
+
+    color: $primary;
+
+    animation: qr-camera-scanner-spin 0.9s linear infinite;
+  }
+
+  // Posé sur l'aperçu, en bas au centre, hors des quatre coins.
+  &__switch {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    z-index: 3;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 8px 14px;
+
+    border: 0;
+    border-radius: 999px;
+
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+
+    transform: translateX(-50%);
+    cursor: pointer;
+  }
+
+  // Panneau de diagnostic — uniquement en dev ou avec
+  // VITE_CAMERA_DIAGNOSTICS=true (voir cameraDiagnostics.js).
+  &__diagnostics {
+    padding: 8px 10px;
+
+    border: 1px dashed var(--presence-border-strong);
+    border-radius: 10px;
+
+    color: var(--presence-ink-soft);
+
+    font-size: 0.72rem;
+
+    summary {
+      font-weight: 700;
+
+      cursor: pointer;
+    }
+
+    button {
+      width: 100%;
+      margin: 8px 0;
+      padding: 8px 10px;
+
+      border: 1px solid var(--presence-border-strong);
+      border-radius: 8px;
+
+      background: transparent;
+      color: var(--presence-ink);
+
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+
+      cursor: pointer;
+    }
+
+    dl {
+      display: grid;
+      gap: 4px;
+
+      margin: 0;
+
+      div {
+        display: grid;
+        grid-template-columns: minmax(0, 10em) minmax(0, 1fr);
+        gap: 8px;
+      }
+    }
+
+    dt {
+      color: var(--presence-ink-faint);
+    }
+
+    dd {
+      margin: 0;
+
+      font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+      word-break: break-all;
+    }
+
+    ol {
+      max-height: 200px;
+      margin: 8px 0 0;
+      padding-left: 1.6em;
+
+      overflow: auto;
+
+      font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+      word-break: break-all;
+    }
   }
 
   // Flux caméra brut : jamais affiché (le recadrage carré est dessiné
@@ -189,6 +374,16 @@
       animation: none;
       top: 50%;
     }
+
+    &__spinner {
+      animation: none;
+    }
+  }
+}
+
+@keyframes qr-camera-scanner-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
