@@ -5,6 +5,14 @@ import ExcelJS from "exceljs";
 import PDFDocument from "pdfkit";
 
 import Member from "../models/Member.js";
+// Import à effet de bord : `fetchMembers` fait `populate("flock")`,
+// et Mongoose exige que le modèle cible soit ENREGISTRÉ avant la
+// requête. L'API le chargeait par ricochet (app.js monte toutes les
+// routes, donc tous les modèles) ; un script lancé seul n'importe que
+// ce module et échouait sur `MissingSchemaError: Schema hasn't been
+// registered for model "Flock"`. La dépendance est déclarée ici, dans
+// le fichier qui s'en sert, plutôt que dans chaque appelant.
+import "../models/Flock.js";
 import { formatRegistrationNumber } from "./registrationNumber.service.js";
 import {
   missingProfileLabels,
