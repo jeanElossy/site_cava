@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   FaGraduationCap,
@@ -10,6 +11,7 @@ import {
 import { HiArrowRight } from "react-icons/hi";
 
 import positions from "../data/positions";
+import { useReveal, useHoverLift } from "../motion";
 
 import "./OpenPositions.scss";
 
@@ -25,57 +27,66 @@ const ICONS = {
   secretariat: FaFileSignature,
 };
 
-const OpenPositions = () => (
-  <section className="open-positions" id="postes">
-    <div className="open-positions__container">
-      <h2 className="open-positions__title">
-        Postes <span>recherchés</span>
-      </h2>
+const OpenPositions = () => {
+  const reveal = useReveal();
+  const lift = useHoverLift();
 
-      <p className="open-positions__subtitle">
-        Découvrez les différents domaines où vous pouvez servir au sein de
-        ÇA.VA.
-      </p>
+  return (
+    <section className="open-positions" id="postes">
+      <div className="open-positions__container">
+        <motion.h2 className="open-positions__title" {...reveal()}>
+          Postes <span>recherchés</span>
+        </motion.h2>
 
-      <ul className="open-positions__grid">
-        {positions.map((position) => {
-          const Icon = ICONS[position.icon] ?? FaHands;
+        <motion.p className="open-positions__subtitle" {...reveal(1)}>
+          Découvrez les différents domaines où vous pouvez servir au sein
+          de ÇA.VA.
+        </motion.p>
 
-          return (
-            <li
-              key={position.id}
-              className={`open-positions__card open-positions__card--${position.variant}`}
-            >
-              <span className="open-positions__icon" aria-hidden="true">
-                <Icon />
-              </span>
+        <ul className="open-positions__grid">
+          {positions.map((position, index) => {
+            const Icon = ICONS[position.icon] ?? FaHands;
 
-              <h3 className="open-positions__card-title">{position.title}</h3>
-
-              <p className="open-positions__card-subtitle">
-                {position.subtitle}
-              </p>
-
-              {/* Un LIEN, pas un bouton qui dispatcherait : le poste
-                  voyage dans l'URL, comme le type de don sur /donate.
-                  Un seul mécanisme de préremplissage à maintenir, et le
-                  lien reste partageable et ouvrable dans un onglet. */}
-              <Link
-                className="open-positions__link"
-                to={`/appel-a-candidature?poste=${position.id}#candidature-formulaire`}
+            return (
+              <motion.li
+                key={position.id}
+                className={`open-positions__card open-positions__card--${position.variant}`}
+                {...reveal(index)}
+                {...lift}
               >
-                Voir les postes
-                <HiArrowRight aria-hidden="true" />
-                <span className="open-positions__sr">
-                  {` — ${position.title}`}
+                <span className="open-positions__icon" aria-hidden="true">
+                  <Icon />
                 </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  </section>
-);
+
+                <h3 className="open-positions__card-title">
+                  {position.title}
+                </h3>
+
+                <p className="open-positions__card-subtitle">
+                  {position.subtitle}
+                </p>
+
+                {/* Un LIEN, pas un bouton qui dispatcherait : le poste
+                    voyage dans l'URL, comme le type de don sur /donate.
+                    Un seul mécanisme de préremplissage à maintenir, et
+                    le lien reste partageable. */}
+                <Link
+                  className="open-positions__link"
+                  to={`/appel-a-candidature?poste=${position.id}#candidature-formulaire`}
+                >
+                  Voir les postes
+                  <HiArrowRight aria-hidden="true" />
+                  <span className="open-positions__sr">
+                    {` — ${position.title}`}
+                  </span>
+                </Link>
+              </motion.li>
+            );
+          })}
+        </ul>
+      </div>
+    </section>
+  );
+};
 
 export default OpenPositions;

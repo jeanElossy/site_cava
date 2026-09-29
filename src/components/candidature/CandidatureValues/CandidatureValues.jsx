@@ -1,9 +1,12 @@
+import { motion } from "framer-motion";
 import {
   FaHandHoldingHeart,
   FaBookOpen,
   FaSeedling,
   FaUsers,
 } from "react-icons/fa";
+
+import { useReveal } from "../motion";
 
 import "./CandidatureValues.scss";
 
@@ -14,31 +17,42 @@ const VALUES = [
   { icon: FaUsers, label: "Impacter" },
 ];
 
-const CandidatureValues = () => (
-  <section className="candidature-values">
-    <div className="candidature-values__container">
-      <ul className="candidature-values__list">
-        {VALUES.map((value) => (
-          <li key={value.label} className="candidature-values__item">
-            <span className="candidature-values__icon" aria-hidden="true">
-              <value.icon />
-            </span>
+const CandidatureValues = () => {
+  const reveal = useReveal();
 
-            {value.label}
-          </li>
-        ))}
-      </ul>
+  return (
+    <section className="candidature-values">
+      <div className="candidature-values__container">
+        <ul className="candidature-values__list">
+          {VALUES.map((value, index) => (
+            <motion.li
+              key={value.label}
+              className="candidature-values__item"
+              {...reveal(index)}
+            >
+              <span className="candidature-values__icon" aria-hidden="true">
+                <value.icon />
+              </span>
 
-      <blockquote className="candidature-values__verse">
-        <p>
-          « Chacun, selon le don qu&apos;il a reçu, le mette au service des
-          autres. »
-        </p>
+              {value.label}
+            </motion.li>
+          ))}
+        </ul>
 
-        <cite>1 Pierre 4:10</cite>
-      </blockquote>
-    </div>
-  </section>
-);
+        <motion.blockquote
+          className="candidature-values__verse"
+          {...reveal(4)}
+        >
+          <p>
+            « Chacun, selon le don qu&apos;il a reçu, le mette au service
+            des autres. »
+          </p>
+
+          <cite>1 Pierre 4:10</cite>
+        </motion.blockquote>
+      </div>
+    </section>
+  );
+};
 
 export default CandidatureValues;

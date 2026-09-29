@@ -5,7 +5,7 @@
   background: $bg-light;
 
   &__container {
-    width: min(820px, 100%);
+    width: min(920px, 100%);
     margin: 0 auto;
     padding: 0 24px;
   }
@@ -23,12 +23,128 @@
     }
   }
 
-  &__intro {
-    margin: 12px auto 32px;
-    max-width: 560px;
+  &__question {
+    margin: 14px auto 0;
+    max-width: 640px;
     text-align: center;
-    color: #5b6b63;
+    font-size: clamp(1.05rem, 2.2vw, 1.4rem);
+    font-weight: 700;
+    font-style: italic;
+    color: $primary;
+  }
+
+  &__verse {
+    margin: 8px auto 32px;
+    max-width: 640px;
+    text-align: center;
+    font-size: 0.92rem;
     line-height: 1.6;
+    color: #5b6b63;
+  }
+
+  // `fieldset` porte une bordure et un fond par défaut dans tous les
+  // navigateurs : remis à plat ici, la mise en forme est entièrement
+  // reprise. On garde l'élément pour ce qu'il apporte — le groupe
+  // annoncé aux lecteurs d'écran — pas pour son apparence.
+  &__group {
+    margin: 0;
+    padding: 20px;
+    border: 1px solid $border-color;
+    border-radius: 12px;
+    background: #fcfdfc;
+
+    legend {
+      padding: 0 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: $primary;
+    }
+  }
+
+  &__choices {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 8px;
+
+    &--inline {
+      grid-template-columns: repeat(auto-fit, minmax(110px, 140px));
+    }
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid $border-color;
+    border-radius: 10px;
+    background: #ffffff;
+    font-size: 0.92rem;
+    line-height: 1.4;
+    color: $text-dark;
+    cursor: pointer;
+    transition: $transition;
+
+    input {
+      margin-top: 2px;
+      width: 17px;
+      height: 17px;
+      flex: none;
+      accent-color: $primary;
+      cursor: pointer;
+    }
+
+    &:hover {
+      border-color: $primary;
+      background: #f4faf6;
+    }
+
+    // Le contour de focus vit sur l'étiquette, pas sur la case elle-même :
+    // c'est l'étiquette entière qui est cliquable, donc c'est elle que
+    // l'on doit voir désignée au clavier.
+    &:focus-within {
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba(13, 91, 62, 0.14);
+    }
+  }
+
+  &__prayer {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin: 0;
+    padding: 20px;
+    border-radius: 12px;
+    background: linear-gradient(120deg, #f2f9f4, #fff9e4);
+    border: 1px solid #e3efe7;
+
+    > svg {
+      flex: none;
+      font-size: 1.6rem;
+      color: $primary;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.95rem;
+      font-style: italic;
+      line-height: 1.6;
+      color: $text-dark;
+    }
+  }
+
+  &__prayer-title {
+    font-style: normal !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $primary;
+    margin-bottom: 4px !important;
   }
 
   &__form {
@@ -43,9 +159,9 @@
   &__row {
     display: grid;
     gap: 18px;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
 
-    @media (max-width: 575px) {
+    @media (max-width: 767px) {
       grid-template-columns: 1fr;
     }
   }
@@ -84,10 +200,20 @@
     }
   }
 
+  // Texte d'aide. Marge nulle par défaut : à l'intérieur d'un
+  // `&__field`, qui espace déjà ses enfants de 6 px, une marge négative
+  // collait l'aide à son intitulé (« 2. Ce qui me touche… »).
+  // Le resserrage n'est utile qu'après la rangée de coordonnées, d'où
+  // le modificateur dédié.
   &__help {
-    margin: -8px 0 0;
+    margin: 0;
     font-size: 0.85rem;
+    line-height: 1.45;
     color: #6b7a72;
+
+    &--tight {
+      margin-top: -8px;
+    }
   }
 
   &__consent {

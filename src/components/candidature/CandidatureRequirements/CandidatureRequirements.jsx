@@ -1,4 +1,7 @@
+import { motion } from "framer-motion";
 import { FaUserCheck, FaClipboardList, FaCheckCircle } from "react-icons/fa";
+
+import { useReveal } from "../motion";
 
 import "./CandidatureRequirements.scss";
 
@@ -17,56 +20,72 @@ const DOCUMENTS = [
   "Renseignements complémentaires selon le poste",
 ];
 
-const CandidatureRequirements = () => (
-  <section className="candidature-requirements">
-    <div className="candidature-requirements__container">
-      <article className="candidature-requirements__panel candidature-requirements__panel--green">
-        <header className="candidature-requirements__header">
-          <span className="candidature-requirements__icon" aria-hidden="true">
-            <FaUserCheck />
-          </span>
+const CandidatureRequirements = () => {
+  const reveal = useReveal();
 
-          <h2>Conditions générales</h2>
-        </header>
+  return (
+    <section className="candidature-requirements">
+      <div className="candidature-requirements__container">
+        <motion.article
+          className="candidature-requirements__panel candidature-requirements__panel--green"
+          {...reveal(0, "x")}
+        >
+          <header className="candidature-requirements__header">
+            <span
+              className="candidature-requirements__icon"
+              aria-hidden="true"
+            >
+              <FaUserCheck />
+            </span>
 
-        <ul className="candidature-requirements__list">
-          {CONDITIONS.map((item) => (
-            <li key={item}>
-              <FaCheckCircle aria-hidden="true" />
-              {item}
-            </li>
-          ))}
-        </ul>
-      </article>
+            <h2>Conditions générales</h2>
+          </header>
 
-      <article className="candidature-requirements__panel candidature-requirements__panel--gold">
-        <header className="candidature-requirements__header">
-          <span className="candidature-requirements__icon" aria-hidden="true">
-            <FaClipboardList />
-          </span>
+          <ul className="candidature-requirements__list">
+            {CONDITIONS.map((item, index) => (
+              <motion.li key={item} {...reveal(index + 1)}>
+                <FaCheckCircle aria-hidden="true" />
+                {item}
+              </motion.li>
+            ))}
+          </ul>
+        </motion.article>
 
-          <h2>Documents requis</h2>
-        </header>
+        <motion.article
+          className="candidature-requirements__panel candidature-requirements__panel--gold"
+          {...reveal(1)}
+        >
+          <header className="candidature-requirements__header">
+            <span
+              className="candidature-requirements__icon"
+              aria-hidden="true"
+            >
+              <FaClipboardList />
+            </span>
 
-        <ul className="candidature-requirements__list">
-          {DOCUMENTS.map((item) => (
-            <li key={item}>
-              <FaCheckCircle aria-hidden="true" />
-              {item}
-            </li>
-          ))}
-        </ul>
+            <h2>Documents requis</h2>
+          </header>
 
-        {/* Le formulaire ci-dessous ne reçoit PAS de pièce jointe : le
-            CV et la lettre se remettent au secrétariat. Le dire ici
-            évite qu'un candidat cherche un bouton d'envoi inexistant. */}
-        <p className="candidature-requirements__note">
-          Le CV et la lettre de motivation sont à remettre au secrétariat
-          exécutif après l'envoi du formulaire.
-        </p>
-      </article>
-    </div>
-  </section>
-);
+          <ul className="candidature-requirements__list">
+            {DOCUMENTS.map((item, index) => (
+              <motion.li key={item} {...reveal(index + 1)}>
+                <FaCheckCircle aria-hidden="true" />
+                {item}
+              </motion.li>
+            ))}
+          </ul>
+
+          {/* Le formulaire ci-dessous ne reçoit PAS de pièce jointe : le
+              CV et la lettre se remettent au secrétariat. Le dire ici
+              évite qu'un candidat cherche un bouton inexistant. */}
+          <p className="candidature-requirements__note">
+            Le CV et la lettre de motivation sont à remettre au secrétariat
+            exécutif après l&apos;envoi du formulaire.
+          </p>
+        </motion.article>
+      </div>
+    </section>
+  );
+};
 
 export default CandidatureRequirements;

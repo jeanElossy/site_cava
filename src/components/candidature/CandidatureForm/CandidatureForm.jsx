@@ -1,47 +1,91 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
-import { FaCheckCircle } from "react-icons/fa";
+import { FaCheckCircle, FaPrayingHands } from "react-icons/fa";
 
 import { inbox } from "../../../services/api";
+import {
+  normalizeRegistrationNumber,
+  formatRegistrationNumber,
+  hasValidShape,
+} from "../../../utils/registrationNumber";
 import positions, { findPosition } from "../data/positions";
+import { useReveal } from "../motion";
+import {
+  SKILLS,
+  SITUATIONS,
+  AVAILABILITIES,
+  PRAYER,
+} from "./questionnaire";
 
 import "./CandidatureForm.scss";
 
 const EMPTY_FORM = {
   name: "",
+  registrationNumber: "",
   phone: "",
   email: "",
   position: "",
-  skills: "",
-  availability: "",
-  message: "",
+  skills: [],
+  otherSkill: "",
+  concern: "",
+  contribution: "",
+  situation: [],
+  availability: [],
+  orientation: "oui",
   consent: false,
 };
 
-// Le corps du message est assemblé ici, en texte lisible : la boîte de
+const listOrDash = (values, extra = "") => {
+  const all = extra.trim() ? [...values, `Autre : ${extra.trim()}`] : values;
+
+  return all.length > 0 ? all.map((item) => `- ${item}`).join("\n") : "- —";
+};
+
+// Le corps du message est assemblé en texte lisible : la boîte de
 // réception (/admin/messages) affiche un message, pas un formulaire
-// structuré. Mieux vaut une fiche lisible à l'œil qu'un JSON que
-// personne ne relira.
-const buildBody = (values) =>
-  [
+// structuré. Mieux vaut une fiche qui se lit d'un coup d'œil qu'un JSON
+// que personne ne relira. Les titres reprennent ceux du questionnaire
+// papier, pour que les deux se dépouillent côte à côte.
+const buildBody = (values) => {
+  const canonical = normalizeRegistrationNumber(values.registrationNumber);
+
+  return [
     `Poste souhaité : ${
       findPosition(values.position)?.title ?? "Non précisé"
+    }`,
+    `Matricule : ${
+      hasValidShape(canonical)
+        ? formatRegistrationNumber(canonical)
+        : values.registrationNumber.trim() || "—"
     }`,
     `Téléphone : ${values.phone.trim() || "—"}`,
     `E-mail : ${values.email.trim() || "—"}`,
     "",
-    "Compétences :",
-    values.skills.trim() || "—",
+    "1. CE QUE JE SAIS FAIRE",
+    listOrDash(values.skills, values.otherSkill),
     "",
-    "Disponibilités :",
-    values.availability.trim() || "—",
+    "2. CE QUI ME TOUCHE PARTICULIÈREMENT",
+    values.concern.trim() || "—",
     "",
-    "Motivation :",
-    values.message.trim() || "—",
+    "3. CE QUE JE POURRAIS APPORTER",
+    values.contribution.trim() || "—",
+    "",
+    "4. JE SUIS ACTUELLEMENT…",
+    listOrDash(values.situation),
+    "",
+    "5. MA DISPONIBILITÉ",
+    listOrDash(values.availability),
+    "",
+    `Souhaite être contacté(e) pour une orientation : ${
+      values.orientation === "oui" ? "Oui" : "Non"
+    }`,
   ].join("\n");
+};
 
 const CandidatureForm = () => {
   const [searchParams] = useSearchParams();
+  const reveal = useReveal();
 
   // Préremplissage par l'URL, posé À L'INITIALISATION et pas dans un
   // effet : la liste des postes est locale et synchrone (contrairement
@@ -61,6 +105,8 @@ const CandidatureForm = () => {
   const [isSending, setIsSending] = useState(false);
   const [isSent, setIsSent] = useState(false);
 
+  const clearError = () => error && setError("");
+
   const handleChange = (event) => {
     const { name, type, value, checked } = event.target;
 
@@ -69,7 +115,19 @@ const CandidatureForm = () => {
       [name]: type === "checkbox" ? checked : value,
     }));
 
-    if (error) setError("");
+    clearError();
+  };
+
+  // Cases à cocher multiples : l'état porte un tableau de libellés.
+  const toggleInGroup = (group, label) => {
+    setValues((previous) => ({
+      ...previous,
+      [group]: previous[group].includes(label)
+        ? previous[group].filter((item) => item !== label)
+        : [...previous[group], label],
+    }));
+
+    clearError();
   };
 
   const handleSubmit = async (event) => {
@@ -79,7 +137,7 @@ const CandidatureForm = () => {
 
     // Au moins un moyen de rappel. Beaucoup de fidèles n'ont pas
     // d'adresse e-mail : exiger l'e-mail aurait écarté précisément les
-    // candidats recherchés. L'API applique la même règle.
+    // personnes recherchées. L'API applique la même règle.
     if (!values.phone.trim() && !values.email.trim()) {
       setError(
         "Indiquez au moins un téléphone ou un e-mail pour que nous puissions vous recontacter."
@@ -88,15 +146,9 @@ const CandidatureForm = () => {
       return;
     }
 
-    if (!values.position) {
-      setError("Choisissez le poste pour lequel vous candidatez.");
-
-      return;
-    }
-
     if (!values.consent) {
       setError(
-        "Merci d'accepter d'être contacté(e) pour que votre candidature soit étudiée."
+        "Merci d'accepter d'être contacté(e) pour que votre réponse soit étudiée."
       );
 
       return;
@@ -110,11 +162,11 @@ const CandidatureForm = () => {
         name: values.name.trim(),
         phone: values.phone.trim(),
         // Chaîne vide plutôt qu'absence : le service public ne retient
-        // que les champs définis, et une chaîne vide n'écrit rien de
-        // faux en base tout en gardant la charge utile régulière.
+        // que les champs définis, et une clé absente vaut mieux qu'un
+        // e-mail vide écrit en base.
         ...(values.email.trim() ? { email: values.email.trim() } : {}),
-        subject: `Candidature — ${
-          findPosition(values.position)?.title ?? "Poste non précisé"
+        subject: `Découvre ta place — ${
+          findPosition(values.position)?.title ?? "Sans poste précisé"
         }`,
         body: buildBody(values),
         // Distingue la candidature d'une question sur un ministère :
@@ -127,46 +179,71 @@ const CandidatureForm = () => {
     } catch (caught) {
       setError(
         caught?.message ??
-          "Votre candidature n'a pas pu être enregistrée. Merci de réessayer."
+          "Votre réponse n'a pas pu être enregistrée. Merci de réessayer."
       );
     } finally {
       setIsSending(false);
     }
   };
 
+  const checkboxGroup = (group, options) => (
+    <div className="candidature-form__choices">
+      {options.map((label) => (
+        <label key={label} className="candidature-form__choice">
+          <input
+            type="checkbox"
+            checked={values[group].includes(label)}
+            onChange={() => toggleInGroup(group, label)}
+          />
+
+          <span>{label}</span>
+        </label>
+      ))}
+    </div>
+  );
+
   return (
     <section className="candidature-form" id="candidature-formulaire">
       <div className="candidature-form__container">
-        <h2 className="candidature-form__title">
-          Faites acte <span>de candidature</span>
-        </h2>
+        <motion.h2 className="candidature-form__title" {...reveal()}>
+          Découvre <span>ta place</span>
+        </motion.h2>
 
-        <p className="candidature-form__intro">
-          Renseignez ce formulaire : le secrétariat exécutif vous
-          recontactera pour la suite du processus.
-        </p>
+        <motion.p className="candidature-form__question" {...reveal(1)}>
+          « Qu&apos;y a-t-il en toi pour la maison ? »
+        </motion.p>
+
+        <motion.p className="candidature-form__verse" {...reveal(2)}>
+          « Que chacun de vous mette au service des autres le don qu&apos;il
+          a reçu. » — 1 Pierre 4.10
+        </motion.p>
 
         {isSent ? (
-          <div
+          <motion.div
             className="candidature-form__success"
             role="status"
             aria-live="polite"
+            {...reveal()}
           >
             <FaCheckCircle aria-hidden="true" />
 
             <div>
-              <h3>Candidature enregistrée</h3>
+              <h3>Réponse enregistrée</h3>
 
               <p>
-                Merci {values.name.trim()}. Votre candidature a bien été
+                Merci {values.name.trim()}. Votre réponse a bien été
                 enregistrée. Elle n&apos;est pas envoyée par e-mail : notre
                 équipe la consulte depuis son espace d&apos;administration
                 et vous recontactera.
               </p>
             </div>
-          </div>
+          </motion.div>
         ) : (
-          <form className="candidature-form__form" onSubmit={handleSubmit}>
+          <motion.form
+            className="candidature-form__form"
+            onSubmit={handleSubmit}
+            {...reveal(3, "y", "some")}
+          >
             <div className="candidature-form__field">
               <label htmlFor="cand-name">Nom et prénoms *</label>
 
@@ -181,6 +258,19 @@ const CandidatureForm = () => {
             </div>
 
             <div className="candidature-form__row">
+              <div className="candidature-form__field">
+                <label htmlFor="cand-matricule">Matricule</label>
+
+                <input
+                  id="cand-matricule"
+                  name="registrationNumber"
+                  type="text"
+                  placeholder="1ME 19-016 P"
+                  value={values.registrationNumber}
+                  onChange={handleChange}
+                />
+              </div>
+
               <div className="candidature-form__field">
                 <label htmlFor="cand-phone">Téléphone</label>
 
@@ -207,22 +297,21 @@ const CandidatureForm = () => {
               </div>
             </div>
 
-            <p className="candidature-form__help">
+            <p className="candidature-form__help candidature-form__help--tight">
               Téléphone ou e-mail : au moins l&apos;un des deux est
               nécessaire pour vous recontacter.
             </p>
 
             <div className="candidature-form__field">
-              <label htmlFor="cand-position">Poste souhaité *</label>
+              <label htmlFor="cand-position">Poste souhaité</label>
 
               <select
                 id="cand-position"
                 name="position"
-                required
                 value={values.position}
                 onChange={handleChange}
               >
-                <option value="">Choisissez un poste</option>
+                <option value="">Je ne sais pas encore</option>
 
                 {positions.map((position) => (
                   <option key={position.id} value={position.id}>
@@ -232,43 +321,122 @@ const CandidatureForm = () => {
               </select>
             </div>
 
+            {/* `fieldset`/`legend` et non un simple titre : c'est ce qui
+                annonce le groupe aux lecteurs d'écran avant d'énumérer
+                les cases, sans quoi chaque case arrive hors contexte. */}
+            <fieldset className="candidature-form__group">
+              <legend>1. Ce que je sais faire</legend>
+
+              <p className="candidature-form__help">
+                Cochez ce qui vous correspond.
+              </p>
+
+              {checkboxGroup("skills", SKILLS)}
+
+              <div className="candidature-form__field">
+                <label htmlFor="cand-other-skill">Autre</label>
+
+                <input
+                  id="cand-other-skill"
+                  name="otherSkill"
+                  type="text"
+                  value={values.otherSkill}
+                  onChange={handleChange}
+                />
+              </div>
+            </fieldset>
+
             <div className="candidature-form__field">
-              <label htmlFor="cand-skills">Vos compétences</label>
+              <label htmlFor="cand-concern">
+                2. Ce qui me touche particulièrement
+              </label>
+
+              <p className="candidature-form__help">
+                Quand je regarde la vie de l&apos;Église, quel besoin me
+                touche ou m&apos;interpelle le plus ?
+              </p>
 
               <textarea
-                id="cand-skills"
-                name="skills"
-                rows={3}
-                placeholder="Comptabilité, sonorisation, enseignement, accueil…"
-                value={values.skills}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="candidature-form__field">
-              <label htmlFor="cand-availability">Vos disponibilités</label>
-
-              <input
-                id="cand-availability"
-                name="availability"
-                type="text"
-                placeholder="Samedi après-midi, dimanche matin…"
-                value={values.availability}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="candidature-form__field">
-              <label htmlFor="cand-message">Votre motivation</label>
-
-              <textarea
-                id="cand-message"
-                name="message"
+                id="cand-concern"
+                name="concern"
                 rows={4}
-                value={values.message}
+                value={values.concern}
                 onChange={handleChange}
               />
             </div>
+
+            <div className="candidature-form__field">
+              <label htmlFor="cand-contribution">
+                3. Ce que je pourrais apporter
+              </label>
+
+              <p className="candidature-form__help">
+                Une compétence, une expérience, un talent, une ressource ou
+                une disponibilité que je pourrais mettre au service de la
+                maison.
+              </p>
+
+              <textarea
+                id="cand-contribution"
+                name="contribution"
+                rows={4}
+                value={values.contribution}
+                onChange={handleChange}
+              />
+            </div>
+
+            <fieldset className="candidature-form__group">
+              <legend>4. Je suis actuellement…</legend>
+
+              {checkboxGroup("situation", SITUATIONS)}
+            </fieldset>
+
+            <fieldset className="candidature-form__group">
+              <legend>5. Ma disponibilité</legend>
+
+              {checkboxGroup("availability", AVAILABILITIES)}
+            </fieldset>
+
+            <blockquote className="candidature-form__prayer">
+              <FaPrayingHands aria-hidden="true" />
+
+              <div>
+                <p className="candidature-form__prayer-title">Ma prière</p>
+
+                <p>« {PRAYER} »</p>
+              </div>
+            </blockquote>
+
+            <fieldset className="candidature-form__group">
+              <legend>
+                Je souhaite être contacté(e) pour une orientation
+              </legend>
+
+              {/* Des boutons radio : les deux réponses s'excluent, et une
+                  case à cocher « Oui » laisserait le « Non » implicite,
+                  donc indistinguable d'une absence de réponse. */}
+              <div className="candidature-form__choices candidature-form__choices--inline">
+                {[
+                  { value: "oui", label: "Oui" },
+                  { value: "non", label: "Non" },
+                ].map((option) => (
+                  <label
+                    key={option.value}
+                    className="candidature-form__choice"
+                  >
+                    <input
+                      type="radio"
+                      name="orientation"
+                      value={option.value}
+                      checked={values.orientation === option.value}
+                      onChange={handleChange}
+                    />
+
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
             <label className="candidature-form__consent">
               <input
@@ -279,8 +447,8 @@ const CandidatureForm = () => {
               />
 
               <span>
-                J&apos;accepte d&apos;être contacté(e) par l&apos;église au
-                sujet de ma candidature.
+                J&apos;accepte que ma réponse soit enregistrée et que
+                l&apos;église me recontacte à ce sujet.
               </span>
             </label>
 
@@ -295,9 +463,9 @@ const CandidatureForm = () => {
               className="candidature-form__submit"
               disabled={isSending}
             >
-              {isSending ? "Envoi en cours…" : "Envoyer ma candidature"}
+              {isSending ? "Envoi en cours…" : "Envoyer ma réponse"}
             </button>
-          </form>
+          </motion.form>
         )}
       </div>
     </section>

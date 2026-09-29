@@ -9,19 +9,36 @@
   min-height: $hero-min-height;
   display: flex;
   align-items: center;
-  background-size: cover;
-  background-position: center;
   color: $text-light;
+  // Indispensable : le zoom arrière de `&__media` déborderait sinon
+  // sur le reste de la page.
   overflow: hidden;
+  background: $primary-dark;
+
+  // La photo vit dans son propre calque pour pouvoir être animée seule.
+  // Cadrée à DROITE : les fidèles en prière y sont, la gauche de
+  // l'image est un fond lumineux — c'est précisément là que le dégradé
+  // vient poser le texte.
+  &__media {
+    position: absolute;
+    inset: 0;
+    background-image: inherit;
+    background-size: cover;
+    background-position: center right;
+    // L'élément est agrandi au repos pour que le zoom arrière ne
+    // découvre jamais de bord vide.
+    will-change: transform;
+  }
 
   &__overlay {
     position: absolute;
     inset: 0;
     background: linear-gradient(
       100deg,
-      rgba(8, 59, 42, 0.96) 0%,
-      rgba(13, 91, 62, 0.86) 45%,
-      rgba(13, 91, 62, 0.35) 100%
+      rgba(8, 59, 42, 0.97) 0%,
+      rgba(8, 59, 42, 0.9) 34%,
+      rgba(13, 91, 62, 0.55) 62%,
+      rgba(13, 91, 62, 0.12) 100%
     );
   }
 
@@ -72,6 +89,9 @@
   }
 
   &__rule {
+    // Le filet s'anime en `scaleX` : sans origine à gauche, il
+    // grandirait depuis son centre, des deux côtés à la fois.
+    transform-origin: left center;
     width: 220px;
     max-width: 60%;
     height: 4px;
