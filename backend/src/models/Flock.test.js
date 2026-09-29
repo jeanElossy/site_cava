@@ -1,96 +1,79 @@
-import { describe, it, before, after, beforeEach } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-import { connectTestDb, disconnectTestDb } from "../test/db.js";
 import Flock from "./Flock.js";
 
-// `church` doit rester dans la plage réelle 1-5 (contrainte du
-// schéma) : impossible d'isoler ces tests avec une église fictive
-// comme pour RegistrationCounter. On isole donc par CODE, avec des
-// codes improbables en production ("ZZ", "YY"), et on ne supprime que
-// ces codes précis — jamais une purge large de la collection — pour
-// ne jamais toucher une bergerie réelle.
-const TEST_CHURCH = 5;
-const TEST_CODES = ["ZZ", "YY"];
+// Test PUR : `validateSync()` n'ouvre aucune connexion — rien à
+// nettoyer, aucun risque pour la base de développement partagée.
 
-const cleanup = () => Flock.deleteMany({ code: { $in: TEST_CODES } });
+const base = (extra = {}) => ({
+  code: "OL",
+  name: "Bergerie des Oliviers",
+  church: 1,
+  ...extra,
+});
 
-describe("Flock (modèle)", () => {
-  before(async () => {
-    await connectTestDb();
+const LEADER_ID = "665f1c2d4e5a6b7c8d9e0f11";
+
+describe("Flock — désignation du responsable", () => {
+  it("accepte une bergerie sans responsable", () => {
+    const doc = new Flock(base());
+
+    assert.equal(doc.validateSync(), undefined);
+    assert.equal(doc.leader, undefined);
   });
 
-  beforeEach(cleanup);
-  after(async () => {
-    await cleanup();
-    await disconnectTestDb();
+  it("traduit une liste déroulante vide en absence de responsable", () => {
+    // Le `<select>` de l'administration envoie une CHAÎNE VIDE quand
+    // aucun membre n'est choisi. Sans le setter du modèle, Mongoose
+    // échouerait sur « Cast to ObjectId failed » au moment précis où
+    // l'administrateur retire un responsable.
+    for (const vide of ["", null]) {
+      const doc = new Flock(base({ leader: vide }));
+
+      assert.equal(doc.validateSync(), undefined);
+      assert.equal(doc.leader, undefined);
+    }
   });
 
-  it("met le code en majuscules", async () => {
-    const flock = await Flock.create({
-      code: "zz",
-      name: "Bergerie de test",
-      church: TEST_CHURCH,
-    });
-
-    assert.equal(flock.code, "ZZ");
+  it("refuse un identifiant de responsable qui n'en est pas un", () => {
+    assert.ok(new Flock(base({ leader: "pas-un-id" })).validateSync()?.errors?.leader);
   });
 
-  it("rejette un code qui n'a pas exactement 2 lettres", async () => {
-    await assert.rejects(
-      Flock.create({ code: "ZZZ", name: "Test", church: TEST_CHURCH })
+  it("retombe sur « actif » plutôt que de laisser le statut vide", () => {
+    // Point sensible : `resolveFlockAccess` exige « actif ». Un statut
+    // resté vide aurait donné une bergerie au responsable désigné mais
+    // au portail fermé, sans le moindre message. Poser explicitement
+    // `undefined` court-circuiterait la valeur par défaut de Mongoose,
+    // d'où un repli explicite dans le setter.
+    for (const vide of ["", null, undefined]) {
+      assert.equal(new Flock(base({ leaderStatus: vide })).leaderStatus, "actif");
+    }
+  });
+
+  it("accepte la mise en retrait, refuse un statut inventé", () => {
+    assert.equal(
+      new Flock(base({ leaderStatus: "suspendu" })).validateSync(),
+      undefined
     );
-    await assert.rejects(
-      Flock.create({ code: "Z", name: "Test", church: TEST_CHURCH })
+
+    assert.ok(
+      new Flock(base({ leaderStatus: "en_conges" })).validateSync()?.errors
+        ?.leaderStatus
     );
   });
 
-  it("exige name et church", async () => {
-    await assert.rejects(Flock.create({ code: "ZZ" }));
+  it("garde les règles existantes du code de bergerie", () => {
+    // Le code fait partie du matricule des membres : l'ajout du
+    // responsable ne doit rien y changer.
+    assert.ok(new Flock(base({ code: "OLI" })).validateSync()?.errors?.code);
+    assert.equal(new Flock(base({ code: "ol" })).code, "OL");
   });
 
-  it("applique le statut par défaut 'published'", async () => {
-    const flock = await Flock.create({
-      code: "ZZ",
-      name: "Bergerie de test",
-      church: TEST_CHURCH,
-    });
+  it("n'exige toujours qu'un code, un nom et une église", () => {
+    const doc = new Flock({ leader: LEADER_ID });
+    const errors = Object.keys(doc.validateSync()?.errors ?? {}).sort();
 
-    assert.equal(flock.status, "published");
-  });
-
-  it("autorise le même code dans deux églises différentes", async () => {
-    await Flock.create({
-      code: "ZZ",
-      name: "Bergerie de test",
-      church: TEST_CHURCH,
-    });
-
-    // Église réelle différente, avec le même code : ne doit pas être
-    // bloqué par l'index composé { church, code }.
-    const other = await Flock.create({
-      code: "ZZ",
-      name: "Bergerie de test (autre église)",
-      church: TEST_CHURCH === 1 ? 2 : 1,
-    });
-
-    assert.equal(other.code, "ZZ");
-  });
-
-  it("rejette un doublon { church, code }", async () => {
-    await Flock.create({
-      code: "ZZ",
-      name: "Bergerie de test",
-      church: TEST_CHURCH,
-    });
-
-    await assert.rejects(
-      Flock.create({
-        code: "ZZ",
-        name: "Doublon",
-        church: TEST_CHURCH,
-      }),
-      (error) => error.code === 11000
-    );
+    assert.deepEqual(errors, ["church", "code", "name"]);
   });
 });

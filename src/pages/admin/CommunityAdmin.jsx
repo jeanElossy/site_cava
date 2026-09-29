@@ -100,7 +100,12 @@ const FLOCK_STATUS_LABELS = Object.fromEntries(
 // depuis l'API) sont construits par une fonction plutôt que déclarés
 // une fois pour toutes au niveau du module — voir `buildMemberFields`
 // pour la même raison.
-const buildFlockFields = (churchSelectOptions) => [
+const LEADER_STATUSES = [
+  { value: "actif", label: "Actif" },
+  { value: "suspendu", label: "Suspendu (accès au portail fermé)" },
+];
+
+const buildFlockFields = (churchSelectOptions, memberOptions) => [
   {
     name: "code",
     label: "Code (2 lettres)",
@@ -121,11 +126,44 @@ const buildFlockFields = (churchSelectOptions) => [
     type: "select",
     options: FLOCK_STATUSES,
   },
+  {
+    // On désigne un MEMBRE, pas un compte : la personne existe dans
+    // l'annuaire avant d'avoir un accès au portail, et son compte se
+    // crée ensuite. Retirer l'accès ne doit pas effacer le fait que la
+    // bergerie a un responsable.
+    name: "leader",
+    label: "Responsable de la bergerie",
+    type: "select",
+    options: memberOptions,
+    wide: true,
+    help: "Un seul responsable par bergerie, et un membre ne peut en diriger qu'une. Laissez vide si la bergerie n'a pas encore de responsable.",
+  },
+  {
+    name: "leaderStatus",
+    label: "Statut du responsable",
+    type: "select",
+    options: LEADER_STATUSES,
+    help: "« Suspendu » ferme l'accès au portail sans effacer la désignation ni toucher au compte.",
+  },
 ];
 
-const buildFlockColumns = (churchOptions) => [
+const buildFlockColumns = (churchOptions, memberNameById) => [
   { key: "code", label: "Code" },
   { key: "name", label: "Nom" },
+  {
+    key: "leader",
+    label: "Responsable",
+    render: (item) => {
+      if (!item.leader) return "—";
+
+      const name = memberNameById.get(String(item.leader)) ?? "Membre inconnu";
+
+      // Le retrait se lit DANS la colonne : sans cette mention, une
+      // bergerie dont le responsable est suspendu serait indiscernable
+      // d'une bergerie qui fonctionne.
+      return item.leaderStatus === "suspendu" ? `${name} (suspendu)` : name;
+    },
+  },
   {
     key: "church",
     label: "Église",
@@ -1099,9 +1137,33 @@ const CommunityAdmin = () => {
     label: `${flock.name} (${churchLabelFrom(churchOptions, flock.church)})`,
   }));
 
+  // Liste des membres, pour désigner le responsable d'une bergerie.
+  // Chargée ici et non dans le formulaire : l'onglet Bergeries et
+  // l'onglet Membres partagent ainsi une seule requête.
+  //
+  // `listAdmin` plafonne à 100 par défaut ; la limite est relevée
+  // explicitement, faute de quoi la liste déroulante se serait
+  // silencieusement arrêtée au centième membre — et le responsable
+  // cherché aurait pu se trouver au-delà, sans qu'on comprenne
+  // pourquoi il est introuvable.
+  const { data: memberList } = useAsyncData(() =>
+    members.listAdmin({ limit: 500, status: "actif" })
+  );
+
+  const memberOptions = (memberList ?? []).map((member) => ({
+    value: member.id,
+    label: `${(member.lastName ?? "").toUpperCase()} ${
+      member.firstName ?? ""
+    }`.trim(),
+  }));
+
+  const memberNameById = new Map(
+    memberOptions.map((option) => [String(option.value), option.label])
+  );
+
   const memberFields = buildMemberFields(flockOptions, churchSelectOptions);
-  const flockFields = buildFlockFields(churchSelectOptions);
-  const flockColumns = buildFlockColumns(churchOptions);
+  const flockFields = buildFlockFields(churchSelectOptions, memberOptions);
+  const flockColumns = buildFlockColumns(churchOptions, memberNameById);
 
   return (
     <div className="admin-community">
