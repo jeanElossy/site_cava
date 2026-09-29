@@ -1096,6 +1096,52 @@ export const buildRoutes = () => {
     })
   );
 
+  // Deux listes de travail, tirées du même registre que les exports
+  // ci-dessus (mêmes filtres, mêmes membres actifs) :
+  //   - la relance des fiches incomplètes, pour savoir qui rappeler et
+  //     quoi lui demander ;
+  //   - l'annuaire des compétences, qui alimentera l'appel à
+  //     candidature des départements.
+  //
+  // Comme /export.pdf, ces chemins sont déclarés AVANT le montage de la
+  // ressource `members`, dont GET /admin/members/:id les prendrait
+  // sinon pour des identifiants.
+  memberExportRouter.get(
+    "/profils-incomplets.pdf",
+    asyncHandler(async (req, res) => {
+      const buffer = await memberExportService.buildIncompleteProfilesPdf({
+        church: req.query.church,
+        flock: req.query.flock,
+      });
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="fiches-a-completer-cava.pdf"'
+      );
+
+      res.send(buffer);
+    })
+  );
+
+  memberExportRouter.get(
+    "/competences.pdf",
+    asyncHandler(async (req, res) => {
+      const buffer = await memberExportService.buildSkillsDirectoryPdf({
+        church: req.query.church,
+        flock: req.query.flock,
+      });
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="competences-membres-cava.pdf"'
+      );
+
+      res.send(buffer);
+    })
+  );
+
   // Carte de membre individuelle. Chemin à trois segments
   // (/:id/card.pdf) : ne peut pas être confondu avec la route
   // générique GET /admin/members/:id de la ressource CRUD montée plus

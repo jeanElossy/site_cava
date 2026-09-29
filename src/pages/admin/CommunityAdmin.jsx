@@ -834,6 +834,24 @@ const GuestBadgesDownloadButton = () => {
 // membres (`AdminCrud`, via `listParams`) doit filtrer sur les mêmes
 // église/bergerie que ce qui sera exporté, sinon l'export téléchargé
 // pourrait surprendre en ne correspondant pas à ce qui est affiché.
+// Chemin et nom de fichier de chaque export, par clé. Une table
+// plutôt qu'un `kind === "xlsx" ? … : …` : il y a désormais quatre
+// exports, et un ternaire en aurait silencieusement renvoyé deux sous
+// le même nom de fichier.
+const EXPORT_PATHS = {
+  xlsx: "export.xlsx",
+  pdf: "export.pdf",
+  incomplets: "profils-incomplets.pdf",
+  competences: "competences.pdf",
+};
+
+const EXPORT_FILENAMES = {
+  xlsx: "membres-cava.xlsx",
+  pdf: "registre-membres-cava.pdf",
+  incomplets: "fiches-a-completer-cava.pdf",
+  competences: "competences-membres-cava.pdf",
+};
+
 const MemberExportButtons = ({
   flockOptions,
   churchOptions,
@@ -858,7 +876,7 @@ const MemberExportButtons = ({
       );
 
       const response = await fetch(
-        `${apiBaseUrl}/api/admin/members/export.${kind}?${query}`,
+        `${apiBaseUrl}/api/admin/members/${EXPORT_PATHS[kind]}?${query}`,
         { headers: { Authorization: `Bearer ${getToken()}` } }
       );
 
@@ -871,8 +889,7 @@ const MemberExportButtons = ({
       const link = document.createElement("a");
 
       link.href = url;
-      link.download =
-        kind === "xlsx" ? "membres-cava.xlsx" : "registre-membres-cava.pdf";
+      link.download = EXPORT_FILENAMES[kind];
       link.click();
 
       URL.revokeObjectURL(url);
@@ -929,6 +946,26 @@ const MemberExportButtons = ({
       <button type="button" onClick={() => download("pdf")} disabled={busy !== ""}>
         <Download aria-hidden="true" />
         {busy === "pdf" ? "Export…" : "PDF"}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => download("incomplets")}
+        disabled={busy !== ""}
+        title="Membres actifs dont la fiche est incomplète, avec le détail des champs manquants"
+      >
+        <Download aria-hidden="true" />
+        {busy === "incomplets" ? "Export…" : "Fiches à compléter"}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => download("competences")}
+        disabled={busy !== ""}
+        title="Tous les membres actifs avec leur profession et leurs compétences déclarées"
+      >
+        <Download aria-hidden="true" />
+        {busy === "competences" ? "Export…" : "Compétences"}
       </button>
 
       {error && (

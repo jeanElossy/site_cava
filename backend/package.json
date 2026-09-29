@@ -11,6 +11,7 @@
     "start": "node src/server.js",
     "seed": "node src/scripts/seed.js",
     "restore:ministeres": "node src/scripts/restore-ministries.js",
+    "export:membres": "node src/scripts/exportMemberPdfs.js",
     "test": "node --test"
   },
   "dependencies": {

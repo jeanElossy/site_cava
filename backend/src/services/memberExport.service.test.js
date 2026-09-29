@@ -5,7 +5,12 @@ import ExcelJS from "exceljs";
 import { connectTestDb, disconnectTestDb } from "../test/db.js";
 import Flock from "../models/Flock.js";
 import Member from "../models/Member.js";
-import { buildMembersXlsx, buildMembersPdf } from "./memberExport.service.js";
+import {
+  buildMembersXlsx,
+  buildMembersPdf,
+  buildIncompleteProfilesPdf,
+  buildSkillsDirectoryPdf,
+} from "./memberExport.service.js";
 
 // Isolation : nom de famille improbable en production, et code de
 // bergerie distinct de ceux déjà utilisés par les autres suites de
@@ -188,6 +193,71 @@ describe("memberExport.service (intégration MongoDB)", () => {
     });
 
     const buffer = await buildMembersPdf({ church: 1, flock: testFlock.id });
+
+    assert.ok(Buffer.isBuffer(buffer));
+    assert.equal(buffer.subarray(0, 5).toString("latin1"), "%PDF-");
+  });
+
+  // Les deux listes de travail. Le détail de « quel champ manque »
+  // est vérifié sans base par memberProfileAudit.service.test.js : ce
+  // qui se teste ICI est le rendu, c'est-à-dire qu'un membre réel,
+  // avec ses champs absents et sa bergerie peuplée, traverse le
+  // constructeur de PDF sans le faire échouer.
+  it("buildIncompleteProfilesPdf rend un PDF pour une fiche très incomplète", async () => {
+    await Member.create({
+      firstName: "Incomplet",
+      lastName: TEST_LAST_NAME,
+      church: 1,
+      flock: testFlock._id,
+      registrationNumber: "1XM26002B",
+    });
+
+    const buffer = await buildIncompleteProfilesPdf({
+      church: 1,
+      flock: testFlock.id,
+    });
+
+    assert.ok(Buffer.isBuffer(buffer));
+    assert.equal(buffer.subarray(0, 5).toString("latin1"), "%PDF-");
+  });
+
+  it("buildIncompleteProfilesPdf rend un PDF même quand aucune fiche n'est incomplète", async () => {
+    // Aucun membre de test créé : le filtre ne renvoie rien, et le
+    // document doit rester valide plutôt que d'échouer sur un
+    // `Math.max()` sans argument ou un tableau vide.
+    const buffer = await buildIncompleteProfilesPdf({
+      church: 1,
+      flock: testFlock.id,
+    });
+
+    assert.ok(Buffer.isBuffer(buffer));
+    assert.equal(buffer.subarray(0, 5).toString("latin1"), "%PDF-");
+  });
+
+  it("buildSkillsDirectoryPdf rend un PDF, compétences déclarées ou non", async () => {
+    await Member.create([
+      {
+        firstName: "AvecCompetences",
+        lastName: TEST_LAST_NAME,
+        church: 1,
+        flock: testFlock._id,
+        registrationNumber: "1XM26003C",
+        profession: "Informaticien",
+        skills: ["Informatique", "Sonorisation"],
+      },
+      {
+        firstName: "SansCompetences",
+        lastName: TEST_LAST_NAME,
+        church: 1,
+        flock: testFlock._id,
+        registrationNumber: "1XM26004D",
+      },
+    ]);
+
+    const buffer = await buildSkillsDirectoryPdf({
+      church: 1,
+      flock: testFlock.id,
+    });
 
     assert.ok(Buffer.isBuffer(buffer));
     assert.equal(buffer.subarray(0, 5).toString("latin1"), "%PDF-");
