@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Church,
   Briefcase,
+  Tent,
   ExternalLink,
   HandCoins,
   HandHelping,
@@ -52,6 +53,7 @@ import { currentUser, signOut } from "../../services/auth";
 import {
   AGENT_ROLES,
   CHILDREN_ROLES,
+  FLOCK_PORTAL_ROLES,
   SOCIAL_ROLES,
   STAFF_ROLES,
 } from "../../routes/roleGroups";
@@ -123,6 +125,20 @@ const NAV_GROUPS = [
         to: "/admin/postes",
         label: "Postes ouverts",
         icon: Briefcase,
+      },
+    ],
+  },
+  {
+    // Groupe propre au responsable de bergerie : c'est sa seule entrée.
+    // `roles` filtre la navigation exactement comme la route filtre
+    // l'accès — les deux ne doivent jamais diverger.
+    title: "Ma bergerie",
+    roles: FLOCK_PORTAL_ROLES,
+    items: [
+      {
+        to: "/admin/bergerie",
+        label: "Mes membres",
+        icon: Tent,
       },
     ],
   },

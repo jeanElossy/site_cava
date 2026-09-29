@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { currentUser } from "../services/auth";
 import {
   AGENT_ROLES,
+  FLOCK_ONLY_ROLES,
   MONITOR_ONLY_ROLES,
   SOCIAL_ONLY_ROLES,
 } from "./roleGroups";
@@ -30,7 +31,11 @@ const RequireRole = ({ allow, children }) => {
         // (voir src/pages/Monitor/).
         MONITOR_ONLY_ROLES.includes(role)
         ? "/monitorat"
-        : "/admin";
+        : // Un responsable de bergerie n'a rien à faire dans le reste
+          // de l'administration : son portail est sa seule porte.
+          FLOCK_ONLY_ROLES.includes(role)
+          ? "/admin/bergerie"
+          : "/admin";
 
   return (
     <Navigate

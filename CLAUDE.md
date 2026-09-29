@@ -128,7 +128,9 @@ Le projet n'est plus un simple site vitrine : `/admin` porte plusieurs modules m
 
   Le pont compte → personne vit dans [account.service.js](backend/src/services/account.service.js) (`findMemberForAccount`), remonté depuis `monitor.service.js` qui le ré-exporte : les bergeries n'ont pas à dépendre de l'École du dimanche.
 
-  **Pas encore fait** : l'écran React du portail, la vue « toutes les bergeries » du `coordinateur_bergeries`, et les notifications d'affectation CANA.
+  Écran : `/admin/bergerie` (`FlockPortal`), réservé à `responsable_bergerie` — **sans** y ajouter `admin` : l'API refuse tout autre rôle, et un administrateur qui ne dirige aucune bergerie n'y trouverait rien. Ouvrir l'écran à un rôle que l'API refuse donne une page qui s'affiche puis se remplit d'un refus, pire qu'un accès franchement fermé. Le rôle est aussi redirigé du tableau de bord général vers son portail (`Dashboard.jsx`), comme le sont déjà les rôles agent, social et moniteur.
+
+  **Pas encore fait** : la vue « toutes les bergeries » du `coordinateur_bergeries`, et les notifications d'affectation CANA.
 - **Postes ouverts** (`/admin/postes`) — les postes de l'appel à candidatures public (`/appel-a-candidature`, fiche détaillée sur `/appel-a-candidature/:slug`). Ressource `Position`, montée sur le CRUD générique. **Ce ne sont pas des ministères** : « Finance & Administration » et « Secrétariat exécutif » n'en sont pas, et un ministère est une activité permanente là où un poste ouvert est une campagne de recrutement — les confondre les ferait apparaître sur `/ministries`. Les listes `missions` et `requirements` sont des tableaux d'objets `{ value }` et non de chaînes : c'est la forme que produit `components/admin/RepeaterField`, et l'aligner évite une traduction à l'aller comme au retour. Les candidatures elles-mêmes ne créent aucune ressource : elles arrivent dans `/admin/messages` avec `kind: "candidature"`.
 
 ### Matricule des membres

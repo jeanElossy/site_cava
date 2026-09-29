@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 
 import {
   ArrowRight,
@@ -23,7 +23,11 @@ import { inbox, newSouls, stats } from "../../services/api";
 import { fetchSocialDashboard } from "../../services/social";
 
 import { currentUser } from "../../services/auth";
-import { AGENT_ROLES, SOCIAL_ONLY_ROLES } from "../../routes/roleGroups";
+import {
+  AGENT_ROLES,
+  FLOCK_ONLY_ROLES,
+  SOCIAL_ONLY_ROLES,
+} from "../../routes/roleGroups";
 import { money } from "./Social/socialShared";
 
 import useAsyncData from "../../hooks/useAsyncData";
@@ -619,6 +623,7 @@ const Dashboard = () => {
   const role = currentUser()?.role;
   const isAgent = AGENT_ROLES.includes(role);
   const isSocialOnly = !isAgent && SOCIAL_ONLY_ROLES.includes(role);
+  const isFlockOnly = FLOCK_ONLY_ROLES.includes(role);
 
   usePageMeta(
     isAgent
@@ -639,6 +644,12 @@ const Dashboard = () => {
 
   if (isAgent) return <AgentDashboard />;
   if (isSocialOnly) return <SocialOnlyDashboard />;
+
+  // Un responsable de bergerie n'a pas de tableau de bord à lui : son
+  // portail EN EST un. Le laisser atterrir sur le tableau de bord
+  // général l'aurait mené sur des compteurs alimentés par des routes
+  // que son rôle ne peut pas lire — une page d'erreurs, pas un accueil.
+  if (isFlockOnly) return <Navigate to="/admin/bergerie" replace />;
 
   return <StaffDashboard />;
 };

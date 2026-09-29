@@ -5,6 +5,7 @@ import RequireRole from "./RequireRole";
 import {
   AGENT_ROLES,
   CHILDREN_ROLES,
+  FLOCK_PORTAL_ROLES,
   SOCIAL_ROLES,
   STAFF_ROLES,
 } from "./roleGroups";
@@ -16,6 +17,7 @@ import MediasAdmin from "../pages/admin/MediasAdmin";
 import EventsAdmin from "../pages/admin/EventsAdmin";
 import MinistriesAdmin from "../pages/admin/MinistriesAdmin";
 import PositionsAdmin from "../pages/admin/PositionsAdmin";
+import FlockPortal from "../pages/admin/FlockPortal/FlockPortal";
 import MessagesAdmin from "../pages/admin/MessagesAdmin";
 import DonationsAdmin from "../pages/admin/DonationsAdmin";
 import PaymentMethodsAdmin from "../pages/admin/PaymentMethodsAdmin";
@@ -100,6 +102,22 @@ const AdminRoutes = () => {
           element={
             <RequireRole allow={STAFF_ROLES}>
               <MinistriesAdmin />
+            </RequireRole>
+          }
+        />
+
+        {/* Le portail n'admet QUE le responsable de bergerie, sans
+            ajouter `admin` : côté API, `requireFlockLeader` refuse
+            tout autre rôle, puis `resolveFlockAccess` ne trouverait de
+            toute façon aucune bergerie à un administrateur qui n'en
+            dirige pas. Ouvrir l'écran ici aurait donné une page qui
+            s'affiche puis se remplit d'un refus — pire qu'un accès
+            franchement fermé. */}
+        <Route
+          path="bergerie"
+          element={
+            <RequireRole allow={FLOCK_PORTAL_ROLES}>
+              <FlockPortal />
             </RequireRole>
           }
         />

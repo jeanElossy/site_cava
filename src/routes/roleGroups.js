@@ -72,3 +72,21 @@ export const MONITOR_ONLY_ROLES = ["moniteur"];
 // entre aussi : il encadre parfois une classe, et doit pouvoir faire
 // l'appel comme les autres.
 export const MONITOR_ROLES = ["moniteur", "responsable_ecole_dimanche", "admin"];
+
+// ---- Portail bergerie ---------------------------------------------
+
+// Comptes dont le portail bergerie est le SEUL espace — même principe
+// qu'AGENT_ROLES pour Nouvelles Âmes, SOCIAL_ONLY_ROLES pour le
+// Service Social et MONITOR_ONLY_ROLES pour l'École du dimanche : ces
+// comptes se connectent depuis leur téléphone et doivent atterrir dans
+// leur portail, jamais sur le tableau de bord général.
+//
+// `coordinateur_bergeries` n'y figure PAS : il suit toutes les
+// bergeries et appartient déjà à AGENT_ROLES (module Nouvelles Âmes).
+// Sa vue d'ensemble reste à construire.
+export const FLOCK_ONLY_ROLES = ["responsable_bergerie"];
+
+// Miroir exact de `FLOCK_PORTAL_ROLES` côté API
+// (backend/src/middlewares/flockAuth.js) — la vraie barrière reste
+// là-bas, comme toujours.
+export const FLOCK_PORTAL_ROLES = ["responsable_bergerie"];

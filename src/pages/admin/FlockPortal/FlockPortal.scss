@@ -1,0 +1,228 @@
+@use "../../../styles/variables" as *;
+
+// Tout est imbriqué sous `.flock-portal` : il n'y a pas de CSS modules
+// dans ce projet, et `&__table`, `&__stat` ou `&__panel` sont des noms
+// que d'autres écrans emploient déjà.
+.flock-portal {
+  display: grid;
+  gap: 24px;
+
+  &__eyebrow {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: $secondary-dark;
+  }
+
+  &__title {
+    margin: 4px 0 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    color: $primary;
+  }
+
+  &__subtitle {
+    margin: 6px 0 0;
+    color: #6b7a72;
+    font-size: 0.92rem;
+  }
+
+  &__stats {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  }
+
+  &__stat {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px;
+    border-radius: $radius;
+    background: #ffffff;
+    border: 1px solid $border-color;
+  }
+
+  &__stat-icon {
+    flex: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #eaf5ee;
+    color: $primary;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__stat-body {
+    display: grid;
+    font-size: 0.88rem;
+    line-height: 1.35;
+    color: #5b6b63;
+
+    strong {
+      font-size: 1.5rem;
+      color: $primary;
+    }
+  }
+
+  &__panel {
+    padding: 24px;
+    border-radius: $radius;
+    background: #ffffff;
+    border: 1px solid $border-color;
+  }
+
+  &__panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+
+    h2 {
+      margin: 0;
+      font-size: 1.15rem;
+      color: $primary;
+    }
+  }
+
+  &__count {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #6b7a72;
+  }
+
+  &__note {
+    margin: 10px 0 18px;
+    font-size: 0.85rem;
+    font-style: italic;
+    color: #6b7a72;
+  }
+
+  &__state {
+    margin: 20px 0;
+    color: #6b7a72;
+  }
+
+  &__alert {
+    margin: 0;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #fdecec;
+    color: #9b1c1c;
+    font-size: 0.92rem;
+  }
+
+  &__table-wrap {
+    overflow-x: auto;
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+
+    th,
+    td {
+      padding: 12px 10px;
+      text-align: left;
+      border-bottom: 1px solid $border-color;
+    }
+
+    th {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: $primary;
+    }
+
+    td a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: $primary;
+      font-weight: 600;
+    }
+
+    td svg {
+      color: #8aa096;
+      vertical-align: -2px;
+      margin-right: 4px;
+    }
+  }
+
+  // Sous 700 px le tableau devient une pile de fiches : le portail se
+  // consulte au téléphone, et quatre colonnes y forcent un défilement
+  // horizontal qui rend la liste pénible à parcourir.
+  @media (max-width: 700px) {
+    &__table {
+      thead {
+        display: none;
+      }
+
+      tr {
+        display: grid;
+        gap: 4px;
+        padding: 12px 0;
+        border-bottom: 1px solid $border-color;
+      }
+
+      td {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 2px 0;
+        border: 0;
+
+        // Le libellé de colonne réapparaît devant chaque valeur, sinon
+        // « +225 07 … » et « Cocody » s'empilent sans rien pour les
+        // distinguer.
+        &::before {
+          content: attr(data-label);
+          font-size: 0.72rem;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          color: #8aa096;
+        }
+      }
+    }
+  }
+
+  &__pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 20px;
+    font-size: 0.9rem;
+    color: #5b6b63;
+
+    button {
+      padding: 8px 16px;
+      border: 1px solid $border-color;
+      border-radius: 999px;
+      background: #ffffff;
+      font: inherit;
+      color: $primary;
+      cursor: pointer;
+      transition: $transition;
+
+      &:hover:not(:disabled) {
+        background: #eaf5ee;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+}

@@ -448,6 +448,25 @@ export const agents = {
 // Tableau de bord
 // ---------------------------------------------------------------
 
+// Portail bergerie — LECTURE SEULE, à l'image de l'API.
+//
+// Aucune fonction d'écriture n'est exposée ici, et ce n'est pas un
+// oubli : un responsable consulte sa bergerie, il ne modifie pas les
+// fiches de ses membres. Le serveur ne monte d'ailleurs aucune route
+// d'écriture sous /api/admin/bergerie.
+export const flockPortal = {
+  summary: async () =>
+    request("/api/admin/bergerie/ma-bergerie", { auth: true }),
+
+  members: async (params = {}) =>
+    requestWithMeta(
+      `/api/admin/bergerie/membres?${new URLSearchParams(
+        cleanParams(params)
+      )}`,
+      { auth: true }
+    ),
+};
+
 export const stats = async () =>
   request("/api/admin/stats", { auth: true });
 
