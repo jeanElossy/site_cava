@@ -5,7 +5,7 @@
   background: $bg-light;
 
   &__container {
-    width: min(920px, 100%);
+    width: min(1240px, 100%);
     margin: 0 auto;
     padding: 0 24px;
   }
@@ -59,12 +59,22 @@
       font-weight: 700;
       color: $primary;
     }
+
+    // Le champ « Autre » suit immédiatement la grille de cases : sans
+    // cette marge, son intitulé venait se coller à la dernière case.
+    .candidature-form__field {
+      margin-top: 16px;
+    }
   }
 
   &__choices {
     display: grid;
     gap: 10px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    // `auto-fit` plutôt qu'un nombre fixe de colonnes : le même groupe
+    // de cases sert dans la colonne large (« 1. Ce que je sais faire »)
+    // et dans la colonne étroite (« 4 » et « 5 »). Deux colonnes
+    // imposées auraient écrasé les libellés de la colonne étroite.
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
     margin-top: 8px;
 
     &--inline {
@@ -156,14 +166,75 @@
     box-shadow: $shadow;
   }
 
+  // BANDES HORIZONTALES
+  //
+  // Le questionnaire papier se lit de haut en bas ; à l'écran, cette
+  // colonne unique imposait un défilement interminable. Les rubriques
+  // sont donc regroupées en bandes de deux colonnes, appariées par
+  // NATURE et par HAUTEUR : les deux questions ouvertes ensemble, la
+  // longue liste des savoir-faire face aux deux courtes listes
+  // empilées. Apparier au hasard aurait laissé une colonne vide en
+  // face d'une colonne pleine.
+  //
+  // Tout retombe sur une seule colonne en dessous de 992 px : sur un
+  // téléphone, deux colonnes de cases à cocher deviennent illisibles.
   &__row {
     display: grid;
     gap: 18px;
     grid-template-columns: repeat(3, 1fr);
 
+    // Les cinq coordonnées sur une seule ligne. `minmax(0, …)` et non
+    // `1fr` seul : sans la borne basse à 0, un `select` au libellé long
+    // (« Finance & Administration — Équipe à constituer ») refuse de
+    // rétrécir et fait déborder toute la rangée.
+    &--identity {
+      grid-template-columns:
+        1.3fr minmax(0, 0.85fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr);
+
+      @media (max-width: 1199px) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      @media (max-width: 575px) {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 767px) {
       grid-template-columns: 1fr;
     }
+  }
+
+  &__band {
+    display: grid;
+    gap: 18px;
+    align-items: start;
+
+    &--skills {
+      // La liste des savoir-faire est deux fois plus longue que les
+      // deux listes d'en face : elle prend deux tiers de la largeur.
+      grid-template-columns: 2fr 1fr;
+    }
+
+    &--open,
+    &--closing {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    @media (max-width: 991px) {
+      &--skills,
+      &--open,
+      &--closing {
+        grid-template-columns: 1fr;
+      }
+    }
+  }
+
+  // Deux blocs empilés qui, ensemble, font face à un bloc long.
+  &__stack {
+    display: grid;
+    gap: 18px;
+    align-content: start;
   }
 
   &__field {

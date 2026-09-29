@@ -244,20 +244,22 @@ const CandidatureForm = () => {
             onSubmit={handleSubmit}
             {...reveal(3, "y", "some")}
           >
-            <div className="candidature-form__field">
-              <label htmlFor="cand-name">Nom et prénoms *</label>
+            {/* BANDE 1 — coordonnées, toutes sur une seule ligne en
+                grand écran (voir `&__row` dans le SCSS). */}
+            <div className="candidature-form__row candidature-form__row--identity">
+              <div className="candidature-form__field">
+                <label htmlFor="cand-name">Nom et prénoms *</label>
 
-              <input
-                id="cand-name"
-                name="name"
-                type="text"
-                required
-                value={values.name}
-                onChange={handleChange}
-              />
-            </div>
+                <input
+                  id="cand-name"
+                  name="name"
+                  type="text"
+                  required
+                  value={values.name}
+                  onChange={handleChange}
+                />
+              </div>
 
-            <div className="candidature-form__row">
               <div className="candidature-form__field">
                 <label htmlFor="cand-matricule">Matricule</label>
 
@@ -295,6 +297,25 @@ const CandidatureForm = () => {
                   onChange={handleChange}
                 />
               </div>
+
+              <div className="candidature-form__field">
+                <label htmlFor="cand-position">Poste souhaité</label>
+
+                <select
+                  id="cand-position"
+                  name="position"
+                  value={values.position}
+                  onChange={handleChange}
+                >
+                  <option value="">Je ne sais pas encore</option>
+
+                  {positions.map((position) => (
+                    <option key={position.id} value={position.id}>
+                      {position.title} — {position.subtitle}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <p className="candidature-form__help candidature-form__help--tight">
@@ -302,30 +323,16 @@ const CandidatureForm = () => {
               nécessaire pour vous recontacter.
             </p>
 
-            <div className="candidature-form__field">
-              <label htmlFor="cand-position">Poste souhaité</label>
-
-              <select
-                id="cand-position"
-                name="position"
-                value={values.position}
-                onChange={handleChange}
-              >
-                <option value="">Je ne sais pas encore</option>
-
-                {positions.map((position) => (
-                  <option key={position.id} value={position.id}>
-                    {position.title} — {position.subtitle}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             {/* `fieldset`/`legend` et non un simple titre : c'est ce qui
                 annonce le groupe aux lecteurs d'écran avant d'énumérer
                 les cases, sans quoi chaque case arrive hors contexte. */}
-            <fieldset className="candidature-form__group">
-              <legend>1. Ce que je sais faire</legend>
+            {/* BANDE 2 — deux colonnes : la liste des savoir-faire, la
+                plus longue, occupe la colonne large ; situation et
+                disponibilité s'empilent dans la colonne étroite, ce qui
+                équilibre les deux hauteurs. */}
+            <div className="candidature-form__band candidature-form__band--skills">
+              <fieldset className="candidature-form__group">
+                <legend>1. Ce que je sais faire</legend>
 
               <p className="candidature-form__help">
                 Cochez ce qui vous correspond.
@@ -333,84 +340,96 @@ const CandidatureForm = () => {
 
               {checkboxGroup("skills", SKILLS)}
 
-              <div className="candidature-form__field">
-                <label htmlFor="cand-other-skill">Autre</label>
+                <div className="candidature-form__field">
+                  <label htmlFor="cand-other-skill">Autre</label>
 
-                <input
-                  id="cand-other-skill"
-                  name="otherSkill"
-                  type="text"
-                  value={values.otherSkill}
+                  <input
+                    id="cand-other-skill"
+                    name="otherSkill"
+                    type="text"
+                    value={values.otherSkill}
+                    onChange={handleChange}
+                  />
+                </div>
+              </fieldset>
+
+              <div className="candidature-form__stack">
+                <fieldset className="candidature-form__group">
+                  <legend>4. Je suis actuellement…</legend>
+
+                  {checkboxGroup("situation", SITUATIONS)}
+                </fieldset>
+
+                <fieldset className="candidature-form__group">
+                  <legend>5. Ma disponibilité</legend>
+
+                  {checkboxGroup("availability", AVAILABILITIES)}
+                </fieldset>
+              </div>
+            </div>
+
+            {/* BANDE 3 — les deux questions ouvertes côte à côte : même
+                nature, même hauteur de zone de saisie. */}
+            <div className="candidature-form__band candidature-form__band--open">
+              <div className="candidature-form__field">
+                <label htmlFor="cand-concern">
+                  2. Ce qui me touche particulièrement
+                </label>
+
+                <p className="candidature-form__help">
+                  Quand je regarde la vie de l&apos;Église, quel besoin me
+                  touche ou m&apos;interpelle le plus ?
+                </p>
+
+                <textarea
+                  id="cand-concern"
+                  name="concern"
+                  rows={5}
+                  value={values.concern}
                   onChange={handleChange}
                 />
               </div>
-            </fieldset>
 
-            <div className="candidature-form__field">
-              <label htmlFor="cand-concern">
-                2. Ce qui me touche particulièrement
-              </label>
+              <div className="candidature-form__field">
+                <label htmlFor="cand-contribution">
+                  3. Ce que je pourrais apporter
+                </label>
 
-              <p className="candidature-form__help">
-                Quand je regarde la vie de l&apos;Église, quel besoin me
-                touche ou m&apos;interpelle le plus ?
-              </p>
+                <p className="candidature-form__help">
+                  Une compétence, une expérience, un talent, une ressource
+                  ou une disponibilité que je pourrais mettre au service de
+                  la maison.
+                </p>
 
-              <textarea
-                id="cand-concern"
-                name="concern"
-                rows={4}
-                value={values.concern}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="candidature-form__field">
-              <label htmlFor="cand-contribution">
-                3. Ce que je pourrais apporter
-              </label>
-
-              <p className="candidature-form__help">
-                Une compétence, une expérience, un talent, une ressource ou
-                une disponibilité que je pourrais mettre au service de la
-                maison.
-              </p>
-
-              <textarea
-                id="cand-contribution"
-                name="contribution"
-                rows={4}
-                value={values.contribution}
-                onChange={handleChange}
-              />
-            </div>
-
-            <fieldset className="candidature-form__group">
-              <legend>4. Je suis actuellement…</legend>
-
-              {checkboxGroup("situation", SITUATIONS)}
-            </fieldset>
-
-            <fieldset className="candidature-form__group">
-              <legend>5. Ma disponibilité</legend>
-
-              {checkboxGroup("availability", AVAILABILITIES)}
-            </fieldset>
-
-            <blockquote className="candidature-form__prayer">
-              <FaPrayingHands aria-hidden="true" />
-
-              <div>
-                <p className="candidature-form__prayer-title">Ma prière</p>
-
-                <p>« {PRAYER} »</p>
+                <textarea
+                  id="cand-contribution"
+                  name="contribution"
+                  rows={5}
+                  value={values.contribution}
+                  onChange={handleChange}
+                />
               </div>
-            </blockquote>
+            </div>
 
-            <fieldset className="candidature-form__group">
-              <legend>
-                Je souhaite être contacté(e) pour une orientation
-              </legend>
+            {/* BANDE 4 — la prière tient la colonne de gauche, le
+                dernier choix et l'envoi celle de droite : la page se
+                termine sur le bouton, pas sur un texte. */}
+            <div className="candidature-form__band candidature-form__band--closing">
+              <blockquote className="candidature-form__prayer">
+                <FaPrayingHands aria-hidden="true" />
+
+                <div>
+                  <p className="candidature-form__prayer-title">Ma prière</p>
+
+                  <p>« {PRAYER} »</p>
+                </div>
+              </blockquote>
+
+              <div className="candidature-form__stack">
+                <fieldset className="candidature-form__group">
+                  <legend>
+                    Je souhaite être contacté(e) pour une orientation
+                  </legend>
 
               {/* Des boutons radio : les deux réponses s'excluent, et une
                   case à cocher « Oui » laisserait le « Non » implicite,
@@ -436,35 +455,37 @@ const CandidatureForm = () => {
                   </label>
                 ))}
               </div>
-            </fieldset>
+                </fieldset>
 
-            <label className="candidature-form__consent">
-              <input
-                name="consent"
-                type="checkbox"
-                checked={values.consent}
-                onChange={handleChange}
-              />
+                <label className="candidature-form__consent">
+                  <input
+                    name="consent"
+                    type="checkbox"
+                    checked={values.consent}
+                    onChange={handleChange}
+                  />
 
-              <span>
-                J&apos;accepte que ma réponse soit enregistrée et que
-                l&apos;église me recontacte à ce sujet.
-              </span>
-            </label>
+                  <span>
+                    J&apos;accepte que ma réponse soit enregistrée et que
+                    l&apos;église me recontacte à ce sujet.
+                  </span>
+                </label>
 
-            {error && (
-              <p className="candidature-form__error" role="alert">
-                {error}
-              </p>
-            )}
+                {error && (
+                  <p className="candidature-form__error" role="alert">
+                    {error}
+                  </p>
+                )}
 
-            <button
-              type="submit"
-              className="candidature-form__submit"
-              disabled={isSending}
-            >
-              {isSending ? "Envoi en cours…" : "Envoyer ma réponse"}
-            </button>
+                <button
+                  type="submit"
+                  className="candidature-form__submit"
+                  disabled={isSending}
+                >
+                  {isSending ? "Envoi en cours…" : "Envoyer ma réponse"}
+                </button>
+              </div>
+            </div>
           </motion.form>
         )}
       </div>
