@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Users, UserPlus, UserMinus, Phone, Home } from "lucide-react";
+import { Users, UserPlus, UserMinus, Phone, Home, Sparkles } from "lucide-react";
 
 import { flockPortal } from "../../../services/api";
 import usePageMeta from "../../../hooks/usePageMeta";
@@ -81,12 +81,14 @@ const FlockPortal = () => {
     );
   }
 
+  const nouveaux = summary?.nouveaux ?? [];
+
   const stats = [
     { icon: Users, label: "Membres actifs", value: summary?.actifs },
     {
       icon: UserPlus,
-      label: "Arrivées ce mois-ci",
-      value: summary?.arriveesDuMois,
+      label: `Arrivées (${summary?.recentDays ?? 30} derniers jours)`,
+      value: nouveaux.length,
     },
     { icon: UserMinus, label: "Désactivés", value: summary?.inactifs },
   ];
@@ -123,6 +125,51 @@ const FlockPortal = () => {
           </li>
         ))}
       </ul>
+
+      {/* Les arrivées récentes en tête, et pas seulement un compteur :
+          c'est le chemin FIABLE pour apprendre qu'un nouveau membre a
+          été affecté. La notification push, elle, suppose que le
+          responsable ait installé le site sur son téléphone et accepté
+          les notifications — ce qui peut ne jamais arriver. */}
+      {nouveaux.length > 0 && (
+        <section className="flock-portal__panel flock-portal__panel--new">
+          <div className="flock-portal__panel-head">
+            <h2>
+              <Sparkles size={18} aria-hidden="true" />
+              Nouvelles arrivées
+            </h2>
+
+            <p className="flock-portal__count">
+              {summary.recentDays} derniers jours
+            </p>
+          </div>
+
+          <ul className="flock-portal__new-list">
+            {nouveaux.map((member) => (
+              <li key={member._id ?? member.registrationNumber}>
+                <span className="flock-portal__new-name">
+                  {displayName(member)}
+                </span>
+
+                <span className="flock-portal__new-meta">
+                  {displayRegistration(member)}
+                  {member.joinedAt &&
+                    ` · arrivé(e) le ${new Date(
+                      member.joinedAt
+                    ).toLocaleDateString("fr-FR")}`}
+                </span>
+
+                {member.phone && (
+                  <a href={`tel:${member.phone}`}>
+                    <Phone size={14} aria-hidden="true" />
+                    {member.phone}
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="flock-portal__panel">
         <div className="flock-portal__panel-head">

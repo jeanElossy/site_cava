@@ -78,6 +78,57 @@
     border: 1px solid $border-color;
   }
 
+  // Le panneau des arrivées se distingue du reste : c'est ce que le
+  // responsable doit voir en premier quand il ouvre son portail.
+  &__panel--new {
+    background: linear-gradient(120deg, #f2f9f4, #fff9e4);
+    border-color: #dcece2;
+
+    h2 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+
+  &__new-list {
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+
+    li {
+      display: grid;
+      gap: 2px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #ffffff;
+      border: 1px solid $border-color;
+    }
+
+    a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: $primary;
+    }
+  }
+
+  &__new-name {
+    font-weight: 700;
+    color: $primary;
+  }
+
+  &__new-meta {
+    font-size: 0.82rem;
+    color: #6b7a72;
+  }
+
   &__panel-head {
     display: flex;
     flex-wrap: wrap;

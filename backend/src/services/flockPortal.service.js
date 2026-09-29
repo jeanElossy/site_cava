@@ -79,22 +79,41 @@ export const listMembers = async (access, { page = 1, limit = 25 } = {}) => {
   };
 };
 
+// Fenêtre des « arrivées récentes ».
+//
+// 30 jours GLISSANTS et non « depuis le 1er du mois » : un membre
+// affecté le 29 aurait disparu de la liste trois jours plus tard, le
+// temps que le responsable s'y connecte. La notification push, elle,
+// peut ne jamais arriver — le responsable n'a pas forcément installé
+// le site sur son téléphone, ni accepté les notifications. Cette liste
+// est donc le chemin FIABLE : elle ne dépend que de sa visite.
+const RECENT_DAYS = 30;
+
+const recentSince = () => {
+  const since = new Date();
+
+  since.setDate(since.getDate() - RECENT_DAYS);
+  since.setHours(0, 0, 0, 0);
+
+  return since;
+};
+
 // Tableau de bord : ce que le responsable voit en arrivant.
 export const summary = async (access) => {
   const filter = memberFilterFor(access);
+  const since = recentSince();
 
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
-
-  const [actifs, inactifs, arriveesDuMois] = await Promise.all([
+  const [actifs, inactifs, nouveaux] = await Promise.all([
     Member.countDocuments({ ...filter, status: "actif" }),
     Member.countDocuments({ ...filter, status: "inactif" }),
-    Member.countDocuments({
-      ...filter,
-      status: "actif",
-      joinedAt: { $gte: startOfMonth },
-    }),
+    Member.find({ ...filter, status: "actif", joinedAt: { $gte: since } })
+      .select("firstName lastName registrationNumber phone joinedAt")
+      .sort({ joinedAt: -1 })
+      // Bornée : la vignette d'accueil signale des arrivées, elle ne
+      // remplace pas l'annuaire. Au-delà, c'est la liste complète qu'il
+      // faut ouvrir.
+      .limit(10)
+      .lean(),
   ]);
 
   return {
@@ -106,6 +125,7 @@ export const summary = async (access) => {
     },
     actifs,
     inactifs,
-    arriveesDuMois,
+    recentDays: RECENT_DAYS,
+    nouveaux,
   };
 };

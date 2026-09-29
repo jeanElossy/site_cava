@@ -120,6 +120,41 @@ describe("flockPortal.service (intégration MongoDB)", () => {
     assert.equal(items[0].notes, undefined);
   });
 
+  it("liste les arrivées récentes, de la plus récente à la plus ancienne", async () => {
+    // La fenêtre est GLISSANTE (30 jours) et non « depuis le 1er du
+    // mois » : un membre affecté le 29 aurait disparu de la liste
+    // trois jours plus tard, avant même que le responsable s'y
+    // connecte.
+    const leader = await makeMember("Responsable");
+
+    const flock = await Flock.create({
+      code: CODE_A,
+      name: "Bergerie A de test",
+      church: CHURCH,
+      leader: leader._id,
+    });
+
+    const joursAvant = (n) => {
+      const d = new Date();
+
+      d.setDate(d.getDate() - n);
+
+      return d;
+    };
+
+    await makeMember("Ancien", { flock: flock._id, joinedAt: joursAvant(120) });
+    await makeMember("Recent", { flock: flock._id, joinedAt: joursAvant(3) });
+    await makeMember("MoinsRecent", { flock: flock._id, joinedAt: joursAvant(20) });
+
+    const data = await summary(await resolveFlockAccess(leader._id));
+
+    assert.deepEqual(
+      data.nouveaux.map((m) => m.firstName),
+      ["Recent", "MoinsRecent"]
+    );
+    assert.equal(data.recentDays, 30);
+  });
+
   it("compte les effectifs de la bergerie dans le résumé", async () => {
     const leader = await makeMember("Responsable");
 
@@ -139,6 +174,7 @@ describe("flockPortal.service (intégration MongoDB)", () => {
     assert.equal(data.flock.code, CODE_A);
     assert.equal(data.actifs, 2);
     assert.equal(data.inactifs, 1);
+    assert.ok(Array.isArray(data.nouveaux));
   });
 
   it("ne renvoie rien plutôt que tout quand aucune bergerie n'est accessible", async () => {

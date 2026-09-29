@@ -9,6 +9,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { nextCaseNumber } from "./newSoulNumber.service.js";
 import { nextRegistrationNumber } from "./registrationNumber.service.js";
 import * as pushService from "./push.service.js";
+import { notifyNewMemberInFlock } from "./flockNotification.service.js";
 
 // Rôles ADMIN (jamais un agent de présence) habilités à voir TOUS les
 // dossiers déjà transmis (jamais ceux encore en cours de saisie par
@@ -679,6 +680,13 @@ export const close = async (id, actor) => {
 
   const memberPayload = await buildMemberPayload(newSoul);
   const member = await Member.create(memberPayload);
+
+  // Le responsable de la bergerie retenue apprend l'arrivée. Non
+  // attendue, comme les autres notifications de ce fichier : une
+  // panne du push ne doit pas faire échouer une clôture qui vient de
+  // créer un membre et de consommer un numéro de matricule — celui-ci
+  // ne se rend pas.
+  notifyNewMemberInFlock(memberPayload.flock, member);
 
   const now = new Date();
 
