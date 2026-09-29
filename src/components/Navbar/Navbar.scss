@@ -316,3 +316,99 @@
     }
   }
 }
+
+// Sous-menu « Communauté ».
+//
+// Bloc `.navbar` SÉPARÉ, ajouté en fin de fichier plutôt qu'inséré au
+// milieu de l'existant : le sélecteur reste imbriqué sous `.navbar`
+// (aucune classe générique ne fuit dans la feuille globale, il n'y a
+// pas de CSS modules ici) et le bloc d'origine n'est pas remanié.
+.navbar {
+  &__dropdown {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    // `:focus-within` autant que `:hover` : au clavier, on n'a jamais
+    // de survol — sans cette seconde condition le sous-menu serait
+    // atteignable par Tab mais resterait invisible, ce qui est pire
+    // qu'absent.
+    &:hover > .navbar__submenu,
+    &:focus-within > .navbar__submenu {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, 0);
+      pointer-events: auto;
+    }
+  }
+
+  &__submenu {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    z-index: 60;
+
+    // Comble l'espace entre le lien et le panneau : sans cette marge
+    // transparente, le survol se perd en descendant vers le sous-menu,
+    // qui se referme avant d'être atteint.
+    margin-top: 18px;
+    padding: 8px;
+    min-width: 230px;
+
+    display: grid;
+    gap: 2px;
+
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate(-50%, 8px);
+    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -18px;
+      height: 18px;
+    }
+
+    // Les liens du menu principal sont blancs (fond transparent
+    // au-dessus du hero) ; ceux du panneau sont sur fond blanc et
+    // doivent donc repartir sur une couleur lisible.
+    a {
+      display: block;
+      padding: 10px 14px;
+      border-radius: 8px;
+      color: $primary;
+      font-weight: 600;
+      font-size: 0.95rem;
+      white-space: nowrap;
+
+      &:hover,
+      &:focus-visible {
+        color: $primary-dark;
+        background: #eaf5ee;
+      }
+
+      &.active {
+        color: $primary-dark;
+        background: #eaf5ee;
+      }
+
+      // La barre soulignée des liens principaux n'a pas de sens ici.
+      &.active::after {
+        display: none;
+      }
+    }
+  }
+
+  &__mobile-sublink {
+    padding-left: 22px;
+    opacity: 0.92;
+  }
+}

@@ -1,0 +1,96 @@
+@use "../../../styles/variables" as *;
+
+.candidature-requirements {
+  padding: 20px 0 70px;
+  background: #ffffff;
+
+  &__container {
+    width: min(1400px, 100%);
+    margin: 0 auto;
+    padding: 0 24px;
+    display: grid;
+    gap: 24px;
+    grid-template-columns: repeat(2, 1fr);
+
+    @media (max-width: 991px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__panel {
+    padding: 28px;
+    border-radius: $radius;
+    border: 1px solid transparent;
+
+    &--green {
+      background: #f2f9f4;
+      border-color: #dcece2;
+    }
+
+    &--gold {
+      background: #fff9e4;
+      border-color: #f4e5b0;
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+
+    h2 {
+      margin: 0;
+      font-size: clamp(1.05rem, 2vw, 1.3rem);
+      font-weight: 800;
+      text-transform: uppercase;
+      color: $primary;
+    }
+  }
+
+  &__icon {
+    flex: none;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: #ffffff;
+    color: $primary;
+    font-size: 1.3rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: $shadow;
+  }
+
+  &__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 12px;
+
+    li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: $text-dark;
+    }
+
+    svg {
+      flex: none;
+      margin-top: 2px;
+      color: $primary;
+      font-size: 1.05rem;
+    }
+  }
+
+  &__note {
+    margin: 18px 0 0;
+    font-size: 0.88rem;
+    font-style: italic;
+    line-height: 1.5;
+    color: #6b6250;
+  }
+}

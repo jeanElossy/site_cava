@@ -1,0 +1,88 @@
+@use "../../../styles/variables" as *;
+
+.candidature-process {
+  padding: 70px 0 50px;
+  background: #ffffff;
+
+  &__container {
+    width: min(1400px, 100%);
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  &__title {
+    margin: 0 0 40px;
+    text-align: center;
+    font-size: clamp(1.7rem, 3.6vw, 2.6rem);
+    font-weight: 800;
+    text-transform: uppercase;
+    color: $primary;
+
+    span {
+      color: $secondary-dark;
+    }
+  }
+
+  &__steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(4, 1fr);
+
+    @media (max-width: 991px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 575px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__step {
+    position: relative;
+    padding: 26px 20px;
+    border-radius: $radius;
+    background: linear-gradient(180deg, #f2f9f4 0%, #ffffff 100%);
+    border: 1px solid #e3efe7;
+    text-align: center;
+  }
+
+  &__icon {
+    font-size: 2.2rem;
+    color: $primary;
+    display: inline-flex;
+  }
+
+  &__step-title {
+    margin: 14px 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: $primary;
+  }
+
+  &__number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: $primary;
+    color: $text-light;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__step-text {
+    margin: 0;
+    font-size: 0.93rem;
+    line-height: 1.55;
+    color: #5b6b63;
+  }
+}

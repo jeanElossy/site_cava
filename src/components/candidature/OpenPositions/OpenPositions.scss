@@ -1,0 +1,139 @@
+@use "../../../styles/variables" as *;
+
+.open-positions {
+  padding: 90px 0 60px;
+  background: #ffffff;
+
+  &__container {
+    width: min(1400px, 100%);
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  &__title {
+    margin: 0;
+    text-align: center;
+    font-size: clamp(1.7rem, 3.6vw, 2.6rem);
+    font-weight: 800;
+    text-transform: uppercase;
+    color: $primary;
+
+    span {
+      color: $secondary-dark;
+    }
+  }
+
+  &__subtitle {
+    margin: 12px auto 0;
+    max-width: 640px;
+    text-align: center;
+    color: #5b6b63;
+    line-height: 1.6;
+  }
+
+  &__grid {
+    margin: 40px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(6, 1fr);
+
+    @media (max-width: 1199px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    @media (max-width: 767px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 479px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 28px 16px 22px;
+    border-radius: $radius;
+    box-shadow: $shadow;
+
+    &--light {
+      background: #eaf5ee;
+      color: $primary;
+    }
+
+    &--gold {
+      background: $secondary;
+      color: $primary-dark;
+    }
+
+    &--dark {
+      background: $primary;
+      color: $text-light;
+    }
+  }
+
+  &__icon {
+    font-size: 2.6rem;
+    line-height: 1;
+    display: inline-flex;
+  }
+
+  &__card-title {
+    margin: 6px 0 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    line-height: 1.25;
+  }
+
+  &__card-subtitle {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.4;
+    opacity: 0.9;
+  }
+
+  &__link {
+    margin-top: auto;
+    padding-top: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: inherit;
+    text-decoration: none;
+
+    // Le libellé « Voir les postes » se répète six fois : la pastille
+    // ci-dessous est la zone cliquable, le nom du poste est ajouté au
+    // lien pour les lecteurs d'écran (`&__sr`), afin que chaque lien
+    // reste distinguable hors contexte.
+    &::before {
+      content: "";
+    }
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
+
+  // Visible des lecteurs d'écran uniquement.
+  &__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}

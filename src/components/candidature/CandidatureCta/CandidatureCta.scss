@@ -1,0 +1,104 @@
+@use "../../../styles/variables" as *;
+
+.candidature-cta {
+  padding: 20px 0 70px;
+  background: #ffffff;
+
+  &__container {
+    width: min(1400px, 100%);
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+  }
+
+  &__claims {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+  }
+
+  &__claim {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 230px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: $text-dark;
+
+    + .candidature-cta__claim {
+      padding-left: 28px;
+      border-left: 1px solid $border-color;
+    }
+  }
+
+  &__icon {
+    font-size: 1.8rem;
+    color: $primary;
+    display: inline-flex;
+  }
+
+  &__button {
+    display: inline-flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 22px;
+    border-radius: $radius;
+    background: linear-gradient(120deg, $primary-dark, $primary);
+    color: $text-light;
+    text-decoration: none;
+    box-shadow: $shadow;
+    transition: $transition;
+
+    span {
+      display: grid;
+      font-size: clamp(1.1rem, 2vw, 1.5rem);
+      font-weight: 800;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+
+    strong {
+      color: $secondary;
+    }
+
+    &:hover,
+    &:focus-visible {
+      transform: translateY(-2px);
+    }
+  }
+
+  &__button-icon {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: $secondary;
+    color: $primary-dark;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+  }
+
+  @media (max-width: 991px) {
+    &__container {
+      justify-content: center;
+    }
+
+    &__claim {
+      + .candidature-cta__claim {
+        padding-left: 0;
+        border-left: 0;
+      }
+    }
+  }
+}

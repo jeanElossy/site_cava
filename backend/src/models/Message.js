@@ -45,9 +45,23 @@ const messageSchema = new mongoose.Schema(
       maxlength: 120,
     },
 
+    // Obligatoire SAUF si un téléphone est donné. À Abidjan, beaucoup de
+    // fidèles n'ont pas d'adresse e-mail — le modèle `Member` en tire
+    // déjà les conséquences (« un membre peut n'avoir que son
+    // téléphone »). Exiger l'e-mail sur l'appel à candidature aurait
+    // écarté précisément les fidèles qu'il s'agit de recruter.
+    //
+    // Conséquence assumée : un message sans e-mail ne peut pas recevoir
+    // de réponse par e-mail depuis /admin/messages. L'administrateur
+    // rappelle au numéro donné — d'où l'exigence d'au moins un des deux.
     email: {
       type: String,
-      required: [true, "L'e-mail est obligatoire."],
+      required: [
+        function () {
+          return !this.phone;
+        },
+        "Indiquez au moins un e-mail ou un téléphone pour être recontacté.",
+      ],
       lowercase: true,
       trim: true,
       match: [
@@ -72,10 +86,16 @@ const messageSchema = new mongoose.Schema(
       maxlength: 5000,
     },
 
-    // Permet de router les demandes de prière vers l'équipe dédiée.
+    // Permet de router les demandes de prière vers l'équipe dédiée, et
+    // de filtrer les candidatures reçues depuis /appel-a-candidature
+    // (la boîte de réception filtre déjà sur ce champ).
+    //
+    // « candidature » plutôt que de réutiliser « ministere » : une
+    // question SUR un ministère et une proposition de SERVIR dedans ne
+    // se traitent pas par la même équipe ni dans le même délai.
     kind: {
       type: String,
-      enum: ["contact", "priere", "ministere", "autre"],
+      enum: ["contact", "priere", "ministere", "candidature", "autre"],
       default: "contact",
       index: true,
     },

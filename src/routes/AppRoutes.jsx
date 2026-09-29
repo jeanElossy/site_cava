@@ -10,6 +10,7 @@ import Events from "../pages/Events/Events";
 import EventDetails from "../pages/EventDetails/EventDetails";
 import Media from "../pages/Media/Media";
 import Communaute from "../pages/Communaute/Communaute";
+import Candidature from "../pages/Candidature/Candidature";
 import Contact from "../pages/Contact/Contact";
 import Donate from "../pages/Donate/Donate";
 import Registration from "../pages/Registration/Registration";
@@ -120,6 +121,11 @@ const AppRoutes = () => {
       <Route
         path="/communaute"
         element={<Communaute />}
+      />
+
+      <Route
+        path="/appel-a-candidature"
+        element={<Candidature />}
       />
 
       <Route

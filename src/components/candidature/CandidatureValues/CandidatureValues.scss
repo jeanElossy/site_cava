@@ -1,0 +1,87 @@
+@use "../../../styles/variables" as *;
+
+.candidature-values {
+  padding: 46px 0;
+  background: linear-gradient(110deg, $primary-dark 0%, $primary 60%, #0f6b49 100%);
+  color: $text-light;
+
+  &__container {
+    width: min(1400px, 100%);
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+  }
+
+  &__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 34px;
+  }
+
+  &__item {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+
+    + .candidature-values__item {
+      padding-left: 34px;
+      border-left: 1px solid rgba(255, 255, 255, 0.28);
+    }
+  }
+
+  &__icon {
+    font-size: 1.9rem;
+    color: $secondary;
+    display: inline-flex;
+  }
+
+  &__verse {
+    margin: 0;
+    max-width: 380px;
+    text-align: right;
+
+    p {
+      margin: 0;
+      font-size: 1rem;
+      font-style: italic;
+      line-height: 1.55;
+    }
+
+    cite {
+      display: block;
+      margin-top: 6px;
+      font-style: normal;
+      font-weight: 700;
+      color: $secondary;
+    }
+  }
+
+  @media (max-width: 991px) {
+    &__container {
+      justify-content: center;
+      text-align: center;
+    }
+
+    &__item {
+      + .candidature-values__item {
+        padding-left: 0;
+        border-left: 0;
+      }
+    }
+
+    &__verse {
+      text-align: center;
+    }
+  }
+}

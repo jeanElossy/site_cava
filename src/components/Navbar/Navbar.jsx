@@ -10,7 +10,8 @@ import {
   Calendar,
   PlayCircle,
   Users,
-  Phone
+  Phone,
+  UserPlus
 } from "lucide-react";
 
 import {
@@ -90,9 +91,24 @@ const Navbar = () => {
             Médias
           </NavLink>
 
-          <NavLink to="/communaute">
-            Communauté
-          </NavLink>
+          {/* Communauté ouvre un sous-menu au survol. Le lien reste
+              cliquable et mène toujours à /communaute : le survol
+              AJOUTE une entrée, il ne remplace pas la navigation.
+
+              `:focus-within` autant que `:hover` (voir Navbar.scss) —
+              sans quoi le sous-menu serait inatteignable au clavier, et
+              sur un écran tactile, où il n'y a pas de survol. */}
+          <div className="navbar__dropdown">
+            <NavLink to="/communaute">
+              Communauté
+            </NavLink>
+
+            <div className="navbar__submenu">
+              <NavLink to="/appel-a-candidature">
+                Appel à candidatures
+              </NavLink>
+            </div>
+          </div>
 
           <NavLink to="/contact">
             Contact
@@ -158,6 +174,17 @@ const Navbar = () => {
             <NavLink to="/communaute" onClick={closeMenu}>
               <Users size={20} />
               <span>Communauté</span>
+            </NavLink>
+
+            {/* Pas de survol sur mobile : l'entrée du sous-menu est
+                affichée en clair, simplement décalée sous son parent. */}
+            <NavLink
+              to="/appel-a-candidature"
+              className="navbar__mobile-sublink"
+              onClick={closeMenu}
+            >
+              <UserPlus size={20} />
+              <span>Appel à candidatures</span>
             </NavLink>
 
             <NavLink to="/contact" onClick={closeMenu}>
