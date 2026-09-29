@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import Event from "../models/Event.js";
 import Ministry from "../models/Ministry.js";
+import Position from "../models/Position.js";
 import Media from "../models/Media.js";
 import Member from "../models/Member.js";
 import Announcement from "../models/Announcement.js";
@@ -91,6 +92,16 @@ const ministries = createCrudService(Ministry, {
   defaultSort: { order: 1, title: 1 },
   publicSort: { order: 1, title: 1 },
   searchableFields: ["title", "description"],
+});
+
+// Postes de l'appel à candidatures. Triés par `order` comme les
+// ministères : l'ordre des cartes est un choix éditorial, pas
+// l'ordre de création.
+const positions = createCrudService(Position, {
+  label: "Poste",
+  defaultSort: { order: 1, title: 1 },
+  publicSort: { order: 1, title: 1 },
+  searchableFields: ["title", "subtitle", "intro"],
 });
 
 const medias = createCrudService(Media, {
@@ -498,6 +509,12 @@ export const buildRoutes = () => {
   mount("events", events, { auditResource: "event" });
   mount("ministries", ministries, {
     auditResource: "ministry",
+  });
+  // `publicBySlug` laissé à sa valeur par défaut : la page de détail
+  // d'un poste s'ouvre sur /appel-a-candidature/<slug>, donc l'API doit
+  // savoir répondre par slug.
+  mount("positions", positions, {
+    auditResource: "position",
   });
   mount("flocks", flocks, {
     publicBySlug: false,

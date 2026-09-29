@@ -31,6 +31,15 @@
     line-height: 1.6;
   }
 
+  // Chargement, erreur, liste vide : trois messages distincts. Une
+  // section muette dans les trois cas laisserait croire qu'aucun poste
+  // n'est ouvert, ce qui est un message différent — et souvent faux.
+  &__state {
+    margin: 40px 0 0;
+    text-align: center;
+    color: #5b6b63;
+  }
+
   &__grid {
     margin: 40px 0 0;
     padding: 0;

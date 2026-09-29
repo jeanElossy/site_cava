@@ -219,3 +219,163 @@ export const seedDonationTypes = [
   { name: "Mission", order: 5 },
   { name: "Don libre", order: 6 },
 ];
+
+// Postes ouverts de l'appel à candidatures (/appel-a-candidature).
+//
+// Ce sont les six domaines de la campagne en cours. Ils sont amorcés
+// ici plutôt qu'écrits en dur dans le site : l'administration doit
+// pouvoir les modifier, en ajouter et en archiver sans passer par un
+// déploiement. L'amorçage est idempotent (clé `slug`), il ne réécrit
+// donc jamais un poste déjà retouché depuis /admin.
+export const seedPositions = [
+  {
+    slug: "ifip-vie",
+    title: "IFIP.VIE",
+    subtitle: "Futurs formateurs",
+    variant: "light",
+    icon: "graduation",
+    order: 1,
+    intro:
+      "L'Institut de Formation IFIP.VIE forme les fidèles appelés à enseigner et à transmettre. Nous recherchons des formateurs capables d'accompagner une promotion du début à la fin de son cursus.",
+    missions: [
+      { value: "Préparer et animer les sessions de formation." },
+      { value: "Accompagner les apprenants tout au long du cursus." },
+      { value: "Participer à l'élaboration des supports pédagogiques." },
+      { value: "Évaluer les acquis et rendre compte à la direction de l'institut." },
+    ],
+    requirements: [
+      { value: "Être membre actif de la communauté ÇA.VA." },
+      { value: "Avoir une expérience de l'enseignement ou de la formation." },
+      { value: "Maîtriser le sujet que l'on souhaite enseigner." },
+      { value: "Savoir préparer une séance et tenir un groupe." },
+    ],
+    commitment:
+      "Une session par mois en moyenne, plus le temps de préparation. Les dates sont arrêtées à l'avance avec la direction de l'institut.",
+    openings: "À déterminer",
+  },
+  {
+    slug: "delivrance",
+    title: "Délivrance",
+    subtitle: "Futurs serviteurs",
+    variant: "gold",
+    icon: "prayer",
+    order: 2,
+    intro:
+      "Le département Délivrance accompagne les personnes qui demandent une prière de libération. C'est un service exigeant, qui demande de la maturité spirituelle et une grande discrétion.",
+    missions: [
+      { value: "Accueillir et écouter les personnes qui se présentent." },
+      { value: "Participer aux séances de prière encadrées par les responsables." },
+      { value: "Assurer le suivi des personnes accompagnées." },
+      { value: "Garder une confidentialité absolue sur les situations rencontrées." },
+    ],
+    requirements: [
+      { value: "Être membre actif et connu de la communauté." },
+      { value: "Faire preuve d'une vie de prière régulière." },
+      { value: "Savoir écouter sans juger." },
+      { value: "Accepter d'être formé(e) avant toute prise de service." },
+    ],
+    commitment:
+      "Présence aux séances programmées et aux temps de formation préalables. L'engagement se prend pour une année renouvelable.",
+    openings: "À déterminer",
+  },
+  {
+    slug: "bergeries",
+    title: "Bergeries",
+    subtitle: "Coordinateur des bergeries",
+    variant: "dark",
+    icon: "flock",
+    order: 3,
+    intro:
+      "Le coordinateur des bergeries fait le lien entre la direction de l'Église et les responsables de chaque bergerie. C'est un poste de coordination, au service de ceux qui encadrent déjà.",
+    missions: [
+      { value: "Accompagner les responsables de bergerie au quotidien." },
+      { value: "Veiller à la tenue des rencontres et au suivi des membres." },
+      { value: "Faire remonter les besoins et les difficultés à la direction." },
+      { value: "Participer à la répartition des nouveaux membres entre les bergeries." },
+    ],
+    requirements: [
+      { value: "Être membre actif depuis plusieurs années." },
+      { value: "Avoir déjà servi dans une bergerie." },
+      { value: "Savoir organiser, planifier et rendre compte." },
+      { value: "Être disponible pour des déplacements entre les bergeries." },
+    ],
+    commitment:
+      "Engagement régulier, avec un point mensuel avec la direction et une présence aux rencontres de bergeries.",
+    openings: "1",
+  },
+  {
+    slug: "direction-des-cultes",
+    title: "Direction des cultes",
+    subtitle: "Futurs serviteurs",
+    variant: "gold",
+    icon: "worship",
+    order: 4,
+    intro:
+      "La direction des cultes prépare et conduit le déroulement des célébrations. Le service demande de la rigueur : c'est l'équipe qui tient le fil du culte du début à la fin.",
+    missions: [
+      { value: "Préparer le déroulé des cultes avec les équipes concernées." },
+      { value: "Conduire la célébration le jour venu." },
+      { value: "Coordonner louange, prédication, annonces et offrandes." },
+      { value: "Faire le bilan après chaque culte pour ajuster le suivant." },
+    ],
+    requirements: [
+      { value: "Être membre actif de la communauté ÇA.VA." },
+      { value: "Avoir de l'aisance à l'oral devant l'assemblée." },
+      { value: "Savoir tenir un horaire et gérer un imprévu." },
+      { value: "Accepter d'être formé(e) et accompagné(e) au démarrage." },
+    ],
+    commitment:
+      "Rotation entre serviteurs, avec une présence obligatoire aux répétitions et à la préparation du culte attribué.",
+    openings: "À déterminer",
+  },
+  {
+    slug: "finance-administration",
+    title: "Finance & Administration",
+    subtitle: "Équipe à constituer",
+    variant: "dark",
+    icon: "finance",
+    order: 5,
+    intro:
+      "L'équipe Finance & Administration tient les comptes de l'Église et sécurise ses procédures. Les candidatures de professionnels du chiffre et de la gestion sont particulièrement attendues.",
+    missions: [
+      { value: "Tenir la comptabilité et suivre les encaissements." },
+      { value: "Préparer les états financiers présentés à la direction." },
+      { value: "Participer au contrôle interne et au respect des procédures." },
+      { value: "Contribuer à la préparation du budget annuel." },
+    ],
+    requirements: [
+      { value: "Être membre actif de la communauté ÇA.VA." },
+      { value: "Avoir une formation ou une expérience en comptabilité, gestion ou audit." },
+      { value: "Faire preuve d'une rigueur et d'une intégrité sans faille." },
+      { value: "Respecter la confidentialité des informations financières." },
+    ],
+    commitment:
+      "Engagement régulier, avec des échéances mensuelles de clôture. Le rythme est arrêté avec le responsable du département.",
+    openings: "Équipe à constituer",
+  },
+  {
+    slug: "secretariat-executif",
+    title: "Secrétariat exécutif",
+    subtitle: "Équipe à constituer",
+    variant: "light",
+    icon: "secretariat",
+    order: 6,
+    intro:
+      "Le secrétariat exécutif assure la mémoire administrative de l'Église : courriers, comptes rendus, archives et suivi des décisions prises.",
+    missions: [
+      { value: "Rédiger les comptes rendus des réunions." },
+      { value: "Assurer le classement et l'archivage des documents." },
+      { value: "Suivre le courrier entrant et sortant." },
+      { value: "Veiller à l'exécution des décisions prises en réunion." },
+    ],
+    requirements: [
+      { value: "Être membre actif de la communauté ÇA.VA." },
+      { value: "Maîtriser l'expression écrite en français." },
+      { value: "Savoir utiliser les outils bureautiques courants." },
+      { value: "Être organisé(e) et discret(e)." },
+    ],
+    commitment:
+      "Présence aux réunions de direction et disponibilité pour la rédaction des comptes rendus dans les jours qui suivent.",
+    openings: "Équipe à constituer",
+  },
+];

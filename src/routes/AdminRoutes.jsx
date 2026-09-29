@@ -15,6 +15,7 @@ import Dashboard from "../pages/admin/Dashboard";
 import MediasAdmin from "../pages/admin/MediasAdmin";
 import EventsAdmin from "../pages/admin/EventsAdmin";
 import MinistriesAdmin from "../pages/admin/MinistriesAdmin";
+import PositionsAdmin from "../pages/admin/PositionsAdmin";
 import MessagesAdmin from "../pages/admin/MessagesAdmin";
 import DonationsAdmin from "../pages/admin/DonationsAdmin";
 import PaymentMethodsAdmin from "../pages/admin/PaymentMethodsAdmin";
@@ -99,6 +100,15 @@ const AdminRoutes = () => {
           element={
             <RequireRole allow={STAFF_ROLES}>
               <MinistriesAdmin />
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="postes"
+          element={
+            <RequireRole allow={STAFF_ROLES}>
+              <PositionsAdmin />
             </RequireRole>
           }
         />

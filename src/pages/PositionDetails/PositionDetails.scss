@@ -1,0 +1,234 @@
+@use "../../styles/variables" as *;
+
+.position-details {
+  background: #ffffff;
+
+  &__container {
+    width: min(1100px, 100%);
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  &__state {
+    width: min(760px, 100%);
+    margin: 0 auto;
+    padding: 180px 24px 120px;
+    text-align: center;
+    color: #5b6b63;
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      color: $primary;
+    }
+  }
+
+  // Le hero est TOUJOURS sombre, quelle que soit la variante du poste.
+  //
+  // Les variantes claires (vert pâle, jaune) rendaient les liens de la
+  // Navbar illisibles : celle-ci est transparente en haut de page et
+  // écrit en blanc, ce qui suppose un fond foncé sous elle. C'est déjà
+  // le parti de tous les autres heros du site (photo + voile vert).
+  //
+  // La variante ne disparaît pas pour autant : elle colore le filet
+  // supérieur, ce qui garde le lien visuel avec la carte cliquée sans
+  // toucher au contraste du texte.
+  &__hero {
+    padding: 140px 0 60px;
+    background: linear-gradient(160deg, $primary-dark, $primary);
+    color: $text-light;
+    border-top: 6px solid transparent;
+
+    &--light {
+      border-top-color: #9fd3b4;
+    }
+
+    &--gold {
+      border-top-color: $secondary;
+    }
+
+    &--dark {
+      border-top-color: rgba(255, 255, 255, 0.35);
+    }
+  }
+
+  &__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 22px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: inherit;
+    opacity: 0.85;
+
+    &:hover,
+    &:focus-visible {
+      opacity: 1;
+      text-decoration: underline;
+    }
+  }
+
+  &__icon {
+    display: block;
+    font-size: 2.8rem;
+    line-height: 1;
+    margin-bottom: 14px;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: clamp(1.9rem, 5vw, 3rem);
+    font-weight: 800;
+    text-transform: uppercase;
+    line-height: 1.1;
+  }
+
+  &__subtitle {
+    margin: 8px 0 0;
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-weight: 600;
+    opacity: 0.9;
+  }
+
+  &__intro {
+    margin: 20px 0 0;
+    max-width: 760px;
+    line-height: 1.7;
+    opacity: 0.95;
+  }
+
+  &__facts {
+    margin: 26px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+
+    li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.93);
+      // Le hero sombre a besoin d'une pastille claire, les deux autres
+      // d'un fond blanc : la transparence donne les deux sans variante
+      // supplémentaire.
+      color: $text-dark;
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    svg {
+      flex: none;
+      margin-top: 3px;
+      color: $primary;
+      font-size: 1.1rem;
+    }
+
+    strong {
+      display: block;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: $primary;
+      margin-bottom: 2px;
+    }
+  }
+
+  &__body {
+    padding-top: 50px;
+    padding-bottom: 10px;
+    display: grid;
+    gap: 22px;
+    grid-template-columns: repeat(2, 1fr);
+    align-items: start;
+
+    @media (max-width: 991px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__panel {
+    padding: 26px;
+    border-radius: $radius;
+    background: #f2f9f4;
+    border: 1px solid #dcece2;
+
+    &--gold {
+      background: #fff9e4;
+      border-color: #f4e5b0;
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: $primary;
+    }
+  }
+
+  &__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 12px;
+
+    li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.95rem;
+      line-height: 1.55;
+      color: $text-dark;
+    }
+
+    svg {
+      flex: none;
+      margin-top: 3px;
+      color: $primary;
+      font-size: 1.05rem;
+    }
+  }
+
+  &__cta {
+    margin: 30px 0 90px;
+    padding: 28px;
+    border-radius: $radius;
+    background: linear-gradient(120deg, $primary-dark, $primary);
+    color: $text-light;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+
+    p {
+      margin: 0;
+      max-width: 560px;
+      line-height: 1.6;
+    }
+
+    a {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 24px;
+      border-radius: 999px;
+      background: $secondary;
+      color: $primary-dark;
+      font-weight: 700;
+      text-decoration: none;
+      transition: $transition;
+
+      &:hover,
+      &:focus-visible {
+        transform: translateY(-2px);
+      }
+    }
+  }
+}

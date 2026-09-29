@@ -8,6 +8,7 @@ import Media from "../models/Media.js";
 import Settings from "../models/Settings.js";
 import PaymentMethod from "../models/PaymentMethod.js";
 import DonationType from "../models/DonationType.js";
+import Position from "../models/Position.js";
 
 import {
   seedEvents,
@@ -15,6 +16,7 @@ import {
   seedMedias,
   seedPaymentMethods,
   seedDonationTypes,
+  seedPositions,
 } from "./seed-data.js";
 
 // Amorçage de la base.
@@ -103,6 +105,7 @@ const run = async () => {
     seedMedias,
     "médias"
   );
+  await upsert(Position, ["slug"], seedPositions, "postes");
   await upsert(
     PaymentMethod,
     ["name"],

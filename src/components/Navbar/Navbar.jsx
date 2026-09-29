@@ -11,7 +11,8 @@ import {
   PlayCircle,
   Users,
   Phone,
-  UserPlus
+  UserPlus,
+  Briefcase
 } from "lucide-react";
 
 import {
@@ -104,6 +105,10 @@ const Navbar = () => {
             </NavLink>
 
             <div className="navbar__submenu">
+              <NavLink to="/inscription">
+                Devenir membre
+              </NavLink>
+
               <NavLink to="/appel-a-candidature">
                 Appel à candidatures
               </NavLink>
@@ -176,14 +181,24 @@ const Navbar = () => {
               <span>Communauté</span>
             </NavLink>
 
-            {/* Pas de survol sur mobile : l'entrée du sous-menu est
-                affichée en clair, simplement décalée sous son parent. */}
+            {/* Pas de survol sur mobile : les entrées du sous-menu sont
+                affichées en clair, simplement décalées sous leur
+                parent. */}
+            <NavLink
+              to="/inscription"
+              className="navbar__mobile-sublink"
+              onClick={closeMenu}
+            >
+              <UserPlus size={20} />
+              <span>Devenir membre</span>
+            </NavLink>
+
             <NavLink
               to="/appel-a-candidature"
               className="navbar__mobile-sublink"
               onClick={closeMenu}
             >
-              <UserPlus size={20} />
+              <Briefcase size={20} />
               <span>Appel à candidatures</span>
             </NavLink>
 

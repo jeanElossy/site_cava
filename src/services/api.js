@@ -96,6 +96,7 @@ const collection = (path) => ({
 
 export const events = collection("events");
 export const ministries = collection("ministries");
+export const positions = collection("positions");
 export const medias = collection("medias");
 export const members = collection("members");
 export const announcements = collection("announcements");

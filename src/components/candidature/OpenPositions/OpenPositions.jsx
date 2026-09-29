@@ -1,35 +1,17 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import {
-  FaGraduationCap,
-  FaPrayingHands,
-  FaHandHoldingHeart,
-  FaHands,
-  FaCoins,
-  FaFileSignature,
-} from "react-icons/fa";
 import { HiArrowRight } from "react-icons/hi";
 
-import positions from "../data/positions";
+import usePositions from "../usePositions";
+import { iconFor, variantFor } from "../positionIcons";
 import { useReveal, useHoverLift } from "../motion";
 
 import "./OpenPositions.scss";
 
-// L'icône est un choix d'habillage, pas une donnée : le module de
-// données ne porte qu'une clé, la correspondance vit ici — même
-// séparation que `MinistriesGrid`, qui garde ses icônes hors du modèle.
-const ICONS = {
-  graduation: FaGraduationCap,
-  prayer: FaPrayingHands,
-  flock: FaHandHoldingHeart,
-  worship: FaHands,
-  finance: FaCoins,
-  secretariat: FaFileSignature,
-};
-
 const OpenPositions = () => {
   const reveal = useReveal();
   const lift = useHoverLift();
+  const { positions, isLoading, error } = usePositions();
 
   return (
     <section className="open-positions" id="postes">
@@ -43,47 +25,73 @@ const OpenPositions = () => {
           de ÇA.VA.
         </motion.p>
 
-        <ul className="open-positions__grid">
-          {positions.map((position, index) => {
-            const Icon = ICONS[position.icon] ?? FaHands;
+        {isLoading && (
+          <p className="open-positions__state" role="status">
+            Chargement des postes…
+          </p>
+        )}
 
-            return (
-              <motion.li
-                key={position.id}
-                className={`open-positions__card open-positions__card--${position.variant}`}
-                {...reveal(index)}
-                {...lift}
-              >
-                <span className="open-positions__icon" aria-hidden="true">
-                  <Icon />
-                </span>
+        {/* Un échec de chargement se DIT. Laisser la section vide
+            laisserait croire qu'aucun poste n'est ouvert, ce qui est un
+            message différent — et faux. */}
+        {!isLoading && error && (
+          <p className="open-positions__state" role="alert">
+            {error}
+          </p>
+        )}
 
-                <h3 className="open-positions__card-title">
-                  {position.title}
-                </h3>
+        {!isLoading && !error && positions.length === 0 && (
+          <p className="open-positions__state">
+            Aucun poste n&apos;est ouvert pour le moment.
+          </p>
+        )}
 
-                <p className="open-positions__card-subtitle">
-                  {position.subtitle}
-                </p>
+        {positions.length > 0 && (
+          <ul className="open-positions__grid">
+            {positions.map((position, index) => {
+              const Icon = iconFor(position.icon);
 
-                {/* Un LIEN, pas un bouton qui dispatcherait : le poste
-                    voyage dans l'URL, comme le type de don sur /donate.
-                    Un seul mécanisme de préremplissage à maintenir, et
-                    le lien reste partageable. */}
-                <Link
-                  className="open-positions__link"
-                  to={`/appel-a-candidature?poste=${position.id}#candidature-formulaire`}
+              return (
+                <motion.li
+                  key={position.id ?? position.slug}
+                  className={`open-positions__card open-positions__card--${variantFor(
+                    position.variant
+                  )}`}
+                  {...reveal(index)}
+                  {...lift}
                 >
-                  Voir les postes
-                  <HiArrowRight aria-hidden="true" />
-                  <span className="open-positions__sr">
-                    {` — ${position.title}`}
+                  <span className="open-positions__icon" aria-hidden="true">
+                    <Icon />
                   </span>
-                </Link>
-              </motion.li>
-            );
-          })}
-        </ul>
+
+                  <h3 className="open-positions__card-title">
+                    {position.title}
+                  </h3>
+
+                  <p className="open-positions__card-subtitle">
+                    {position.subtitle || " "}
+                  </p>
+
+                  {/* Mène désormais à la FICHE du poste, et non plus
+                      directement au formulaire : le visiteur doit
+                      pouvoir lire ce qu'on attend de lui avant de
+                      candidater. Le lien vers le formulaire, prérempli,
+                      est sur la fiche. */}
+                  <Link
+                    className="open-positions__link"
+                    to={`/appel-a-candidature/${position.slug}`}
+                  >
+                    Voir le poste
+                    <HiArrowRight aria-hidden="true" />
+                    <span className="open-positions__sr">
+                      {` — ${position.title}`}
+                    </span>
+                  </Link>
+                </motion.li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </section>
   );

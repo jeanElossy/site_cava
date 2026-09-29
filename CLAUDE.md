@@ -41,10 +41,14 @@ Le **frontend** est une SPA React côté client ; l'état applicatif persistant 
 
 - [src/main.jsx](src/main.jsx) — monte l'app, importe `styles/main.scss`, enveloppe le tout dans `ContributionProvider`.
 - [src/App.jsx](src/App.jsx) — `BrowserRouter` seul.
-- [src/routes/AppRoutes.jsx](src/routes/AppRoutes.jsx) — **toutes** les routes publiques. Toute nouvelle page s'ajoute ici : `/`, `/about`, `/ministries`, `/ministries/:slug`, `/events`, `/events/:slug`, `/media`, `/communaute`, `/contact`, `/donate`, `/inscription`, `/mentions-legales`, `/politique-confidentialite`, `/desinscription`, `*` → NotFound.
+- [src/routes/AppRoutes.jsx](src/routes/AppRoutes.jsx) — **toutes** les routes publiques. Toute nouvelle page s'ajoute ici : `/`, `/about`, `/ministries`, `/ministries/:slug`, `/events`, `/events/:slug`, `/media`, `/communaute`, `/appel-a-candidature`, `/appel-a-candidature/:slug`, `/contact`, `/donate`, `/inscription`, `/mentions-legales`, `/politique-confidentialite`, `/desinscription`, `*` → NotFound.
 - [src/routes/AdminRoutes.jsx](src/routes/AdminRoutes.jsx) — toutes les routes de `/admin`, chargées **paresseusement** : un visiteur du site public ne télécharge jamais ce morceau de bundle. Même mécanisme pour `/presences` (badgeage, réservé aux agents).
 
 **Interrupteur de déploiement** : `/admin` et `/presences` n'existent que si `VITE_ENABLE_ADMIN=true` (ou en dev). Sur une build sans cette variable, la branche devient du code mort et Rollup supprime l'`import()` — le chunk n'est même pas généré. Ce n'est **pas** ce qui protège les données : c'est l'API qui refuse les requêtes non authentifiées.
+
+**Point d'entrée « Communauté »** : la Navbar ouvre un sous-menu au survol (`navbar__dropdown` / `navbar__submenu`) portant « Devenir membre » (`/inscription`) et « Appel à candidatures ». Il s'ouvre aussi sur `:focus-within` — sans quoi il serait atteignable au clavier mais invisible — et s'affiche en clair, décalé, dans le menu mobile où il n'y a pas de survol. « Devenir membre » a été **retiré du Footer** au profit de ce sous-menu : ne pas le réintroduire aux deux endroits.
+
+La page de détail d'un poste est montée avec `key={slug}` (voir `AppRoutes.jsx`) : sans cette clé, React réutilise l'instance et l'ancien poste reste affiché pendant toute la requête du nouveau.
 
 **Pas de page Blog** : le client l'a explicitement refusée. Ne pas en créer, ne pas ajouter de lien "Blog" dans la Navbar ou le Footer, même si les maquettes de `src/assets/design/` en montrent un dans la barre de navigation.
 
@@ -116,6 +120,7 @@ Le projet n'est plus un simple site vitrine : `/admin` porte plusieurs modules m
 - **Dons** (`/admin/dons`) — voir ci-dessous.
 - **Service Social** (`/admin/social`) — voir plus bas.
 - **Agents** (`/admin/agents`) — comptes de terrain, qui se connectent par **matricule** et non par e-mail.
+- **Postes ouverts** (`/admin/postes`) — les postes de l'appel à candidatures public (`/appel-a-candidature`, fiche détaillée sur `/appel-a-candidature/:slug`). Ressource `Position`, montée sur le CRUD générique. **Ce ne sont pas des ministères** : « Finance & Administration » et « Secrétariat exécutif » n'en sont pas, et un ministère est une activité permanente là où un poste ouvert est une campagne de recrutement — les confondre les ferait apparaître sur `/ministries`. Les listes `missions` et `requirements` sont des tableaux d'objets `{ value }` et non de chaînes : c'est la forme que produit `components/admin/RepeaterField`, et l'aligner évite une traduction à l'aller comme au retour. Les candidatures elles-mêmes ne créent aucune ressource : elles arrivent dans `/admin/messages` avec `kind: "candidature"`.
 
 ### Matricule des membres
 

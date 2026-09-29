@@ -9,7 +9,7 @@ import {
   formatRegistrationNumber,
   hasValidShape,
 } from "../../../utils/registrationNumber";
-import positions, { findPosition } from "../data/positions";
+import usePositions from "../usePositions";
 import { useReveal } from "../motion";
 import {
   SKILLS,
@@ -47,13 +47,11 @@ const listOrDash = (values, extra = "") => {
 // structuré. Mieux vaut une fiche qui se lit d'un coup d'œil qu'un JSON
 // que personne ne relira. Les titres reprennent ceux du questionnaire
 // papier, pour que les deux se dépouillent côte à côte.
-const buildBody = (values) => {
+const buildBody = (values, positionTitle) => {
   const canonical = normalizeRegistrationNumber(values.registrationNumber);
 
   return [
-    `Poste souhaité : ${
-      findPosition(values.position)?.title ?? "Non précisé"
-    }`,
+    `Poste souhaité : ${positionTitle || "Non précisé"}`,
     `Matricule : ${
       hasValidShape(canonical)
         ? formatRegistrationNumber(canonical)
@@ -86,20 +84,24 @@ const buildBody = (values) => {
 const CandidatureForm = () => {
   const [searchParams] = useSearchParams();
   const reveal = useReveal();
+  const { positions } = usePositions();
 
-  // Préremplissage par l'URL, posé À L'INITIALISATION et pas dans un
-  // effet : la liste des postes est locale et synchrone (contrairement
-  // aux types de don, qui arrivent de l'API), il n'y a donc aucune
-  // course à arbitrer. Un effet réimposerait en plus le poste de l'URL
-  // par-dessus celui que le visiteur vient de choisir.
-  const [values, setValues] = useState(() => {
-    const requested = searchParams.get("poste");
+  // Le slug demandé dans l'URL est conservé tel quel, sans attendre la
+  // liste. Les postes arrivent maintenant de l'API : les rapprocher à
+  // l'initialisation aurait vidé le champ à chaque fois que la réponse
+  // n'était pas encore là — c'est-à-dire toujours, au premier rendu.
+  //
+  // Le `<select>` affiche donc « Je ne sais pas encore » tant que la
+  // liste n'a pas répondu, puis le bon poste dès qu'elle arrive, sans
+  // écraser un choix déjà fait par le visiteur : `position` n'est plus
+  // jamais touché après ce premier état.
+  const [values, setValues] = useState(() => ({
+    ...EMPTY_FORM,
+    position: searchParams.get("poste") ?? "",
+  }));
 
-    return {
-      ...EMPTY_FORM,
-      position: findPosition(requested) ? requested : "",
-    };
-  });
+  const selectedTitle =
+    positions.find((item) => item.slug === values.position)?.title ?? "";
 
   const [error, setError] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -166,9 +168,9 @@ const CandidatureForm = () => {
         // e-mail vide écrit en base.
         ...(values.email.trim() ? { email: values.email.trim() } : {}),
         subject: `Découvre ta place — ${
-          findPosition(values.position)?.title ?? "Sans poste précisé"
+          selectedTitle || "Sans poste précisé"
         }`,
-        body: buildBody(values),
+        body: buildBody(values, selectedTitle),
         // Distingue la candidature d'une question sur un ministère :
         // la boîte de réception filtre sur ce champ.
         kind: "candidature",
@@ -309,9 +311,18 @@ const CandidatureForm = () => {
                 >
                   <option value="">Je ne sais pas encore</option>
 
+                  {/* La valeur d'une option est le SLUG, pas
+                      l'identifiant Mongo : c'est le slug que porte
+                      l'URL `?poste=`, sur les cartes comme sur les
+                      fiches de poste. Un identifiant ici rendait tout
+                      préremplissage impossible. */}
                   {positions.map((position) => (
-                    <option key={position.id} value={position.id}>
-                      {position.title} — {position.subtitle}
+                    <option
+                      key={position.id ?? position.slug}
+                      value={position.slug}
+                    >
+                      {position.title}
+                      {position.subtitle ? ` — ${position.subtitle}` : ""}
                     </option>
                   ))}
                 </select>

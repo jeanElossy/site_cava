@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useParams } from "react-router-dom";
 
 import Home from "../pages/Home/Home";
 import About from "../pages/About/About";
@@ -11,6 +11,20 @@ import EventDetails from "../pages/EventDetails/EventDetails";
 import Media from "../pages/Media/Media";
 import Communaute from "../pages/Communaute/Communaute";
 import Candidature from "../pages/Candidature/Candidature";
+import PositionDetails from "../pages/PositionDetails/PositionDetails";
+
+// Remonte la page de détail à chaque changement de poste.
+//
+// Sans cette clé, React réutilise l'instance : l'ancien poste resterait
+// affiché, avec son titre et ses missions, pendant toute la durée de la
+// requête du nouveau — et la page ne repasserait jamais par son état de
+// chargement. C'est aussi ce qui dispense la page de reposer son état
+// depuis un effet, ce que React déconseille.
+const PositionDetailsRoute = () => {
+  const { slug } = useParams();
+
+  return <PositionDetails key={slug} />;
+};
 import Contact from "../pages/Contact/Contact";
 import Donate from "../pages/Donate/Donate";
 import Registration from "../pages/Registration/Registration";
@@ -126,6 +140,14 @@ const AppRoutes = () => {
       <Route
         path="/appel-a-candidature"
         element={<Candidature />}
+      />
+
+      {/* `key={slug}` : passer d'un poste à l'autre REMONTE la page au
+          lieu de la réutiliser. Sans cela, l'ancien poste resterait
+          affiché le temps que la nouvelle requête réponde. */}
+      <Route
+        path="/appel-a-candidature/:slug"
+        element={<PositionDetailsRoute />}
       />
 
       <Route
