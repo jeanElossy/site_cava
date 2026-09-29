@@ -12,6 +12,8 @@ import { positions as positionsApi } from "../../services/api";
 import { iconFor, variantFor } from "../../components/candidature/positionIcons";
 import { useReveal } from "../../components/candidature/motion";
 
+import fallbackHero from "../../assets/images/candidature-hero.webp";
+
 import "./PositionDetails.scss";
 
 const PositionDetails = () => {
@@ -99,11 +101,21 @@ const PositionDetails = () => {
 
         {status === "ready" && position && (
           <>
+            {/* Même traitement que les autres heros du site : photo en
+                fond, voile vert par-dessus, pleine hauteur de fenêtre.
+                L'image du poste si l'administration en a mis une, sinon
+                celle de l'appel à candidatures — une fiche sans image
+                reste ainsi cohérente avec la page dont elle vient. */}
             <header
               className={`position-details__hero position-details__hero--${variantFor(
                 position.variant
               )}`}
+              style={{
+                backgroundImage: `url(${position.image || fallbackHero})`,
+              }}
             >
+              <div className="position-details__overlay" aria-hidden="true" />
+
               <div className="position-details__container">
                 <Link
                   className="position-details__back"

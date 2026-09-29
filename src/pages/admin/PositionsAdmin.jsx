@@ -69,6 +69,15 @@ const fields = [
     help: "Texte libre, affiché tel quel sur la fiche du poste.",
   },
   {
+    name: "image",
+    label: "Image de la bannière",
+    type: "upload",
+    folder: "positions",
+    accept: "image",
+    wide: true,
+    help: "Photo de fond de la fiche du poste. Sans image, celle de la page Appel à candidatures est reprise.",
+  },
+  {
     name: "intro",
     label: "Présentation du poste",
     type: "textarea",

@@ -1,12 +1,28 @@
 @use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
 
 .position-details {
   background: #ffffff;
 
   &__container {
+    position: relative;
     width: min(1100px, 100%);
     margin: 0 auto;
     padding: 0 24px;
+  }
+
+  // Le voile : sans lui, le texte blanc devient illisible dès que la
+  // photo s'éclaircit. Dégradé plutôt qu'aplat, pour que le bas — où
+  // vit le texte — soit plus sombre que le haut.
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(8, 59, 42, 0.62) 0%,
+      rgba(8, 59, 42, 0.78) 45%,
+      rgba(8, 59, 42, 0.94) 100%
+    );
   }
 
   &__state {
@@ -33,11 +49,21 @@
   // La variante ne disparaît pas pour autant : elle colore le filet
   // supérieur, ce qui garde le lien visuel avec la carte cliquée sans
   // toucher au contraste du texte.
+  // Pleine hauteur de fenêtre, comme tous les heros du site
+  // (`hero-height`) : une bannière deux fois plus courte que celle des
+  // pages voisines se lisait comme une page d'un autre site.
   &__hero {
-    padding: 140px 0 60px;
-    background: linear-gradient(160deg, $primary-dark, $primary);
+    position: relative;
+    @include hero-height;
+    display: flex;
+    align-items: flex-end;
+    padding: 160px 0 70px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     color: $text-light;
     border-top: 6px solid transparent;
+    overflow: hidden;
 
     &--light {
       border-top-color: #9fd3b4;
@@ -139,8 +165,8 @@
   }
 
   &__body {
-    padding-top: 50px;
-    padding-bottom: 10px;
+    padding-top: 90px;
+    padding-bottom: 20px;
     display: grid;
     gap: 22px;
     grid-template-columns: repeat(2, 1fr);
@@ -152,7 +178,7 @@
   }
 
   &__panel {
-    padding: 26px;
+    padding: 40px;
     border-radius: $radius;
     background: #f2f9f4;
     border: 1px solid #dcece2;
@@ -196,8 +222,8 @@
   }
 
   &__cta {
-    margin: 30px 0 90px;
-    padding: 28px;
+    margin: 50px 0 120px;
+    padding: 44px;
     border-radius: $radius;
     background: linear-gradient(120deg, $primary-dark, $primary);
     color: $text-light;

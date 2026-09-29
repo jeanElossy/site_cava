@@ -105,6 +105,15 @@ const Navbar = () => {
             </NavLink>
 
             <div className="navbar__submenu">
+              {/* Le lien vers la page Communauté elle-même figure AUSSI
+                  dans le panneau : sur un écran tactile, où le survol
+                  n'existe pas, toucher « Communauté » ouvre le menu au
+                  lieu de naviguer — sans cette entrée, la page devenait
+                  inatteignable au doigt. */}
+              <NavLink to="/communaute" end>
+                Notre communauté
+              </NavLink>
+
               <NavLink to="/inscription">
                 Devenir membre
               </NavLink>
