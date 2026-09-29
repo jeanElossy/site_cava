@@ -1,0 +1,116 @@
+@use "../../styles/variables" as *;
+
+// Masquage du curseur natif.
+//
+// `has-custom-cursor` est posée sur `<body>` par le composant, et
+// SEULEMENT quand celui-ci s'est réellement activé : sur un écran
+// tactile, ou si la préférence « réduire les animations » est active,
+// la classe n'arrive jamais et le curseur natif reste intact. Écrire
+// `cursor: none` directement sur `body` aurait privé ces visiteurs de
+// tout curseur.
+//
+// `!important` sur les éléments interactifs : de nombreux composants du
+// projet posent `cursor: pointer` dans leur propre feuille, et une
+// règle de même spécificité ne l'aurait pas emporté.
+body.has-custom-cursor {
+  cursor: none;
+
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  label,
+  [role="button"] {
+    cursor: none !important;
+  }
+}
+
+.custom-cursor {
+  // Le conteneur ne doit jamais intercepter un clic ni participer à la
+  // mise en page : il est hors flux, au-dessus de tout, et transparent
+  // aux événements. Sans `pointer-events: none`, le curseur se
+  // survolerait lui-même et plus rien ne serait cliquable.
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+
+
+
+  // Invisible tant que la souris n'a pas bougé : au chargement, on ne
+  // sait pas où elle est, et l'afficher au centre de l'écran ferait
+  // apparaître un point là où personne ne pointe.
+  opacity: 0;
+  transition: opacity 0.2s ease;
+
+  .has-custom-cursor--visible & {
+    opacity: 1;
+  }
+
+  &__dot,
+  &__ring {
+    position: fixed;
+    top: 0;
+    left: 0;
+    border-radius: 50%;
+    // Indique au navigateur de préparer une couche dédiée : la boucle
+    // d'animation n'écrit que `transform`, qui peut alors être composé
+    // sans repeindre la page.
+    will-change: transform;
+  }
+
+  // JAUNE de la charte, et non le vert.
+  //
+  // Les heros du site sont tous vert foncé : un curseur vert y
+  // disparaissait. Le jaune tient sur le vert des bannières comme sur
+  // le blanc des formulaires — c'est la seule couleur de la charte qui
+  // passe partout. Le liseré sombre lui donne le contraste qui lui
+  // manque sur une section claire ; il ne se voit pas sur fond foncé,
+  // où il ne sert à rien.
+  &__dot {
+    width: 8px;
+    height: 8px;
+    background: $secondary;
+    box-shadow: 0 0 0 1px rgba(8, 59, 42, 0.3);
+  }
+
+  &__ring {
+    width: 36px;
+    height: 36px;
+    // FOND TRANSPARENT : le cercle ENCADRE le contenu, il ne le
+    // recouvre pas. Un remplissage, même léger, masquait le texte
+    // survolé au lieu de le désigner.
+    background: transparent;
+    border: 2px solid $secondary;
+    box-shadow: 0 0 0 1px rgba(8, 59, 42, 0.2);
+    // Seuls la taille, la bordure et le fond s'animent en CSS ; la
+    // POSITION reste pilotée par la boucle `requestAnimationFrame`.
+    // Une transition sur `transform` s'y ajouterait et donnerait un
+    // mouvement mou, décalé deux fois.
+    transition:
+      width 0.25s ease,
+      height 0.25s ease,
+      background-color 0.25s ease,
+      border-color 0.25s ease;
+
+    // Sur un élément interactif : le cercle grossit et se remplit. Le
+    // curseur natif étant masqué, c'est cette réaction qui remplace la
+    // petite main — sans elle, plus rien ne dirait « ceci se clique ».
+    // Sur un élément interactif : le cercle grossit et son trait
+    // s'épaissit. Le fond reste transparent — c'est la consigne, et
+    // c'est aussi ce qui laisse lire le libellé du bouton survolé.
+    // Sur un lien ou un bouton : le cercle grossit d'un tiers et son
+    // trait s'épaissit. Le curseur natif étant masqué, la petite main
+    // a disparu — c'est cette réaction qui dit désormais « ceci se
+    // clique », et rien d'autre ne le dit.
+    //
+    // Un tiers et pas le double : au-delà, le cercle déborde largement
+    // du mot survolé et l'on ne sait plus ce qu'il désigne.
+    &--active {
+      width: 48px;
+      height: 48px;
+      border-width: 3px;
+    }
+  }
+}
