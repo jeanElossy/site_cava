@@ -293,13 +293,11 @@ export const withdraw = async (id) => {
 // c'est le membre qui porte la fonction. Ce chemin en trois temps est
 // la conséquence directe du choix de ne jamais dupliquer l'identité —
 // il est centralisé ici pour n'exister qu'une fois.
-export const findMemberForAccount = async (user) => {
-  const registrationNumber = normalizeRegistrationNumber(user?.registrationNumber);
-
-  if (!registrationNumber) return null;
-
-  return Member.findOne({ registrationNumber }).lean();
-};
+// Remontée dans `account.service.js` : le portail bergerie en a le même
+// besoin, et le faire dépendre d'un module de l'École du dimanche
+// aurait couplé deux fonctionnalités sans rapport. Ré-exportée ici pour
+// que les appelants existants ne changent pas.
+export { findMemberForAccount } from "./account.service.js";
 
 // Membres que l'on peut nommer moniteur.
 //

@@ -120,6 +120,15 @@ Le projet n'est plus un simple site vitrine : `/admin` porte plusieurs modules m
 - **Dons** (`/admin/dons`) — voir ci-dessous.
 - **Service Social** (`/admin/social`) — voir plus bas.
 - **Agents** (`/admin/agents`) — comptes de terrain, qui se connectent par **matricule** et non par e-mail.
+- **Portail bergerie** (API `/api/admin/bergerie/*`) — chaque bergerie a **un** responsable, désigné dans `/admin/communaute` → onglet Bergeries. C'est un **membre** que l'on désigne (`Flock.leader`), pas un compte : la personne existe dans l'annuaire avant d'avoir un accès. `Flock.leaderStatus` permet la mise en retrait sans effacer la désignation ni toucher au compte. Un index partiel unique sur `leader` garantit qu'un membre ne dirige qu'une bergerie.
+
+  [flockAccess.service.js](backend/src/services/flockAccess.service.js) est le **seul endroit** qui décide des bergeries accessibles — même principe que `resolveMonitorAccess`, et pour la même raison (le badgeage a déjà divergé entre trois décideurs). Quatre conditions : désignation existante, désignation active, bergerie publiée, **et membre toujours actif dans l'annuaire**.
+
+  Le portail est monté sur un routeur **séparé** et non par un élargissement de `/admin/members` : le CRUD générique filtre sur des paramètres de requête, que le navigateur peut réécrire. Ici `memberFilterFor` compose le filtre à partir du compte connecté, et renvoie un filtre **impossible** (et non vide) quand aucune bergerie n'est accessible — un filtre vide aurait renvoyé tous les membres. **Lecture seule** : aucune route d'écriture n'est montée, et [flockPortal.service.js](backend/src/services/flockPortal.service.js) n'expose aucune fonction d'écriture. La projection des champs y est explicite : ce qui n'est pas nommé ne sort pas, sans dépendre du `select: false` de `Member.notes`.
+
+  Le pont compte → personne vit dans [account.service.js](backend/src/services/account.service.js) (`findMemberForAccount`), remonté depuis `monitor.service.js` qui le ré-exporte : les bergeries n'ont pas à dépendre de l'École du dimanche.
+
+  **Pas encore fait** : l'écran React du portail, la vue « toutes les bergeries » du `coordinateur_bergeries`, et les notifications d'affectation CANA.
 - **Postes ouverts** (`/admin/postes`) — les postes de l'appel à candidatures public (`/appel-a-candidature`, fiche détaillée sur `/appel-a-candidature/:slug`). Ressource `Position`, montée sur le CRUD générique. **Ce ne sont pas des ministères** : « Finance & Administration » et « Secrétariat exécutif » n'en sont pas, et un ministère est une activité permanente là où un poste ouvert est une campagne de recrutement — les confondre les ferait apparaître sur `/ministries`. Les listes `missions` et `requirements` sont des tableaux d'objets `{ value }` et non de chaînes : c'est la forme que produit `components/admin/RepeaterField`, et l'aligner évite une traduction à l'aller comme au retour. Les candidatures elles-mêmes ne créent aucune ressource : elles arrivent dans `/admin/messages` avec `kind: "candidature"`.
 
 ### Matricule des membres

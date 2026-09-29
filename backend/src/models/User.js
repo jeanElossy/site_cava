@@ -87,6 +87,12 @@ const userSchema = new mongoose.Schema(
         "soa",
         "cana",
         "coordinateur_bergeries",
+        // Responsable d'UNE bergerie — à ne pas confondre avec
+        // `coordinateur_bergeries`, qui les suit toutes. Il se connecte
+        // par matricule (il n'est pas dans EMAIL_LOGIN_ROLES) et ne
+        // voit que sa propre bergerie, décidé par
+        // `resolveFlockAccess`.
+        "responsable_bergerie",
         "pasteur",
         "social_admin",
         "social_agent",

@@ -26,6 +26,7 @@ import * as donationService from "../services/donation.service.js";
 import * as receiptService from "../services/receipt.service.js";
 import * as submissionService from "../services/submission.service.js";
 import * as memberExportService from "../services/memberExport.service.js";
+import * as flockPortalService from "../services/flockPortal.service.js";
 import * as memberCardService from "../services/memberCardSvg.service.js";
 import { buildMemberProfileSheetPdf } from "../services/memberProfileSheet.service.js";
 import { syncMemberContributionsQuietly } from "../services/socialContribution.service.js";
@@ -57,6 +58,7 @@ import {
   requireAuth,
   requireRole,
 } from "../middlewares/auth.js";
+import { requireFlockLeader } from "../middlewares/flockAuth.js";
 import { requirePresenceSession } from "../middlewares/presenceAuth.js";
 import { requireNewSoulActor } from "../middlewares/newSoulAuth.js";
 import { getEffectiveWindow } from "../utils/presenceQrWindow.js";
@@ -1239,6 +1241,47 @@ export const buildRoutes = () => {
   );
 
   api.use("/admin/members", memberExportRouter);
+
+  // ---- Portail bergerie ---------------------------------------
+  //
+  // Routeur SÉPARÉ, et non un élargissement de `/admin/members` au
+  // rôle `responsable_bergerie`. La ressource membres est montée sur
+  // le CRUD générique, dont les filtres se passent en paramètres de
+  // requête : y greffer une restriction par bergerie aurait fait
+  // dépendre la confidentialité d'un paramètre que le navigateur peut
+  // réécrire. Ici le filtre est composé côté serveur, à partir du
+  // compte connecté, et rien d'autre ne l'alimente.
+  //
+  // LECTURE SEULE : aucune route d'écriture n'est montée. Un
+  // responsable consulte sa bergerie, il ne modifie pas les fiches.
+  const flockPortalRouter = Router();
+
+  flockPortalRouter.use(requireAuth, requireFlockLeader);
+
+  flockPortalRouter.get(
+    "/ma-bergerie",
+    asyncHandler(async (req, res) =>
+      sendSuccess(res, {
+        data: await flockPortalService.summary(req.flockAccess),
+      })
+    )
+  );
+
+  flockPortalRouter.get(
+    "/membres",
+    asyncHandler(async (req, res) => {
+      const { items, meta } = await flockPortalService.listMembers(
+        // `req.flockAccess`, pas `req.query` : c'est tout l'objet du
+        // routeur séparé ci-dessus.
+        req.flockAccess,
+        { page: req.query.page, limit: req.query.limit }
+      );
+
+      sendSuccess(res, { data: items, meta });
+    })
+  );
+
+  api.use("/admin/bergerie", flockPortalRouter);
 
   // Badges invités pré-imprimés (5 par genre) — voir
   // guestBadgeSvg.service.js. Un document par genre à télécharger et
