@@ -50,6 +50,14 @@ Le **frontend** est une SPA React côté client ; l'état applicatif persistant 
 
 La page de détail d'un poste est montée avec `key={slug}` (voir `AppRoutes.jsx`) : sans cette clé, React réutilise l'instance et l'ancien poste reste affiché pendant toute la requête du nouveau.
 
+**Curseur personnalisé** : [CustomCursor](src/components/CustomCursor/CustomCursor.jsx), monté dans `App.jsx` — il n'y a pas de layout partagé, et le curseur couvre le site public comme `/admin`, `/presences` et `/monitorat`. La position ne passe **jamais** par `useState` (`mousemove` re-rendrait toute la page à chaque frémissement) : elle vit dans des `ref`, et seul `transform` est écrit dans une boucle `requestAnimationFrame`.
+
+Il ne s'active **pas** sur écran tactile ni sous `prefers-reduced-motion` ; la classe `has-custom-cursor` qui masque le curseur natif n'est posée que par le composant, et seulement s'il s'est activé — écrire `cursor: none` directement dans le SCSS aurait privé ces visiteurs de tout curseur.
+
+Les **champs de saisie** gardent le curseur natif et masquent le curseur personnalisé : la barre d'insertion n'a pas d'équivalent ici. La liste `TEXT_FIELDS` (JS) et son miroir SCSS doivent basculer **ensemble**, sous peine d'afficher soit aucun curseur, soit les deux.
+
+Le curseur est **jaune** et non vert : les heros du site sont tous vert foncé, un curseur vert y disparaissait. `mix-blend-mode: difference`, essayé pour régler ça, ne produit rien quand il est posé sur les enfants — ils fusionnent alors avec le fond de leur propre groupe, le conteneur, qui est transparent.
+
 **Pas de page Blog** : le client l'a explicitement refusée. Ne pas en créer, ne pas ajouter de lien "Blog" dans la Navbar ou le Footer, même si les maquettes de `src/assets/design/` en montrent un dans la barre de navigation.
 
 ### Pattern page → sections

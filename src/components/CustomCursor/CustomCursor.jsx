@@ -35,7 +35,37 @@ const EASE = 0.18;
 // supprime la petite main des liens et la barre de saisie des champs :
 // sans ce repli, l'interface perdrait l'indication « ceci se clique »,
 // que rien d'autre ne porte.
-const INTERACTIVE = "a, button, input, select, textarea, label, [role='button']";
+const INTERACTIVE =
+  "a, button, input, select, textarea, label, [role='button']";
+
+// Champs de SAISIE, traités à part des autres éléments interactifs.
+//
+// Masquer le curseur natif supprime la barre verticale qui indique où
+// le texte va s'insérer, et cette barre n'a pas d'équivalent : le
+// cercle dit « ceci se clique », il ne dit pas « ceci s'écrit », et il
+// ne montre pas non plus la position exacte du point d'insertion dans
+// un mot. Sur les formulaires du back-office — saisie de membres,
+// d'offrandes, de dossiers — la perte est réelle.
+//
+// Sur ces champs-là, donc : curseur natif rendu, curseur personnalisé
+// masqué. Les deux à la fois donneraient un doublon.
+//
+// `[type]` absent vaut `text` en HTML, d'où `input:not([type])`. Les
+// cases à cocher, boutons radio et sélecteurs de fichier ne sont PAS
+// dans cette liste : ils se cliquent, ils ne se saisissent pas.
+const TEXT_FIELDS = [
+  "textarea",
+  "input:not([type])",
+  "input[type='text']",
+  "input[type='email']",
+  "input[type='tel']",
+  "input[type='password']",
+  "input[type='search']",
+  "input[type='url']",
+  "input[type='number']",
+  "input[type='date']",
+  "[contenteditable='true']",
+].join(", ");
 
 const CustomCursor = () => {
   const dotRef = useRef(null);
@@ -90,12 +120,26 @@ const CustomCursor = () => {
     };
 
     const handleOver = (event) => {
-      // `closest` et non une comparaison de balise : le clic peut
-      // atterrir sur le `<svg>` ou le `<span>` À L'INTÉRIEUR d'un
+      // `closest` et non une comparaison de balise : le survol atterrit
+      // souvent sur le `<svg>` ou le `<span>` À L'INTÉRIEUR d'un
       // bouton, et c'est le bouton qui porte l'affordance.
-      const interactive = event.target.closest?.(INTERACTIVE);
+      const target = event.target;
+      const interactive = target.closest?.(INTERACTIVE);
 
-      ring.classList.toggle("custom-cursor__ring--active", Boolean(interactive));
+      // Un champ de saisie reprend son curseur natif — voir
+      // TEXT_FIELDS. `matches` et non `closest` : c'est le champ
+      // lui-même qui se saisit, pas le bloc qui l'entoure.
+      const isTextField = Boolean(target.matches?.(TEXT_FIELDS));
+
+      document.body.classList.toggle(
+        "has-custom-cursor--text",
+        isTextField
+      );
+
+      ring.classList.toggle(
+        "custom-cursor__ring--active",
+        Boolean(interactive) && !isTextField
+      );
     };
 
     const tick = () => {
@@ -133,6 +177,7 @@ const CustomCursor = () => {
       // sans ce nettoyage, une page sans curseur du tout.
       document.body.classList.remove("has-custom-cursor");
       document.body.classList.remove("has-custom-cursor--visible");
+      document.body.classList.remove("has-custom-cursor--text");
     };
   }, []);
 

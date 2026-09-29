@@ -24,6 +24,39 @@ body.has-custom-cursor {
   [role="button"] {
     cursor: none !important;
   }
+
+  // CHAMPS DE SAISIE : le curseur natif revient.
+  //
+  // La barre verticale d'insertion n'a pas d'équivalent dans ce
+  // curseur : le cercle dit « ceci se clique », il ne dit pas « ceci
+  // s'écrit », et il ne montre pas où le texte va s'insérer dans un
+  // mot. Sur les formulaires du back-office, la perte était réelle.
+  //
+  // Cases à cocher, boutons radio et sélecteurs de fichier restent
+  // exclus : ils se cliquent, ils ne se saisissent pas. La liste doit
+  // rester alignée sur `TEXT_FIELDS` dans CustomCursor.jsx — c'est le
+  // composant qui masque le curseur personnalisé au même moment, et
+  // les deux doivent basculer ensemble sous peine d'afficher soit rien
+  // du tout, soit les deux curseurs à la fois.
+  textarea,
+  input:not([type]),
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  input[type="search"],
+  input[type="url"],
+  input[type="number"],
+  input[type="date"],
+  [contenteditable="true"] {
+    cursor: text !important;
+  }
+}
+
+// Curseur personnalisé masqué pendant la saisie : le curseur natif est
+// revenu, afficher les deux ferait un doublon.
+body.has-custom-cursor--text .custom-cursor {
+  opacity: 0;
 }
 
 .custom-cursor {
