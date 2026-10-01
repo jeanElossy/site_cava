@@ -2114,6 +2114,26 @@ export const buildRoutes = () => {
     })
   );
 
+  // Suppression définitive — à distinguer de /archive, qui met de côté
+  // sans effacer. Le service refuse un dossier ayant créé un membre
+  // (voir newSoul.service.js#remove) : le matricule consommé ne se rend
+  // pas.
+  adminNewSouls.delete(
+    "/:id",
+    asyncHandler(async (req, res) => {
+      const data = await newSoulService.remove(req.params.id, req.actor);
+
+      await audit.record(req, {
+        action: "delete",
+        resource: "newSoul",
+        resourceId: req.params.id,
+        actor: req.actor,
+      });
+
+      sendSuccess(res, { data });
+    })
+  );
+
   api.use("/admin/new-souls", adminNewSouls);
 
   // ---- Gestion des agents (SOA, CANA, coordonnateur, pasteur) -----

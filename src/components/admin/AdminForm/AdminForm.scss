@@ -288,6 +288,33 @@
         box-shadow: none;
       }
     }
+
+    // Action DESTRUCTRICE (suppression définitive d'un dossier).
+    //
+    // Défini ici, aux côtés de `--ghost`, parce que `.admin-form__button`
+    // est le propriétaire de cette classe dans tout le projet : une
+    // variante posée dans l'écran qui s'en sert aurait créé un second
+    // propriétaire pour la même classe générique — le piège documenté
+    // en tête de CLAUDE.md.
+    //
+    // Le rouge n'est pas décoratif : c'est le seul signal, avant le
+    // libellé, qui distingue « Supprimer » d'« Archiver » quand les
+    // deux boutons se suivent dans la même barre.
+    &--danger {
+      border-color: #b91c1c;
+
+      background: linear-gradient(135deg, #b91c1c, #dc2626);
+
+      color: #fff;
+
+      &:hover:not([disabled]) {
+        box-shadow: 0 8px 20px rgba(185, 28, 28, 0.28);
+      }
+
+      &:focus-visible {
+        outline-color: #b91c1c;
+      }
+    }
   }
 
   @media (max-width: 768px) {

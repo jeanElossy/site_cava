@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Archive, ArchiveRestore } from "lucide-react";
+import { Archive, ArchiveRestore, Trash2 } from "lucide-react";
 
 import { newSouls } from "../../../services/api";
 import { currentUser } from "../../../services/auth";
@@ -19,6 +19,11 @@ import "../../../components/newSouls/shared/NewSouls.scss";
 const SOA_SIDE_ARCHIVE_ROLES = ["soa", "admin"];
 const CANA_SIDE_ARCHIVE_ROLES = ["cana", "coordinateur_bergeries", "admin"];
 
+// La suppression suit exactement les mêmes droits que l'archivage —
+// celui qui peut mettre un dossier de côté peut aussi l'effacer. Les
+// listes sont donc réutilisées telles quelles, plutôt que recopiées :
+// deux listes séparées auraient fini par diverger.
+
 // Bascule entre le wizard SOA (dossier pas encore transmis) et le
 // wizard CANA (dossier transmis, `soa.lockedAt` posé) — la même
 // logique que côté serveur (`SOA_EDITABLE_STATUSES`), sans dupliquer
@@ -35,6 +40,8 @@ const NewSoulDetailPage = () => {
   const [showReasonField, setShowReasonField] = useState(false);
   const [reason, setReason] = useState("");
   const [archiveError, setArchiveError] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   usePageMeta({
     title: record ? `Dossier ${record.caseNumber}` : "Nouvelle âme",
@@ -60,6 +67,11 @@ const NewSoulDetailPage = () => {
   const archiveRoles = transmitted ? CANA_SIDE_ARCHIVE_ROLES : SOA_SIDE_ARCHIVE_ROLES;
   const canArchive = !isClosed && archiveRoles.includes(role);
 
+  // Un dossier clôturé a créé un membre : le serveur refusera de le
+  // supprimer (le matricule consommé ne se rend pas). Le bouton est
+  // masqué plutôt que de laisser cliquer sur un refus annoncé.
+  const canDelete = !isClosed && archiveRoles.includes(role);
+
   const handleArchive = async () => {
     setArchiving(true);
     setArchiveError("");
@@ -73,6 +85,23 @@ const NewSoulDetailPage = () => {
       setArchiveError(caught?.message ?? "Impossible d'archiver ce dossier.");
     } finally {
       setArchiving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setArchiveError("");
+
+    try {
+      await newSouls.remove(id);
+
+      // Retour à la liste : la fiche qu'on affichait n'existe plus,
+      // rester dessus donnerait un écran d'erreur.
+      navigate("/admin/nouvelles-ames", { replace: true });
+    } catch (caught) {
+      setArchiveError(caught?.message ?? "Impossible de supprimer ce dossier.");
+      setConfirmDelete(false);
+      setDeleting(false);
     }
   };
 
@@ -125,8 +154,55 @@ const NewSoulDetailPage = () => {
               {archiving ? "Reprise…" : "Reprendre le dossier"}
             </button>
           )}
+
+          {/* Suppression en DEUX temps, et non une boîte de dialogue
+              `confirm()` : le dossier porte des données personnelles et
+              son effacement est définitif. Le second bouton nomme la
+              conséquence (« Oui, supprimer définitivement ») plutôt
+              qu'un « OK » qu'on clique sans lire. */}
+          {canDelete && !confirmDelete && !showReasonField && (
+            <button
+              type="button"
+              className="admin-form__button admin-form__button--ghost"
+              onClick={() => setConfirmDelete(true)}
+            >
+              <Trash2 aria-hidden="true" size={16} />
+              Supprimer
+            </button>
+          )}
+
+          {canDelete && confirmDelete && (
+            <>
+              <button
+                type="button"
+                className="admin-form__button admin-form__button--danger"
+                disabled={deleting}
+                onClick={handleDelete}
+              >
+                <Trash2 aria-hidden="true" size={16} />
+                {deleting ? "Suppression…" : "Oui, supprimer définitivement"}
+              </button>
+
+              <button
+                type="button"
+                className="admin-form__button admin-form__button--ghost"
+                disabled={deleting}
+                onClick={() => setConfirmDelete(false)}
+              >
+                Annuler
+              </button>
+            </>
+          )}
         </div>
       </header>
+
+      {confirmDelete && (
+        <p className="new-soul-list__archived-banner" role="alert">
+          Le dossier {record.caseNumber} et tout son suivi seront effacés.
+          Cette action est définitive. Pour simplement mettre le suivi de
+          côté, utilisez « Archiver ».
+        </p>
+      )}
 
       {showReasonField && (
         <div className="new-soul-list__archive-form">

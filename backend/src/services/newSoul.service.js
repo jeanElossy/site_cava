@@ -285,7 +285,23 @@ export const list = async (actor, { status, search, archived } = {}) => {
     ];
   }
 
-  const items = await NewSoul.find(filter).sort({ createdAt: -1 }).lean();
+  // ORDRE DU REGISTRE : du plus ancien au plus récent, comme les
+  // numéros de dossier (`AN-2026-001`, `AN-2026-002`…) qui sont
+  // attribués à la création. La liste se lit donc dans le même ordre
+  // que les numéros, côté SOA comme côté CANA.
+  //
+  // Le tri porte sur `createdAt` et NON sur `caseNumber` : le numéro
+  // est une chaîne, et son rang déborde de trois chiffres au-delà du
+  // 999e dossier d'une année — « AN-2026-1000 » se classerait alors
+  // AVANT « AN-2026-999 ». Le même piège que les matricules de membre,
+  // réglé là-bas par un rang numérique dénormalisé.
+  //
+  // `_id` en second : deux dossiers créés dans la même milliseconde
+  // auraient sinon un ordre instable d'un appel à l'autre, et la liste
+  // « sauterait » entre deux rafraîchissements.
+  const items = await NewSoul.find(filter)
+    .sort({ createdAt: 1, _id: 1 })
+    .lean();
 
   return items.map((item) => stripConfidentialFields(item, actor)).map((item) => {
     if (item.soa?.agent) item.soa.agentName = item.soa.agent.name;
@@ -749,6 +765,66 @@ export const archive = async (id, actor, reason) => {
   await newSoul.save();
 
   return attachDisplayNames(stripConfidentialFields(newSoul, actor));
+};
+
+// SUPPRESSION DÉFINITIVE
+//
+// À ne pas confondre avec l'archivage, juste au-dessus : archiver met
+// un dossier de côté en le gardant lisible, supprimer l'efface. Les
+// deux répondent à des besoins différents — on archive un suivi en
+// pause, on supprime un doublon ou une saisie erronée.
+//
+// Mêmes droits que l'archivage : celui qui peut mettre un dossier de
+// côté peut aussi l'effacer. Le découpage SOA / CANA reste le même,
+// parce que c'est le même principe — on n'agit que sur les dossiers du
+// côté où ils se trouvent.
+const assertCanDelete = (newSoul, actor) => {
+  if (isAdminUser(actor)) return;
+
+  if (SOA_EDITABLE_STATUSES.includes(newSoul.status)) {
+    if (!isSoaCapable(actor)) {
+      throw ApiError.forbidden("Votre rôle ne permet pas de supprimer ce dossier.");
+    }
+
+    // Un agent de présence crée des dossiers depuis le badgeage : il
+    // ne supprime que les siens. Un compte SOA, lui, partage la file.
+    if (isPresenceAgent(actor) && !ownsRecord(newSoul, actor)) {
+      throw ApiError.forbidden("Vous ne pouvez supprimer que vos propres dossiers.");
+    }
+
+    return;
+  }
+
+  // Le pasteur consulte, il n'écrit pas — même exclusion que pour
+  // l'archivage.
+  if (!isCanaSideUser(actor) || actor.role === "pasteur") {
+    throw ApiError.forbidden("Votre rôle ne permet pas de supprimer ce dossier.");
+  }
+};
+
+export const remove = async (id, actor) => {
+  const newSoul = await NewSoul.findById(id);
+
+  if (!newSoul) throw ApiError.notFound("Dossier introuvable.");
+
+  assertCanDelete(newSoul, actor);
+
+  // GARDE-FOU : un dossier clôturé a CRÉÉ un membre et consommé un
+  // numéro de matricule, qui ne se rend pas. L'effacer laisserait dans
+  // l'annuaire une fiche dont plus rien n'explique l'origine, et un
+  // trou dans la séquence des matricules que personne ne saurait
+  // interpréter. Le refus est volontairement explicite : il dit quoi
+  // faire à la place.
+  if (newSoul.createdMemberId) {
+    throw ApiError.conflict(
+      "Ce dossier a créé un membre dans l'annuaire : il ne peut plus être supprimé. " +
+        "Archivez-le, ou désactivez d'abord le membre correspondant."
+    );
+  }
+
+  await newSoul.deleteOne();
+
+  return { id: String(newSoul._id), caseNumber: newSoul.caseNumber };
 };
 
 export const unarchive = async (id, actor) => {

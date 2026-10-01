@@ -394,6 +394,15 @@ export const newSouls = {
       method: "POST",
       auth: true,
     }),
+
+  // Suppression DÉFINITIVE, à distinguer de `archive` juste au-dessus :
+  // on archive un suivi en pause, on supprime un doublon ou une saisie
+  // erronée. Le serveur refuse un dossier ayant déjà créé un membre.
+  remove: async (id) =>
+    request(`/api/admin/new-souls/${id}`, {
+      method: "DELETE",
+      auth: true,
+    }),
 };
 
 // Comptes agents (SOA, CANA, coordonnateur des bergeries, pasteur,
