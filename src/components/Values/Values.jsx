@@ -1,36 +1,58 @@
 import { motion } from "framer-motion";
 
-import { Heart, UsersRound, Sprout, HandHeart } from "lucide-react";
+import {
+  BookOpen,
+  Compass,
+  Flame,
+  Globe2,
+  HandHeart,
+  Network,
+} from "lucide-react";
 
 import "./Values.scss";
 
 // Les classes sont préfixées `home-values` : les anciens noms génériques
 // (`.value-card`, `.icon`, `.line`) entraient en collision avec d'autres
 // pages, la feuille de style étant unique (voir CLAUDE.md).
+//
+// Six traits fournis par l'église (13/10/2026), affichés en deux lignes
+// de trois sur ordinateur.
 const values = [
   {
-    id: "adorer",
-    icon: Heart,
-    title: "Adorer",
-    text: "Nous élevons nos cœurs dans l'adoration sincère.",
+    id: "apostolique",
+    icon: Compass,
+    title: "Apostolique",
+    text: "Église apostolique dans sa vision.",
   },
   {
-    id: "appartenir",
-    icon: UsersRound,
-    title: "Appartenir",
-    text: "Une famille soudée, unie en Christ.",
+    id: "biblique",
+    icon: BookOpen,
+    title: "Biblique",
+    text: "Église biblique dans son enseignement.",
   },
   {
-    id: "grandir",
-    icon: Sprout,
-    title: "Grandir",
-    text: "Nous grandissons dans la Parole et la vérité.",
+    id: "spirituelle",
+    icon: Flame,
+    title: "Spirituelle",
+    text: "Église spirituelle dans sa vie.",
   },
   {
-    id: "impacter",
+    id: "missionnaire",
+    icon: Globe2,
+    title: "Missionnaire",
+    text: "Église missionnaire dans ses actions.",
+  },
+  {
+    id: "active",
     icon: HandHeart,
-    title: "Impacter",
-    text: "Nous sommes envoyés pour impacter le monde.",
+    title: "Active",
+    text: "Église active dans la société.",
+  },
+  {
+    id: "structuree",
+    icon: Network,
+    title: "Structurée",
+    text: "Église structurée, organisée et capable de se multiplier.",
   },
 ];
 
@@ -45,7 +67,7 @@ const Values = () => {
           <span className="home-values__eyebrow">Notre identité</span>
 
           <h2 id="home-values-title">
-            Quatre mots pour une vie de foi
+            Six traits qui nous définissent
           </h2>
         </header>
 

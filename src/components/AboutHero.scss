@@ -1,8 +1,115 @@
+@use "../styles/variables" as *;
 @use "../styles/ui" as *;
 
 // Hero de la page À propos.
 // Styles partagés : mixin `page-hero` (`styles/_ui.scss`), imbriqué sous
 // la classe racine (feuille de style unique, voir CLAUDE.md).
+//
+// Variante EN DEUX COLONNES, propre à cette page : titre et boutons à
+// gauche, présentation et horaires à droite. Le mixin empilait tout à
+// gauche et laissait la moitié droite de l'image vide. Les surcharges
+// restent ici pour ne pas toucher les autres heros.
 .about-hero {
-  @include page-hero($title-size: clamp(2.2rem, 4.4vw, 3.8rem));
+  @include page-hero($title-size: clamp(2.2rem, 4.2vw, 3.7rem));
+
+  // Voile plus uniforme que celui du mixin, éclairci à droite : du texte
+  // s'y trouve désormais aussi.
+  &__overlay {
+    background:
+      radial-gradient(
+        ellipse at 75% 20%,
+        rgba($secondary, 0.12) 0%,
+        transparent 50%
+      ),
+      linear-gradient(
+        95deg,
+        rgba($primary-dark, 0.95) 0%,
+        rgba($primary-dark, 0.86) 50%,
+        rgba($primary-dark, 0.78) 100%
+      );
+  }
+
+  &__content {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 72px;
+
+    max-width: none;
+  }
+
+  &__main h1 {
+    margin-bottom: 34px;
+  }
+
+  // Colonne de droite, séparée par un filet vertical.
+  &__aside {
+    padding-left: 40px;
+
+    border-left: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  &__lead {
+    margin-bottom: 0;
+  }
+
+  &__services {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+
+    margin: 34px 0 0;
+    padding: 24px 0 0;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+
+    list-style: none;
+
+    li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+
+      color: rgba(255, 255, 255, 0.72);
+
+      font-size: 0.88rem;
+      line-height: 1.45;
+
+      svg {
+        flex-shrink: 0;
+
+        margin-top: 2px;
+
+        color: $secondary;
+      }
+    }
+
+    strong {
+      display: block;
+
+      color: #fff;
+
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    &__content {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+
+    &__aside {
+      padding-left: 0;
+
+      border-left: 0;
+    }
+  }
+
+  @media (max-width: 480px) {
+    &__services {
+      grid-template-columns: 1fr;
+    }
+  }
 }
