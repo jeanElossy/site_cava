@@ -41,9 +41,10 @@ const VisionMission = () => {
             <span className="vision-mission__label">Notre vision</span>
 
             <p>
-              Communiquer la vie abondante de Dieu par la Parole et le
-              Saint-Esprit à travers une Église spirituelle, organisée,
-              structurée et impactante.
+              Communiquer la vie abondante de Dieu en Jésus-Christ par la
+              Parole et le Saint-Esprit à travers une Église spirituelle,
+              organisée, structurée et impactante afin de bâtir un peuple
+              qui révèle Dieu.
             </p>
           </div>
         </motion.div>

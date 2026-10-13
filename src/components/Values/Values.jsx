@@ -67,7 +67,7 @@ const Values = () => {
           <span className="home-values__eyebrow">Notre identité</span>
 
           <h2 id="home-values-title">
-            Six traits qui nous définissent
+            Six traits qui nous identifient
           </h2>
         </header>
 

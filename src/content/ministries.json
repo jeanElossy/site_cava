@@ -1,10 +1,114 @@
 {
-  "enfance-jeunesse": {
-    "_id": "6a5e4da15532ad9570cfd514",
-    "slug": "enfance-jeunesse",
-    "title": "Enfance & Jeunesse",
-    "description": "Accompagner les enfants et les jeunes dans leur marche avec Christ.",
+  "intercession": {
+    "_id": "6ace8b7e1370042f898d34e7",
+    "slug": "intercession",
+    "title": "Intercession",
+    "description": "Des hommes et des femmes qui se tiennent sur la brèche : prière pour l'Église, les familles, les malades et la nation, dans la persévérance et la foi.",
+    "image": "/images/events/event-2.jpg",
+    "color": "green",
+    "mission": {
+      "title": "Notre mission",
+      "description": "Porter dans la prière les fardeaux de l'Église et de ses membres, soutenir chaque activité de l'Église par l'intercession et développer une culture de prière dans toute la communauté."
+    },
+    "vision": {
+      "title": "Notre vision",
+      "description": "Une Église qui prie sans cesse, et dont chaque avancée est précédée et portée par la prière."
+    },
+    "gallery": [],
+    "order": 1,
+    "status": "published",
+    "stats": [],
+    "leaders": [],
+    "testimonials": [],
+    "createdAt": "2026-10-13T19:50:22.414Z",
+    "updatedAt": "2026-10-13T19:50:22.414Z",
+    "__v": 0,
+    "id": "6ace8b7e1370042f898d34e7"
+  },
+  "formation": {
+    "_id": "6ace8b7e1370042f898d34ea",
+    "slug": "formation",
+    "title": "Formation",
+    "description": "Enseignement biblique, discipolat et formation des serviteurs : faire grandir chaque croyant vers la maturité spirituelle et le préparer au service.",
+    "image": "/images/ministries/enseignement.jpg",
+    "color": "gold",
+    "mission": {
+      "title": "Notre mission",
+      "description": "Enseigner fidèlement la Parole de Dieu, établir les croyants dans les fondements de la foi et former les serviteurs et les responsables avant leur mise en fonction."
+    },
+    "vision": {
+      "title": "Notre vision",
+      "description": "Des disciples matures, stables et utiles dans le Royaume de Dieu, capables à leur tour de transmettre ce qu'ils ont reçu."
+    },
+    "gallery": [],
+    "order": 2,
+    "status": "published",
+    "stats": [],
+    "leaders": [],
+    "testimonials": [],
+    "createdAt": "2026-10-13T19:50:22.710Z",
+    "updatedAt": "2026-10-13T19:50:22.710Z",
+    "__v": 0,
+    "id": "6ace8b7e1370042f898d34ea"
+  },
+  "jeunesse": {
+    "_id": "6ace8b7f1370042f898d34ed",
+    "slug": "jeunesse",
+    "title": "Jeunesse (Néos)",
+    "description": "Néos rassemble les jeunes de l'Église pour grandir ensemble dans la foi, l'amitié fraternelle et le service, avec audace et passion pour Christ.",
+    "image": "/images/ministries/jeunesse.jpg",
+    "color": "green",
+    "mission": {
+      "title": "Notre mission",
+      "description": "Accompagner les jeunes dans leur marche avec Dieu, les enraciner dans la Parole et les aider à découvrir et à développer les dons que Dieu a déposés en eux."
+    },
+    "vision": {
+      "title": "Notre vision",
+      "description": "Une génération nouvelle, intègre et passionnée, qui révèle Christ dans son école, sa famille, son travail et sa société."
+    },
+    "gallery": [],
+    "order": 3,
+    "status": "published",
+    "stats": [],
+    "leaders": [],
+    "testimonials": [],
+    "createdAt": "2026-10-13T19:50:23.010Z",
+    "updatedAt": "2026-10-13T19:50:23.010Z",
+    "__v": 0,
+    "id": "6ace8b7f1370042f898d34ed"
+  },
+  "enfance": {
+    "_id": "6ace8b7f1370042f898d34f0",
+    "slug": "enfance",
+    "title": "Enfance",
+    "description": "L'École du dimanche et les activités des enfants : un cadre sûr et joyeux où les plus jeunes découvrent Jésus et apprennent à aimer la Parole.",
     "image": "/images/ministries/enfance.jpg",
+    "color": "gold",
+    "mission": {
+      "title": "Notre mission",
+      "description": "Enseigner la Parole de Dieu aux enfants de manière adaptée à leur âge, veiller sur eux et accompagner les parents dans l'éducation spirituelle de leurs enfants."
+    },
+    "vision": {
+      "title": "Notre vision",
+      "description": "Des enfants qui connaissent Dieu dès leur jeune âge et grandissent en sagesse, en stature et en grâce."
+    },
+    "gallery": [],
+    "order": 4,
+    "status": "published",
+    "stats": [],
+    "leaders": [],
+    "testimonials": [],
+    "createdAt": "2026-10-13T19:50:23.310Z",
+    "updatedAt": "2026-10-13T19:50:23.310Z",
+    "__v": 0,
+    "id": "6ace8b7f1370042f898d34f0"
+  },
+  "evangelisation": {
+    "_id": "6a5e4da35532ad9570cfd523",
+    "slug": "evangelisation",
+    "title": "Évangélisation",
+    "description": "Annoncer la bonne nouvelle de Jésus-Christ dans les quartiers, les familles et au-delà, et accueillir ceux qui répondent à l'appel.",
+    "image": "/images/ministries/evangelisation.jpg",
     "color": "green",
     "mission": {
       "title": "Notre Mission",
@@ -17,62 +121,62 @@
     "stats": [
       {
         "icon": "users",
-        "value": "180+",
-        "label": "Enfants et jeunes"
+        "value": "120+",
+        "label": "Évangélistes"
       },
       {
         "icon": "calendar",
-        "value": "8",
-        "label": "Activités mensuelles"
+        "value": "9",
+        "label": "Sorties mensuelles"
       },
       {
         "icon": "leaders",
-        "value": "14",
-        "label": "Moniteurs"
+        "value": "7",
+        "label": "Responsables"
       },
       {
         "icon": "star",
-        "value": "9 ans",
+        "value": "8 ans",
         "label": "D'existence"
       }
     ],
     "leaders": [
       {
-        "name": "Fr. Aristide Yao",
+        "name": "Fr. Léonce Adou",
         "role": "Responsable Principal",
-        "bio": "Éducateur de formation, il coordonne l'école du dimanche depuis six ans."
+        "bio": "Coordonne les sorties d'évangélisation et le suivi des nouveaux convertis."
       },
       {
-        "name": "Sr. Micheline Kouadio",
+        "name": "Sr. Bénédicte Yapo",
         "role": "Responsable Adjointe",
-        "bio": "Elle encadre les adolescents et veille au suivi personnel de chaque jeune."
+        "bio": "Forme les équipes et anime les campagnes en milieu étudiant."
       }
     ],
     "gallery": [],
     "testimonials": [
       {
-        "author": "Mme Adjoua T.",
-        "quote": "Mon fils attend le dimanche avec impatience. Il récite ses versets à la maison et prie pour la famille.",
+        "author": "Franck Z.",
+        "quote": "C'est lors d'une sortie au marché que j'ai entendu l'Évangile pour la première fois. Deux ans après, je sers dans cette même équipe.",
         "rating": 5
       },
       {
-        "author": "Yannick K.",
-        "quote": "J'ai rejoint le groupe des jeunes à 13 ans. C'est ici que j'ai appris à lire ma Bible seul.",
+        "author": "Nadège S.",
+        "quote": "J'avais peur de parler de ma foi. La formation m'a donné les mots et l'assurance.",
         "rating": 5
       }
     ],
-    "order": 1,
+    "order": 5,
     "status": "published",
-    "createdAt": "2026-07-20T16:32:33.907Z",
-    "updatedAt": "2026-07-21T15:00:00.716Z",
+    "createdAt": "2026-07-20T16:32:35.650Z",
+    "updatedAt": "2026-10-13T19:50:23.661Z",
     "__v": 1,
-    "id": "6a5e4da15532ad9570cfd514"
+    "id": "6a5e4da35532ad9570cfd523"
   },
   "louange-adoration": {
     "_id": "6a5e4da25532ad9570cfd517",
     "slug": "louange-adoration",
-    "title": "Louange & Adoration",
-    "description": "Élever un son qui transforme les cœurs et attire la présence de Dieu.",
+    "title": "Louange et adoration",
+    "description": "Conduire l'assemblée dans la présence de Dieu par le chant, la musique et l'adoration, avec excellence et dans un esprit de consécration.",
     "image": "/images/ministries/louange-hero.jpg",
     "color": "gold",
     "mission": {
@@ -130,156 +234,18 @@
         "rating": 5
       }
     ],
-    "order": 2,
+    "order": 6,
     "status": "published",
     "createdAt": "2026-07-20T16:32:34.246Z",
-    "updatedAt": "2026-07-21T15:00:01.064Z",
+    "updatedAt": "2026-10-13T19:50:23.939Z",
     "__v": 1,
     "id": "6a5e4da25532ad9570cfd517"
-  },
-  "enseignement": {
-    "_id": "6a5e4da25532ad9570cfd51a",
-    "slug": "enseignement",
-    "title": "Enseignement",
-    "description": "La parole de Dieu enseignée avec clarté pour une vie transformée.",
-    "image": "/images/ministries/enseignement.jpg",
-    "color": "green",
-    "mission": {
-      "title": "Notre Mission",
-      "description": "Former des disciples engagés et accompagner chacun dans sa croissance spirituelle."
-    },
-    "vision": {
-      "title": "Notre Vision",
-      "description": "Voir des vies transformées par l'Évangile et équipées pour servir leur génération."
-    },
-    "stats": [
-      {
-        "icon": "users",
-        "value": "220+",
-        "label": "Participants"
-      },
-      {
-        "icon": "calendar",
-        "value": "10",
-        "label": "Sessions mensuelles"
-      },
-      {
-        "icon": "leaders",
-        "value": "6",
-        "label": "Enseignants"
-      },
-      {
-        "icon": "star",
-        "value": "7 ans",
-        "label": "D'existence"
-      }
-    ],
-    "leaders": [
-      {
-        "name": "Pasteur Emmanuel Brou",
-        "role": "Responsable Principal",
-        "bio": "Enseignant depuis quinze ans, il supervise le programme de l'école biblique."
-      },
-      {
-        "name": "Fr. Ismaël Koffi",
-        "role": "Responsable Adjoint",
-        "bio": "Anime les ateliers d'étude personnelle et accompagne les nouveaux convertis."
-      }
-    ],
-    "gallery": [],
-    "testimonials": [
-      {
-        "author": "Patricia G.",
-        "quote": "Je lisais la Bible sans rien comprendre. Aujourd'hui, je prépare moi-même mes études pour mon groupe de maison.",
-        "rating": 5
-      },
-      {
-        "author": "Jean-Marc D.",
-        "quote": "Les enseignements sont clairs et ancrés dans le texte. Ma foi repose enfin sur des bases solides.",
-        "rating": 5
-      }
-    ],
-    "order": 3,
-    "status": "published",
-    "createdAt": "2026-07-20T16:32:34.574Z",
-    "updatedAt": "2026-07-21T15:00:01.408Z",
-    "__v": 1,
-    "id": "6a5e4da25532ad9570cfd51a"
-  },
-  "groupes-de-maison": {
-    "_id": "6a5e4da25532ad9570cfd51d",
-    "slug": "groupes-de-maison",
-    "title": "Groupes de maison",
-    "description": "Vivre la foi en petits groupes, partager et s'encourager mutuellement.",
-    "image": "/images/ministries/homegroup.jpg",
-    "color": "gold",
-    "mission": {
-      "title": "Notre Mission",
-      "description": "Former des disciples engagés et accompagner chacun dans sa croissance spirituelle."
-    },
-    "vision": {
-      "title": "Notre Vision",
-      "description": "Voir des vies transformées par l'Évangile et équipées pour servir leur génération."
-    },
-    "stats": [
-      {
-        "icon": "users",
-        "value": "260+",
-        "label": "Membres en cellule"
-      },
-      {
-        "icon": "calendar",
-        "value": "16",
-        "label": "Rencontres mensuelles"
-      },
-      {
-        "icon": "leaders",
-        "value": "18",
-        "label": "Bergers de cellule"
-      },
-      {
-        "icon": "star",
-        "value": "6 ans",
-        "label": "D'existence"
-      }
-    ],
-    "leaders": [
-      {
-        "name": "Fr. Rodrigue N'Dri",
-        "role": "Responsable Principal",
-        "bio": "Coordonne l'ensemble des cellules et la formation des bergers."
-      },
-      {
-        "name": "Sr. Estelle Bamba",
-        "role": "Responsable Adjointe",
-        "bio": "Assure le suivi des nouveaux membres et l'ouverture des nouvelles cellules."
-      }
-    ],
-    "gallery": [],
-    "testimonials": [
-      {
-        "author": "Christelle A.",
-        "quote": "Le groupe de maison de mon quartier est devenu ma seconde famille. On prie ensemble chaque semaine.",
-        "rating": 5
-      },
-      {
-        "author": "Boris K.",
-        "quote": "Après mon déménagement, j'ai retrouvé une cellule à dix minutes de chez moi. Je ne me suis jamais senti seul.",
-        "rating": 5
-      }
-    ],
-    "order": 4,
-    "status": "published",
-    "createdAt": "2026-07-20T16:32:34.913Z",
-    "updatedAt": "2026-07-21T15:00:01.734Z",
-    "__v": 1,
-    "id": "6a5e4da25532ad9570cfd51d"
   },
   "action-sociale": {
     "_id": "6a5e4da35532ad9570cfd520",
     "slug": "action-sociale",
-    "title": "Action Sociale",
-    "description": "Manifester l'amour de Christ par des actions concrètes envers notre prochain.",
+    "title": "Action sociale",
+    "description": "Manifester l'amour de Christ par des actes concrets : soutien aux personnes vulnérables, aide aux familles et actions de solidarité.",
     "image": "/images/ministries/sociale.jpg",
     "color": "green",
     "mission": {
@@ -337,80 +303,115 @@
         "rating": 5
       }
     ],
-    "order": 5,
+    "order": 7,
     "status": "published",
     "createdAt": "2026-07-20T16:32:35.261Z",
-    "updatedAt": "2026-07-21T15:11:08.284Z",
+    "updatedAt": "2026-10-13T19:50:24.235Z",
     "__v": 1,
     "id": "6a5e4da35532ad9570cfd520"
   },
-  "evangelisation": {
-    "_id": "6a5e4da35532ad9570cfd523",
-    "slug": "evangelisation",
-    "title": "Évangélisation",
-    "description": "Annoncer l'Évangile et gagner des âmes pour le Royaume de Dieu.",
-    "image": "/images/ministries/evangelisation.jpg",
+  "delivrance": {
+    "_id": "6ace8b801370042f898d34f9",
+    "slug": "delivrance",
+    "title": "Délivrance",
+    "description": "Prière et accompagnement des personnes en quête de libération et de restauration, par la puissance de la Parole et du Saint-Esprit.",
+    "image": "/images/ministries/delivrance.jpg",
     "color": "gold",
     "mission": {
-      "title": "Notre Mission",
-      "description": "Former des disciples engagés et accompagner chacun dans sa croissance spirituelle."
+      "title": "Notre mission",
+      "description": "Prier pour les personnes liées ou éprouvées, les accompagner avec sagesse et discrétion, et les conduire vers une vie libre et stable en Christ."
     },
     "vision": {
-      "title": "Notre Vision",
-      "description": "Voir des vies transformées par l'Évangile et équipées pour servir leur génération."
+      "title": "Notre vision",
+      "description": "Des vies libérées, restaurées et affermies, qui marchent dans la liberté que Christ a acquise."
     },
-    "stats": [
-      {
-        "icon": "users",
-        "value": "120+",
-        "label": "Évangélistes"
-      },
-      {
-        "icon": "calendar",
-        "value": "9",
-        "label": "Sorties mensuelles"
-      },
-      {
-        "icon": "leaders",
-        "value": "7",
-        "label": "Responsables"
-      },
-      {
-        "icon": "star",
-        "value": "8 ans",
-        "label": "D'existence"
-      }
-    ],
-    "leaders": [
-      {
-        "name": "Fr. Léonce Adou",
-        "role": "Responsable Principal",
-        "bio": "Coordonne les sorties d'évangélisation et le suivi des nouveaux convertis."
-      },
-      {
-        "name": "Sr. Bénédicte Yapo",
-        "role": "Responsable Adjointe",
-        "bio": "Forme les équipes et anime les campagnes en milieu étudiant."
-      }
-    ],
     "gallery": [],
-    "testimonials": [
-      {
-        "author": "Franck Z.",
-        "quote": "C'est lors d'une sortie au marché que j'ai entendu l'Évangile pour la première fois. Deux ans après, je sers dans cette même équipe.",
-        "rating": 5
-      },
-      {
-        "author": "Nadège S.",
-        "quote": "J'avais peur de parler de ma foi. La formation m'a donné les mots et l'assurance.",
-        "rating": 5
-      }
-    ],
-    "order": 6,
+    "order": 8,
     "status": "published",
-    "createdAt": "2026-07-20T16:32:35.650Z",
-    "updatedAt": "2026-07-21T15:00:02.441Z",
-    "__v": 1,
-    "id": "6a5e4da35532ad9570cfd523"
+    "stats": [],
+    "leaders": [],
+    "testimonials": [],
+    "createdAt": "2026-10-13T19:50:24.640Z",
+    "updatedAt": "2026-10-13T19:50:24.640Z",
+    "__v": 0,
+    "id": "6ace8b801370042f898d34f9"
+  },
+  "bergerie": {
+    "_id": "6ace8b801370042f898d34fc",
+    "slug": "bergerie",
+    "title": "Bergerie",
+    "description": "Les bergeries sont des groupes de proximité où chaque membre est connu, suivi et accompagné par un berger, pour qu'aucune âme ne marche seule.",
+    "image": "/images/ministries/homegroup.jpg",
+    "color": "green",
+    "mission": {
+      "title": "Notre mission",
+      "description": "Intégrer chaque membre dans une bergerie, assurer le suivi pastoral de proximité et favoriser la communion fraternelle entre les membres."
+    },
+    "vision": {
+      "title": "Notre vision",
+      "description": "Une Église où chaque personne appartient à une famille spirituelle qui la connaît, la soutient et la fait grandir."
+    },
+    "gallery": [],
+    "order": 9,
+    "status": "published",
+    "stats": [],
+    "leaders": [],
+    "testimonials": [],
+    "createdAt": "2026-10-13T19:50:24.914Z",
+    "updatedAt": "2026-10-13T19:50:24.914Z",
+    "__v": 0,
+    "id": "6ace8b801370042f898d34fc"
+  },
+  "famille-bien-etre": {
+    "_id": "6ace8bfab91bde718363cbd6",
+    "slug": "famille-bien-etre",
+    "title": "Famille et bien-être",
+    "description": "Accompagner les couples et les familles, et prendre soin de l'équilibre de chacun : vie de couple, parentalité, santé et bien-être, à la lumière de la Parole.",
+    "image": "/images/ministries/famille.jpg",
+    "color": "gold",
+    "mission": {
+      "title": "Notre mission",
+      "description": "Fortifier les foyers par l'enseignement et l'accompagnement, soutenir les familles dans leurs difficultés et promouvoir le bien-être spirituel, émotionnel et physique des membres."
+    },
+    "vision": {
+      "title": "Notre vision",
+      "description": "Des familles solides et épanouies, qui reflètent l'amour de Dieu et deviennent des lieux de bénédiction pour leur entourage."
+    },
+    "gallery": [],
+    "order": 10,
+    "status": "published",
+    "stats": [],
+    "leaders": [],
+    "testimonials": [],
+    "createdAt": "2026-10-13T19:52:26.328Z",
+    "updatedAt": "2026-10-13T19:52:26.328Z",
+    "__v": 0,
+    "id": "6ace8bfab91bde718363cbd6"
+  },
+  "femme-sans-limite": {
+    "_id": "6ace8c60e13b06f2f3758c64",
+    "slug": "femme-sans-limite",
+    "title": "Femme sans limite",
+    "description": "Le ministère des femmes : un lieu de prière, d'enseignement et de fraternité où chaque femme est encouragée à vivre pleinement l'appel de Dieu, sans limite.",
+    "image": "/images/media/temoignage4.jpg",
+    "color": "green",
+    "mission": {
+      "title": "Notre mission",
+      "description": "Édifier les femmes dans la Parole et la prière, les accompagner dans toutes les saisons de leur vie et les encourager à exercer leurs dons au service de Dieu, de leur famille et de la société."
+    },
+    "vision": {
+      "title": "Notre vision",
+      "description": "Des femmes affermies en Christ, épanouies et influentes, qui révèlent Dieu là où elles sont placées."
+    },
+    "gallery": [],
+    "order": 11,
+    "status": "published",
+    "stats": [],
+    "leaders": [],
+    "testimonials": [],
+    "createdAt": "2026-10-13T19:54:08.115Z",
+    "updatedAt": "2026-10-13T19:54:08.115Z",
+    "__v": 0,
+    "id": "6ace8c60e13b06f2f3758c64"
   }
 }

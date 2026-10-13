@@ -32,8 +32,10 @@ const Verse = () => {
           “
         </span>
 
+        {/* Points de suspension en tête : le verset est une citation
+            partielle (le début de Jean 10:10 parle du voleur). */}
         <blockquote>
-          Je suis venu afin que les brebis aient la vie, et qu&apos;elles
+          … Je suis venu afin que les brebis aient la vie, et qu&apos;elles
           soient dans l&apos;abondance.
         </blockquote>
 

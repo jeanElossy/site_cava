@@ -1,26 +1,10 @@
 import "./MinistryContacts.scss";
 
-import {
-  FaUsers,
-  FaHandsHelping,
-  FaBookOpen,
-  FaHome,
-  FaHeart,
-  FaGlobeAfrica,
-  FaArrowRight,
-} from "react-icons/fa";
+import { FaArrowRight } from "react-icons/fa";
 
 import allMinistries from "./MinistryDetails/data/ministries";
+import { ministryIcon } from "./MinistryDetails/data/ministryIcons";
 import { site } from "../content/settings";
-
-const ICONS = [
-  <FaUsers />,
-  <FaHeart />,
-  <FaBookOpen />,
-  <FaHome />,
-  <FaHandsHelping />,
-  <FaGlobeAfrica />,
-];
 
 // La liste et les adresses étaient écrites en dur. Un ministère ajouté
 // ou renommé dans l'administration n'apparaissait pas ici, et les
@@ -34,7 +18,7 @@ const ministries = Object.values(allMinistries).map(
     title: item.title,
     description: item.description,
     email: item.contactEmail?.trim() || site.email,
-    icon: ICONS[index % ICONS.length],
+    Icon: ministryIcon(item.slug),
     color: index % 2 === 0 ? "green" : "gold",
   })
 );
@@ -65,7 +49,7 @@ const MinistryContacts = () => {
               <div
                 className={`ministry-card__icon ministry-card__icon--${ministry.color}`}
               >
-                {ministry.icon}
+                <ministry.Icon />
               </div>
 
               <h3>{ministry.title}</h3>

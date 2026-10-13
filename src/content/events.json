@@ -1,4 +1,48 @@
 {
+  "camp-de-formation-spirituelle": {
+    "id": "6abbae6f5ad341f4ed2b7c06",
+    "slug": "camp-de-formation-spirituelle",
+    "title": "Camp de Formation Spirituelle",
+    "description": "Deux journées de formation, de prière et de communion fraternelle.",
+    "content": [
+      "Deux journées pour se former, prier ensemble et approfondir sa marche avec Christ, loin des sollicitations du quotidien.",
+      "Le camp alterne enseignements, ateliers en petits groupes et temps de prière."
+    ],
+    "day": "27",
+    "month": "JUIN",
+    "dateLong": "Vendredi 27 Juin 2025 - 09h00",
+    "time": "09h00",
+    "endTime": "17h00",
+    "location": "CAVA, Abidjan",
+    "address": "Angré château, non loin de l'institut des jésuites",
+    "audience": "Ouvert à tous",
+    "theme": "Persévérer dans la discipline spirituelle",
+    "speaker": {
+      "name": "Pasteur Israël Liaide",
+      "role": "Orateur invité"
+    },
+    "image": "/images/events/event-3.jpg",
+    "color": "yellow"
+  },
+  "seminaire-sur-le-mariage": {
+    "id": "6a9ad8476e74ce1db1d3ed8c",
+    "slug": "seminaire-sur-le-mariage",
+    "title": "PROGRAMME:  Mariage, Revenir au projet de Dieu",
+    "description": "Les 12 Revelations Bibliques sur le mariage",
+    "content": [],
+    "day": "09",
+    "month": "MAI",
+    "dateLong": "Samedi 9 Mai 2026 - 15h00",
+    "time": "15h00",
+    "endTime": "18h00",
+    "location": "CAVA, Abidjan",
+    "address": "Cocody Angré, Rue Domolon Villa 72",
+    "audience": "Ouvert à tous",
+    "theme": "LE MARIAGE : REVENIR AU PROJET DE DIEU",
+    "speaker": null,
+    "image": "https://res.cloudinary.com/dbrqr0x6y/image/upload/v1788532741/cava/events/lrg4tign2qcd0suveqfs.png",
+    "color": "green"
+  },
   "culte-s-offrir-a-dieu": {
     "id": "6a5e4da05532ad9570cfd50b",
     "slug": "culte-s-offrir-a-dieu",
@@ -42,26 +86,5 @@
     "speaker": null,
     "image": "/images/events/event-2.jpg",
     "color": "yellow"
-  },
-  "seminaire": {
-    "id": "6a75a2b8e70199f564331bd3",
-    "slug": "seminaire",
-    "title": "SÉMINAIRE BIBLIQUE EXCEPTIONNEL",
-    "description": "Pendant plusieurs semaines, nous entreprendrons un voyage au cœur des Écritures afin de redécouvrir le projet originel du Créateur.",
-    "content": [
-      "À travers 12 grandes révélations bibliques, nous découvrirons les fondements du mariage selon Dieu, les mystères qu'il renferme et les clés d'une vie conjugale transformée par Jésus-Christ."
-    ],
-    "day": "02",
-    "month": "SEPTEMBRE",
-    "dateLong": "Mercredi 2 Septembre 2026 - 08h30",
-    "time": "08h30",
-    "endTime": "11h30",
-    "location": "CAVA, Abidjan",
-    "address": "Cocody Angré, Rue Domolon Villa 72",
-    "audience": "Ouvert à tous",
-    "theme": "LE MARIAGE : REVENIR AU PROJET DE DIEU",
-    "speaker": null,
-    "image": "https://res.cloudinary.com/dbrqr0x6y/image/upload/v1786094200/cava/events/xbrfxbayobcmaaaakq9w.png",
-    "color": "green"
   }
 }

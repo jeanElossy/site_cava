@@ -88,6 +88,8 @@ Le code mort a été supprimé (les anciens `Donation*` remplacés par `componen
 
 **Pages de ministères.** Leur contenu détaillé (mission, vision, stats, leaders, galerie, événements, témoignages) est lu par [src/components/MinistryDetails/data/ministries.js](src/components/MinistryDetails/data/ministries.js), un objet indexé par `slug`, depuis `content/ministries.json`. [MinistryDetails.jsx](src/pages/MinistryDetails/MinistryDetails.jsx) lit `useParams().slug` et affiche « Ministère introuvable » si la clé n'existe pas ; [MinistriesGrid.jsx](src/components/MinistriesGrid.jsx) dérive ses cartes du **même** fichier (la duplication qui existait entre les deux a été supprimée — ne pas la réintroduire).
 
+Icône d'un ministère : choisie par **slug** dans [ministryIcons.js](src/components/MinistryDetails/data/ministryIcons.js), avec un repli (`FaChurch`) — jamais par position, qui changeait de sens dès qu'on ajoutait ou réordonnait un ministère. Un nouveau slug s'y ajoute.
+
 Il existe par ailleurs une ressource `ministries` administrable en base, utilisée par l'administration ; elle ne pilote pas encore les pages publiques de détail.
 
 ### État global
@@ -123,6 +125,7 @@ Un backend Node.js + Express 5 + MongoDB/Mongoose vit dans [backend/](backend/),
 | `backfillSocialContributions.js` | rattrape les lignes d'offrande dues, sans attendre le job quotidien |
 | `reaffecterTropPercu.js` | replace le trop-perçu d'un mois sur les mois dus les plus anciens, sans toucher à la caisse |
 | `seed-legacy-members.js` | import du registre papier |
+| `replaceMinistries.js` | remplace la liste des ministères publiés (octobre 2026, 11 ministères) : met à jour ou crée, **archive** (sans supprimer) ceux qui n'y figurent plus ; ne touche ni responsables, ni stats, ni témoignages, et ne remplit mission/vision que si elles sont vides |
 
 **Pas de base de test dédiée** : [backend/src/test/db.js](backend/src/test/db.js) connecte les tests d'intégration à la **même** base que le développement (`MONGODB_URI`), y compris en local. Les tests doivent donc nettoyer scrupuleusement ce qu'ils créent (identifiants improbables en production, ex. e-mails `*.testsuite.*@example.invalid`). Ne jamais interrompre `cd backend && npm test` en cours de route (Ctrl+C ou kill du process) : les hooks `after()` de nettoyage n'ont alors pas l'occasion de s'exécuter et laissent des données de test résiduelles dans la base partagée — vécu concrètement lors de la vérification finale de la fonctionnalité de dons (Task 24), où un processus de test interrompu a laissé une bergerie de test fantôme qui a fait échouer la suite `newSoul.service` d'une session ultérieure avec une erreur de clé dupliquée, le temps d'être identifiée et nettoyée à la main.
 

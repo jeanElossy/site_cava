@@ -19,11 +19,14 @@
 
   display: grid;
 
+  // `minmax(0, …)` pour la même raison qu'en tablette (voir plus bas) :
+  // entre 993 et ~1150 px, le formulaire de newsletter élargissait sa
+  // colonne et la page défilait horizontalement.
   grid-template-columns:
-    1.4fr
-    1fr
-    1fr
-    1.2fr;
+    minmax(0, 1.4fr)
+    minmax(0, 1fr)
+    minmax(0, 1fr)
+    minmax(0, 1.2fr);
 
   gap: 50px;
 }
@@ -133,6 +136,15 @@
   /* Les coordonnées sont devenues des liens cliquables (tel:, mailto:).
      Sans cette règle, le navigateur leur applique son bleu par défaut,
      illisible sur le fond vert du pied de page. */
+  // Une adresse e-mail est un seul « mot » : sans césure possible, elle
+  // débordait sur la colonne voisine entre 993 et ~1200 px.
+  a,
+  span {
+    min-width: 0;
+
+    overflow-wrap: anywhere;
+  }
+
   a {
     color: rgba(255, 255, 255, 0.85);
 

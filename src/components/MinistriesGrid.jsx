@@ -1,32 +1,13 @@
 import { motion } from "framer-motion";
 
-import {
-  FaUsers,
-  FaHandsHelping,
-  FaBookOpen,
-  FaHome,
-  FaPeopleCarry,
-  FaMicrophone,
-} from "react-icons/fa";
-
 import { HiArrowRight } from "react-icons/hi";
 
 import { Link } from "react-router-dom";
 
 import allMinistries from "./MinistryDetails/data/ministries";
+import { ministryIcon } from "./MinistryDetails/data/ministryIcons";
 
 import "./MinistriesGrid.scss";
-
-// Icônes par position, dans l'ordre d'affichage. Le modèle ne stocke
-// pas d'icône : c'est une décision d'habillage, pas une donnée.
-const ICONS = [
-  FaUsers,
-  FaHandsHelping,
-  FaBookOpen,
-  FaHome,
-  FaPeopleCarry,
-  FaMicrophone,
-];
 
 // Même source que la page de détail : ne jamais recopier ici titres ou
 // slugs (voir CLAUDE.md).
@@ -59,7 +40,7 @@ const MinistriesGrid = () => {
 
         <ul className="ministries-grid__list">
           {ministries.map((ministry, index) => {
-            const Icon = ICONS[index % ICONS.length];
+            const Icon = ministryIcon(ministry.slug);
 
             return (
               <motion.li

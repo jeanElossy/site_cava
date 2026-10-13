@@ -150,7 +150,11 @@ const Footer = () => {
 
           <div className="contact-item">
             <Mail size={18} />
-            <a href={`mailto:${site.email}`}>{site.email}</a>
+            {/* `<wbr />` : la coupure se fait de préférence avant « @ ». */}
+            <a href={`mailto:${site.email}`}>
+              {site.email.split("@")[0]}
+              <wbr />@{site.email.split("@").slice(1).join("@")}
+            </a>
           </div>
 
           <div className="contact-item">

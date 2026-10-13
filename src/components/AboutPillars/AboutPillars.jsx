@@ -22,7 +22,7 @@ const AboutPillars = () => {
         <header className="about-pillars__header">
           <div>
             <span className="about-pillars__eyebrow">
-              Ce qui soutient la vision de l&apos;Église
+              Ce qui soutient la vision
             </span>
 
             <h2 id="about-pillars-title">Nos piliers</h2>
