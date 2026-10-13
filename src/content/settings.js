@@ -27,19 +27,9 @@ const FALLBACK = {
   email: "eglise.cava2021@gmail.com",
   address: "Cocody Angré, Rue Domolon Villa 72 ",
 
+  // Horaires confirmés par l'église (13/10/2026) : mercredi 18h30 et
+  // dimanche 08h30, rien d'autre.
   serviceTimes: [
-    {
-      label: "Culte dominical",
-      day: "dimanche",
-      time: "08h30",
-      description: "Louange, enseignement et prière.",
-    },
-    {
-      label: "École du dimanche",
-      day: "dimanche",
-      time: "09h00",
-      description: "Enseignement biblique adapté aux enfants.",
-    },
     {
       label: "Réunion de prière",
       day: "mercredi",
@@ -48,10 +38,10 @@ const FALLBACK = {
         "Intercession pour nos familles et notre nation.",
     },
     {
-      label: "Accueil & secrétariat",
-      day: "lundi",
-      time: "08h00 - 17h00",
-      description: "Une équipe disponible pour vous orienter.",
+      label: "Culte dominical",
+      day: "dimanche",
+      time: "08h30",
+      description: "Louange, enseignement et prière.",
     },
   ],
 

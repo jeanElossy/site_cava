@@ -42,8 +42,8 @@ const Hero = () => {
           </h1>
 
           <p className="hero__lead">
-            Une église qui communique la vie abondante de Dieu par la
-            Parole et par le Saint-Esprit.
+            Une Église où la vie de Dieu transforme les hommes et les
+            prépare à révéler Christ au monde.
           </p>
 
           <div className="hero__actions">
