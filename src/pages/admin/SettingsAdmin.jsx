@@ -200,11 +200,13 @@ const SettingsAdmin = () => {
   return (
     <div className="admin-settings">
       <header className="admin-settings__header">
-        <h1>Paramètres</h1>
+        <div>
+          <h1>Paramètres</h1>
 
-        <p>
-          Coordonnées de l&apos;église et liens vers les réseaux sociaux.
-        </p>
+          <p>
+            Coordonnées de l&apos;église et liens vers les réseaux sociaux.
+          </p>
+        </div>
       </header>
 
       {/* Ne pas laisser croire que ces champs pilotent déjà le site. */}

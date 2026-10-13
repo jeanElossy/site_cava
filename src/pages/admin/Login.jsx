@@ -33,6 +33,12 @@ import "./Login.scss";
 // Affichée pour que l'utilisateur sache qu'il n'a pas tout son temps.
 const CHALLENGE_SECONDS = 5 * 60;
 
+const SESSION_END_NOTICES = {
+  expired: "Votre session a expiré ou a été fermée. Reconnectez-vous pour continuer.",
+  idle: "Vous avez été déconnecté après 30 minutes sans activité, pour protéger les données de ce poste.",
+  elsewhere: "Vous vous êtes déconnecté depuis un autre onglet.",
+};
+
 const Login = () => {
   usePageMeta({
     title: "Connexion à l'administration",
@@ -65,7 +71,17 @@ const Login = () => {
   // stockage local.
   const challengeRef = useRef(null);
 
-  const destination = location.state?.from ?? "/admin";
+  // `from` n'est posé que par l'application (RequireAuth, AdminLayout) :
+  // l'état de navigation ne se règle pas depuis l'URL. On n'accepte
+  // malgré tout qu'un chemin INTERNE à l'administration.
+  const requested = location.state?.from;
+  const destination =
+    typeof requested === "string" && /^\/admin(\/|$)/.test(requested)
+      ? requested
+      : "/admin";
+
+  // Pourquoi la session s'est fermée (voir AdminLayout.jsx#leave).
+  const endedNotice = SESSION_END_NOTICES[location.state?.reason] ?? "";
 
   // Compte à rebours de l'étape 2.
   useEffect(() => {
@@ -341,6 +357,15 @@ const Login = () => {
                     >
                       <AlertCircle aria-hidden="true" />
                       {error}
+                    </p>
+                  )}
+
+                  {!error && endedNotice && (
+                    <p
+                      className="admin-login__notice"
+                      role="status"
+                    >
+                      {endedNotice}
                     </p>
                   )}
 

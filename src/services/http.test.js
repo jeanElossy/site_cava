@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-import { request } from "./http";
+import { SESSION_EXPIRED_EVENT, getToken, request, setToken } from "./http";
 
 // Normalisation `_id` → `id` des réponses de l'API.
 //
@@ -97,5 +97,63 @@ describe("http — normalisation des identifiants", () => {
     const result = await call({ _id: "a", member: "member-1" });
 
     expect(result.member).toBe("member-1");
+  });
+});
+
+describe("http — session expirée", () => {
+  const unauthorized = {
+    ok: false,
+    status: 401,
+    json: async () => ({ message: "Session expirée." }),
+  };
+
+  let heard;
+  const listener = () => {
+    heard += 1;
+  };
+
+  beforeEach(() => {
+    heard = 0;
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(unauthorized));
+    window.addEventListener(SESSION_EXPIRED_EVENT, listener);
+  });
+
+  afterEach(() => {
+    window.removeEventListener(SESSION_EXPIRED_EVENT, listener);
+    vi.unstubAllGlobals();
+    setToken(null);
+  });
+
+  it("signale l'expiration quand la session stockée est refusée", async () => {
+    setToken("jeton-stocke");
+
+    await expect(request("/api/admin/stats", { auth: true })).rejects.toThrow();
+
+    expect(heard).toBe(1);
+    expect(getToken()).toBeNull();
+  });
+
+  it("ne signale rien pour un mauvais mot de passe à la connexion", async () => {
+    await expect(
+      request("/api/auth/login", { method: "POST", body: {} })
+    ).rejects.toThrow();
+
+    expect(heard).toBe(0);
+  });
+
+  it("ne signale rien pour un jeton explicite (double authentification, badgeage)", async () => {
+    setToken("jeton-stocke");
+
+    await expect(
+      request("/api/auth/login/2fa", { method: "POST", body: {}, token: "defi" })
+    ).rejects.toThrow();
+
+    expect(heard).toBe(0);
+  });
+
+  it("ne signale rien sans session stockée", async () => {
+    await expect(request("/api/admin/stats", { auth: true })).rejects.toThrow();
+
+    expect(heard).toBe(0);
   });
 });

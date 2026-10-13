@@ -46,6 +46,9 @@
   // manque de contraste (voir l'alternative ci-dessous) — d'où un
   // jeton plutôt qu'une couleur fixe.
   --presence-gold: #{$secondary};
+  // Vert d'accent pour les icônes et les mentions « Connecté » : le vert
+  // de marque ($primary) est trop sombre pour se lire sur le fond nuit.
+  --presence-accent-ink: #34d399;
 
   &[data-theme="light"] {
     --presence-bg: linear-gradient(
@@ -71,6 +74,7 @@
     // Or clair peu lisible sur fond blanc : variante plus sombre,
     // même teinte.
     --presence-gold: #{$secondary-dark};
+    --presence-accent-ink: #{$primary};
   }
 }
 
@@ -146,7 +150,7 @@
       height: 34px;
       margin-bottom: 10px;
 
-      color: $primary;
+      color: var(--presence-accent-ink);
     }
 
     h1 {
@@ -316,7 +320,7 @@
       width: 26px;
       height: 26px;
 
-      color: $primary;
+      color: var(--presence-accent-ink);
     }
 
     strong {
@@ -502,7 +506,7 @@
     svg {
       width: 44px;
       height: 44px;
-      color: $primary;
+      color: var(--presence-accent-ink);
     }
   }
 
@@ -538,7 +542,9 @@
   min-height: 100vh;
   min-height: 100dvh;
 
-  padding: 20px 18px 32px;
+  // Contenu centré sur 1080 px au plus, fond toujours plein écran : la
+  // marge intérieure grandit avec l'écran au lieu d'un conteneur.
+  padding: 20px max(18px, calc((100% - 1080px) / 2)) 32px;
 
   background: var(--presence-bg);
 
@@ -605,7 +611,7 @@
     svg {
       width: 22px;
       height: 22px;
-      color: $primary;
+      color: var(--presence-accent-ink);
     }
   }
 
@@ -659,6 +665,14 @@
     }
   }
 
+  &__live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    white-space: nowrap;
+  }
+
   &__session-bar {
     display: flex;
     flex-wrap: wrap;
@@ -686,7 +700,7 @@
     align-items: center;
     gap: 7px;
 
-    color: $primary;
+    color: var(--presence-accent-ink);
     font-weight: 700;
 
     svg {
@@ -699,7 +713,12 @@
   // l'agent voit le scanner dès l'arrivée sur la page, sans avoir à
   // faire défiler quoi que ce soit — le résultat d'un badgeage
   // s'affiche par-dessus, en bulle flottante (voir __result-toast).
+  // `width: 100%` indispensable : dans une colonne flexible, des
+  // marges automatiques retirent l'étirement, et le bloc prenait la
+  // largeur de son CONTENU (jusqu'à 480 px) — il débordait de l'écran
+  // d'un téléphone, bouton de recherche coupé.
   &__main {
+    width: 100%;
     max-width: 480px;
     margin: 0 auto;
   }
@@ -727,7 +746,7 @@
       svg {
         width: 17px;
         height: 17px;
-        color: $primary;
+        color: var(--presence-accent-ink);
       }
     }
 
@@ -779,7 +798,7 @@
       svg {
         width: 15px;
         height: 15px;
-        color: $primary;
+        color: var(--presence-accent-ink);
       }
     }
   }
@@ -866,7 +885,7 @@
     }
 
     &:hover {
-      border-color: $primary;
+      border-color: var(--presence-accent-ink);
       color: var(--presence-ink);
     }
   }
@@ -1025,7 +1044,7 @@
       }
 
       &:hover:not([disabled]) {
-        border-color: $primary;
+        border-color: var(--presence-accent-ink);
       }
 
       &[disabled] {
@@ -1123,7 +1142,7 @@
 
       svg,
       strong {
-        color: $primary;
+        color: var(--presence-accent-ink);
       }
 
       span {

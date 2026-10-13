@@ -172,22 +172,38 @@ export const signOut = () => {
   db.remove(USER_KEY);
 };
 
-// Revalide la session auprès du serveur au chargement de l'admin.
-// Utile après une expiration : l'utilisateur est redirigé vers la
-// connexion au lieu d'enchaîner des écrans vides.
-export const refresh = async () => {
-  if (!getToken()) return null;
+/**
+ * Revalide la session (administration, espace moniteur) auprès du serveur.
+ *
+ * Une panne réseau ne déconnecte PAS : un Wi-Fi d'église instable ne
+ * doit pas renvoyer toute l'équipe à l'écran de connexion. Seul un refus du serveur (401, 403) met fin à la
+ * session. Le rôle renvoyé par le serveur remplace celui mémorisé :
+ * un compte rétrogradé ne garde pas son ancien menu jusqu'à la
+ * prochaine connexion.
+ *
+ * @returns {Promise<"valid" | "expired" | "offline">}
+ */
+export const revalidateSession = async () => {
+  if (!getToken()) return "expired";
 
   try {
     const user = await request("/api/auth/me", { auth: true });
 
-    db.write(USER_KEY, user);
+    // Un profil sans rôle (réponse inattendue, proxy, maintenance)
+    // n'écrase jamais celui mémorisé : il viderait le menu.
+    if (user && typeof user === "object" && typeof user.role === "string") {
+      db.write(USER_KEY, user);
+    }
 
-    return user;
-  } catch {
-    signOut();
+    return "valid";
+  } catch (error) {
+    if (error?.status === 401 || error?.status === 403) {
+      signOut();
 
-    return null;
+      return "expired";
+    }
+
+    return "offline";
   }
 };
 

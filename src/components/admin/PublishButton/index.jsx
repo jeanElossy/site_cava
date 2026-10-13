@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { Globe, Check } from "lucide-react";
+import { Check, Globe, Rocket } from "lucide-react";
 
 import { publish } from "../../../services/api";
 
@@ -38,6 +38,13 @@ const PublishButton = () => {
 
   return (
     <section className="publish-box">
+
+      <span
+        className="publish-box__icon"
+        aria-hidden="true"
+      >
+        <Rocket />
+      </span>
 
       <div className="publish-box__text">
         <h2>Publier le site</h2>

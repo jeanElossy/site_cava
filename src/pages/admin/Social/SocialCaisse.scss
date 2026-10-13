@@ -2,33 +2,7 @@
 
 .admin-social-caisse {
   &__header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 20px;
-
-    margin-bottom: 24px;
-
-    h1 {
-      margin: 0;
-
-      color: $admin-ink;
-
-      font-size: 1.6rem;
-      font-weight: 700;
-    }
-
-    p {
-      margin: 8px 0 0;
-
-      max-width: 560px;
-
-      color: $admin-ink-soft;
-
-      font-size: 0.92rem;
-      line-height: 1.6;
-    }
+    @include admin-page-head;
   }
 
   &__header-actions {
@@ -60,7 +34,7 @@
       font-size: 0.88rem;
 
       &:focus {
-        border-color: $primary;
+        border-color: $admin-accent;
 
         outline: none;
 
@@ -92,13 +66,13 @@
     transition: $transition;
 
     &:hover {
-      border-color: $primary;
+      border-color: $admin-accent;
 
-      color: $primary;
+      color: $admin-accent;
     }
 
     &:focus-visible {
-      outline: 2px solid $primary;
+      outline: 2px solid $admin-accent;
       outline-offset: 2px;
     }
   }
@@ -147,11 +121,11 @@
       background: $admin-accent-soft;
 
       span {
-        color: $primary;
+        color: $admin-accent;
       }
 
       strong {
-        color: $primary;
+        color: $admin-accent;
 
         font-size: 1.4rem;
         font-weight: 800;
@@ -409,9 +383,9 @@
       transition: $transition;
 
       &:hover:not([disabled]) {
-        border-color: $primary;
+        border-color: $admin-accent;
 
-        color: $primary;
+        color: $admin-accent;
       }
 
       &[disabled] {
@@ -454,7 +428,7 @@
       font-size: 0.9rem;
 
       &:focus {
-        border-color: $primary;
+        border-color: $admin-accent;
 
         outline: none;
 
@@ -486,7 +460,7 @@
     border: 0;
     border-radius: 9px;
 
-    background: $primary;
+    background: $admin-accent;
 
     color: #fff;
 
@@ -499,7 +473,7 @@
     transition: $transition;
 
     &:hover:not([disabled]) {
-      background: $primary-dark;
+      background: $admin-accent-strong;
     }
 
     &[disabled] {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { KeyRound, Loader2, LogIn } from "lucide-react";
+import { Eye, EyeOff, KeyRound, Loader2, LogIn } from "lucide-react";
 
 import { signIn } from "../../services/auth";
 
@@ -19,6 +19,7 @@ const MonitorLogin = ({ onSignedIn }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -43,16 +44,24 @@ const MonitorLogin = ({ onSignedIn }) => {
         className="monitor-login__card"
         onSubmit={submit}
       >
-        <img
-          src={logo}
-          alt=""
-          aria-hidden="true"
-          className="monitor-login__logo"
-        />
+        <div className="monitor-login__brand">
+          <span className="monitor-login__logo-chip">
+            <img
+              src={logo}
+              alt=""
+              aria-hidden="true"
+              className="monitor-login__logo"
+            />
+          </span>
 
-        <h1>Espace moniteur</h1>
+          <p className="monitor-login__eyebrow">École du dimanche — CAVA</p>
 
-        <p className="monitor-login__lede">École du dimanche — CAVA</p>
+          <h1>Espace moniteur</h1>
+
+          <p className="monitor-login__lede">
+            Faites l&apos;appel de votre classe depuis votre téléphone.
+          </p>
+        </div>
 
         {error && (
           <p
@@ -79,13 +88,33 @@ const MonitorLogin = ({ onSignedIn }) => {
         <label className="monitor-login__field">
           <span>Mot de passe</span>
 
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="current-password"
-            required
-          />
+          <span className="monitor-login__password">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              required
+            />
+
+            <button
+              type="button"
+              className="monitor-login__reveal"
+              onClick={() => setShowPassword((shown) => !shown)}
+              aria-label={
+                showPassword
+                  ? "Masquer le mot de passe"
+                  : "Afficher le mot de passe"
+              }
+              aria-pressed={showPassword}
+            >
+              {showPassword ? (
+                <EyeOff aria-hidden="true" />
+              ) : (
+                <Eye aria-hidden="true" />
+              )}
+            </button>
+          </span>
         </label>
 
         <button

@@ -184,11 +184,13 @@ const SocialMemberSearch = () => {
   return (
     <div className="admin-social-members">
       <header className="admin-social-members__header">
-        <h1>Recherche membre — Service Social</h1>
-        <p>
-          Retrouvez un membre par matricule, nom, prénom ou téléphone pour
-          consulter sa fiche sociale complète.
-        </p>
+        <div>
+          <h1>Recherche membre — Service Social</h1>
+          <p>
+            Retrouvez un membre par matricule, nom, prénom ou téléphone pour
+            consulter sa fiche sociale complète.
+          </p>
+        </div>
       </header>
 
       <div className="admin-social-members__search">

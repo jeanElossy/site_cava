@@ -236,7 +236,7 @@ const SubmissionsPanel = () => {
     <section className="submissions-panel">
       <header className="submissions-panel__header">
         <div>
-          <h1>Inscriptions en attente</h1>
+          <h2>Inscriptions en attente</h2>
 
           <p>
             Demandes envoyées depuis le site public. Rien n&apos;est

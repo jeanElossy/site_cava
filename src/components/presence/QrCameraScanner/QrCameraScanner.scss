@@ -116,7 +116,7 @@
     width: 34px;
     height: 34px;
 
-    color: $primary;
+    color: var(--presence-accent-ink, #{$primary});
 
     animation: qr-camera-scanner-spin 0.9s linear infinite;
   }
@@ -252,7 +252,7 @@
     width: 28px;
     height: 28px;
 
-    border: 3px solid $primary;
+    border: 3px solid var(--presence-accent-ink, #{$primary});
 
     pointer-events: none;
 

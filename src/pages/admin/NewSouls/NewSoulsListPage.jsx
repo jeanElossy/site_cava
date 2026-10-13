@@ -136,9 +136,11 @@ const NewSoulsListPage = () => {
 
   return (
     <div className="new-soul-list">
-      <header>
-        <h1>Nouvelles âmes</h1>
-        <p className="admin-form__help">Suivi des dossiers SOA et CANA.</p>
+      <header className="new-soul-list__header">
+        <div>
+          <h1>Nouvelles âmes</h1>
+          <p>Suivi des dossiers, de l&apos;accueil par la SOA à l&apos;intégration en bergerie.</p>
+        </div>
       </header>
 
       <div
@@ -206,17 +208,38 @@ const NewSoulsListPage = () => {
                   <h2>Répartition par étape</h2>
 
                   <ul className="new-soul-dashboard__breakdown">
-                    {visibleStatusEntries.map(([value, label]) => (
-                      <li key={value}>
-                        <button type="button" onClick={() => goToStatus(value)}>
-                          <StatusBadge status={value} />
+                    {visibleStatusEntries.map(([value, label]) => {
+                      const count = stats.byStatus[value] ?? 0;
+                      // Rapportée à l'étape la plus chargée (et non au
+                      // total) : la plus longue barre remplit la ligne,
+                      // les écarts entre étapes se voient d'un coup d'œil.
+                      const busiest = Math.max(
+                        0,
+                        ...visibleStatusEntries.map(([key]) => stats.byStatus[key] ?? 0)
+                      );
+                      const share = busiest > 0 ? Math.round((count / busiest) * 100) : 0;
 
-                          <span>{label}</span>
+                      return (
+                        <li key={value}>
+                          <button
+                            type="button"
+                            onClick={() => goToStatus(value)}
+                            aria-label={`${label} : ${count} dossier${count > 1 ? "s" : ""}. Voir la liste`}
+                          >
+                            <StatusBadge status={value} />
 
-                          <strong>{stats.byStatus[value] ?? 0}</strong>
-                        </button>
-                      </li>
-                    ))}
+                            <span
+                              className="new-soul-dashboard__bar"
+                              aria-hidden="true"
+                            >
+                              <span style={{ width: `${share}%` }} />
+                            </span>
+
+                            <strong>{count}</strong>
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </section>
 

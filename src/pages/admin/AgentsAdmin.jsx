@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import {
   KeyRound,
   Pencil,
+  Plus,
+  Search,
   ShieldAlert,
   Trash2,
   UserCheck,
@@ -12,6 +14,11 @@ import { agents } from "../../services/api";
 import { currentUser } from "../../services/auth";
 import usePageMeta from "../../hooks/usePageMeta";
 import AdminModal from "../../components/admin/AdminModal";
+import {
+  AdminEmpty,
+  AdminError,
+  AdminLoading,
+} from "../../components/admin/AdminFeedback";
 import { formatRegistrationNumber } from "../../utils/registrationNumber";
 
 import "./AgentsAdmin.scss";
@@ -218,51 +225,72 @@ const AgentsAdmin = () => {
 
   return (
     <div className="admin-agents">
-      <header>
-        <h1>Agents</h1>
-        <p className="admin-form__help">
-          Comptes SOA, CANA, coordonnateur des bergeries, pasteur et Service Social —
-          chacun ne voit, une fois connecté, que son propre module. Connexion par
-          matricule (pas d&apos;e-mail nécessaire).
-        </p>
-      </header>
+      <header className="admin-agents__header">
+        <div>
+          <h1>Agents</h1>
 
-      <div className="admin-agents__toolbar">
-        <div className="admin-form__field">
-          <input
-            type="search"
-            placeholder="Rechercher (nom, matricule)"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </div>
-
-        <div className="admin-form__field">
-          <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
-            <option value="">Tous les rôles</option>
-            <RoleOptions />
-          </select>
+          <p>
+            Comptes SOA, CANA, coordonnateur des bergeries, pasteur et
+            Service Social — chacun ne voit, une fois connecté, que son
+            propre module. Connexion par matricule (pas d&apos;e-mail
+            nécessaire).
+          </p>
         </div>
 
         <button
           type="button"
-          className="admin-form__button"
+          className="admin-agents__add"
           onClick={() => {
             setCreateValues(EMPTY_CREATE);
             setFormError("");
             setCreateOpen(true);
           }}
         >
-          + Nouvel agent
+          <Plus aria-hidden="true" />
+          Nouvel agent
         </button>
+      </header>
+
+      <div className="admin-agents__toolbar">
+        <label className="admin-agents__search">
+          <Search aria-hidden="true" />
+
+          <input
+            type="search"
+            placeholder="Rechercher (nom, matricule)"
+            aria-label="Rechercher un agent par nom ou matricule"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            maxLength={80}
+          />
+        </label>
+
+        <select
+          className="admin-agents__filter"
+          aria-label="Filtrer par rôle"
+          value={roleFilter}
+          onChange={(event) => setRoleFilter(event.target.value)}
+        >
+          <option value="">Tous les rôles</option>
+          <RoleOptions />
+        </select>
       </div>
 
-      {error && <p className="admin-form__error">{error}</p>}
-      {loading && <p>Chargement…</p>}
+      {error && (
+        <AdminError
+          message={error}
+          onRetry={load}
+        />
+      )}
 
-      {!loading && items.length === 0 && <p>Aucun agent pour le moment.</p>}
+      {loading && <AdminLoading label="Chargement des agents…" />}
+
+      {!loading && !error && items.length === 0 && (
+        <AdminEmpty message="Aucun agent ne correspond. Créez un compte pour chaque personne de terrain : elle se connectera avec son matricule." />
+      )}
 
       {!loading && items.length > 0 && (
+        <div className="admin-agents__table-wrapper">
         <table className="admin-agents__table">
           <thead>
             <tr>
@@ -271,16 +299,25 @@ const AgentsAdmin = () => {
               <th>Rôle</th>
               <th>Statut</th>
               <th>Dernière connexion</th>
-              <th>Actions</th>
+              <th>
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             {items.map((agent) => (
               <tr key={agent.id} className={agent.isActive ? "" : "admin-agents__row--inactive"}>
-                <td>{agent.name}</td>
-                <td>{formatRegistrationNumber(agent.registrationNumber)}</td>
-                <td>{ROLE_LABELS[agent.role] ?? agent.role}</td>
-                <td>
+                <td data-label="Nom">
+                  <strong>{agent.name}</strong>
+                </td>
+                <td
+                  data-label="Matricule"
+                  className="admin-agents__mono"
+                >
+                  {formatRegistrationNumber(agent.registrationNumber)}
+                </td>
+                <td data-label="Rôle">{ROLE_LABELS[agent.role] ?? agent.role}</td>
+                <td data-label="Statut">
                   <span
                     className={`admin-agents__badge${
                       agent.isActive ? " admin-agents__badge--active" : ""
@@ -289,7 +326,7 @@ const AgentsAdmin = () => {
                     {agent.isActive ? "Actif" : "Désactivé"}
                   </span>
                 </td>
-                <td>{formatLastLogin(agent.lastLoginAt)}</td>
+                <td data-label="Dernière connexion">{formatLastLogin(agent.lastLoginAt)}</td>
                 <td>
                   <div className="admin-agents__row-actions">
                     <button
@@ -346,6 +383,7 @@ const AgentsAdmin = () => {
             ))}
           </tbody>
         </table>
+        </div>
       )}
 
       {createOpen && (

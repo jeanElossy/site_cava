@@ -2,12 +2,15 @@ import { useCallback, useState } from "react";
 
 import {
   AlertTriangle,
+  CalendarCheck,
   Check,
   Clock,
   Download,
   FileText,
+  Hourglass,
   QrCode,
   RefreshCw,
+  Wallet,
   X,
 } from "lucide-react";
 
@@ -129,21 +132,39 @@ const DonationsAdmin = () => {
       {summary && (
         <ul className="admin-donations__stats">
           <li className="admin-donations__stat admin-donations__stat--paid">
-            <span className="admin-donations__stat-label">Validé ce mois</span>
-            <strong>{money(summary.thisMonth?.total)}</strong>
-            <span className="admin-donations__stat-hint">{summary.thisMonth?.count ?? 0} don(s)</span>
+            <span className="admin-donations__stat-icon" aria-hidden="true">
+              <CalendarCheck />
+            </span>
+
+            <span className="admin-donations__stat-body">
+              <span className="admin-donations__stat-label">Validé ce mois</span>
+              <strong>{money(summary.thisMonth?.total)}</strong>
+              <span className="admin-donations__stat-hint">{summary.thisMonth?.count ?? 0} don(s)</span>
+            </span>
           </li>
 
           <li className="admin-donations__stat">
-            <span className="admin-donations__stat-label">Total validé</span>
-            <strong>{money(summary.valide?.total)}</strong>
-            <span className="admin-donations__stat-hint">{summary.valide?.count ?? 0} don(s)</span>
+            <span className="admin-donations__stat-icon" aria-hidden="true">
+              <Wallet />
+            </span>
+
+            <span className="admin-donations__stat-body">
+              <span className="admin-donations__stat-label">Total validé</span>
+              <strong>{money(summary.valide?.total)}</strong>
+              <span className="admin-donations__stat-hint">{summary.valide?.count ?? 0} don(s)</span>
+            </span>
           </li>
 
           <li className="admin-donations__stat admin-donations__stat--suspect">
-            <span className="admin-donations__stat-label">En attente</span>
-            <strong>{summary.en_attente?.count ?? 0}</strong>
-            <span className="admin-donations__stat-hint">à vérifier</span>
+            <span className="admin-donations__stat-icon" aria-hidden="true">
+              <Hourglass />
+            </span>
+
+            <span className="admin-donations__stat-body">
+              <span className="admin-donations__stat-label">En attente</span>
+              <strong>{summary.en_attente?.count ?? 0}</strong>
+              <span className="admin-donations__stat-hint">à vérifier</span>
+            </span>
           </li>
         </ul>
       )}
@@ -199,17 +220,17 @@ const DonationsAdmin = () => {
 
                 return (
                   <tr key={donation.id}>
-                    <td>
+                    <td data-label="Date">
                       <span className="admin-donations__date">{formatDate(donation.createdAt)}</span>
                       <span className="admin-donations__reference">{donation.reference}</span>
                     </td>
 
-                    <td>{donorName(donation)}</td>
-                    <td>{donation.donationType?.name ?? "—"}</td>
-                    <td className="admin-donations__method">{donation.paymentMethod?.name ?? "—"}</td>
-                    <td className="admin-donations__amount">{money(donation.amount)}</td>
+                    <td data-label="Donateur">{donorName(donation)}</td>
+                    <td data-label="Type">{donation.donationType?.name ?? "—"}</td>
+                    <td data-label="Moyen" className="admin-donations__method">{donation.paymentMethod?.name ?? "—"}</td>
+                    <td data-label="Montant" className="admin-donations__amount">{money(donation.amount)}</td>
 
-                    <td>
+                    <td data-label="Preuve">
                       <span className="admin-donations__transaction">{donation.proof?.transactionId}</span>
 
                       {donation.duplicateTransactionCount > 0 && (
@@ -231,7 +252,7 @@ const DonationsAdmin = () => {
                       )}
                     </td>
 
-                    <td>
+                    <td data-label="Statut">
                       <span className={`admin-donations__status admin-donations__status--${donation.status}`}>
                         <Icon size={13} aria-hidden="true" />
                         {meta.label}

@@ -33,12 +33,22 @@
   }
 
   &:hover {
-    border-color: $primary;
+    border-color: var(--presence-accent-ink);
     color: var(--presence-ink);
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--presence-accent-ink);
     outline-offset: 2px;
+  }
+
+  &--inline {
+    position: static;
+
+    flex-shrink: 0;
+
+    width: 34px;
+    height: 34px;
+    margin-left: auto;
   }
 }

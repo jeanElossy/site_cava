@@ -5,8 +5,8 @@ import MonitorFirstPassword from "./MonitorFirstPassword";
 import MonitorHome from "./MonitorHome";
 import MonitorRollCall from "./MonitorRollCall";
 
-import { currentUser, refresh, signOut } from "../../services/auth";
-import { getToken } from "../../services/http";
+import { currentUser, revalidateSession, signOut } from "../../services/auth";
+import { SESSION_EXPIRED_EVENT, getToken } from "../../services/http";
 
 import usePageMeta from "../../hooks/usePageMeta";
 
@@ -51,17 +51,37 @@ const Monitor = () => {
   // Revalide la session au chargement : un jeton expiré, ou un compte
   // dont le mot de passe vient d'être réinitialisé par l'administration,
   // doit ramener à la connexion plutôt qu'à des écrans vides.
+  //
+  // Une coupure réseau, en revanche, ne déconnecte PAS : le Wi-Fi d'une
+  // salle de classe est capricieux, et un moniteur renvoyé à l'écran de
+  // connexion au milieu de l'appel perdrait sa saisie.
   useEffect(() => {
     if (stage !== "home") return;
 
-    refresh().then((user) => {
-      if (user) {
-        setSession(user);
-      } else {
+    revalidateSession().then((status) => {
+      if (status === "valid") {
+        setSession(currentUser());
+      } else if (status === "expired") {
+        setRollCall(null);
         setStage("login");
       }
     });
   }, [stage]);
+
+  // Tout refus du serveur en cours de route (jeton expiré, compte
+  // désactivé) ramène à la connexion — voir SESSION_EXPIRED_EVENT.
+  useEffect(() => {
+    const onExpired = () => {
+      signOut();
+      setSession(null);
+      setRollCall(null);
+      setStage("login");
+    };
+
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, []);
 
   const onSignedIn = useCallback((result) => {
     if (result.passwordChangeRequired) {

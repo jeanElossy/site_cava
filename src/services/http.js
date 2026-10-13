@@ -37,6 +37,29 @@ export const setToken = (token) => {
   }
 };
 
+// SESSION EXPIRÉE — signal pour l'interface.
+//
+// Un 401 sur une requête qui portait la session STOCKÉE veut dire que
+// le jeton a expiré ou a été révoqué (compte désactivé, mot de passe
+// changé). Le client nettoie le jeton ; ce signal permet en plus à
+// l'administration de renvoyer vers l'écran de connexion au lieu
+// d'enchaîner des écrans d'erreur.
+//
+// Rien n'est émis pour un 401 sans session stockée : un mauvais mot de
+// passe à la connexion, un code de double authentification erroné ou
+// le jeton propre au badgeage ne sont pas une expiration.
+export const SESSION_EXPIRED_EVENT = "cava:session-expired";
+
+const expireStoredSession = () => {
+  setToken(null);
+
+  try {
+    window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+  } catch {
+    /* hors navigateur */
+  }
+};
+
 // Erreur portant le code HTTP et le détail par champ renvoyé par
 // l'API, pour que les formulaires affichent le bon message au bon
 // endroit.
@@ -146,7 +169,10 @@ export const request = async (
   if (!response.ok) {
     // Jeton expiré ou révoqué : on nettoie pour éviter de boucler
     // sur des requêtes vouées à échouer.
-    if (response.status === 401) setToken(null);
+    if (response.status === 401) {
+      if (auth && !token && headers.Authorization) expireStoredSession();
+      else setToken(null);
+    }
 
     throw new HttpError(
       response.status,
@@ -177,7 +203,10 @@ export const requestWithMeta = async (path, options) => {
   const payload = await response.json().catch(() => null);
 
   if (!response.ok) {
-    if (response.status === 401) setToken(null);
+    if (response.status === 401) {
+      if (headers.Authorization) expireStoredSession();
+      else setToken(null);
+    }
 
     throw new HttpError(
       response.status,

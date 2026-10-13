@@ -4,8 +4,12 @@
 // qui suit est imbriqué sous `.admin-agents`, aucun nom générique
 // (`.table`, `.badge`, `.danger`…) n'apparaît à la racine du fichier.
 .admin-agents {
-  h1 {
-    margin: 0 0 4px;
+  &__header {
+    @include admin-page-head;
+  }
+
+  &__add {
+    @include admin-button(primary);
   }
 
   &__toolbar {
@@ -13,58 +17,164 @@
     flex-wrap: wrap;
     gap: 12px;
     align-items: center;
-    justify-content: space-between;
 
     margin-bottom: 18px;
   }
 
+  &__search {
+    display: flex;
+    flex: 1 1 280px;
+    align-items: center;
+    gap: 10px;
+
+    max-width: 380px;
+    padding: 0 14px;
+
+    border: 1px solid $admin-border-strong;
+    border-radius: 999px;
+
+    background: $admin-surface;
+
+    box-shadow: $admin-shadow-sm;
+
+    transition: border-color $admin-ease, box-shadow $admin-ease;
+
+    &:focus-within {
+      border-color: $admin-accent;
+
+      box-shadow: 0 0 0 3px $admin-accent-soft;
+    }
+
+    svg {
+      flex-shrink: 0;
+
+      width: 16px;
+      height: 16px;
+
+      color: $admin-ink-faint;
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+
+      height: 40px;
+
+      border: 0;
+
+      background: transparent;
+      color: $admin-ink;
+
+      font-family: inherit;
+      font-size: 0.88rem;
+
+      outline: none;
+
+      &::placeholder {
+        color: $admin-ink-faint;
+      }
+    }
+  }
+
+  &__filter {
+    @include admin-field;
+
+    & {
+      flex: 0 1 260px;
+      min-width: 0;
+    }
+  }
+
+  &__table-wrapper {
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius-lg;
+
+    background: $admin-surface;
+
+    box-shadow: $admin-shadow-sm;
+
+    overflow-x: auto;
+  }
+
   &__table {
     width: 100%;
+    min-width: 720px;
+
     border-collapse: collapse;
+
+    @include admin-stacked-table;
 
     th,
     td {
-      padding: 9px 10px;
+      padding: 13px 18px;
 
-      border: 1px solid $admin-border;
-
-      font-size: 0.84rem;
       text-align: left;
+      vertical-align: middle;
     }
 
-    th {
+    thead th {
+      border-bottom: 1px solid $admin-border;
+
       background: $admin-surface-muted;
       color: $admin-ink-soft;
-      font-weight: 600;
+
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
+
+    tbody tr {
+      border-bottom: 1px solid $admin-border;
+
+      transition: background $admin-ease;
+
+      &:last-child {
+        border-bottom: 0;
+      }
+
+      &:hover {
+        background: $admin-surface-hover;
+      }
+    }
+
+    tbody td {
+      color: $admin-ink;
+
+      font-size: 0.88rem;
+
+      strong {
+        font-weight: 600;
+      }
+    }
+  }
+
+  &__mono {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
   }
 
   &__row--inactive td {
     color: $admin-ink-faint;
+
+    strong {
+      color: $admin-ink-faint;
+    }
   }
 
   &__badge {
-    display: inline-flex;
-    align-items: center;
-
-    padding: 3px 10px;
-
-    border-radius: 999px;
-
-    background: $admin-surface-muted;
-    color: $admin-ink-faint;
-
-    font-size: 0.74rem;
-    font-weight: 600;
+    @include admin-status-pill;
 
     &--active {
-      background: $admin-success-bg;
-      color: $admin-success;
+      @include admin-status-pill(success);
     }
   }
 
   &__row-actions {
     display: flex;
+    justify-content: flex-end;
     gap: 6px;
 
     button {
@@ -72,8 +182,8 @@
       align-items: center;
       justify-content: center;
 
-      width: 30px;
-      height: 30px;
+      width: 33px;
+      height: 33px;
 
       border: 1px solid $admin-border;
       border-radius: $admin-radius-sm;
@@ -83,7 +193,8 @@
 
       cursor: pointer;
 
-      transition: background $admin-ease, color $admin-ease;
+      transition: background $admin-ease, color $admin-ease,
+        border-color $admin-ease;
 
       svg {
         width: 15px;
@@ -91,8 +202,15 @@
       }
 
       &:hover:not([disabled]) {
-        background: $admin-surface-hover;
-        color: $admin-ink;
+        border-color: $admin-accent;
+
+        background: $admin-accent-soft;
+        color: $admin-accent;
+      }
+
+      &:focus-visible {
+        outline: 2px solid $admin-accent;
+        outline-offset: 2px;
       }
 
       &[disabled] {
@@ -102,7 +220,24 @@
     }
   }
 
-  &__danger:hover:not([disabled]) {
+  @media (max-width: 768px) {
+    &__header {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    &__search,
+    &__filter {
+      flex: 1 1 100%;
+      max-width: none;
+    }
+  }
+
+  // Spécificité renforcée : doit l'emporter sur le survol accentué
+  // de `&__row-actions button`.
+  &__row-actions &__danger:hover:not([disabled]) {
+    border-color: $admin-danger;
+
     background: $admin-danger-bg;
     color: $admin-danger;
   }

@@ -419,10 +419,6 @@ const PresenceScanner = ({
 
   return (
     <div className="presence-scanner">
-      <ThemeToggle
-        theme={theme}
-        onToggle={onToggleTheme}
-      />
 
       <header className="presence-scanner__header">
         <div className="presence-scanner__title">
@@ -437,8 +433,10 @@ const PresenceScanner = ({
             <h1>BADGEAGE DES MEMBRES</h1>
             <p>
               {qr.label}
-              <span className="presence-scanner__status-dot" aria-hidden="true" />
-              En cours
+              <span className="presence-scanner__live">
+                <span className="presence-scanner__status-dot" aria-hidden="true" />
+                En cours
+              </span>
             </p>
           </div>
         </div>
@@ -465,6 +463,12 @@ const PresenceScanner = ({
         <span>
           Rôle : <strong>{AGENT_ROLE_LABELS[agent.role] ?? agent.role}</strong>
         </span>
+
+        <ThemeToggle
+          theme={theme}
+          onToggle={onToggleTheme}
+          inline
+        />
       </div>
 
       <div className="presence-scanner__main">

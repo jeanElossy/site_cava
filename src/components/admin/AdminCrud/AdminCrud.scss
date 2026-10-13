@@ -18,34 +18,7 @@
   }
 
   &__header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
-    flex-wrap: wrap;
-
-    margin-bottom: 24px;
-
-    h1 {
-      margin: 0;
-
-      color: $admin-ink;
-
-      font-size: 1.62rem;
-      font-weight: 700;
-      letter-spacing: -0.015em;
-    }
-
-    p {
-      margin: 7px 0 0;
-
-      max-width: 640px;
-
-      color: $admin-ink-soft;
-
-      font-size: 0.9rem;
-      line-height: 1.65;
-    }
+    @include admin-page-head;
   }
 
   &__search {
@@ -53,14 +26,24 @@
     align-items: center;
     gap: 10px;
 
-    max-width: 360px;
+    max-width: 380px;
     margin-bottom: 18px;
     padding: 0 14px;
 
     border: 1px solid $admin-border-strong;
-    border-radius: $admin-radius-sm;
+    border-radius: 999px;
 
     background: $admin-surface;
+
+    box-shadow: $admin-shadow-sm;
+
+    transition: border-color $admin-ease, box-shadow $admin-ease;
+
+    &:focus-within {
+      border-color: $admin-accent;
+
+      box-shadow: 0 0 0 3px $admin-accent-soft;
+    }
 
     svg {
       flex-shrink: 0;
@@ -104,46 +87,10 @@
   }
 
   &__add {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    flex-shrink: 0;
+    @include admin-button(primary);
 
-    padding: 11px 19px;
-
-    border: 0;
-    border-radius: $admin-radius-sm;
-
-    background: linear-gradient(
-      135deg,
-      $admin-accent-strong,
-      $admin-accent
-    );
-
-    color: #fff;
-
-    font-family: inherit;
-    font-size: 0.87rem;
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition: transform $admin-ease, box-shadow $admin-ease;
-
-    svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    &:hover {
-      transform: translateY(-1px);
-
-      box-shadow: 0 8px 20px rgba(13, 91, 62, 0.28);
-    }
-
-    &:focus-visible {
-      outline: 2px solid $admin-accent;
-      outline-offset: 2px;
+    & {
+      flex-shrink: 0;
     }
 
     &--inline {
@@ -204,32 +151,7 @@
     }
 
     button {
-      padding: 8px 16px;
-
-      border: 1px solid $admin-border;
-      border-radius: $admin-radius-sm;
-
-      background: $admin-surface;
-
-      color: $admin-ink;
-
-      font-family: inherit;
-      font-size: 0.85rem;
-      font-weight: 600;
-
-      cursor: pointer;
-
-      transition: border-color $admin-ease, color $admin-ease;
-
-      &:hover:not(:disabled) {
-        border-color: $admin-accent;
-        color: $admin-accent;
-      }
-
-      &:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-      }
+      @include admin-button(secondary);
     }
   }
 
@@ -237,9 +159,11 @@
 
   &__table-wrapper {
     border: 1px solid $admin-border;
-    border-radius: $admin-radius;
+    border-radius: $admin-radius-lg;
 
     background: $admin-surface;
+
+    box-shadow: $admin-shadow-sm;
 
     // Le tableau défile DANS son cadre : sans cela, une colonne large
     // ferait défiler la page entière horizontalement.
@@ -275,11 +199,19 @@
 
       color: $admin-ink-soft;
 
-      font-size: 0.73rem;
+      font-size: 0.72rem;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
       white-space: nowrap;
+    }
+
+    thead th:first-child {
+      border-top-left-radius: $admin-radius-lg;
+    }
+
+    thead th:last-child {
+      border-top-right-radius: $admin-radius-lg;
     }
 
     tbody tr {
@@ -449,73 +381,11 @@
   }
 
   &__ghost {
-    padding: 11px 22px;
-
-    border: 1px solid $admin-border;
-    border-radius: $admin-radius-sm;
-
-    background: $admin-surface;
-
-    color: $admin-ink-soft;
-
-    font-family: inherit;
-    font-size: 0.88rem;
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition: background $admin-ease, border-color $admin-ease;
-
-    &:hover:not([disabled]) {
-      border-color: $admin-border-strong;
-
-      background: $admin-surface-hover;
-    }
-
-    &:focus-visible {
-      outline: 2px solid $admin-accent;
-      outline-offset: 2px;
-    }
-
-    &[disabled] {
-      opacity: 0.55;
-
-      cursor: not-allowed;
-    }
+    @include admin-button(secondary);
   }
 
   &__danger-solid {
-    padding: 11px 22px;
-
-    border: 0;
-    border-radius: $admin-radius-sm;
-
-    background: $admin-danger;
-
-    color: #fff;
-
-    font-family: inherit;
-    font-size: 0.88rem;
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition: background $admin-ease;
-
-    &:hover:not([disabled]) {
-      background: #911d13;
-    }
-
-    &:focus-visible {
-      outline: 2px solid $admin-danger;
-      outline-offset: 2px;
-    }
-
-    &[disabled] {
-      opacity: 0.55;
-
-      cursor: not-allowed;
-    }
+    @include admin-button(danger);
   }
 
   // ---------------- Divers ----------------
@@ -542,11 +412,8 @@
 
   @media (max-width: 768px) {
     &__header {
+      align-items: stretch;
       flex-direction: column;
-
-      h1 {
-        font-size: 1.38rem;
-      }
     }
 
     &__add {
@@ -562,12 +429,6 @@
     &__ghost,
     &__danger-solid {
       width: 100%;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    &__add:hover {
-      transform: none;
     }
   }
 }

@@ -18,13 +18,11 @@ import {
   AdminLoading,
 } from "../../components/admin/AdminFeedback";
 
+import { MESSAGE_STATUS_LABELS } from "./messageStatus";
+
 import "./MessagesAdmin.scss";
 
-const STATUS_LABELS = {
-  nouveau: "Nouveau",
-  lu: "Lu",
-  repondu: "Répondu",
-};
+const STATUS_LABELS = MESSAGE_STATUS_LABELS;
 
 const formatDateTime = (value) => {
   if (!value) return "—";

@@ -95,7 +95,12 @@ const AdminCrud = ({
   // (crud.service.js#MAX_LIMIT) : au-delà, elle tronquerait sans le
   // dire.
   pageSize = 20,
+  // Niveau du titre : `h2` quand l'écran est une SECTION d'une page
+  // qui porte déjà son propre `h1` (les onglets de Communauté).
+  headingLevel = 1,
 }) => {
+  const Heading = headingLevel === 2 ? "h2" : "h1";
+
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -214,7 +219,7 @@ const AdminCrud = ({
     <section className={wide ? "admin-crud admin-crud--wide" : "admin-crud"}>
       <header className="admin-crud__header">
         <div>
-          <h1>{labels.plural}</h1>
+          <Heading>{labels.plural}</Heading>
 
           {labels.description && <p>{labels.description}</p>}
         </div>

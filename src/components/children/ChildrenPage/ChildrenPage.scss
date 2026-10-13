@@ -14,18 +14,10 @@
   gap: 20px;
 
   &__head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
+    @include admin-page-head;
 
-    h1 {
-      margin: 0;
-      font-size: 1.6rem;
-      font-weight: 600;
-      color: $admin-ink;
-      letter-spacing: -0.01em;
+    & {
+      margin-bottom: 0;
     }
   }
 
@@ -78,11 +70,16 @@
   &__stat {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    background: $admin-surface;
+    gap: 14px;
+
+    padding: 16px 18px;
+
     border: 1px solid $admin-border;
-    border-radius: 12px;
+    border-radius: $admin-radius-lg;
+
+    background: $admin-surface;
+
+    box-shadow: $admin-shadow-sm;
   }
 
   &__stat-icon {
@@ -123,12 +120,7 @@
   }
 
   &__stat-value {
-    font-size: 1.5rem;
-    font-weight: 600;
-    line-height: 1.1;
-    color: $admin-ink;
-    // Les chiffres s'alignent d'une carte à l'autre.
-    font-variant-numeric: tabular-nums;
+    @include admin-kpi-value;
   }
 
   &__stat-label {
@@ -183,10 +175,7 @@
   }
 
   &__panel {
-    padding: 14px 16px;
-    background: $admin-surface;
-    border: 1px solid $admin-border;
-    border-radius: 12px;
+    @include admin-panel(18px 20px);
   }
 
   &__panel-title {

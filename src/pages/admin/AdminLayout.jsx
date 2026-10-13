@@ -1,258 +1,65 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   Link,
   NavLink,
   Outlet,
+  useLocation,
   useNavigate,
 } from "react-router-dom";
 
 import {
-  Baby,
-  CalendarCheck,
-  Banknote,
   Bell,
   BellOff,
-  Calendar,
+  ChevronDown,
   ChevronRight,
-  Church,
-  Briefcase,
-  Tent,
   ExternalLink,
-  HandCoins,
-  HandHelping,
-  AlertTriangle,
-  HeartHandshake,
-  Heart,
-  History,
-  GraduationCap,
-  Image,
-  LayoutDashboard,
   LogOut,
-  Mail,
   Menu,
-  MessageSquareQuote,
   Moon,
-  PiggyBank,
   RefreshCw,
-  Repeat,
-  ScanLine,
   Search,
-  Send,
-  Settings,
-  ShieldCheck,
   Sun,
-  Tag,
-  UserCog,
-  Users,
-  Wallet,
   X,
 } from "lucide-react";
 
-import { currentUser, signOut } from "../../services/auth";
 import {
-  AGENT_ROLES,
-  CHILDREN_ROLES,
-  FLOCK_PORTAL_ROLES,
-  SOCIAL_ROLES,
-  STAFF_ROLES,
-} from "../../routes/roleGroups";
+  currentUser,
+  revalidateSession,
+  signOut,
+} from "../../services/auth";
+import { SESSION_EXPIRED_EVENT } from "../../services/http";
 
 import usePendingSubmissionsCount from "../../hooks/usePendingSubmissionsCount";
 import useNewSoulsBadgeCount from "../../hooks/useNewSoulsBadgeCount";
 import usePushNotifications from "../../hooks/usePushNotifications";
+import useIdleTimeout from "../../hooks/useIdleTimeout";
 
+import AdminModal from "../../components/admin/AdminModal";
 import ApiStatus from "../../components/admin/ApiStatus";
+import QuickNav from "../../components/admin/QuickNav";
+
+import {
+  ROLE_LABELS,
+  findActiveEntry,
+  visibleNavGroups as navGroupsFor,
+} from "./adminNav";
 
 import logo from "../../assets/logo/logo_cava.gif";
 
 import "./AdminLayout.scss";
 
-// Navigation groupée. Sept liens à plat forment un mur indifférencié ;
-// regroupés, ils se parcourent d'un coup d'œil.
-// `roles` (facultatif) restreint l'entrée à certains rôles — voir
-// RequireRole.jsx pour la garde de route correspondante, sur laquelle
-// ce filtrage s'aligne. Sans `roles`, l'entrée reste visible à tout
-// compte authentifié.
-const NAV_GROUPS = [
-  {
-    title: null,
-    items: [
-      {
-        to: "/admin",
-        label: "Tableau de bord",
-        icon: LayoutDashboard,
-        end: true,
-      },
-      { to: "/admin/messages", label: "Messages", icon: Mail, roles: STAFF_ROLES },
-      { to: "/admin/dons", label: "Dons", icon: HandCoins, roles: STAFF_ROLES, end: true },
-      {
-        to: "/admin/dons/moyens-de-paiement",
-        label: "Moyens de paiement",
-        icon: Wallet,
-        roles: ["admin"],
-      },
-      {
-        to: "/admin/dons/types",
-        label: "Types de don",
-        icon: Tag,
-        roles: ["admin"],
-      },
-      {
-        to: "/admin/newsletter",
-        label: "Lettre d'information",
-        icon: Send,
-        roles: STAFF_ROLES,
-      },
-    ],
-  },
-  {
-    title: "Contenu du site",
-    roles: STAFF_ROLES,
-    items: [
-      { to: "/admin/medias", label: "Médias", icon: Image },
-      {
-        to: "/admin/evenements",
-        label: "Événements",
-        icon: Calendar,
-      },
-      {
-        to: "/admin/ministeres",
-        label: "Ministères",
-        icon: Church,
-      },
-      {
-        to: "/admin/postes",
-        label: "Postes ouverts",
-        icon: Briefcase,
-      },
-    ],
-  },
-  {
-    // Groupe propre au responsable de bergerie : c'est sa seule entrée.
-    // `roles` filtre la navigation exactement comme la route filtre
-    // l'accès — les deux ne doivent jamais diverger.
-    title: "Ma bergerie",
-    roles: FLOCK_PORTAL_ROLES,
-    items: [
-      {
-        to: "/admin/bergerie",
-        label: "Mes membres",
-        icon: Tent,
-      },
-    ],
-  },
-  {
-    title: "Communauté",
-    items: [
-      {
-        to: "/admin/communaute",
-        label: "Membres et annonces",
-        icon: Users,
-        badgeKey: "pendingSubmissions",
-        roles: STAFF_ROLES,
-      },
-      {
-        to: "/admin/temoignages",
-        label: "Témoignages",
-        icon: MessageSquareQuote,
-        roles: STAFF_ROLES,
-      },
-      {
-        to: "/admin/presences",
-        label: "Badgeage des présences",
-        icon: ScanLine,
-        roles: STAFF_ROLES,
-      },
-      {
-        // Module réservé à soa/cana/coordinateur_bergeries/pasteur (+
-        // admin), seuls rôles acceptés par requireNewSoulActor côté API
-        // (voir newSoul.service.js#isSoaUser/isCanaSideUser) — sans ce
-        // `roles`, l'entrée restait visible à TOUT compte authentifié,
-        // y compris les comptes social_* (Service Social), qui
-        // tombaient alors sur « Votre rôle ne permet pas de consulter
-        // ces dossiers » en cliquant dessus.
-        to: "/admin/nouvelles-ames",
-        label: "Nouvelles âmes",
-        icon: Heart,
-        badgeKey: "newSouls",
-        roles: [...AGENT_ROLES, "admin"],
-      },
-    ],
-  },
-  {
-    title: "Enfants",
-    roles: CHILDREN_ROLES,
-    items: [
-      { to: "/admin/enfants", label: "Tableau de bord", icon: Baby, end: true },
-      { to: "/admin/enfants/liste", label: "Enfants", icon: Users },
-      {
-        to: "/admin/enfants/seances",
-        label: "Séances et appel",
-        icon: CalendarCheck,
-      },
-      {
-        to: "/admin/enfants/responsables",
-        label: "Parents / Responsables",
-        icon: HeartHandshake,
-      },
-      { to: "/admin/enfants/classes", label: "Classes", icon: GraduationCap },
-      { to: "/admin/enfants/moniteurs", label: "Moniteurs", icon: UserCog },
-      {
-        to: "/admin/enfants/remplacements",
-        label: "Remplacements",
-        icon: Repeat,
-      },
-      {
-        to: "/admin/enfants/historique",
-        label: "Historique",
-        icon: History,
-      },
-    ],
-  },
-  {
-    title: "Service Social",
-    roles: SOCIAL_ROLES,
-    items: [
-      { to: "/admin/social", label: "Aperçu", icon: HeartHandshake, end: true },
-      { to: "/admin/social/cotisations", label: "Offrandes", icon: Banknote },
-      {
-        to: "/admin/social/arrieres",
-        label: "Arriérés",
-        icon: AlertTriangle,
-      },
-      { to: "/admin/social/membres", label: "Membres", icon: Search },
-      { to: "/admin/social/caisse", label: "Caisse", icon: PiggyBank },
-      { to: "/admin/social/aides", label: "Aides sociales", icon: HandHelping, end: true },
-      {
-        to: "/admin/social/aides/types",
-        label: "Types d'aide",
-        icon: Tag,
-        roles: ["admin", "social_admin"],
-      },
-    ],
-  },
-  {
-    title: "Configuration",
-    roles: STAFF_ROLES,
-    items: [
-      {
-        to: "/admin/parametres",
-        label: "Paramètres",
-        icon: Settings,
-      },
-      {
-        // Réservé à l'admin, même parmi les rôles "staff" — voir
-        // agent.service.js. D'où un `roles` propre à cette entrée,
-        // plus strict que celui du groupe.
-        to: "/admin/agents",
-        label: "Agents",
-        icon: ShieldCheck,
-        roles: ["admin"],
-      },
-    ],
-  },
-];
+// Clé du jeton dans le localStorage (voir services/http.js) : écoutée
+// pour suivre une déconnexion faite dans un AUTRE onglet.
+const TOKEN_STORAGE_KEY = "cava:token";
+
+// Le Mac affiche ⌘, les autres Ctrl : c'est la touche que la
+// personne doit réellement presser.
+const SHORTCUT_LABEL =
+  typeof navigator !== "undefined" &&
+  /Mac|iPhone|iPad/.test(navigator.platform ?? "")
+    ? "⌘K"
+    : "Ctrl K";
 
 // Initiales pour la pastille d'identité. Deux lettres au maximum :
 // au-delà, la pastille se déforme.
@@ -288,6 +95,8 @@ const initials = (name) =>
 
 const AdminLayout = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [quickNavOpen, setQuickNavOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
 
   const [collapsed, setCollapsed] = useState(
     () => window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1"
@@ -298,30 +107,30 @@ const AdminLayout = () => {
   const [refreshing, setRefreshing] = useState(false);
   // Change à chaque clic sur « Actualiser » : posé en `key` sur
   // `<Outlet>`, il force React à démonter puis remonter l'écran actuel
-  // — chaque page relance alors son propre chargement de données (son
-  // propre petit indicateur, ex. `AdminLoading`), sans recharger tout
-  // le navigateur ni perdre la mise en page de l'administration.
+  // — chaque page relance alors son propre chargement de données, sans
+  // recharger tout le navigateur ni perdre la mise en page.
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Le rôle peut changer après la revalidation de la session (compte
+  // rétrogradé entre deux visites) : ce compteur force un nouveau rendu,
+  // qui relit l'utilisateur mémorisé.
+  const [, setSessionVersion] = useState(0);
+
   const navigate = useNavigate();
+  const location = useLocation();
 
   const closeButtonRef = useRef(null);
+  const accountRef = useRef(null);
 
+  // Relu à chaque rendu : la revalidation ci-dessous force un rendu
+  // une fois le profil mis à jour.
   const user = currentUser();
 
-  // Filtrage par rôle : un groupe/item sans `roles` reste visible à
-  // tous, sinon il faut y figurer explicitement (voir NAV_GROUPS et
-  // RequireRole.jsx, qui protège les routes correspondantes).
-  const visibleNavGroups = NAV_GROUPS.filter(
-    (group) => !group.roles || group.roles.includes(user?.role)
-  )
-    .map((group) => ({
-      ...group,
-      items: group.items.filter(
-        (item) => !item.roles || item.roles.includes(user?.role)
-      ),
-    }))
-    .filter((group) => group.items.length > 0);
+  // Filtrage par rôle, partagé avec le fil d'Ariane et la recherche
+  // rapide (voir adminNav.js). Confort seulement : l'API refuse.
+  const visibleNavGroups = navGroupsFor(user?.role);
+
+  const activeEntry = findActiveEntry(location.pathname, visibleNavGroups);
 
   const pendingSubmissionsCount = usePendingSubmissionsCount();
   const newSoulsBadgeCount = useNewSoulsBadgeCount();
@@ -341,11 +150,114 @@ const AdminLayout = () => {
     }
   };
 
+  // ---- Fin de session ------------------------------------------------
+  //
+  // Trois façons de perdre la session, un seul chemin de sortie : la
+  // connexion, avec la raison affichée et la page à rouvrir ensuite.
+  //   expired   le serveur a refusé le jeton (expiré, révoqué, compte
+  //             désactivé) ;
+  //   idle      inactivité prolongée sur ce poste ;
+  //   elsewhere déconnexion faite dans un autre onglet.
+  const leave = useCallback(
+    (reason) => {
+      signOut();
+
+      navigate("/admin/connexion", {
+        replace: true,
+        state: { reason, from: window.location.pathname },
+      });
+    },
+    [navigate]
+  );
+
+  // Revalidation au chargement : sans elle, un jeton expiré depuis la
+  // veille ouvrait un tableau de bord rempli d'erreurs.
+  useEffect(() => {
+    let cancelled = false;
+
+    revalidateSession().then((status) => {
+      if (cancelled) return;
+
+      if (status === "expired") leave("expired");
+      else if (status === "valid") setSessionVersion((value) => value + 1);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [leave]);
+
+  useEffect(() => {
+    const onExpired = () => leave("expired");
+
+    const onStorage = (event) => {
+      if (event.key === TOKEN_STORAGE_KEY && !event.newValue) {
+        leave("elsewhere");
+      }
+    };
+
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [leave]);
+
+  const idle = useIdleTimeout(() => leave("idle"));
+
+  // ---- Recherche rapide : Ctrl+K / ⌘K, et « / » hors d'un champ -------
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      const target = event.target;
+      const typing =
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setQuickNavOpen((open) => !open);
+      } else if (event.key === "/" && !typing) {
+        event.preventDefault();
+        setQuickNavOpen(true);
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  // ---- Menu du compte : se referme au clic extérieur et sur Échap -------
+  useEffect(() => {
+    if (!accountOpen) return undefined;
+
+    const onPointerDown = (event) => {
+      if (!accountRef.current?.contains(event.target)) setAccountOpen(false);
+    };
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setAccountOpen(false);
+        accountRef.current?.querySelector("button")?.focus();
+      }
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [accountOpen]);
+
   // Le tiroir se referme dès qu'on suit un lien : sinon, sur mobile, il
   // masque l'écran qu'on vient d'ouvrir. Géré dans le gestionnaire de
   // clic plutôt que dans un effet sur l'URL — un effet qui appelle
-  // `setState` provoque un rendu supplémentaire à chaque navigation,
-  // pour un résultat que l'événement produit directement.
+  // `setState` provoque un rendu supplémentaire à chaque navigation.
   const closeMenu = () => setMenuOpen(false);
 
   const toggleCollapsed = () => {
@@ -369,10 +281,7 @@ const AdminLayout = () => {
   };
 
   // Démonte/remonte l'écran actuel (voir `refreshKey`) au lieu d'un
-  // rechargement complet du navigateur : chaque page relance son
-  // propre chargement de données avec son propre indicateur, sans le
-  // flash blanc ni perdre l'état de CETTE mise en page (barre latérale
-  // repliée, thème…), qui vit ici et non dans l'écran remonté.
+  // rechargement complet du navigateur.
   const handleRefresh = () => {
     setRefreshing(true);
     setRefreshKey((previous) => previous + 1);
@@ -409,6 +318,8 @@ const AdminLayout = () => {
 
     navigate("/admin/connexion", { replace: true });
   };
+
+  const identifier = user?.email ?? user?.registrationNumber ?? "";
 
   return (
     <div className="admin-shell" data-theme={theme}>
@@ -578,104 +489,292 @@ const AdminLayout = () => {
             <Menu aria-hidden="true" />
           </button>
 
-          <div className="admin-shell__spacer" />
+          {/* Fil d'Ariane : où l'on est, sans relire le menu. Une fiche
+              (« /admin/enfants/64f… ») renvoie à sa liste parente. */}
+          <nav
+            className="admin-shell__crumbs"
+            aria-label="Fil d'Ariane"
+          >
+            {activeEntry ? (
+              <>
+                {activeEntry.group.title && (
+                  <>
+                    <span className="admin-shell__crumb-group">
+                      {activeEntry.group.title}
+                    </span>
 
-          <div className="admin-shell__identity">
-            <span
-              className="admin-shell__avatar"
-              aria-hidden="true"
-            >
-              {initials(user?.name)}
+                    <ChevronRight
+                      className="admin-shell__crumb-sep"
+                      aria-hidden="true"
+                    />
+                  </>
+                )}
+
+                {activeEntry.exact ? (
+                  <span
+                    className="admin-shell__crumb-current"
+                    aria-current="page"
+                  >
+                    {activeEntry.item.label}
+                  </span>
+                ) : (
+                  <>
+                    <Link
+                      to={activeEntry.item.to}
+                      className="admin-shell__crumb-link"
+                    >
+                      {activeEntry.item.label}
+                    </Link>
+
+                    <ChevronRight
+                      className="admin-shell__crumb-sep"
+                      aria-hidden="true"
+                    />
+
+                    <span
+                      className="admin-shell__crumb-current"
+                      aria-current="page"
+                    >
+                      Détail
+                    </span>
+                  </>
+                )}
+              </>
+            ) : (
+              <span className="admin-shell__crumb-current">
+                Administration
+              </span>
+            )}
+          </nav>
+
+          <button
+            type="button"
+            className="admin-shell__search"
+            onClick={() => setQuickNavOpen(true)}
+            aria-haspopup="dialog"
+            aria-keyshortcuts="Control+K Meta+K"
+          >
+            <Search aria-hidden="true" />
+
+            <span className="admin-shell__search-label">
+              Rechercher une page…
             </span>
 
-            <span className="admin-shell__identity-text">
-              <strong>{user?.name ?? "Administrateur"}</strong>
+            <kbd>{SHORTCUT_LABEL}</kbd>
+          </button>
 
-              <span>{user?.email ?? user?.registrationNumber ?? ""}</span>
-            </span>
-          </div>
+          <div className="admin-shell__tools">
+            {pushNotifications.supported && (
+              <button
+                type="button"
+                className="admin-shell__tool"
+                onClick={togglePushNotifications}
+                disabled={pushNotifications.loading}
+                aria-pressed={pushNotifications.subscribed}
+                aria-label={
+                  pushNotifications.subscribed
+                    ? "Désactiver les notifications"
+                    : "Activer les notifications"
+                }
+                title={
+                  pushNotifications.error ||
+                  (pushNotifications.subscribed
+                    ? "Désactiver les notifications"
+                    : "Activer les notifications")
+                }
+              >
+                {pushNotifications.subscribed ? (
+                  <Bell aria-hidden="true" />
+                ) : (
+                  <BellOff aria-hidden="true" />
+                )}
+              </button>
+            )}
 
-          {pushNotifications.supported && (
             <button
               type="button"
-              className="admin-shell__theme-toggle"
-              onClick={togglePushNotifications}
-              disabled={pushNotifications.loading}
-              aria-pressed={pushNotifications.subscribed}
+              className="admin-shell__tool"
+              onClick={toggleTheme}
               aria-label={
-                pushNotifications.subscribed
-                  ? "Désactiver les notifications"
-                  : "Activer les notifications"
+                theme === "dark"
+                  ? "Passer au thème clair"
+                  : "Passer au thème sombre"
               }
               title={
-                pushNotifications.error ||
-                (pushNotifications.subscribed
-                  ? "Désactiver les notifications"
-                  : "Activer les notifications")
+                theme === "dark"
+                  ? "Passer au thème clair"
+                  : "Passer au thème sombre"
               }
             >
-              {pushNotifications.subscribed ? (
-                <Bell aria-hidden="true" />
+              {theme === "dark" ? (
+                <Sun aria-hidden="true" />
               ) : (
-                <BellOff aria-hidden="true" />
+                <Moon aria-hidden="true" />
               )}
             </button>
-          )}
 
-          <button
-            type="button"
-            className="admin-shell__theme-toggle"
-            onClick={toggleTheme}
-            aria-label={
-              theme === "dark"
-                ? "Passer au thème clair"
-                : "Passer au thème sombre"
-            }
-            title={
-              theme === "dark"
-                ? "Passer au thème clair"
-                : "Passer au thème sombre"
-            }
+            <button
+              type="button"
+              className="admin-shell__tool"
+              onClick={handleRefresh}
+              aria-label="Actualiser la page"
+              title="Actualiser la page"
+            >
+              <RefreshCw
+                aria-hidden="true"
+                className={
+                  refreshing
+                    ? "admin-shell__refresh-icon admin-shell__refresh-icon--spinning"
+                    : "admin-shell__refresh-icon"
+                }
+              />
+            </button>
+          </div>
+
+          <div
+            className="admin-shell__account"
+            ref={accountRef}
           >
-            {theme === "dark" ? (
-              <Sun aria-hidden="true" />
-            ) : (
-              <Moon aria-hidden="true" />
+            <button
+              type="button"
+              className="admin-shell__account-toggle"
+              onClick={() => setAccountOpen((open) => !open)}
+              aria-expanded={accountOpen}
+              aria-controls="admin-account-panel"
+            >
+              <span
+                className="admin-shell__avatar"
+                aria-hidden="true"
+              >
+                {initials(user?.name)}
+              </span>
+
+              <span className="admin-shell__identity-text">
+                <strong>{user?.name ?? "Administrateur"}</strong>
+
+                <span>{ROLE_LABELS[user?.role] ?? user?.role ?? ""}</span>
+              </span>
+
+              <ChevronDown
+                className="admin-shell__account-caret"
+                aria-hidden="true"
+              />
+
+              <span className="sr-only">Menu du compte</span>
+            </button>
+
+            {accountOpen && (
+              <div
+                className="admin-shell__account-panel"
+                id="admin-account-panel"
+              >
+                <div className="admin-shell__account-head">
+                  <span
+                    className="admin-shell__avatar admin-shell__avatar--large"
+                    aria-hidden="true"
+                  >
+                    {initials(user?.name)}
+                  </span>
+
+                  <span>
+                    <strong>{user?.name ?? "Administrateur"}</strong>
+
+                    {identifier && <span>{identifier}</span>}
+
+                    <span className="admin-shell__role-pill">
+                      {ROLE_LABELS[user?.role] ?? user?.role ?? "—"}
+                    </span>
+                  </span>
+                </div>
+
+                <ul>
+                  <li>
+                    <Link
+                      to="/"
+                      onClick={() => setAccountOpen(false)}
+                      className="admin-shell__account-item"
+                    >
+                      <ExternalLink aria-hidden="true" />
+                      Voir le site public
+                    </Link>
+                  </li>
+
+                  <li>
+                    <button
+                      type="button"
+                      className="admin-shell__account-item admin-shell__account-item--danger"
+                      onClick={handleSignOut}
+                    >
+                      <LogOut aria-hidden="true" />
+                      Se déconnecter
+                    </button>
+                  </li>
+                </ul>
+
+                <p className="admin-shell__account-note">
+                  Déconnexion automatique après 30 minutes sans activité.
+                </p>
+              </div>
             )}
-          </button>
-
-          <button
-            type="button"
-            className="admin-shell__refresh"
-            onClick={handleRefresh}
-            aria-label="Actualiser la page"
-            title="Actualiser la page"
-          >
-            <RefreshCw
-              aria-hidden="true"
-              className={
-                refreshing
-                  ? "admin-shell__refresh-icon admin-shell__refresh-icon--spinning"
-                  : "admin-shell__refresh-icon"
-              }
-            />
-          </button>
-
-          <button
-            type="button"
-            className="admin-shell__signout"
-            onClick={handleSignOut}
-          >
-            <LogOut aria-hidden="true" />
-
-            <span>Déconnexion</span>
-          </button>
+          </div>
         </header>
 
-        <main className="admin-shell__content">
-          <Outlet key={refreshKey} />
+        <main
+          className="admin-shell__content"
+          id="admin-content"
+        >
+          {/* Les compteurs du menu sont déjà chargés (et rafraîchis)
+              ici : le tableau de bord les lit par le contexte plutôt
+              que de redemander les mêmes chiffres à l'API. */}
+          <Outlet
+            key={refreshKey}
+            context={{ badges: badgeValues }}
+          />
         </main>
       </div>
+
+      {quickNavOpen && (
+        <QuickNav
+          groups={visibleNavGroups}
+          onClose={() => setQuickNavOpen(false)}
+        />
+      )}
+
+      {idle.warning && (
+        <AdminModal
+          title="Êtes-vous toujours là ?"
+          description="Par sécurité, la session se ferme après 30 minutes sans activité sur ce poste."
+          onClose={idle.stayActive}
+        >
+          <div className="admin-shell__idle">
+            <p>
+              Déconnexion dans{" "}
+              <strong>
+                {idle.secondsLeft} seconde{idle.secondsLeft > 1 ? "s" : ""}
+              </strong>
+              . Les modifications non enregistrées seront perdues.
+            </p>
+
+            <div className="admin-shell__idle-actions">
+              <button
+                type="button"
+                className="admin-shell__idle-leave"
+                onClick={handleSignOut}
+              >
+                Se déconnecter
+              </button>
+
+              <button
+                type="button"
+                className="admin-shell__idle-stay"
+                onClick={idle.stayActive}
+              >
+                Rester connecté
+              </button>
+            </div>
+          </div>
+        </AdminModal>
+      )}
     </div>
   );
 };

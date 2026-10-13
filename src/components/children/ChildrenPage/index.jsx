@@ -30,7 +30,10 @@ const ChildrenPage = ({
       <div>
         <h1>{title}</h1>
 
-        {breadcrumb.length > 0 && (
+        {/* Le fil d'Ariane de l'en-tête de l'administration couvre
+            déjà « Enfants › page » : celui-ci ne s'affiche que pour une
+            fiche ou une création, où il nomme l'élément ouvert. */}
+        {breadcrumb.length > 3 && (
           <nav
             className="children-page__crumbs"
             aria-label="Fil d'Ariane"

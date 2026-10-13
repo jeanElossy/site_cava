@@ -2,47 +2,37 @@
 
 // PIÈGE PROJET : feuille de style unique. Tout est imbriqué sous
 // `.admin-dashboard`, aucun nom générique à la racine du fichier.
+// Le vocabulaire visuel (cartes de chiffres, panneaux) vient des
+// mixins de `styles/_admin.scss`.
 .admin-dashboard {
-  max-width: 1240px;
+  max-width: 1280px;
 
   &__header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 20px;
-    flex-wrap: wrap;
-
-    margin-bottom: 28px;
-
-    h1 {
-      margin: 0;
-
-      color: $admin-ink;
-
-      font-size: 1.62rem;
-      font-weight: 700;
-      letter-spacing: -0.015em;
-    }
-
-    p {
-      margin: 6px 0 0;
-
-      color: $admin-ink-soft;
-
-      font-size: 0.92rem;
-    }
+    @include admin-page-head;
   }
 
-  &__section + &__section {
-    margin-top: 26px;
+  &__date {
+    margin: 0 0 6px;
+
+    color: $admin-accent;
+
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  &__section + &__section,
+  &__section + .publish-box,
+  .publish-box + &__section {
+    margin-top: 24px;
   }
 
   &__section-title {
-    margin: 0;
+    margin: 0 0 14px;
 
     color: $admin-ink;
 
-    font-size: 0.95rem;
+    font-size: 0.98rem;
     font-weight: 700;
   }
 
@@ -52,7 +42,11 @@
     justify-content: space-between;
     gap: 14px;
 
-    margin-bottom: 16px;
+    margin-bottom: 14px;
+
+    .admin-dashboard__section-title {
+      margin: 0;
+    }
   }
 
   &__see-all {
@@ -76,34 +70,197 @@
     &:hover svg {
       transform: translateX(3px);
     }
+
+    &:focus-visible {
+      outline: 2px solid $admin-accent;
+      outline-offset: 2px;
+    }
   }
 
-  // ---------------- Chiffres clés ----------------
+  &__panel {
+    @include admin-panel;
+  }
 
-  &__stats {
+  // ---------------- À traiter ----------------
+
+  &__todo {
+    @include admin-panel(20px 22px 22px);
+  }
+
+  &__todo-total {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 4px 12px;
+
+    border-radius: 999px;
+
+    background: $admin-warning-bg;
+    color: $admin-warning;
+
+    font-size: 0.76rem;
+    font-weight: 700;
+
+    svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    &--clear {
+      background: $admin-success-bg;
+      color: $admin-success;
+    }
+  }
+
+  &__todo-list {
     display: grid;
-    // `auto-fit` + minmax : les cartes se répartissent sans point de
-    // rupture codé en dur, quelle que soit la largeur du rail.
-    grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+    gap: 12px;
 
-    margin: 14px 0 0;
+    margin: 0;
     padding: 0;
 
     list-style: none;
   }
 
-  &__stat {
-    position: relative;
+  &__todo-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
 
-    display: block;
-
-    padding: 20px;
+    height: 100%;
+    padding: 14px 16px;
 
     border: 1px solid $admin-border;
     border-radius: $admin-radius;
 
+    background: $admin-surface-muted;
+    color: $admin-ink;
+
+    text-decoration: none;
+
+    transition: border-color $admin-ease, background $admin-ease,
+      box-shadow $admin-ease;
+
+    &:hover {
+      border-color: $admin-border-strong;
+
+      background: $admin-surface;
+
+      box-shadow: $admin-shadow;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $admin-accent;
+      outline-offset: 2px;
+    }
+
+    &--danger .admin-dashboard__todo-icon {
+      @include admin-kpi-icon(danger);
+    }
+
+    &--warning .admin-dashboard__todo-icon {
+      @include admin-kpi-icon(warning);
+    }
+
+    &--info .admin-dashboard__todo-icon {
+      @include admin-kpi-icon(info);
+    }
+
+    &--danger .admin-dashboard__todo-count {
+      background: $admin-danger;
+      color: #fff;
+    }
+
+    &--warning .admin-dashboard__todo-count {
+      background: $admin-warning-bg;
+      color: $admin-warning;
+    }
+
+    &--info .admin-dashboard__todo-count {
+      background: $admin-info-bg;
+      color: $admin-info;
+    }
+
+    // Rien à traiter : en sourdine, sans disparaître.
+    &--clear {
+      .admin-dashboard__todo-icon {
+        @include admin-kpi-icon(success);
+      }
+
+      .admin-dashboard__todo-count {
+        background: transparent;
+        color: $admin-ink-faint;
+
+        font-size: 0.76rem;
+        font-weight: 600;
+      }
+    }
+  }
+
+  &__todo-icon {
+    @include admin-kpi-icon;
+  }
+
+  &__todo-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+
+    min-width: 0;
+
+    strong {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    span {
+      color: $admin-ink-faint;
+
+      font-size: 0.76rem;
+      line-height: 1.4;
+    }
+  }
+
+  &__todo-count {
+    flex-shrink: 0;
+
+    min-width: 34px;
+    padding: 4px 10px;
+
+    border-radius: 999px;
+
+    font-size: 0.86rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  // ---------------- Chiffres clés ----------------
+
+  &__stats {
+    @include admin-kpi-grid(200px);
+  }
+
+  &__stat {
+    position: relative;
+
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 14px;
+
+    padding: 18px 20px;
+
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius-lg;
+
     background: $admin-surface;
+
+    box-shadow: $admin-shadow-sm;
 
     text-decoration: none;
 
@@ -129,78 +286,48 @@
       outline-offset: 2px;
     }
 
-    // Une pastille non lue mérite d'attirer l'œil, mais seulement
-    // lorsqu'il y a réellement quelque chose à lire.
-    &--alert {
-      border-color: $admin-border-strong;
+    &--success .admin-dashboard__stat-icon {
+      @include admin-kpi-icon(success);
+    }
 
-      background: linear-gradient(
-        180deg,
-        $admin-danger-bg,
-        $admin-surface 60%
-      );
+    &--warning .admin-dashboard__stat-icon {
+      @include admin-kpi-icon(warning);
+    }
 
-      .admin-dashboard__stat-icon {
-        background: $admin-danger-bg;
+    &--info .admin-dashboard__stat-icon {
+      @include admin-kpi-icon(info);
+    }
 
-        color: $admin-danger;
-      }
-
-      .admin-dashboard__stat-value {
-        color: $admin-danger;
-      }
+    &--danger .admin-dashboard__stat-icon {
+      @include admin-kpi-icon(danger);
     }
   }
 
   &__stat-icon {
-    display: grid;
-    place-items: center;
+    @include admin-kpi-icon;
 
-    width: 38px;
-    height: 38px;
+    & {
+      grid-row: 1 / span 2;
 
-    margin-bottom: 14px;
+      width: 46px;
+      height: 46px;
 
-    border-radius: 10px;
-
-    background: $admin-accent-soft;
-
-    color: $admin-accent;
-
-    svg {
-      width: 19px;
-      height: 19px;
+      border-radius: 13px;
     }
   }
 
   &__stat-value {
-    display: block;
-
-    color: $admin-ink;
-
-    font-size: 1.85rem;
-    font-weight: 700;
-    // Chiffres tabulaires : les cartes ne changent pas de largeur
-    // quand les valeurs se mettent à jour.
-    font-variant-numeric: tabular-nums;
-    line-height: 1.1;
+    @include admin-kpi-value;
   }
 
   &__stat-label {
-    display: block;
-
-    margin-top: 4px;
-
-    color: $admin-ink-soft;
-
-    font-size: 0.82rem;
-    font-weight: 500;
+    @include admin-kpi-label;
   }
 
   &__stat-arrow {
     position: absolute;
-    top: 20px;
-    right: 18px;
+    top: 16px;
+    right: 16px;
 
     width: 16px;
     height: 16px;
@@ -214,35 +341,25 @@
     transition: opacity $admin-ease, transform $admin-ease;
   }
 
-  // ---------------- Deux colonnes ----------------
+  // ---------------- Colonnes ----------------
 
   &__columns {
     display: grid;
-    grid-template-columns: 1.35fr 1fr;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    align-items: start;
     gap: 20px;
 
-    margin-top: 26px;
+    margin-top: 24px;
 
-    // Les sections empilées dans une grille ne doivent pas hériter de
-    // la marge verticale prévue pour l'empilement vertical.
-    > .admin-dashboard__section + .admin-dashboard__section {
+    .admin-dashboard__section + .admin-dashboard__section {
       margin-top: 0;
     }
   }
 
-  &__panel {
-    padding: 20px;
-
-    border: 1px solid $admin-border;
-    border-radius: $admin-radius;
-
-    background: $admin-surface;
-  }
-
-  // ---------------- Messages ----------------
+  // ---------------- Derniers messages ----------------
 
   &__messages {
-    margin: 0;
+    margin: 0 -10px;
     padding: 0;
 
     list-style: none;
@@ -253,12 +370,14 @@
 
     a {
       display: flex;
-      align-items: flex-start;
-      gap: 12px;
+      align-items: center;
+      gap: 14px;
 
-      padding: 13px 10px;
+      padding: 12px 10px;
 
       border-radius: $admin-radius-sm;
+
+      color: inherit;
 
       text-decoration: none;
 
@@ -280,116 +399,83 @@
     flex-shrink: 0;
     place-items: center;
 
-    width: 34px;
-    height: 34px;
+    width: 38px;
+    height: 38px;
 
     border-radius: 50%;
 
     background: $admin-accent-soft;
-
     color: $admin-accent;
 
-    font-size: 0.74rem;
+    font-size: 0.76rem;
     font-weight: 700;
   }
 
   &__message-body {
-    display: block;
-    // Indispensable dans un conteneur flex : sans cela, un sujet long
-    // élargit la carte au lieu d'être tronqué.
-    min-width: 0;
+    display: flex;
     flex: 1;
+    flex-direction: column;
+    gap: 2px;
+
+    min-width: 0;
   }
 
   &__message-top {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    align-items: baseline;
     gap: 10px;
 
     strong {
+      overflow: hidden;
+
       color: $admin-ink;
 
-      font-size: 0.87rem;
+      font-size: 0.88rem;
       font-weight: 600;
-
-      overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
   }
 
   &__message-subject {
-    display: block;
-
-    margin-top: 3px;
+    overflow: hidden;
 
     color: $admin-ink-soft;
 
-    font-size: 0.83rem;
-
-    overflow: hidden;
+    font-size: 0.84rem;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   &__message-date {
-    display: block;
-
-    margin-top: 4px;
+    flex-shrink: 0;
 
     color: $admin-ink-faint;
 
-    font-size: 0.76rem;
+    font-size: 0.74rem;
   }
 
   &__badge {
-    flex-shrink: 0;
+    @include admin-status-pill;
 
-    padding: 3px 9px;
-
-    border-radius: 999px;
-
-    background: $admin-surface-hover;
-
-    color: $admin-ink-soft;
-
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
+    & {
+      flex-shrink: 0;
+    }
 
     &--nouveau {
-      background: $admin-info-bg;
-
-      color: $admin-info;
+      @include admin-status-pill(info);
     }
 
-    &--lu {
-      background: $admin-surface-hover;
-
-      color: $admin-ink-soft;
-    }
-
-    &--traite,
     &--repondu {
-      background: $admin-success-bg;
-
-      color: $admin-success;
-    }
-
-    &--archive {
-      background: $admin-warning-bg;
-
-      color: $admin-warning;
+      @include admin-status-pill(success);
     }
   }
 
-  // ---------------- Raccourcis ----------------
+  // ---------------- Actions rapides ----------------
 
   &__shortcuts {
     display: grid;
-    gap: 9px;
+    gap: 8px;
 
     margin: 0;
     padding: 0;
@@ -399,27 +485,24 @@
     a {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
 
-      padding: 13px 14px;
+      padding: 12px 14px;
 
       border: 1px solid $admin-border;
-      border-radius: $admin-radius-sm;
+      border-radius: $admin-radius;
 
-      background: $admin-surface-muted;
+      color: $admin-ink;
 
       text-decoration: none;
 
       transition: border-color $admin-ease, background $admin-ease;
 
-      // La flèche de fin de ligne.
       > svg {
         flex-shrink: 0;
 
         width: 16px;
         height: 16px;
-
-        margin-left: auto;
 
         color: $admin-ink-faint;
 
@@ -446,20 +529,14 @@
   }
 
   &__shortcut-icon {
-    display: grid;
-    flex-shrink: 0;
-    place-items: center;
+    @include admin-kpi-icon;
 
-    width: 34px;
-    height: 34px;
+    & {
+      width: 36px;
+      height: 36px;
 
-    border-radius: 9px;
-
-    background: $admin-surface;
-
-    color: $admin-accent;
-
-    box-shadow: $admin-shadow-sm;
+      border-radius: 10px;
+    }
 
     svg {
       width: 17px;
@@ -468,68 +545,71 @@
   }
 
   &__shortcut-text {
-    display: block;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
 
     min-width: 0;
 
     strong {
-      display: block;
-
-      color: $admin-ink;
-
-      font-size: 0.86rem;
+      font-size: 0.88rem;
       font-weight: 600;
     }
 
     span {
-      display: block;
-
       color: $admin-ink-faint;
 
-      font-size: 0.77rem;
+      font-size: 0.76rem;
     }
   }
 
   // ---------------- Adaptation ----------------
 
-  @media (max-width: 980px) {
+  @media (max-width: 1100px) {
     &__columns {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 
-  @media (max-width: 560px) {
-    &__header h1 {
-      font-size: 1.4rem;
-    }
-
+  @media (max-width: 640px) {
     &__stats {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 11px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
     }
 
     &__stat {
-      padding: 15px;
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 10px;
+
+      padding: 16px;
+    }
+
+    &__stat-icon {
+      grid-row: auto;
+
+      width: 40px;
+      height: 40px;
     }
 
     &__stat-value {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
     }
 
-    // Sur mobile, la flèche de survol n'a pas de sens et empiète sur
-    // la valeur.
-    &__stat-arrow {
+    &__message-date {
       display: none;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    &__stat:hover {
-      transform: none;
+    &__stat,
+    &__stat-arrow,
+    &__see-all svg,
+    &__shortcuts a > svg {
+      transition: none;
     }
 
-    &__see-all:hover svg,
-    &__shortcuts a:hover > svg {
+    &__stat:hover {
       transform: none;
     }
   }

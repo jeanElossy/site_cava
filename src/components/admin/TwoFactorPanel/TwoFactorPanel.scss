@@ -392,16 +392,16 @@
     }
 
     &--primary {
-      border-color: $primary;
+      border-color: $admin-accent;
 
-      background: $primary;
+      background: $admin-accent;
 
       color: #fff;
 
       &:hover:not([disabled]) {
-        border-color: $primary-dark;
+        border-color: $admin-accent-strong;
 
-        background: $primary-dark;
+        background: $admin-accent-strong;
       }
     }
 

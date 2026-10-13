@@ -2,24 +2,7 @@
 
 .admin-messages {
   &__header {
-    margin-bottom: 20px;
-
-    h1 {
-      margin: 0;
-
-      font-size: 1.6rem;
-      font-weight: 700;
-
-      color: $admin-ink;
-    }
-
-    p {
-      margin: 8px 0 0;
-
-      color: $admin-ink-soft;
-
-      font-size: 0.92rem;
-    }
+    @include admin-page-head;
   }
 
   &__warning {
@@ -107,12 +90,12 @@
     }
 
     &:focus-visible {
-      outline: 2px solid $primary;
+      outline: 2px solid $admin-accent;
       outline-offset: -2px;
     }
 
     &--active {
-      border-left-color: $primary;
+      border-left-color: $admin-accent;
 
       background: $admin-accent-soft;
     }
@@ -239,10 +222,10 @@
     }
 
     a {
-      color: $primary;
+      color: $admin-accent;
 
       &:focus-visible {
-        outline: 2px solid $primary;
+        outline: 2px solid $admin-accent;
         outline-offset: 2px;
       }
     }
@@ -272,13 +255,13 @@
     transition: $transition;
 
     &:hover:not([disabled]) {
-      border-color: $primary;
+      border-color: $admin-accent;
 
-      color: $primary;
+      color: $admin-accent;
     }
 
     &:focus-visible {
-      outline: 2px solid $primary;
+      outline: 2px solid $admin-accent;
       outline-offset: 2px;
     }
 
@@ -337,7 +320,7 @@
     li {
       padding: 14px 16px;
 
-      border-left: 3px solid $primary;
+      border-left: 3px solid $admin-accent;
       border-radius: 8px;
 
       background: $admin-surface;
@@ -401,7 +384,7 @@
       resize: vertical;
 
       &:focus {
-        border-color: $primary;
+        border-color: $admin-accent;
 
         outline: none;
 
@@ -409,7 +392,7 @@
       }
 
       &:focus-visible {
-        outline: 2px solid $primary;
+        outline: 2px solid $admin-accent;
         outline-offset: 1px;
       }
     }
@@ -426,7 +409,7 @@
       border: 0;
       border-radius: 9px;
 
-      background: $primary;
+      background: $admin-accent;
 
       color: #fff;
 
@@ -439,11 +422,11 @@
       transition: $transition;
 
       &:hover:not([disabled]) {
-        background: $primary-dark;
+        background: $admin-accent-strong;
       }
 
       &:focus-visible {
-        outline: 2px solid $primary-dark;
+        outline: 2px solid $admin-accent-strong;
         outline-offset: 2px;
       }
 

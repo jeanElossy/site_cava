@@ -2,27 +2,7 @@
 
 .admin-social-members {
   &__header {
-    margin-bottom: 24px;
-
-    h1 {
-      margin: 0;
-
-      color: $admin-ink;
-
-      font-size: 1.6rem;
-      font-weight: 700;
-    }
-
-    p {
-      margin: 8px 0 0;
-
-      max-width: 560px;
-
-      color: $admin-ink-soft;
-
-      font-size: 0.92rem;
-      line-height: 1.6;
-    }
+    @include admin-page-head;
   }
 
   &__search {
@@ -70,7 +50,7 @@
     }
 
     &:focus-within {
-      border-color: $primary;
+      border-color: $admin-accent;
 
       box-shadow: 0 0 0 3px $admin-accent-soft;
     }
@@ -132,7 +112,7 @@
       transition: $transition;
 
       strong {
-        color: $primary;
+        color: $admin-accent;
 
         font-size: 0.87rem;
       }
@@ -144,13 +124,13 @@
       }
 
       &:hover {
-        border-color: $primary;
+        border-color: $admin-accent;
 
         background: $admin-accent-soft;
       }
 
       &:focus-visible {
-        outline: 2px solid $primary;
+        outline: 2px solid $admin-accent;
         outline-offset: 2px;
       }
     }

@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useOutletContext } from "react-router-dom";
 
 import {
+  AlertTriangle,
   ArrowRight,
   Calendar,
   CalendarPlus,
@@ -15,6 +16,7 @@ import {
   Mail,
   MailOpen,
   Megaphone,
+  PiggyBank,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -27,8 +29,10 @@ import {
   AGENT_ROLES,
   FLOCK_ONLY_ROLES,
   SOCIAL_ONLY_ROLES,
+  STAFF_ROLES,
 } from "../../routes/roleGroups";
 import { money } from "./Social/socialShared";
+import { messageStatusLabel } from "./messageStatus";
 
 import useAsyncData from "../../hooks/useAsyncData";
 import PublishButton from "../../components/admin/PublishButton";
@@ -42,36 +46,44 @@ import {
 
 import "./Dashboard.scss";
 
+// `roles` : même liste que la garde de la route visée (AdminRoutes.jsx).
+// Un raccourci vers un écran refusé au rôle n'a rien à faire ici — un
+// éditeur voyait « Nouvelles âmes » et tombait sur un refus.
 const SHORTCUTS = [
   {
     to: "/admin/medias",
     label: "Publier un média",
     hint: "Message, louange ou témoignage",
     icon: ImagePlus,
+    roles: STAFF_ROLES,
   },
   {
     to: "/admin/evenements",
     label: "Créer un événement",
     hint: "Culte, formation, camp",
     icon: CalendarPlus,
+    roles: STAFF_ROLES,
   },
   {
     to: "/admin/communaute",
     label: "Publier une annonce",
     hint: "Visible sur la page Communauté",
     icon: Megaphone,
+    roles: STAFF_ROLES,
   },
   {
     to: "/admin/messages",
     label: "Relever les messages",
     hint: "Demandes reçues via le site",
     icon: MailOpen,
+    roles: STAFF_ROLES,
   },
   {
     to: "/admin/nouvelles-ames",
     label: "Nouvelles âmes",
     hint: "Tableau de bord SOA & CANA",
     icon: Heart,
+    roles: [...AGENT_ROLES, "admin"],
   },
 ];
 
@@ -87,6 +99,18 @@ const formatDate = (value) => {
     month: "short",
     year: "numeric",
   });
+};
+
+// Date du jour en toutes lettres, avec une majuscule : « Mardi 13 octobre 2026 ».
+const today = () => {
+  const label = new Date().toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  return label.charAt(0).toUpperCase() + label.slice(1);
 };
 
 // Salutation selon l'heure : un détail, mais c'est ce qui distingue un
@@ -110,115 +134,234 @@ const initials = (name) =>
     .map((part) => part[0].toUpperCase())
     .join("") || "?";
 
+const firstNameOf = (user) => String(user?.name ?? "").trim().split(/\s+/)[0];
+
+// En-tête commun aux trois variantes du tableau de bord.
+const DashboardHeader = ({ subtitle, children }) => {
+  const firstName = firstNameOf(currentUser());
+
+  return (
+    <header className="admin-dashboard__header">
+      <div>
+        <p className="admin-dashboard__date">{today()}</p>
+
+        <h1>
+          {greeting()}
+          {firstName ? `, ${firstName}` : ""}
+        </h1>
+
+        <p>{subtitle}</p>
+      </div>
+
+      {children}
+    </header>
+  );
+};
+
+// Cartes de chiffres, avec leurs états de chargement et d'erreur.
+const KpiSection = ({ title, query, cards }) => (
+  <section
+    aria-label={title}
+    className="admin-dashboard__section"
+  >
+    {title && <h2 className="admin-dashboard__section-title">{title}</h2>}
+
+    <div aria-busy={query.loading}>
+      {query.loading && <AdminLoading label="Chargement des statistiques…" />}
+
+      {!query.loading && query.error && (
+        <AdminError
+          message={query.error}
+          onRetry={query.reload}
+        />
+      )}
+
+      {!query.loading && !query.error && (
+        <ul className="admin-dashboard__stats">
+          {cards.map((card) => {
+            const Icon = card.icon;
+
+            return (
+              <li key={card.key}>
+                <Link
+                  to={card.to}
+                  className={`admin-dashboard__stat admin-dashboard__stat--${
+                    card.tone ?? "accent"
+                  }`}
+                >
+                  <span className="admin-dashboard__stat-icon">
+                    <Icon aria-hidden="true" />
+                  </span>
+
+                  <span className="admin-dashboard__stat-value">
+                    {card.value ?? 0}
+                  </span>
+
+                  <span className="admin-dashboard__stat-label">
+                    {card.label}
+                  </span>
+
+                  <ArrowRight
+                    className="admin-dashboard__stat-arrow"
+                    aria-hidden="true"
+                  />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  </section>
+);
+
+// Bloc « À traiter » : ce qui attend une action, avant les chiffres de
+// contenu. Un compteur à zéro reste affiché, en sourdine (« À jour ») :
+// le voir disparaître ferait douter qu'il ait été vérifié.
+const TodoSection = ({ items }) => {
+  const total = items.reduce((sum, item) => sum + (item.count ?? 0), 0);
+
+  return (
+    <section
+      aria-labelledby="admin-dashboard-todo"
+      className="admin-dashboard__section admin-dashboard__todo"
+    >
+      <div className="admin-dashboard__section-head">
+        <h2
+          id="admin-dashboard-todo"
+          className="admin-dashboard__section-title"
+        >
+          À traiter
+        </h2>
+
+        <span
+          className={
+            total > 0
+              ? "admin-dashboard__todo-total"
+              : "admin-dashboard__todo-total admin-dashboard__todo-total--clear"
+          }
+        >
+          {total > 0 ? (
+            `${total} élément${total > 1 ? "s" : ""} en attente`
+          ) : (
+            <>
+              <CheckCircle2 aria-hidden="true" />
+              Tout est à jour
+            </>
+          )}
+        </span>
+      </div>
+
+      <ul className="admin-dashboard__todo-list">
+        {items.map((item) => {
+          const Icon = item.icon;
+          const pending = (item.count ?? 0) > 0;
+
+          return (
+            <li key={item.key}>
+              <Link
+                to={item.to}
+                className={
+                  pending
+                    ? `admin-dashboard__todo-item admin-dashboard__todo-item--${item.tone}`
+                    : "admin-dashboard__todo-item admin-dashboard__todo-item--clear"
+                }
+              >
+                <span className="admin-dashboard__todo-icon">
+                  <Icon aria-hidden="true" />
+                </span>
+
+                <span className="admin-dashboard__todo-text">
+                  <strong>{item.label}</strong>
+                  <span>{item.hint}</span>
+                </span>
+
+                <span className="admin-dashboard__todo-count">
+                  {pending ? (item.count > 99 ? "99+" : item.count) : "À jour"}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+};
+
+const ShortcutList = ({ shortcuts }) => (
+  <ul className="admin-dashboard__shortcuts">
+    {shortcuts.map((shortcut) => {
+      const Icon = shortcut.icon;
+
+      return (
+        <li key={shortcut.to}>
+          <Link to={shortcut.to}>
+            <span className="admin-dashboard__shortcut-icon">
+              <Icon aria-hidden="true" />
+            </span>
+
+            <span className="admin-dashboard__shortcut-text">
+              <strong>{shortcut.label}</strong>
+
+              <span>{shortcut.hint}</span>
+            </span>
+
+            <ArrowRight aria-hidden="true" />
+          </Link>
+        </li>
+      );
+    })}
+  </ul>
+);
+
 // Tableau de bord allégé pour les comptes agents (soa, cana,
 // coordinateur_bergeries, pasteur) : ils n'ont accès à aucune des
-// sections que montre `StaffDashboard` (voir AdminLayout.jsx et
-// AdminRoutes.jsx) — leur charger `stats`/`inbox.list` échouerait de
-// toute façon (403, voir routes/index.js) en plus d'être hors sujet.
-// Réutilise les chiffres déjà construits pour l'onglet "Vue d'ensemble"
-// de Nouvelles Âmes plutôt que de les dupliquer.
+// sections de `StaffDashboard` — leur charger `stats`/`inbox.list`
+// échouerait (403) en plus d'être hors sujet.
 const AgentDashboard = () => {
   const statsQuery = useAsyncData(newSouls.stats);
-
-  const user = currentUser();
-  const firstName = String(user?.name ?? "").trim().split(/\s+/)[0];
   const counters = statsQuery.data;
 
   const cards = [
-    { key: "total", label: "Dossiers suivis", value: counters?.total, icon: Heart },
-    { key: "soaPending", label: "En attente SOA", value: counters?.soaPending, icon: UserPlus },
-    { key: "canaActive", label: "En accompagnement CANA", value: counters?.canaActive, icon: HeartHandshake },
-    { key: "closedThisMonth", label: "Clôturés ce mois-ci", value: counters?.closedThisMonth, icon: CheckCircle2 },
+    { key: "total", label: "Dossiers suivis", value: counters?.total, icon: Heart, to: "/admin/nouvelles-ames" },
+    { key: "soaPending", label: "En attente SOA", value: counters?.soaPending, icon: UserPlus, to: "/admin/nouvelles-ames", tone: "warning" },
+    { key: "canaActive", label: "En accompagnement CANA", value: counters?.canaActive, icon: HeartHandshake, to: "/admin/nouvelles-ames", tone: "info" },
+    { key: "closedThisMonth", label: "Clôturés ce mois-ci", value: counters?.closedThisMonth, icon: CheckCircle2, to: "/admin/nouvelles-ames", tone: "success" },
   ];
 
   return (
     <div className="admin-dashboard">
-      <header className="admin-dashboard__header">
-        <div>
-          <h1>
-            {greeting()}
-            {firstName ? `, ${firstName}` : ""}
-          </h1>
+      <DashboardHeader subtitle="Voici l'état des dossiers Nouvelles Âmes." />
 
-          <p>Voici l&apos;état des dossiers Nouvelles Âmes.</p>
-        </div>
-      </header>
+      <KpiSection
+        title="Chiffres clés"
+        query={statsQuery}
+        cards={cards}
+      />
 
       <section
-        aria-labelledby="admin-dashboard-stats"
-        className="admin-dashboard__section"
-      >
-        <div aria-busy={statsQuery.loading}>
-          {statsQuery.loading && (
-            <AdminLoading label="Chargement des statistiques…" />
-          )}
-
-          {!statsQuery.loading && statsQuery.error && (
-            <AdminError message={statsQuery.error} onRetry={statsQuery.reload} />
-          )}
-
-          {!statsQuery.loading && !statsQuery.error && (
-            <ul className="admin-dashboard__stats">
-              {cards.map((card) => {
-                const Icon = card.icon;
-
-                return (
-                  <li key={card.key}>
-                    <Link to="/admin/nouvelles-ames" className="admin-dashboard__stat">
-                      <span className="admin-dashboard__stat-icon">
-                        <Icon aria-hidden="true" />
-                      </span>
-
-                      <span className="admin-dashboard__stat-value">{card.value ?? 0}</span>
-
-                      <span className="admin-dashboard__stat-label">{card.label}</span>
-
-                      <ArrowRight className="admin-dashboard__stat-arrow" aria-hidden="true" />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      </section>
-
-      <section
-        aria-labelledby="admin-dashboard-shortcuts"
+        aria-label="Raccourcis"
         className="admin-dashboard__section admin-dashboard__panel"
       >
-        <ul className="admin-dashboard__shortcuts">
-          <li>
-            <Link to="/admin/nouvelles-ames">
-              <span className="admin-dashboard__shortcut-icon">
-                <Heart aria-hidden="true" />
-              </span>
-
-              <span className="admin-dashboard__shortcut-text">
-                <strong>Nouvelles âmes</strong>
-                <span>Voir tous les dossiers et le tableau de bord SOA &amp; CANA</span>
-              </span>
-
-              <ArrowRight aria-hidden="true" />
-            </Link>
-          </li>
-        </ul>
+        <ShortcutList
+          shortcuts={[
+            {
+              to: "/admin/nouvelles-ames",
+              label: "Nouvelles âmes",
+              hint: "Voir tous les dossiers et le tableau de bord SOA & CANA",
+              icon: Heart,
+            },
+          ]}
+        />
       </section>
     </div>
   );
 };
 
 // Tableau de bord allégé pour les comptes exclusivement Service Social
-// (social_admin/social_agent/social_approver/social_viewer) — même
-// principe qu'AgentDashboard ci-dessus : ces comptes n'ont accès à
-// aucune section de `StaffDashboard`, la charger échouerait (403).
-// Réutilise les chiffres déjà construits pour le tableau de bord
-// Service Social plutôt que de les dupliquer.
+// — même principe qu'AgentDashboard ci-dessus.
 const SocialOnlyDashboard = () => {
   const statsQuery = useAsyncData(fetchSocialDashboard);
-
-  const user = currentUser();
-  const firstName = String(user?.name ?? "").trim().split(/\s+/)[0];
   const data = statsQuery.data;
 
   const cards = [
@@ -227,99 +370,58 @@ const SocialOnlyDashboard = () => {
       label: "Offrandes du mois",
       value: `${data?.contributionsThisMonth?.paidCount ?? 0} / ${data?.contributionsThisMonth?.totalMembers ?? 0}`,
       icon: HeartHandshake,
+      to: "/admin/social/cotisations",
     },
     {
       key: "collected",
       label: "Collecté ce mois-ci",
       value: money(data?.amountCollectedThisMonth ?? 0),
       icon: CheckCircle2,
+      to: "/admin/social/cotisations",
+      tone: "success",
     },
     {
       key: "late",
       label: "Offrandes en retard",
       value: data?.lateContributions ?? 0,
-      icon: UserPlus,
+      icon: AlertTriangle,
+      to: "/admin/social/arrieres",
+      tone: "warning",
     },
     {
       key: "cashBalance",
       label: "Caisse sociale",
       value: money(data?.cashBalance ?? 0),
-      icon: Heart,
+      icon: PiggyBank,
+      to: "/admin/social/caisse",
+      tone: "info",
     },
   ];
 
   return (
     <div className="admin-dashboard">
-      <header className="admin-dashboard__header">
-        <div>
-          <h1>
-            {greeting()}
-            {firstName ? `, ${firstName}` : ""}
-          </h1>
+      <DashboardHeader subtitle="Voici l'état du Service Social." />
 
-          <p>Voici l&apos;état du Service Social.</p>
-        </div>
-      </header>
+      <KpiSection
+        title="Chiffres clés"
+        query={statsQuery}
+        cards={cards}
+      />
 
       <section
-        aria-labelledby="admin-dashboard-stats"
-        className="admin-dashboard__section"
-      >
-        <div aria-busy={statsQuery.loading}>
-          {statsQuery.loading && (
-            <AdminLoading label="Chargement des statistiques…" />
-          )}
-
-          {!statsQuery.loading && statsQuery.error && (
-            <AdminError message={statsQuery.error} onRetry={statsQuery.reload} />
-          )}
-
-          {!statsQuery.loading && !statsQuery.error && (
-            <ul className="admin-dashboard__stats">
-              {cards.map((card) => {
-                const Icon = card.icon;
-
-                return (
-                  <li key={card.key}>
-                    <Link to="/admin/social" className="admin-dashboard__stat">
-                      <span className="admin-dashboard__stat-icon">
-                        <Icon aria-hidden="true" />
-                      </span>
-
-                      <span className="admin-dashboard__stat-value">{card.value}</span>
-
-                      <span className="admin-dashboard__stat-label">{card.label}</span>
-
-                      <ArrowRight className="admin-dashboard__stat-arrow" aria-hidden="true" />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      </section>
-
-      <section
-        aria-labelledby="admin-dashboard-shortcuts"
+        aria-label="Raccourcis"
         className="admin-dashboard__section admin-dashboard__panel"
       >
-        <ul className="admin-dashboard__shortcuts">
-          <li>
-            <Link to="/admin/social">
-              <span className="admin-dashboard__shortcut-icon">
-                <Heart aria-hidden="true" />
-              </span>
-
-              <span className="admin-dashboard__shortcut-text">
-                <strong>Service Social</strong>
-                <span>Voir le tableau de bord, les offrandes, les aides et la caisse</span>
-              </span>
-
-              <ArrowRight aria-hidden="true" />
-            </Link>
-          </li>
-        </ul>
+        <ShortcutList
+          shortcuts={[
+            {
+              to: "/admin/social",
+              label: "Service Social",
+              hint: "Voir le tableau de bord, les offrandes, les aides et la caisse",
+              icon: Heart,
+            },
+          ]}
+        />
       </section>
     </div>
   );
@@ -330,18 +432,17 @@ const StaffDashboard = () => {
   const statsQuery = useAsyncData(stats);
   const inboxQuery = useAsyncData(inbox.list);
 
-  // `reload` seul (et non `statsQuery`/`inboxQuery` en entier) comme
-  // dépendance : ces objets sont recréés à chaque rendu, alors que
-  // `reload` reste stable (voir useAsyncData) — le mettre en
-  // dépendance relancerait l'intervalle à chaque rendu.
+  // Compteurs du menu, déjà chargés et rafraîchis par AdminLayout.
+  const { badges } = useOutletContext() ?? {};
+
+  // `reload` seul comme dépendance : il reste stable (voir
+  // useAsyncData), contrairement aux objets de requête.
   const { reload: reloadStats } = statsQuery;
   const { reload: reloadInbox } = inboxQuery;
 
   // `useAsyncData` ne charge qu'une fois au montage : sans ce sondage,
-  // un message reçu ou un membre approuvé par quelqu'un d'autre
-  // n'apparaît sur ce tableau de bord qu'après un rechargement manuel
-  // de la page. `reload()` ne repasse pas par l'état « chargement »
-  // (voir useAsyncData) : le rafraîchissement est silencieux, sans
+  // un message reçu entre-temps n'apparaissait qu'après rechargement.
+  // `reload()` ne repasse pas par l'état « chargement » : pas de
   // clignotement des chiffres déjà affichés.
   useEffect(() => {
     const interval = setInterval(() => {
@@ -352,145 +453,71 @@ const StaffDashboard = () => {
     return () => clearInterval(interval);
   }, [reloadStats, reloadInbox]);
 
-  const user = currentUser();
+  const role = currentUser()?.role;
 
   const counters = statsQuery.data;
 
   const messages = [...(inboxQuery.data ?? [])]
-    .sort((a, b) =>
-      (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
-    )
+    .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
     .slice(0, 5);
 
-  const cards = [
+  const todo = [
     {
-      key: "inboxUnread",
+      key: "messages",
       label: "Messages non lus",
-      value: counters?.inboxUnread,
-      icon: Mail,
+      hint: "Reçus depuis la page Contact du site",
+      count: counters?.inboxUnread ?? 0,
       to: "/admin/messages",
-      tone: "alert",
+      icon: Mail,
+      tone: "danger",
     },
     {
-      key: "medias",
-      label: "Médias publiés",
-      value: counters?.medias,
-      icon: Image,
-      to: "/admin/medias",
+      key: "submissions",
+      label: "Inscriptions à valider",
+      hint: "Demandes envoyées depuis « Devenir membre »",
+      count: badges?.pendingSubmissions ?? 0,
+      to: "/admin/communaute?onglet=submissions",
+      icon: UserPlus,
+      tone: "warning",
     },
-    {
-      key: "events",
-      label: "Événements",
-      value: counters?.events,
-      icon: Calendar,
-      to: "/admin/evenements",
+    // Nouvelles âmes : réservé à l'administrateur parmi les rôles de ce
+    // tableau de bord (un éditeur n'a pas accès au module).
+    role === "admin" && {
+      key: "newSouls",
+      label: "Nouvelles âmes à suivre",
+      hint: "Dossiers SOA à transmettre, suivis CANA",
+      count: badges?.newSouls ?? 0,
+      to: "/admin/nouvelles-ames",
+      icon: Heart,
+      tone: "info",
     },
-    {
-      key: "ministries",
-      label: "Ministères",
-      value: counters?.ministries,
-      icon: Church,
-      to: "/admin/ministeres",
-    },
-    {
-      key: "members",
-      label: "Membres",
-      value: counters?.members,
-      icon: Users,
-      to: "/admin/communaute",
-    },
+  ].filter(Boolean);
+
+  const cards = [
+    { key: "medias", label: "Médias publiés", value: counters?.medias, icon: Image, to: "/admin/medias" },
+    { key: "events", label: "Événements", value: counters?.events, icon: Calendar, to: "/admin/evenements", tone: "info" },
+    { key: "ministries", label: "Ministères", value: counters?.ministries, icon: Church, to: "/admin/ministeres", tone: "warning" },
+    { key: "members", label: "Membres", value: counters?.members, icon: Users, to: "/admin/communaute?onglet=members", tone: "success" },
   ];
 
-  const firstName = String(user?.name ?? "")
-    .trim()
-    .split(/\s+/)[0];
+  const shortcuts = SHORTCUTS.filter((shortcut) => shortcut.roles.includes(role));
 
   return (
     <div className="admin-dashboard">
-      <header className="admin-dashboard__header">
-        <div>
-          <h1>
-            {greeting()}
-            {firstName ? `, ${firstName}` : ""}
-          </h1>
+      <DashboardHeader subtitle="Voici ce qui attend une action et l'état du contenu du site." />
 
-          <p>
-            Voici l&apos;état du contenu du site et les derniers
-            messages reçus.
-          </p>
-        </div>
-      </header>
+      <TodoSection items={todo} />
 
       {/* Bannière pleine largeur : c'est l'action la plus engageante de
           l'espace (elle reconstruit le site public), elle ne doit pas
           se confondre avec un bouton d'en-tête. */}
       <PublishButton />
 
-      <section
-        aria-labelledby="admin-dashboard-stats"
-        className="admin-dashboard__section"
-      >
-        <h2
-          id="admin-dashboard-stats"
-          className="admin-dashboard__section-title"
-        >
-          Chiffres clés
-        </h2>
-
-        <div aria-busy={statsQuery.loading}>
-          {statsQuery.loading && (
-            <AdminLoading label="Chargement des statistiques…" />
-          )}
-
-          {!statsQuery.loading && statsQuery.error && (
-            <AdminError
-              message={statsQuery.error}
-              onRetry={statsQuery.reload}
-            />
-          )}
-
-          {!statsQuery.loading && !statsQuery.error && (
-            <ul className="admin-dashboard__stats">
-              {cards.map((card) => {
-                const Icon = card.icon;
-
-                const alerting =
-                  card.tone === "alert" && card.value > 0;
-
-                return (
-                  <li key={card.key}>
-                    <Link
-                      to={card.to}
-                      className={`admin-dashboard__stat${
-                        alerting
-                          ? " admin-dashboard__stat--alert"
-                          : ""
-                      }`}
-                    >
-                      <span className="admin-dashboard__stat-icon">
-                        <Icon aria-hidden="true" />
-                      </span>
-
-                      <span className="admin-dashboard__stat-value">
-                        {card.value ?? 0}
-                      </span>
-
-                      <span className="admin-dashboard__stat-label">
-                        {card.label}
-                      </span>
-
-                      <ArrowRight
-                        className="admin-dashboard__stat-arrow"
-                        aria-hidden="true"
-                      />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      </section>
+      <KpiSection
+        title="Contenu du site"
+        query={statsQuery}
+        cards={cards}
+      />
 
       <div className="admin-dashboard__columns">
         <section
@@ -536,84 +563,66 @@ const StaffDashboard = () => {
               !inboxQuery.error &&
               messages.length > 0 && (
                 <ul className="admin-dashboard__messages">
-                  {messages.map((message) => (
-                    <li key={message.id}>
-                      <Link to="/admin/messages">
-                        <span
-                          className="admin-dashboard__message-avatar"
-                          aria-hidden="true"
-                        >
-                          {initials(message.name)}
-                        </span>
+                  {messages.map((message) => {
+                    const status = message.status ?? "nouveau";
 
-                        <span className="admin-dashboard__message-body">
-                          <span className="admin-dashboard__message-top">
-                            <strong>
-                              {message.name || "Visiteur anonyme"}
-                            </strong>
+                    return (
+                      <li key={message.id}>
+                        <Link to="/admin/messages">
+                          <span
+                            className="admin-dashboard__message-avatar"
+                            aria-hidden="true"
+                          >
+                            {initials(message.name)}
+                          </span>
 
-                            <span
-                              className={`admin-dashboard__badge admin-dashboard__badge--${
-                                message.status ?? "nouveau"
-                              }`}
-                            >
-                              {message.status ?? "nouveau"}
+                          <span className="admin-dashboard__message-body">
+                            <span className="admin-dashboard__message-top">
+                              <strong>
+                                {message.name || "Visiteur anonyme"}
+                              </strong>
+
+                              <span className="admin-dashboard__message-date">
+                                {formatDate(message.createdAt)}
+                              </span>
+                            </span>
+
+                            <span className="admin-dashboard__message-subject">
+                              {message.subject || "(sans sujet)"}
                             </span>
                           </span>
 
-                          <span className="admin-dashboard__message-subject">
-                            {message.subject || "(sans sujet)"}
+                          <span
+                            className={`admin-dashboard__badge admin-dashboard__badge--${status}`}
+                          >
+                            {messageStatusLabel(status)}
                           </span>
-
-                          <span className="admin-dashboard__message-date">
-                            {formatDate(message.createdAt)}
-                          </span>
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
+                        </Link>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
           </div>
         </section>
 
-        <section
-          aria-labelledby="admin-dashboard-shortcuts"
-          className="admin-dashboard__section admin-dashboard__panel"
-        >
-          <div className="admin-dashboard__section-head">
-            <h2
-              id="admin-dashboard-shortcuts"
-              className="admin-dashboard__section-title"
-            >
-              Actions rapides
-            </h2>
-          </div>
+        {shortcuts.length > 0 && (
+          <section
+            aria-labelledby="admin-dashboard-shortcuts"
+            className="admin-dashboard__section admin-dashboard__panel"
+          >
+            <div className="admin-dashboard__section-head">
+              <h2
+                id="admin-dashboard-shortcuts"
+                className="admin-dashboard__section-title"
+              >
+                Actions rapides
+              </h2>
+            </div>
 
-          <ul className="admin-dashboard__shortcuts">
-            {SHORTCUTS.map((shortcut) => {
-              const Icon = shortcut.icon;
-
-              return (
-                <li key={shortcut.to}>
-                  <Link to={shortcut.to}>
-                    <span className="admin-dashboard__shortcut-icon">
-                      <Icon aria-hidden="true" />
-                    </span>
-
-                    <span className="admin-dashboard__shortcut-text">
-                      <strong>{shortcut.label}</strong>
-
-                      <span>{shortcut.hint}</span>
-                    </span>
-
-                    <ArrowRight aria-hidden="true" />
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
+            <ShortcutList shortcuts={shortcuts} />
+          </section>
+        )}
       </div>
     </div>
   );

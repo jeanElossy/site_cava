@@ -2,17 +2,7 @@
 
 .submissions-panel {
   &__header {
-    margin-bottom: 24px;
-
-    h1 {
-      margin: 0 0 6px;
-      color: $admin-ink;
-    }
-
-    p {
-      margin: 0;
-      color: $admin-ink-soft;
-    }
+    @include admin-page-head;
   }
 
   &__list {

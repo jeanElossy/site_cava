@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
+import { useSearchParams } from "react-router-dom";
+
 import {
   Download,
   FileText,
@@ -1097,7 +1099,26 @@ const CommunityAdmin = () => {
       "Gestion des membres et des annonces de la communauté CAVA.",
   });
 
-  const [tab, setTab] = useState("announcements");
+  // L'onglet vit dans l'URL (`?onglet=submissions`) : le tableau de
+  // bord peut y mener directement, et il survit à un rechargement. Une
+  // valeur inconnue retombe sur les annonces.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get("onglet");
+  const tab = TABS.some((item) => item.id === requestedTab)
+    ? requestedTab
+    : "announcements";
+
+  const setTab = (id) =>
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+
+        next.set("onglet", id);
+
+        return next;
+      },
+      { replace: true }
+    );
 
   // Église/bergerie : un seul état, partagé entre le tableau (via
   // `listParams`) et les boutons d'export — ce qui se télécharge
@@ -1167,6 +1188,17 @@ const CommunityAdmin = () => {
 
   return (
     <div className="admin-community">
+      <header className="admin-community__header">
+        <div>
+          <h1>Communauté</h1>
+
+          <p>
+            Annonces publiées sur le site, annuaire des membres, bergeries,
+            églises et inscriptions envoyées depuis « Devenir membre ».
+          </p>
+        </div>
+      </header>
+
       <div
         className="admin-community__tabs"
         role="tablist"
@@ -1223,6 +1255,7 @@ const CommunityAdmin = () => {
       >
         {tab === "announcements" && (
           <AdminCrud
+            headingLevel={2}
             resource={announcements}
             fields={announcementFields}
             columns={announcementColumns}
@@ -1278,6 +1311,7 @@ const CommunityAdmin = () => {
             <GuestBadgesDownloadButton />
 
             <AdminCrud
+            headingLevel={2}
               resource={members}
               fields={memberFields}
               columns={memberColumns}
@@ -1338,6 +1372,7 @@ const CommunityAdmin = () => {
       >
         {tab === "flocks" && (
           <AdminCrud
+            headingLevel={2}
             resource={flocksApi}
             fields={flockFields}
             columns={flockColumns}
@@ -1366,6 +1401,7 @@ const CommunityAdmin = () => {
       >
         {tab === "churches" && (
           <AdminCrud
+            headingLevel={2}
             resource={churchesApi}
             fields={churchFields}
             columns={churchColumns}
