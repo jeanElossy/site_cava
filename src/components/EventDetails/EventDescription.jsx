@@ -22,9 +22,9 @@ const EventDescription = ({ event }) => {
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.45 }}
         >
-          <h2 id="event-description-title">À propos de cet événement</h2>
+          <span className="event-description__eyebrow">Présentation</span>
 
-          <div className="event-description__line" />
+          <h2 id="event-description-title">À propos de cet événement</h2>
 
           {event.theme && (
             <p className="event-description__theme">

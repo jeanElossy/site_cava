@@ -1,6 +1,6 @@
-import "./CalendarWidget.scss";
-
 import { useState } from "react";
+
+import { Link } from "react-router-dom";
 
 import {
   FaCalendarAlt,
@@ -10,7 +10,11 @@ import {
 
 import { eventsList } from "./EventDetails/data/events";
 
-const monthNames = [
+import { eventStartDate } from "../utils/eventDates";
+
+import "./CalendarWidget.scss";
+
+const MONTH_NAMES = [
   "Janvier",
   "Février",
   "Mars",
@@ -25,183 +29,191 @@ const monthNames = [
   "Décembre",
 ];
 
-const weekDays = ["L", "M", "M", "J", "V", "S", "D"];
+const WEEK_DAYS = [
+  { short: "L", long: "lundi" },
+  { short: "M", long: "mardi" },
+  { short: "M", long: "mercredi" },
+  { short: "J", long: "jeudi" },
+  { short: "V", long: "vendredi" },
+  { short: "S", long: "samedi" },
+  { short: "D", long: "dimanche" },
+];
 
-const monthIndexByName = {
-  JANVIER: 0,
-  FEVRIER: 1,
-  MARS: 2,
-  AVRIL: 3,
-  MAI: 4,
-  JUIN: 5,
-  JUILLET: 6,
-  AOUT: 7,
-  SEPTEMBRE: 8,
-  OCTOBRE: 9,
-  NOVEMBRE: 10,
-  DECEMBRE: 11,
-};
+// Dates réelles des événements, par la même fonction que l'accueil et la
+// liste (`utils/eventDates`) : la reconstitution était auparavant dupliquée
+// ici.
+const EVENT_DATES = eventsList
+  .map((event) => ({ event, date: eventStartDate(event) }))
+  .filter(({ date }) => date);
 
-// Retire les accents pour que "FÉVRIER" et "AOÛT" retombent sur les clés.
-const normalizeMonth = (value = "") =>
-  value
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toUpperCase()
-    .trim();
+const sameDay = (a, b) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
 
-// Le calendrier est dérivé de la source unique des événements : plus de
-// jour actif codé en dur (il pointait le 25 mai, qui ne correspond à
-// aucun événement depuis la refonte des données).
-const eventDates = eventsList
-  .map((event) => {
-    const year = `${event.dateLong || event.date || ""}`.match(
-      /\b(20\d{2})\b/
-    );
+/**
+ * Calendrier mensuel de la page Événements.
+ *
+ * Il s'ouvrait sur le mois du PREMIER événement de la liste (août), et les
+ * jours d'événement portaient des classes (`day--event`) qu'aucun style ne
+ * définissait : rien n'était mis en évidence. Il s'ouvre désormais sur le
+ * mois courant, repère aujourd'hui, et chaque jour d'événement est un lien
+ * vers sa fiche.
+ */
+const CalendarWidget = () => {
+  const [today] = useState(() => new Date());
 
-    return {
-      day: Number.parseInt(event.day, 10),
-      month: monthIndexByName[normalizeMonth(event.month)],
-      year: year ? Number(year[1]) : null,
-      color: event.color === "yellow" ? "yellow" : "green",
-      title: event.title,
-    };
-  })
-  .filter(
-    (date) =>
-      Number.isInteger(date.day) &&
-      Number.isInteger(date.month) &&
-      Number.isInteger(date.year)
+  const [cursor, setCursor] = useState(
+    () => new Date(today.getFullYear(), today.getMonth(), 1)
   );
 
-// On ouvre le calendrier sur le mois du premier événement à venir.
-const initialDate = eventDates.length
-  ? new Date(eventDates[0].year, eventDates[0].month, 1)
-  : new Date();
+  const month = cursor.getMonth();
+  const year = cursor.getFullYear();
 
-const CalendarWidget = () => {
-  const [currentDate, setCurrentDate] = useState(initialDate);
-
-  const month = currentDate.getMonth();
-  const year = currentDate.getFullYear();
-
-  const firstDay = new Date(year, month, 1);
-  const startingDay =
-    firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
-
+  // Lundi en premier : `getDay()` renvoie 0 pour dimanche.
+  const offset = (new Date(year, month, 1).getDay() + 6) % 7;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  const prevMonth = () => {
-    setCurrentDate(new Date(year, month - 1, 1));
-  };
+  const cells = [
+    ...Array.from({ length: offset }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1)),
+  ];
 
-  const nextMonth = () => {
-    setCurrentDate(new Date(year, month + 1, 1));
-  };
+  const eventOn = (date) =>
+    EVENT_DATES.find((entry) => sameDay(entry.date, date))?.event;
 
-  const findEvent = (day) =>
-    eventDates.find(
-      (date) =>
-        date.day === day &&
-        date.month === month &&
-        date.year === year
-    );
+  const monthEvents = EVENT_DATES.filter(
+    ({ date }) => date.getFullYear() === year && date.getMonth() === month
+  ).length;
 
-  const days = [];
-
-  for (let i = 0; i < startingDay; i++) {
-    days.push(null);
-  }
-
-  for (let i = 1; i <= daysInMonth; i++) {
-    days.push(i);
-  }
+  const move = (step) => setCursor(new Date(year, month + step, 1));
 
   return (
     <div className="calendar-widget">
-
-      {/* h2 : la page n'a qu'un h1 (le héros), les titres de section
-          doivent rester au niveau 2. */}
+      {/* h2 : la page n'a qu'un h1 (le héros). */}
       <h2>
         <FaCalendarAlt aria-hidden="true" />
         Calendrier
       </h2>
 
-      <div className="calendar-widget__body">
+      <div className="calendar-widget__header">
+        <button
+          type="button"
+          onClick={() => move(-1)}
+          aria-label="Mois précédent"
+        >
+          <FaChevronLeft aria-hidden="true" />
+        </button>
 
-        <div className="calendar-widget__header">
+        <span aria-live="polite">
+          {MONTH_NAMES[month]} {year}
+        </span>
 
-          <button
-            type="button"
-            onClick={prevMonth}
-            aria-label="Mois précédent"
-          >
-            <FaChevronLeft aria-hidden="true" />
-          </button>
+        <button
+          type="button"
+          onClick={() => move(1)}
+          aria-label="Mois suivant"
+        >
+          <FaChevronRight aria-hidden="true" />
+        </button>
+      </div>
 
-          <span aria-live="polite">
-            {monthNames[month]} {year}
-          </span>
-
-          <button
-            type="button"
-            onClick={nextMonth}
-            aria-label="Mois suivant"
-          >
-            <FaChevronRight aria-hidden="true" />
-          </button>
-
-        </div>
-
-        <div className="calendar-widget__weekdays" aria-hidden="true">
-          {weekDays.map((day, index) => (
-            <span key={index}>{day}</span>
+      {/* Pas de rôles ARIA de grille : un calendrier en une seule rangée
+          de 31 cellules décrirait une structure fausse. Les jours sans
+          événement sont décoratifs ; les jours d'événement sont des liens
+          explicitement libellés, résumés sous la grille. */}
+      <div className="calendar-widget__grid">
+        <div
+          className="calendar-widget__row"
+          aria-hidden="true"
+        >
+          {WEEK_DAYS.map((day) => (
+            <span
+              key={day.long}
+              className="calendar-widget__weekday"
+            >
+              {day.short}
+            </span>
           ))}
         </div>
 
         <div className="calendar-widget__days">
-          {days.map((day, index) => {
-            const event = day ? findEvent(day) : null;
+          {cells.map((date, index) => {
+            if (!date) {
+              return (
+                <span
+                  key={`vide-${index}`}
+                  className="calendar-widget__day calendar-widget__day--empty"
+                  aria-hidden="true"
+                />
+              );
+            }
 
-            return (
-              <div
-                key={index}
-                className={
-                  event
-                    ? `day day--event day--${event.color}`
-                    : "day"
-                }
-                title={event ? event.title : undefined}
+            const event = eventOn(date);
+
+            const classes = [
+              "calendar-widget__day",
+              sameDay(date, today) && "calendar-widget__day--today",
+              event && "calendar-widget__day--event",
+              event?.color === "yellow" && "calendar-widget__day--special",
+            ]
+              .filter(Boolean)
+              .join(" ");
+
+            return event ? (
+              <Link
+                key={date.getDate()}
+                to={`/events/${event.slug}`}
+                className={classes}
+                title={event.title}
+                aria-label={`${date.getDate()} ${MONTH_NAMES[month]} : ${event.title}`}
               >
-                {day}
-
-                {event && (
-                  <span className="sr-only">
-                    {" "}
-                    — {event.title}
-                  </span>
-                )}
-              </div>
+                {date.getDate()}
+              </Link>
+            ) : (
+              <span
+                key={date.getDate()}
+                className={classes}
+                aria-hidden="true"
+              >
+                {date.getDate()}
+              </span>
             );
           })}
         </div>
-
-        <div className="calendar-widget__legend">
-
-          <div>
-            <span className="dot green" aria-hidden="true" />
-            Événements
-          </div>
-
-          <div>
-            <span className="dot yellow" aria-hidden="true" />
-            Événements spéciaux
-          </div>
-
-        </div>
-
       </div>
 
+      <p className="calendar-widget__summary">
+        {monthEvents === 0
+          ? "Aucun événement ce mois-ci."
+          : `${monthEvents} événement${monthEvents > 1 ? "s" : ""} ce mois-ci.`}
+      </p>
+
+      <ul className="calendar-widget__legend">
+        <li>
+          <span
+            className="calendar-widget__dot calendar-widget__dot--event"
+            aria-hidden="true"
+          />
+          Événement
+        </li>
+
+        <li>
+          <span
+            className="calendar-widget__dot calendar-widget__dot--special"
+            aria-hidden="true"
+          />
+          Événement spécial
+        </li>
+
+        <li>
+          <span
+            className="calendar-widget__dot calendar-widget__dot--today"
+            aria-hidden="true"
+          />
+          Aujourd&apos;hui
+        </li>
+      </ul>
     </div>
   );
 };

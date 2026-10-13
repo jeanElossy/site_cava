@@ -11,6 +11,8 @@ import CandidatureRequirements from "../../components/candidature/CandidatureReq
 import CandidatureForm from "../../components/candidature/CandidatureForm/CandidatureForm";
 import CandidatureValues from "../../components/candidature/CandidatureValues/CandidatureValues";
 
+import "./Candidature.scss";
+
 // Page → sections, comme le reste du site : pas de layout partagé, la
 // page monte elle-même sa Navbar et son Footer.
 const Candidature = () => {
@@ -24,19 +26,23 @@ const Candidature = () => {
     <>
       <Navbar />
 
-      <CandidatureHero />
+      {/* `<main>` : repère de navigation pour les lecteurs d'écran, comme
+          sur les autres pages. */}
+      <main className="candidature-page">
+        <CandidatureHero />
 
-      <OpenPositions />
+        <OpenPositions />
 
-      <CandidatureCta />
+        <CandidatureCta />
 
-      <CandidatureProcess />
+        <CandidatureProcess />
 
-      <CandidatureRequirements />
+        <CandidatureRequirements />
 
-      <CandidatureForm />
+        <CandidatureForm />
 
-      <CandidatureValues />
+        <CandidatureValues />
+      </main>
 
       <Footer />
     </>

@@ -117,17 +117,26 @@ const PositionDetails = () => {
               <div className="position-details__overlay" aria-hidden="true" />
 
               <div className="position-details__container">
-                <Link
-                  className="position-details__back"
-                  to="/appel-a-candidature"
+                <nav
+                  className="position-details__breadcrumb"
+                  aria-label="Fil d'Ariane"
                 >
-                  <HiArrowLeft aria-hidden="true" />
-                  Tous les postes ouverts
-                </Link>
+                  <Link to="/">Accueil</Link>
+
+                  <span aria-hidden="true">/</span>
+
+                  <Link to="/appel-a-candidature">Appel à candidatures</Link>
+
+                  <span aria-hidden="true">/</span>
+
+                  <span aria-current="page">{position.title}</span>
+                </nav>
 
                 <span className="position-details__icon" aria-hidden="true">
                   {createElement(icon)}
                 </span>
+
+                <p className="position-details__eyebrow">Poste ouvert</p>
 
                 <h1 className="position-details__title">{position.title}</h1>
 

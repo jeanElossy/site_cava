@@ -1,164 +1,138 @@
 @use "../styles/variables" as *;
+@use "../styles/mixins" as *;
+@use "../styles/ui" as *;
 
+// Tout est imbriqué sous `.values-section` (feuille de style unique, voir
+// CLAUDE.md). La carte s'appelle désormais `.values-section__card` : le
+// nom générique `.value-card` était partagé avec l'accueil.
 .values-section {
-  padding: 35px 0 30px;
+  padding: 110px 0;
 
-  background: #fff;
+  background: #f7f5ee;
 
   &__container {
-    max-width: 1400px;
-    margin: 0 auto;
-
-    padding: 0 60px;
+    @include container;
   }
 
   &__header {
-    margin-bottom: 40px;
+    max-width: 640px;
+
+    margin: 0 auto 54px;
+
+    text-align: center;
 
     h2 {
-      margin: 0;
+      @include section-title;
+    }
 
-      color: #0c4d2f;
+    p {
+      margin: 16px 0 0;
 
-      font-size: 3rem;
-      font-weight: 700;
+      color: #4b5563;
 
-      text-transform: uppercase;
+      font-size: 1.02rem;
+      line-height: 1.8;
     }
   }
 
-  &__line {
-    width: 50px;
-    height: 4px;
-
-    margin-top: 15px;
-
-    background: #f4c61d;
-
-    border-radius: 20px;
+  &__eyebrow {
+    @include eyebrow($rule: false);
   }
 
   &__grid {
     display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+    gap: 20px;
 
-    grid-template-columns: repeat(5, 1fr);
+    margin: 0;
+    padding: 0;
 
-    gap: 24px;
+    list-style: none;
   }
-}
 
-// Imbriqué sous `.values-section` : `.value-card` est aussi utilisé par la
-// section Valeurs de l'accueil (`Values/Values.scss`). Tous les SCSS du projet
-// étant fusionnés en une feuille unique, ces règles débordaient sur l'accueil
-// — `min-height: 52px` sur le h3 y ajoutait notamment de la hauteur.
-.values-section .value-card {
-  padding: 28px;
+  &__card {
+    display: flex;
+    flex-direction: column;
 
-  background: #fff;
+    padding: 26px 24px 28px;
 
-  border: 1px solid #e8e8e8;
-  border-radius: 18px;
+    border: 1px solid rgba($primary, 0.08);
+    border-radius: 22px;
 
-  transition: all 0.3s ease;
+    background: #fff;
 
-  &:hover {
-    transform: translateY(-6px);
+    box-shadow: 0 8px 24px rgba(8, 59, 42, 0.05);
 
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+    transition:
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
+
+    h3 {
+      margin: 0 0 10px;
+
+      color: $primary-dark;
+
+      font-size: 1.08rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    p {
+      margin: 0;
+
+      color: #6b7280;
+
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    &:hover {
+      transform: translateY(-5px);
+
+      box-shadow: 0 22px 44px rgba(8, 59, 42, 0.12);
+
+      .values-section__icon {
+        background: $secondary;
+        color: $primary-dark;
+      }
+    }
+  }
+
+  &__card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 22px;
   }
 
   &__icon {
-    width: 70px;
-    height: 70px;
+    display: grid;
+    place-items: center;
 
-    border-radius: 50%;
+    width: 50px;
+    height: 50px;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border-radius: 15px;
 
-    color: #fff;
+    background: $primary;
+    color: $secondary;
 
-    font-size: 1.8rem;
+    font-size: 1.2rem;
 
-    margin-bottom: 22px;
-
-    &--green {
-      background: #0c4d2f;
-    }
-
-    &--gold {
-      background: #f4c61d;
-    }
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
   }
 
-  h3 {
-    margin: 0 0 15px;
+  &__number {
+    color: rgba($primary, 0.18);
 
-    color: #0c4d2f;
-
-    font-size: 1.15rem;
-    font-weight: 700;
-
-    line-height: 1.4;
-
-    min-height: 52px;
+    font-size: 1.6rem;
+    font-weight: 800;
   }
 
-  p {
-    margin: 0;
-
-    color: #555;
-
-    font-size: 0.95rem;
-    line-height: 1.8;
-  }
-}
-
-@media (max-width: 1200px) {
-  .values-section {
-    &__grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-}
-
-@media (max-width: 768px) {
-  .values-section {
-    padding: 50px 0 70px;
-
-    &__container {
-      padding: 0 25px;
-    }
-
-    &__header {
-      h2 {
-        font-size: 2.2rem;
-      }
-    }
-
-    &__grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-}
-
-@media (max-width: 576px) {
-  .values-section {
-    &__grid {
-      grid-template-columns: 1fr;
-    }
-
-    &__header {
-      h2 {
-        font-size: 1.8rem;
-      }
-    }
-  }
-
-  .values-section .value-card {
-    h3 {
-      min-height: auto;
-    }
+  @media (max-width: 768px) {
+    padding: 80px 0;
   }
 }

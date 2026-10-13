@@ -1,99 +1,105 @@
 @use "../../styles/variables" as *;
 @use "../../styles/mixins" as *;
 
+// Tout est imbriqué sous `.ministry-mission` (feuille de style unique,
+// voir CLAUDE.md). L'ancienne `.mission-card` était déclarée à la racine.
 .ministry-mission {
-  padding: 70px 0 50px;
+  padding: 90px 0 100px;
 
-  background: $bg-light;
-
-  .container {
+  &__container {
     @include container;
 
     display: grid;
-
-    grid-template-columns: repeat(
-      auto-fit,
-      minmax(340px, 1fr)
-    );
-
-    gap: 28px;
-  }
-}
-
-.mission-card {
-  display: flex;
-
-  align-items: flex-start;
-
-  gap: 22px;
-
-  padding: 32px;
-
-  background: #fff;
-
-  border: 1px solid $border-color;
-
-  border-radius: $radius;
-
-  box-shadow: $shadow;
-
-  transition: $transition;
-
-  &:hover {
-    transform: translateY(-4px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 26px;
   }
 
-  // Icône react-icons rendue directement dans la carte.
-  > svg {
-    @include flex-center;
+  &__card {
+    padding: 40px 38px;
 
-    flex-shrink: 0;
+    border-radius: 24px;
 
-    box-sizing: content-box;
+    h2 {
+      margin: 0 0 12px;
 
-    width: 26px;
-    height: 26px;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
 
-    padding: 17px;
+    p {
+      margin: 0;
 
-    border-radius: 50%;
+      font-size: 1.02rem;
+      line-height: 1.8;
+    }
 
-    background: linear-gradient(
-      145deg,
-      $primary 0%,
-      $primary-dark 100%
-    );
+    &--mission {
+      background:
+        radial-gradient(
+          ellipse at 100% 0%,
+          rgba($secondary, 0.16) 0%,
+          transparent 50%
+        ),
+        linear-gradient(135deg, $primary-dark 0%, $primary 100%);
+      color: #fff;
 
-    color: $secondary;
+      h2 {
+        color: #fff;
+      }
+
+      p {
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      .ministry-mission__icon {
+        background: $secondary;
+        color: $primary-dark;
+      }
+    }
+
+    &--vision {
+      border: 1px solid rgba($primary, 0.1);
+
+      background: #f7f5ee;
+
+      h2 {
+        color: $primary-dark;
+      }
+
+      p {
+        color: #4b5563;
+      }
+
+      .ministry-mission__icon {
+        background: $primary;
+        color: $secondary;
+      }
+    }
   }
 
-  h3 {
+  &__icon {
+    display: grid;
+    place-items: center;
+
+    width: 56px;
+    height: 56px;
+
+    margin-bottom: 22px;
+
+    border-radius: 16px;
+
     font-size: 1.3rem;
-
-    font-weight: 700;
-
-    color: $primary;
-
-    margin-bottom: 10px;
   }
 
-  p {
-    font-size: 0.97rem;
+  @media (max-width: 768px) {
+    padding: 70px 0;
 
-    line-height: 1.7;
+    &__container {
+      grid-template-columns: 1fr;
+    }
 
-    color: rgba(31, 41, 55, 0.78);
-  }
-}
-
-@media (max-width: 600px) {
-  .ministry-mission {
-    padding: 50px 0 30px;
-  }
-
-  .mission-card {
-    padding: 24px;
-
-    gap: 16px;
+    &__card {
+      padding: 30px 26px;
+    }
   }
 }

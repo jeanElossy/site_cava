@@ -16,31 +16,31 @@ const MinistryEvents = ({ events = [] }) => {
     >
       <div className="ministry-events__container">
         <header className="ministry-events__header">
-          <h2 id="ministry-events-title">Prochains Événements</h2>
+          <span className="ministry-events__eyebrow">Agenda</span>
 
-          <div className="ministry-events__line" />
+          <h2 id="ministry-events-title">Prochains événements</h2>
         </header>
 
         <ul className="ministry-events__grid">
           {events.map((event, index) => (
             <motion.li
               key={`${event.title}-${event.day}`}
-              className="event-card"
+              className="ministry-events__card"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.4, delay: index * 0.08 }}
             >
-              <div className="event-card__date" aria-hidden="true">
-                <span className="event-card__day">{event.day}</span>
+              <div className="ministry-events__date" aria-hidden="true">
+                <span className="ministry-events__day">{event.day}</span>
 
-                <span className="event-card__month">{event.month}</span>
+                <span className="ministry-events__month">{event.month}</span>
               </div>
 
-              <div className="event-card__body">
+              <div className="ministry-events__body">
                 <h3>{event.title}</h3>
 
-                <p className="event-card__meta">
+                <p className="ministry-events__meta">
                   <span>
                     <FaRegClock aria-hidden="true" />
 
@@ -59,7 +59,7 @@ const MinistryEvents = ({ events = [] }) => {
                 </p>
 
                 {event.description && (
-                  <p className="event-card__description">
+                  <p className="ministry-events__description">
                     {event.description}
                   </p>
                 )}

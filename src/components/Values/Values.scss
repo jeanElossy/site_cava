@@ -1,132 +1,177 @@
 @use "../../styles/variables" as *;
 @use "../../styles/mixins" as *;
 
-// `.icon` et `.line` sont des noms génériques également utilisés par la
-// section Ministères de la même page : tout est imbriqué sous `.values`
-// pour éviter que les deux composants ne se écrasent mutuellement.
-.values {
-  background: $bg-light;
-  padding: 28px 0;
+// Tout est imbriqué sous `.home-values` (feuille de style unique, voir
+// CLAUDE.md).
+.home-values {
+  padding: 110px 0 100px;
 
-  .container {
+  background: #fff;
+
+  &__container {
     @include container;
-
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-
-    gap: 16px;
   }
 
-  .value-card {
-    background: #ffffff;
+  &__header {
+    max-width: 620px;
 
-    border: 1px solid #ececec;
+    margin: 0 auto 54px;
 
-    border-radius: 18px;
+    text-align: center;
 
-    padding: 22px;
+    h2 {
+      margin: 0;
 
-    min-height: 165px;
+      color: $primary-dark;
 
-    transition: all 0.3s ease;
+      font-size: clamp(1.9rem, 3.2vw, 2.7rem);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.015em;
 
-    &:hover {
-      transform: translateY(-5px);
-
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+      text-wrap: balance;
     }
+  }
+
+  &__eyebrow {
+    display: inline-block;
+
+    margin-bottom: 14px;
+
+    color: $secondary-dark;
+
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+  }
+
+  &__card {
+    position: relative;
+
+    padding: 34px 28px 30px;
+
+    border: 1px solid rgba($primary, 0.08);
+    border-radius: 22px;
+
+    background: #f7f5ee;
+
+    overflow: hidden;
+
+    transition:
+      transform 0.3s ease,
+      background-color 0.3s ease,
+      box-shadow 0.3s ease;
 
     h3 {
-      font-size: 16px;
+      margin: 0 0 10px;
 
+      color: $primary-dark;
+
+      font-size: 1.25rem;
       font-weight: 700;
-
-      color: $text-dark;
-
-      margin-bottom: 8px;
-
-      letter-spacing: 0.2px;
     }
 
     p {
-      color: #666;
+      margin: 0;
 
-      font-size: 14px;
+      color: #4b5563;
 
-      line-height: 1.5;
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    &:hover {
+      transform: translateY(-6px);
+
+      background: $primary;
+
+      box-shadow: 0 24px 48px rgba(8, 59, 42, 0.2);
+
+      h3 {
+        color: #fff;
+      }
+
+      p {
+        color: rgba(255, 255, 255, 0.82);
+      }
+
+      .home-values__icon {
+        background: $secondary;
+        color: $primary-dark;
+      }
+
+      .home-values__number {
+        color: rgba(255, 255, 255, 0.12);
+      }
     }
   }
 
-  // Pastille ronde pleine, icône blanche (cf. maquette).
-  .icon {
-    width: 72px;
-    height: 72px;
+  &__number {
+    position: absolute;
+    top: 16px;
+    right: 22px;
 
-    border-radius: 50%;
+    color: rgba($primary, 0.08);
 
-    @include flex-center;
+    font-size: 3.4rem;
+    font-weight: 800;
+    line-height: 1;
 
-    margin-bottom: 16px;
+    transition: color 0.3s ease;
+  }
 
-    flex-shrink: 0;
+  &__icon {
+    display: grid;
+    place-items: center;
+
+    width: 56px;
+    height: 56px;
+
+    margin-bottom: 24px;
+
+    border-radius: 16px;
+
+    background: $primary;
+    color: $secondary;
+
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
 
     svg {
-      width: 34px;
-      height: 34px;
-
-      color: #ffffff;
-      stroke: #ffffff;
-      fill: none;
-
-      display: block;
-    }
-
-    &.green {
-      background: $primary;
-    }
-
-    &.yellow {
-      background: #f4c41d;
+      width: 26px;
+      height: 26px;
     }
   }
 
-  .line {
-    width: 32px;
-    height: 3px;
-
-    margin-top: 14px;
-
-    border-radius: 10px;
-
-    &.green {
-      background: $primary;
-    }
-
-    &.yellow {
-      background: #f4c41d;
+  @media (max-width: 1100px) {
+    &__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
-}
 
-/* ---- Tablette large : 4 → 2 colonnes ---- */
-@media (max-width: 1200px) {
-  .values .container {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
-  }
-}
+  @media (max-width: 600px) {
+    padding: 80px 0;
 
-/* ---- Mobile : 1 colonne ---- */
-@media (max-width: 768px) {
-  .values {
-    padding: 20px 0;
-  }
+    &__grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
 
-  .values .container {
-    grid-template-columns: 1fr;
-  }
-
-  .values .value-card {
-    min-height: auto;
+    &__card {
+      padding: 26px 22px;
+    }
   }
 }

@@ -1,32 +1,29 @@
 import { motion } from "framer-motion";
-
 import { Link } from "react-router-dom";
 
 import "./LegalHero.scss";
 
 import defaultImage from "../../../assets/images/bible.jpg";
 
-// Héros des pages légales.
-//
-// Il reprend la structure des autres héros du site (image de fond,
-// dégradé de lisibilité, fil d'Ariane, titre, filet doré) : jusqu'ici
-// ces deux pages s'ouvraient sur un simple aplat vert, nettement plus
-// bas et sans image, ce qui les faisait ressembler à une annexe plutôt
-// qu'à une page du site.
+// Héros des pages légales : hero commun du site (mixin `page-hero`),
+// avec un sur-titre « Informations légales ».
 const LegalHero = ({ title, intro, image = defaultImage }) => {
   return (
     <section
       className="legal-hero"
       style={{ backgroundImage: `url(${image})` }}
     >
-      <div className="legal-hero__overlay" aria-hidden="true"></div>
+      <div
+        className="legal-hero__overlay"
+        aria-hidden="true"
+      />
 
       <div className="legal-hero__container">
         <motion.div
           className="legal-hero__content"
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
         >
           <nav
             className="legal-hero__breadcrumb"
@@ -39,11 +36,11 @@ const LegalHero = ({ title, intro, image = defaultImage }) => {
             <span aria-current="page">{title}</span>
           </nav>
 
-          <h1 className="legal-hero__title">{title}</h1>
+          <p className="legal-hero__eyebrow">Informations légales</p>
 
-          <div className="legal-hero__line" aria-hidden="true"></div>
+          <h1>{title}</h1>
 
-          <p className="legal-hero__intro">{intro}</p>
+          <p className="legal-hero__lead">{intro}</p>
         </motion.div>
       </div>
     </section>

@@ -30,13 +30,13 @@ const EventSpeaker = ({ speaker }) => {
     >
       <div className="event-speaker__container">
         <header className="event-speaker__header">
-          <h2 id="event-speaker-title">Orateur</h2>
+          <span className="event-speaker__eyebrow">Intervenant</span>
 
-          <div className="event-speaker__line" />
+          <h2 id="event-speaker-title">Orateur</h2>
         </header>
 
         <motion.article
-          className="speaker-card"
+          className="event-speaker__card"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
@@ -44,25 +44,26 @@ const EventSpeaker = ({ speaker }) => {
         >
           {speaker.image ? (
             <img
-              className="speaker-card__avatar"
+              className="event-speaker__avatar"
               src={speaker.image}
-              alt={speaker.name}
+              alt=""
               loading="lazy"
+              decoding="async"
             />
           ) : (
             <div
-              className="speaker-card__avatar speaker-card__avatar--initials"
+              className="event-speaker__avatar event-speaker__avatar--initials"
               aria-hidden="true"
             >
               {getInitials(speaker.name)}
             </div>
           )}
 
-          <div className="speaker-card__body">
+          <div className="event-speaker__body">
             <h3>{speaker.name}</h3>
 
             {speaker.role && (
-              <span className="speaker-card__role">{speaker.role}</span>
+              <span className="event-speaker__role">{speaker.role}</span>
             )}
 
             {speaker.bio && <p>{speaker.bio}</p>}

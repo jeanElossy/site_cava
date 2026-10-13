@@ -44,11 +44,11 @@ const MediaCard = ({ item, onPlay }) => {
 
         <h3>{item.title}</h3>
 
-        <p>{item.author}</p>
+        {item.author && <p>{item.author}</p>}
 
-        <div className="meta">
+        <div className="media-card__meta">
           <span>{item.date}</span>
-          <span>{item.duration}</span>
+          {item.duration && <span>{item.duration}</span>}
         </div>
 
       </div>
@@ -76,7 +76,7 @@ const MediaCard = ({ item, onPlay }) => {
         className="media-card__trigger"
         href={externalUrl(item)}
         target="_blank"
-        rel="noreferrer"
+        rel="noopener noreferrer"
         aria-label={`${item.title} — ouvrir dans un nouvel onglet`}
       >
         {inner}

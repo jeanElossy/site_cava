@@ -1,10 +1,9 @@
-// Enchaînement des sections de la page Ministères.
-// Le style de chaque bloc vit dans le SCSS de son composant
-// (MinistriesHero, MinistriesGrid, MinistriesCallToAction, MinistriesStats).
 .ministries-page {
-  background: #fff;
+  overflow-x: hidden;
+}
 
-  > section:not(:first-child) {
-    margin-top: 0;
-  }
+// La page se termine sur une section vert foncé : la marge haute du
+// pied de page (globale, `Footer.scss`) y laisserait une bande blanche.
+.ministries-page + .footer {
+  margin-top: 0;
 }

@@ -1,6 +1,9 @@
 @use "../styles/variables" as *;
 @use "../styles/mixins" as *;
+@use "../styles/ui" as *;
 
+// Tout est imbriqué sous `.ministries-hero` (feuille de style unique,
+// voir CLAUDE.md).
 .ministries-hero {
   position: relative;
 
@@ -15,289 +18,173 @@
 
   overflow: hidden;
 
-  animation: heroZoom 10s ease-out forwards;
-
-  &__breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    margin-bottom: 18px;
-
-    font-size: .95rem;
-
-    color: rgba(255, 255, 255, .75);
-
-    a {
-      color: rgba(255, 255, 255, .75);
-
-      text-decoration: none;
-
-      transition: color .3s ease;
-
-      &:hover {
-        color: $secondary;
-      }
-
-      &:focus-visible {
-        outline: 2px solid $secondary;
-
-        outline-offset: 3px;
-      }
-    }
-
-    [aria-current="page"] {
-      color: #fff;
-
-      font-weight: 600;
-    }
-  }
-
   &__overlay {
     position: absolute;
     inset: 0;
-
-    background:
-      linear-gradient(
-        90deg,
-        rgba(0, 65, 35, 0.94) 0%,
-        rgba(0, 65, 35, 0.88) 35%,
-        rgba(0, 65, 35, 0.45) 60%,
-        rgba(0, 0, 0, 0.1) 100%
-      );
-
     z-index: 1;
 
-    &::after {
-      content: "";
-
-      position: absolute;
-
-      right: 15%;
-      top: 15%;
-
-      width: 300px;
-      height: 300px;
-
-      border-radius: 50%;
-
-      background: rgba(244, 198, 29, 0.15);
-
-      filter: blur(120px);
-
-      animation: pulseLight 5s infinite ease-in-out;
-    }
+    background:
+      radial-gradient(
+        ellipse at 85% 110%,
+        rgba($secondary, 0.16) 0%,
+        transparent 55%
+      ),
+      linear-gradient(
+        95deg,
+        rgba($primary-dark, 0.96) 0%,
+        rgba($primary-dark, 0.86) 40%,
+        rgba($primary, 0.5) 70%,
+        rgba(0, 0, 0, 0.25) 100%
+      );
   }
 
   &__container {
+    @include container;
+
     position: relative;
     z-index: 2;
 
-    width: 100%;
-    max-width: 1400px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 64px;
 
-    margin: 0 auto;
-
-    padding: 140px 60px 80px;
+    padding-top: 150px;
+    padding-bottom: 100px;
   }
 
   &__content {
-    max-width: 620px;
+    max-width: 700px;
 
     color: #fff;
   }
 
   &__breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    @include hero-breadcrumb;
+  }
 
-    margin-bottom: 30px;
-
-    font-size: 1rem;
-    font-weight: 500;
-
-    color: rgba(255, 255, 255, 0.95);
-
-    opacity: 0;
-
-    animation: fadeUp 0.7s ease forwards;
-
-    span {
-      color: #f4c61d;
-    }
+  &__eyebrow {
+    @include eyebrow($on-dark: true, $spacing: 18px);
   }
 
   h1 {
-    margin: 0 0 15px;
-
-    font-size: clamp(3rem, 5vw, 4.5rem);
-    font-weight: 700;
-    line-height: 1.1;
+    margin: 0 0 22px;
 
     color: #fff;
 
-    opacity: 0;
+    font-size: clamp(2.2rem, 4.4vw, 3.8rem);
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
 
-    animation: fadeUp 0.9s ease forwards;
-    animation-delay: 0.2s;
+    text-wrap: balance;
   }
 
-  h2 {
-    margin: 0;
-
-    color: rgba(255, 255, 255, 0.95);
-
-    font-size: 2rem;
-    font-weight: 500;
-    line-height: 1.4;
-
-    opacity: 0;
-
-    animation: fadeUp 0.9s ease forwards;
-    animation-delay: 0.4s;
+  &__highlight {
+    color: $secondary;
   }
 
-  &__line {
-    width: 60px;
-    height: 4px;
+  &__lead {
+    margin: 0 0 36px;
 
-    margin: 28px 0;
+    max-width: 560px;
 
-    border-radius: 50px;
-
-    background: #f4c61d;
-
-    opacity: 0;
-
-    animation: fadeUp 0.9s ease forwards;
-    animation-delay: 0.6s;
-  }
-
-  blockquote {
-    margin: 0;
-
-    max-width: 480px;
-
-    color: rgba(255, 255, 255, 0.92);
-
-    font-size: 1.15rem;
-    line-height: 1.8;
-
-    font-style: italic;
-
-    opacity: 0;
-
-    animation: fadeUp 1s ease forwards;
-    animation-delay: 0.8s;
-  }
-
-  p {
-    margin-top: 16px;
-
-    color: #f4c61d;
+    color: rgba(255, 255, 255, 0.86);
 
     font-size: 1.1rem;
-    font-weight: 700;
-
-    opacity: 0;
-
-    animation:
-      fadeUp 1s ease forwards,
-      floatingVerse 4s ease-in-out infinite;
-
-    animation-delay: 1s, 2s;
+    line-height: 1.75;
   }
-}
 
-@media (max-width: 992px) {
-  .ministries-hero {
-
-    &__container {
-      padding: 130px 40px 70px;
-    }
-
-    h1 {
-      font-size: 3.2rem;
-    }
-
-    h2 {
-      font-size: 1.5rem;
-    }
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
   }
-}
 
-@media (max-width: 768px) {
-  .ministries-hero {
+  &__cta {
+    @include pill-button(primary);
+  }
 
-    &__container {
-      padding: 120px 25px 70px;
-    }
+  &__verse {
+    justify-self: end;
 
-    h1 {
-      font-size: 2.5rem;
-    }
+    max-width: 440px;
 
-    h2 {
-      font-size: 1.2rem;
-    }
+    margin: 0;
+    padding: 34px 34px 30px;
+
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 22px;
+
+    background: rgba(8, 59, 42, 0.45);
+    color: #fff;
+
+    backdrop-filter: blur(14px);
+
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
 
     blockquote {
-      font-size: 1rem;
+      margin: 0 0 18px;
+
+      color: rgba(255, 255, 255, 0.94);
+
+      font-size: 1.08rem;
+      font-style: italic;
+      line-height: 1.75;
+    }
+
+    figcaption {
+      color: $secondary;
+
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
     }
   }
-}
 
-/* ==========================
-   ANIMATIONS
-========================== */
+  &__verse-icon {
+    display: block;
 
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(40px);
+    margin-bottom: 16px;
+
+    color: $secondary;
+
+    font-size: 1.6rem;
   }
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+  @media (max-width: 1100px) {
+    &__container {
+      grid-template-columns: 1fr;
+      align-items: start;
+      gap: 40px;
+    }
 
-@keyframes heroZoom {
-  from {
-    transform: scale(1.08);
-  }
-
-  to {
-    transform: scale(1);
-  }
-}
-
-@keyframes floatingVerse {
-  0% {
-    transform: translateY(0);
+    &__verse {
+      justify-self: start;
+    }
   }
 
-  50% {
-    transform: translateY(-4px);
-  }
+  @media (max-width: 768px) {
+    &__container {
+      padding-top: 120px;
+      padding-bottom: 70px;
+    }
 
-  100% {
-    transform: translateY(0);
-  }
-}
+    &__lead {
+      font-size: 1rem;
+    }
 
-@keyframes pulseLight {
-  0% {
-    opacity: 0.4;
-  }
+    &__actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
 
-  50% {
-    opacity: 1;
-  }
+    &__verse {
+      padding: 26px 24px;
 
-  100% {
-    opacity: 0.4;
+      blockquote {
+        font-size: 1rem;
+      }
+    }
   }
 }

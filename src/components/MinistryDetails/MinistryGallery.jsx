@@ -14,9 +14,9 @@ const MinistryGallery = ({ images = [], ministryTitle = "" }) => {
     >
       <div className="ministry-gallery__container">
         <header className="ministry-gallery__header">
-          <h2 id="ministry-gallery-title">Galerie</h2>
+          <span className="ministry-gallery__eyebrow">En images</span>
 
-          <div className="ministry-gallery__line" />
+          <h2 id="ministry-gallery-title">Galerie</h2>
         </header>
 
         <div className="ministry-gallery__grid">
@@ -37,6 +37,7 @@ const MinistryGallery = ({ images = [], ministryTitle = "" }) => {
                     : `Photo ${index + 1} du ministère`
                 }
                 loading="lazy"
+                decoding="async"
               />
             </motion.figure>
           ))}

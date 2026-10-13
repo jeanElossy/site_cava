@@ -5,6 +5,7 @@ import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 
 import MinistryHero from "../../components/MinistryDetails/MinistryHero";
+import MinistryStats from "../../components/MinistryDetails/MinistryStats";
 import MinistryMission from "../../components/MinistryDetails/MinistryMission";
 import MinistryLeaders from "../../components/MinistryDetails/MinistryLeaders";
 import MinistryGallery from "../../components/MinistryDetails/MinistryGallery";
@@ -70,6 +71,8 @@ const MinistryDetails = () => {
 
       <main className="ministry-details">
         <MinistryHero ministry={ministry} />
+
+        <MinistryStats stats={ministry.stats} />
 
         <MinistryMission ministry={ministry} />
 

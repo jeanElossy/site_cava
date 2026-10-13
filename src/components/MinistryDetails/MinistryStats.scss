@@ -1,164 +1,124 @@
 @use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
 
-/* =========================
-   VERSION HERO
-========================= */
+// Tout est imbriqué sous `.ministry-stats` (feuille de style unique, voir
+// CLAUDE.md).
+.ministry-stats {
+  position: relative;
+  z-index: 3;
 
-.ministry-stats--hero {
-  background: transparent;
+  margin-top: -80px;
 
-  margin-top: 50px;
-}
-
-.ministry-stats--hero .container {
-  display: grid;
-
-  grid-template-columns:
-    repeat(4, 1fr);
-
-  gap: 0;
-
-  max-width: 1000px;
-
-  margin: 0 auto;
-}
-
-.ministry-stats--hero .stat-card {
-  background: transparent;
-
-  border: none;
-
-  border-right:
-    1px solid
-    rgba(255, 255, 255, 0.2);
-
-  border-radius: 0;
-
-  padding: 0 24px;
-
-  box-shadow: none;
-
-  text-align: center;
-}
-
-.ministry-stats--hero .stat-card:last-child {
-  border-right: none;
-}
-
-.ministry-stats--hero .stat-card__icon {
-  font-size: 2rem;
-
-  color: #f7c600;
-
-  margin-bottom: 12px;
-}
-
-.ministry-stats--hero h3 {
-  font-size: 2.8rem;
-
-  font-weight: 800;
-
-  color: white;
-
-  margin-bottom: 8px;
-}
-
-.ministry-stats--hero span {
-  color:
-    rgba(255, 255, 255, 0.85);
-
-  font-size: 0.95rem;
-}
-
-/* =========================
-   VERSION SECTION
-========================= */
-
-.ministry-stats .container {
-  display: grid;
-
-  grid-template-columns:
-    repeat(4, 1fr);
-
-  gap: 24px;
-}
-
-.ministry-stats .stat-card {
-  text-align: center;
-
-  background:
-    linear-gradient(
-      135deg,
-      #053824,
-      #0a5c3d
-    );
-
-  border:
-    1px solid rgba(255, 255, 255, 0.08);
-
-  border-radius: 24px;
-
-  backdrop-filter: blur(10px);
-
-  padding: 40px 20px;
-
-  transition: 0.3s ease;
-}
-
-.ministry-stats .stat-card:hover {
-  transform: translateY(-8px);
-}
-
-.ministry-stats .stat-card__icon {
-  font-size: 2rem;
-
-  color: #f7c600;
-
-  margin-bottom: 15px;
-}
-
-.ministry-stats .stat-card h3 {
-  font-size: 3rem;
-
-  color: white;
-
-  margin-bottom: 10px;
-}
-
-.ministry-stats .stat-card span {
-  color:
-    rgba(255, 255, 255, 0.85);
-}
-
-/* =========================
-   RESPONSIVE
-========================= */
-
-@media (max-width: 992px) {
-  .ministry-stats .container,
-  .ministry-stats--hero .container {
-    grid-template-columns:
-      repeat(2, 1fr);
-
-    gap: 25px;
+  &__container {
+    @include container;
   }
 
-  .ministry-stats--hero .stat-card {
-    border-right: none;
-  }
-}
+  &__panel {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
 
-@media (max-width: 768px) {
-  .ministry-stats .container,
-  .ministry-stats--hero .container {
-    grid-template-columns: 1fr;
+    margin: 0;
+    padding: 30px 20px;
+
+    border: 1px solid rgba($primary, 0.08);
+    border-radius: 24px;
+
+    background: #fff;
+
+    list-style: none;
+
+    box-shadow:
+      0 30px 70px rgba(8, 59, 42, 0.14),
+      0 4px 14px rgba(8, 59, 42, 0.06);
   }
 
-  .ministry-stats--hero h3 {
-    font-size: 2.2rem;
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+
+    padding: 6px 20px;
+
+    border-left: 1px solid $border-color;
+
+    &:first-child {
+      border-left: 0;
+    }
   }
 
-  .ministry-stats--hero .stat-card {
-    padding: 15px 0;
+  &__icon {
+    flex-shrink: 0;
+
+    display: grid;
+    place-items: center;
+
+    width: 48px;
+    height: 48px;
+
+    border-radius: 14px;
+
+    background: rgba($primary, 0.08);
+    color: $primary;
+
+    font-size: 1.15rem;
+  }
+
+  &__figures {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__value {
+    color: $primary-dark;
+
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+
+    white-space: nowrap;
+  }
+
+  &__label {
+    margin-top: 4px;
+
+    color: #6b7280;
+
+    font-size: 0.86rem;
+  }
+
+  @media (max-width: 992px) {
+    &__panel {
+      grid-auto-flow: row;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      row-gap: 24px;
+    }
+
+    &__item {
+      justify-content: flex-start;
+
+      &:nth-child(odd) {
+        border-left: 0;
+      }
+    }
+  }
+
+  @media (max-width: 600px) {
+    margin-top: -70px;
+
+    &__panel {
+      grid-template-columns: 1fr;
+      row-gap: 18px;
+
+      padding: 26px 22px;
+    }
+
+    &__item {
+      padding: 0;
+
+      border-left: 0;
+    }
   }
 }

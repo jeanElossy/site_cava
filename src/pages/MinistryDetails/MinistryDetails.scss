@@ -1,102 +1,24 @@
-@use "../../styles/variables" as *;
-@use "../../styles/mixins" as *;
+@use "../../styles/ui" as *;
 
+// Page de détail d'un ministère. Chaque section porte son propre style
+// (`components/MinistryDetails/*`), sous sa classe racine.
 .ministry-details {
-  min-height: 100vh;
+  background: #fff;
 
-  background:
-    linear-gradient(
-      180deg,
-      #f8faf8 0%,
-      #ffffff 30%,
-      #f6f8f7 100%
-    );
+  overflow-x: hidden;
 
-  overflow: hidden;
-
-  section {
-    position: relative;
-  }
-
-  // Container partagé par MinistryMission / MinistryStats / MinistryCTA.
-  .container {
-    width: min(1400px, 92%);
-
-    margin: 0 auto;
-  }
-
-  // État « ministère introuvable ».
+  // État « ministère introuvable » (mixin partagé, `styles/_ui.scss`).
   &--missing {
-    @include flex-center;
-
-    flex-direction: column;
-
-    gap: 16px;
-
-    min-height: 70vh;
-
-    padding: 40px 20px;
-
-    text-align: center;
-
-    h1 {
-      font-size: clamp(1.8rem, 4vw, 2.6rem);
-
-      font-weight: 800;
-
-      color: $primary;
-    }
-
-    p {
-      max-width: 480px;
-
-      line-height: 1.7;
-
-      color: rgba(31, 41, 55, 0.75);
-    }
+    @include missing-state;
   }
 
   &__back {
-    display: inline-flex;
-
-    align-items: center;
-
-    height: 52px;
-
-    margin-top: 10px;
-
-    padding: 0 30px;
-
-    border-radius: 14px;
-
-    background: $primary;
-
-    color: $text-light;
-
-    font-weight: 700;
-
-    transition: $transition;
-
-    &:hover {
-      background: $primary-dark;
-
-      transform: translateY(-3px);
-    }
-
-    &:focus-visible {
-      outline: 3px solid $secondary;
-
-      outline-offset: 3px;
-    }
+    @include missing-back;
   }
 }
 
-// Note : l'apparition des sections est gérée par framer-motion
-// (`whileInView`) dans chaque composant. Pas d'animation CSS globale ici,
-// afin de ne pas superposer deux systèmes d'animation.
-
-@media (max-width: 768px) {
-  .ministry-details {
-    overflow-x: hidden;
-  }
+// La page se termine sur une section vert foncé : la marge haute du
+// pied de page (globale, `Footer.scss`) y laisserait une bande blanche.
+.ministry-details + .footer {
+  margin-top: 0;
 }

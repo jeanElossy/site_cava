@@ -1,271 +1,214 @@
 @use "../../styles/variables" as *;
 @use "../../styles/mixins" as *;
+@use "../../styles/ui" as *;
 
+// Tout est imbriqué sous `.contact-schedule` (feuille de style unique,
+// voir CLAUDE.md). La carte s'appelait `.schedule-card`, déclarée à la
+// racine.
 .contact-schedule {
-  padding: 20px 60px 60px;
-
-  background: $bg-light;
+  padding: 60px 0 60px;
 
   &__container {
-    max-width: 1400px;
-
-    margin: 0 auto;
+    @include container;
   }
 
   &__header {
+    max-width: 620px;
+
+    margin: 0 auto 44px;
+
     text-align: center;
 
-    margin-bottom: 40px;
-
     h2 {
-      font-size: clamp(1.6rem, 3vw, 2.25rem);
-
-      font-weight: 700;
-
-      color: #0b3d23;
+      @include section-title;
     }
 
     p {
-      max-width: 620px;
+      margin: 14px 0 0;
 
-      margin: 18px auto 0;
+      color: #4b5563;
 
-      color: #555;
-
-      line-height: 1.8;
+      font-size: 1rem;
+      line-height: 1.75;
     }
   }
 
-  &__line {
-    width: 44px;
-    height: 3px;
-
-    margin: 14px auto 0;
-
-    border-radius: 999px;
-
-    background: $secondary;
+  &__eyebrow {
+    @include eyebrow($rule: false);
   }
 
   &__grid {
     display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+    gap: 20px;
 
-    grid-template-columns: repeat(
-      auto-fit,
-      minmax(250px, 1fr)
-    );
-
-    gap: 22px;
+    margin: 0;
+    padding: 0;
 
     list-style: none;
   }
 
-  /* ======================
-     ENCADRÉ « PRIONS POUR VOUS »
-  ====================== */
-
-  &__prayer {
+  &__card {
     display: flex;
-
-    align-items: flex-start;
-
-    gap: 26px;
-
-    margin-top: 40px;
-
-    padding: 40px;
-
-    border-radius: 18px;
-
-    background: linear-gradient(
-      135deg,
-      $primary-dark 0%,
-      $primary 100%
-    );
-
-    color: $text-light;
-
-    box-shadow: 0 18px 40px rgba(11, 92, 52, 0.18);
-  }
-
-  &__prayer-icon {
-    @include flex-center;
-
-    flex-shrink: 0;
-
-    width: 64px;
-    height: 64px;
-
-    border-radius: 50%;
-
-    background: rgba(255, 255, 255, 0.12);
-
-    color: $secondary;
-
-    font-size: 1.5rem;
-  }
-
-  &__prayer-body {
-    h2 {
-      margin: 0 0 12px;
-
-      font-size: clamp(1.4rem, 2.5vw, 1.9rem);
-
-      font-weight: 700;
-
-      color: $text-light;
-    }
-
-    p {
-      max-width: 760px;
-
-      margin: 0 0 24px;
-
-      line-height: 1.8;
-
-      color: rgba(255, 255, 255, 0.9);
-    }
-  }
-
-  &__prayer-link {
-    display: inline-flex;
-
+    flex-direction: column;
     align-items: center;
 
-    gap: 10px;
+    padding: 30px 22px;
 
-    height: 52px;
+    border: 1px solid rgba($primary, 0.08);
+    border-radius: 22px;
 
-    padding: 0 28px;
+    background: #fff;
 
-    border-radius: 10px;
+    text-align: center;
 
-    background: $secondary;
+    box-shadow: 0 10px 30px rgba(8, 59, 42, 0.06);
 
-    color: #1a1a1a;
-
-    font-size: 15px;
-    font-weight: 700;
-
-    transition: $transition;
+    transition:
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
 
     &:hover {
-      transform: translateY(-2px);
+      transform: translateY(-5px);
 
-      box-shadow: 0 10px 25px rgba(255, 210, 46, 0.3);
+      box-shadow: 0 22px 44px rgba(8, 59, 42, 0.12);
     }
 
-    &:focus-visible {
-      outline: 3px solid $text-light;
+    h3 {
+      margin: 0 0 6px;
 
-      outline-offset: 3px;
+      color: $primary-dark;
+
+      font-size: 1.08rem;
+      font-weight: 700;
     }
-  }
-}
-
-/* ======================
-   CARTE HORAIRE
-====================== */
-
-.schedule-card {
-  padding: 28px 24px;
-
-  text-align: center;
-
-  background: #fff;
-
-  border: 1px solid #e8e8e8;
-  border-radius: 18px;
-
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-
-  transition: $transition;
-
-  &:hover {
-    transform: translateY(-4px);
-
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.07);
   }
 
   &__icon {
-    @include flex-center;
+    display: grid;
+    place-items: center;
 
-    width: 56px;
-    height: 56px;
+    width: 54px;
+    height: 54px;
 
-    margin: 0 auto 18px;
+    margin-bottom: 18px;
 
-    border-radius: 50%;
+    border-radius: 16px;
 
-    background: rgba(11, 92, 52, 0.08);
-
-    color: $primary;
+    background: $primary;
+    color: $secondary;
 
     font-size: 1.25rem;
-  }
-
-  h3 {
-    margin: 0 0 10px;
-
-    font-size: 1.1rem;
-    font-weight: 700;
-
-    color: #0b3d23;
   }
 
   &__day {
     margin: 0;
 
-    font-size: 14px;
-    font-weight: 600;
+    color: #6b7280;
 
-    color: #555;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 
   &__time {
-    margin: 4px 0 12px;
+    margin: 10px 0;
+    padding: 6px 16px;
 
-    font-size: 1.5rem;
-    font-weight: 800;
+    border-radius: 999px;
 
+    background: rgba($secondary, 0.22);
     color: $secondary-dark;
+
+    font-size: 1.15rem;
+    font-weight: 700;
+
+    font-variant-numeric: tabular-nums;
   }
 
   &__detail {
     margin: 0;
 
-    font-size: 14px;
+    color: #6b7280;
 
-    line-height: 1.65;
-
-    color: #666;
-  }
-}
-
-@media (max-width: 900px) {
-  .contact-schedule {
-    padding: 20px 24px 50px;
+    font-size: 0.88rem;
+    line-height: 1.6;
   }
 
-  .contact-schedule__prayer {
-    flex-direction: column;
-
+  // --- Encart « Prions pour vous » ---------------------------------------
+  &__prayer {
+    display: flex;
     align-items: center;
+    gap: 28px;
 
-    text-align: center;
+    margin-top: 40px;
+    padding: 38px 42px;
 
-    padding: 32px 24px;
+    border-radius: 26px;
+
+    background:
+      radial-gradient(
+        ellipse at 100% 0%,
+        rgba($secondary, 0.18) 0%,
+        transparent 50%
+      ),
+      linear-gradient(120deg, $primary-dark 0%, $primary 100%);
+    color: #fff;
+
+    box-shadow: 0 26px 56px rgba(8, 59, 42, 0.22);
   }
-}
 
-@media (max-width: 480px) {
-  .contact-schedule {
-    padding: 10px 16px 40px;
+  &__prayer-icon {
+    flex-shrink: 0;
+
+    display: grid;
+    place-items: center;
+
+    width: 72px;
+    height: 72px;
+
+    border-radius: 50%;
+
+    background: rgba($secondary, 0.16);
+    color: $secondary;
+
+    font-size: 1.8rem;
+
+    box-shadow: 0 0 0 10px rgba($secondary, 0.06);
   }
 
-  .contact-schedule__prayer-link {
-    width: 100%;
+  &__prayer-body {
+    h2 {
+      @include section-title($on-dark: true);
 
-    justify-content: center;
+      font-size: clamp(1.5rem, 2.6vw, 2rem);
+    }
+
+    p {
+      margin: 10px 0 20px;
+
+      max-width: 640px;
+
+      color: rgba(255, 255, 255, 0.85);
+
+      font-size: 0.98rem;
+      line-height: 1.75;
+    }
+  }
+
+  &__prayer-link {
+    @include pill-button(primary);
+  }
+
+  @media (max-width: 768px) {
+    padding: 40px 0;
+
+    &__prayer {
+      flex-direction: column;
+      align-items: flex-start;
+
+      padding: 30px 24px;
+    }
   }
 }

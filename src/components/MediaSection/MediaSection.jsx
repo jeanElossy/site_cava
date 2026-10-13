@@ -16,7 +16,15 @@ const MediaSection = ({
 
       <div className="media-section__header">
 
-        <h2>{title}</h2>
+        <h2>
+          {title}
+          <span
+            className="media-section__count"
+            aria-hidden="true"
+          >
+            {items.length}
+          </span>
+        </h2>
 
         {/*
           Le bouton applique le filtre correspondant de la page Médias.
@@ -24,7 +32,11 @@ const MediaSection = ({
           filtre est déjà actif, il n'aurait plus de destination.
         */}
         {buttonText && onButtonClick && (
-          <button type="button" onClick={onButtonClick}>
+          <button
+            type="button"
+            className="media-section__more"
+            onClick={onButtonClick}
+          >
             {buttonText}
             <ArrowRight size={18} aria-hidden="true" />
           </button>
@@ -32,7 +44,7 @@ const MediaSection = ({
 
       </div>
 
-      <div className="media-grid">
+      <div className="media-section__grid">
 
         {items.map((item) => (
           <MediaCard

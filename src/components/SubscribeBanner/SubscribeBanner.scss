@@ -1,113 +1,119 @@
+@use "../../styles/variables" as *;
 @use "../../styles/mixins" as *;
+@use "../../styles/ui" as *;
 
+// Tout est imbriqué sous `.subscribe-banner` (feuille de style unique,
+// voir CLAUDE.md).
 .subscribe-banner {
   @include container;
 
-  margin: 80px auto;
+  padding-top: 50px;
+  padding-bottom: 110px;
 
   &__content {
-    background:
-      linear-gradient(
-        90deg,
-        #063d2b,
-        #015a34
-      );
-
-    border-radius: 24px;
-
-    padding: 45px;
-
-    color: white;
-
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 30px;
 
-    gap: 24px;
+    padding: 40px 44px;
 
-    flex-wrap: wrap;
+    border-radius: 26px;
+
+    background:
+      radial-gradient(
+        ellipse at 100% 0%,
+        rgba($secondary, 0.18) 0%,
+        transparent 50%
+      ),
+      linear-gradient(120deg, $primary-dark 0%, $primary 100%);
+    color: #fff;
+
+    box-shadow: 0 26px 56px rgba(8, 59, 42, 0.22);
   }
 
-  // Lien vers la chaîne YouTube, présenté comme un bouton.
-  &__cta {
-    background: #ffd22e;
+  &__text {
+    h2 {
+      @include section-title($on-dark: true);
 
-    color: #083b2a;
+      font-size: clamp(1.6rem, 2.8vw, 2.2rem);
+    }
 
-    border: none;
+    p {
+      margin: 10px 0 0;
 
-    padding: 16px 30px;
+      max-width: 460px;
 
-    border-radius: 12px;
+      color: rgba(255, 255, 255, 0.82);
 
-    font-weight: 700;
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+  }
 
-    text-decoration: none;
-
-    display: inline-flex;
-    gap: 10px;
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
+    gap: 18px;
+  }
 
-    transition: all .3s ease;
-
-    &:hover {
-      transform: translateY(-2px);
-    }
-
-    &:focus-visible {
-      outline: 3px solid #fff;
-
-      outline-offset: 3px;
-    }
+  &__cta {
+    @include pill-button(primary);
   }
 
   &__socials {
     display: flex;
-    gap: 15px;
+    gap: 10px;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
 
     a {
-      display: inline-flex;
+      display: grid;
+      place-items: center;
 
-      color: white;
+      width: 46px;
+      height: 46px;
 
+      border: 1px solid rgba(255, 255, 255, 0.3);
       border-radius: 50%;
 
-      transition: all .3s ease;
+      color: #fff;
+
+      font-size: 1.05rem;
+
+      transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        border-color 0.25s ease;
 
       &:hover {
-        transform: translateY(-2px);
+        border-color: $secondary;
+
+        background: $secondary;
+        color: $primary-dark;
       }
 
       &:focus-visible {
-        outline: 3px solid #ffd22e;
-
+        outline: 3px solid $secondary;
         outline-offset: 3px;
       }
     }
+  }
 
-    svg {
-      width: 48px;
-      height: 48px;
+  @media (max-width: 900px) {
+    &__content {
+      flex-direction: column;
+      align-items: flex-start;
 
-      padding: 12px;
-
-      border-radius: 50%;
-
-      border: 1px solid rgba(255,255,255,.25);
+      padding: 32px 26px;
     }
   }
-}
 
-@media (max-width: 768px) {
-  .subscribe-banner {
-    margin: 50px auto;
-
-    &__content {
-      padding: 32px 24px;
-
-      justify-content: center;
-
-      text-align: center;
-    }
+  @media (max-width: 768px) {
+    padding-bottom: 80px;
   }
 }

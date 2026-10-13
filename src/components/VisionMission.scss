@@ -1,144 +1,186 @@
 @use "../styles/variables" as *;
+@use "../styles/mixins" as *;
+@use "../styles/ui" as *;
 
+// Tout est imbriqué sous `.vision-mission` (feuille de style unique, voir
+// CLAUDE.md). Les anciens `.vision-item` / `.vision-separator` étaient
+// déclarés à la racine.
 .vision-mission {
-  padding: 35px 0;
+  padding: 120px 0 110px;
 
   background: #fff;
 
-  &__container {
-    max-width: 1400px;
-    margin: 0 auto;
+  scroll-margin-top: 80px;
 
-    padding: 0 60px;
+  &__container {
+    @include container;
 
     display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
-    gap: 60px;
-
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
     align-items: center;
+    gap: 80px;
   }
 
-  &__left {
-    display: flex;
-    flex-direction: column;
-  }
+  &__media {
+    position: relative;
 
-  &__right {
+    padding-bottom: 90px;
+
     img {
+      display: block;
+
       width: 100%;
-      height: 420px;
+      aspect-ratio: 4 / 4.4;
+
+      border-radius: 28px;
 
       object-fit: cover;
 
-      border-radius: 18px;
+      box-shadow: 0 30px 60px rgba(8, 59, 42, 0.18);
     }
   }
-}
 
-.vision-item {
-  display: flex;
-  gap: 40px;
+  // La vision en carte superposée : c'est la phrase que l'on retient.
+  &__vision {
+    position: absolute;
+    right: -30px;
+    bottom: 0;
+    left: 40px;
 
-  align-items: flex-start;
+    padding: 30px 32px;
 
-  &__icon {
-    min-width: 100px;
-    width: 100px;
-    height: 100px;
+    border-radius: 22px;
+
+    background: $primary;
+    color: #fff;
+
+    box-shadow: 0 24px 50px rgba(8, 59, 42, 0.3);
+
+    p {
+      margin: 0;
+
+      font-size: 1.08rem;
+      font-weight: 500;
+      line-height: 1.65;
+    }
+  }
+
+  &__label {
+    @include eyebrow($on-dark: true, $spacing: 12px);
+  }
+
+  &__eyebrow {
+    @include eyebrow;
+  }
+
+  h2 {
+    @include section-title;
+  }
+
+  &__text {
+    margin: 20px 0 34px;
+
+    color: #4b5563;
+
+    font-size: 1rem;
+    line-height: 1.85;
+  }
+
+  &__steps {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+
+      padding: 14px 16px;
+
+      border: 1px solid rgba($primary, 0.1);
+      border-radius: 16px;
+
+      background: #f7f5ee;
+
+      color: #4b5563;
+
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    strong {
+      color: $primary-dark;
+
+      font-weight: 700;
+    }
+  }
+
+  &__step-number {
+    flex-shrink: 0;
+
+    display: grid;
+    place-items: center;
+
+    width: 32px;
+    height: 32px;
 
     border-radius: 50%;
 
-    background: #f3f6eb;
+    background: $secondary;
+    color: $primary-dark;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    color: #0c4d2f;
-    font-size: 3rem;
-  }
-
-  &__content {
-    flex: 1;
-  }
-
-  h3 {
-    margin: 0;
-
-    color: #0c4d2f;
-
-    font-size: 2.1rem;
+    font-size: 0.85rem;
     font-weight: 700;
   }
 
-  &__line {
-    width: 50px;
-    height: 4px;
-
-    background: #f4c61d;
-
-    margin: 14px 0 20px;
-  }
-
-  p {
-    max-width: 520px;
-
-    color: #444;
-
-    line-height: 1.8;
-    font-size: 1.15rem;
-
-    margin: 0;
-  }
-}
-
-.vision-separator {
-  height: 1px;
-
-  background: #e5e5e5;
-
-  margin: 40px 0;
-}
-
-@media (max-width: 992px) {
-  .vision-mission {
+  @media (max-width: 1100px) {
     &__container {
       grid-template-columns: 1fr;
-      gap: 40px;
+      gap: 60px;
     }
 
-    &__right img {
-      height: 350px;
+    &__media {
+      max-width: 560px;
+      width: 100%;
+      margin: 0 auto;
     }
-  }
-}
 
-@media (max-width: 768px) {
-  .vision-mission {
-    padding: 50px 0;
-
-    &__container {
-      padding: 0 25px;
+    &__vision {
+      right: -12px;
+      left: 24px;
     }
   }
 
-  .vision-item {
-    gap: 20px;
+  @media (max-width: 768px) {
+    padding: 80px 0;
 
-    &__icon {
-      min-width: 70px;
-      width: 70px;
-      height: 70px;
+    &__media {
+      padding-bottom: 0;
 
-      font-size: 2rem;
+      img {
+        aspect-ratio: 4 / 3;
+      }
     }
 
-    h3 {
-      font-size: 1.6rem;
+    // En colonne, la carte de vision passe sous l'image au lieu de la
+    // recouvrir.
+    &__vision {
+      position: relative;
+      right: auto;
+      left: auto;
+
+      margin: -40px 14px 0;
+      padding: 24px 22px;
     }
 
-    p {
-      font-size: 1rem;
+    &__steps {
+      grid-template-columns: 1fr;
     }
   }
 }

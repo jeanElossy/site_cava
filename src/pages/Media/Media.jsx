@@ -101,21 +101,26 @@ export default function Media() {
 
         <MediaHero />
 
-        <MediaFilters
-          active={activeFilter}
-          setActive={setActiveFilter}
-        />
-
-        {sections.map((section, index) => (
-          <MediaSection
-            key={index}
-            title={section.title}
-            buttonText={section.buttonText}
-            onButtonClick={section.onButtonClick}
-            onPlay={setPlaying}
-            items={section.items}
+        <div
+          className="media-page__library"
+          id="mediatheque"
+        >
+          <MediaFilters
+            active={activeFilter}
+            setActive={setActiveFilter}
           />
-        ))}
+
+          {sections.map((section) => (
+            <MediaSection
+              key={section.title}
+              title={section.title}
+              buttonText={section.buttonText}
+              onButtonClick={section.onButtonClick}
+              onPlay={setPlaying}
+              items={section.items}
+            />
+          ))}
+        </div>
 
         <SubscribeBanner />
 

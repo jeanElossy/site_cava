@@ -69,13 +69,13 @@ const StatCard = ({ icon, value, label, hint, active, index }) => {
 
   return (
     <motion.li
-      className="community-stats__card"
-      initial={{ opacity: 0, y: 24 }}
+      className="community-stats__item"
+      initial={{ opacity: 0, y: 16 }}
       animate={
-        active ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }
+        active ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }
       }
       transition={{
-        duration: 0.5,
+        duration: 0.45,
         delay: index * 0.1,
         ease: "easeOut",
       }}
@@ -84,16 +84,18 @@ const StatCard = ({ icon, value, label, hint, active, index }) => {
         {icon}
       </span>
 
-      <span className="community-stats__value">
-        {shown}
-        <span className="community-stats__plus" aria-hidden="true">
-          +
+      <span className="community-stats__figures">
+        <span className="community-stats__value">
+          {shown}
+          <span className="community-stats__plus" aria-hidden="true">
+            +
+          </span>
         </span>
+
+        <span className="community-stats__label">{label}</span>
+
+        <span className="community-stats__hint">{hint}</span>
       </span>
-
-      <span className="community-stats__label">{label}</span>
-
-      <span className="community-stats__hint">{hint}</span>
     </motion.li>
   );
 };
@@ -111,70 +113,72 @@ const CommunityStats = () => {
       icon: <FaUsers />,
       value: communityStats.members,
       label: "Membres",
-      hint: "Frères et sœurs engagés dans la vie de l'église",
+      hint: "Engagés dans la vie de l'église",
     },
     {
       key: "servants",
       icon: <FaHandsHelping />,
       value: communityStats.servants,
       label: "Serviteurs",
-      hint: "Responsables et bénévoles au service de tous",
+      hint: "Responsables et bénévoles",
     },
     {
       key: "ministries",
       icon: <FaChurch />,
       value: communityStats.ministries,
       label: "Ministères",
-      hint: "Départements actifs, chacun avec sa mission",
+      hint: "Chacun avec sa mission",
     },
     {
       key: "districts",
       icon: <FaMapMarkedAlt />,
       value: communityStats.districts,
       label: "Quartiers",
-      hint: "Communes d'Abidjan où vivent nos membres",
+      hint: "Où vivent nos membres",
     },
   ].filter((card) => card.value > 0);
 
   // Il faut au moins deux chiffres pour parler de « chiffres ».
   //
   // Le registre se remplit progressivement : tant qu'une seule rubrique
-  // dépasse son seuil, un grand bandeau titré « notre communauté en
-  // chiffres » autour d'une carte unique fait plus pauvre que pas de
-  // bandeau du tout. La section réapparaîtra d'elle-même à mesure que
-  // les membres seront saisis.
+  // dépasse son seuil, un bandeau titré « notre communauté en chiffres »
+  // autour d'une carte unique fait plus pauvre que pas de bandeau du
+  // tout. La section réapparaîtra d'elle-même à mesure que les membres
+  // seront saisis.
   if (cards.length < 2) return null;
 
   return (
-    <section className="community-stats" ref={ref}>
+    <section
+      className="community-stats"
+      ref={ref}
+      aria-labelledby="community-stats-title"
+    >
       <div className="community-stats__container">
-        <header className="community-stats__header">
-          <span className="community-stats__eyebrow">
-            Notre communauté en chiffres
-          </span>
+        <div className="community-stats__panel">
+          <header className="community-stats__header">
+            <span className="community-stats__eyebrow">
+              En chiffres
+            </span>
 
-          <h2>Une famille qui grandit</h2>
+            <h2 id="community-stats-title">Une famille qui grandit</h2>
 
-          <p>
-            Derrière chaque nombre, des visages, des histoires et des
-            vies transformées. Ces chiffres sont issus de notre registre
-            et mis à jour à chaque publication.
-          </p>
-        </header>
+            <p>Issus de notre registre, mis à jour à chaque publication.</p>
+          </header>
 
-        <ul className="community-stats__grid">
-          {cards.map((card, index) => (
-            <StatCard
-              key={card.key}
-              icon={card.icon}
-              value={card.value}
-              label={card.label}
-              hint={card.hint}
-              active={inView}
-              index={index}
-            />
-          ))}
-        </ul>
+          <ul className="community-stats__list">
+            {cards.map((card, index) => (
+              <StatCard
+                key={card.key}
+                icon={card.icon}
+                value={card.value}
+                label={card.label}
+                hint={card.hint}
+                active={inView}
+                index={index}
+              />
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   );

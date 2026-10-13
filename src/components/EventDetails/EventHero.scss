@@ -1,6 +1,10 @@
 @use "../../styles/variables" as *;
 @use "../../styles/mixins" as *;
+@use "../../styles/ui" as *;
 
+// Tout est imbriqué sous `.event-hero` (feuille de style unique, voir
+// CLAUDE.md). Voile presque opaque côté texte : l'image d'un événement
+// est souvent une affiche, dont le texte transparaissait sous le titre.
 .event-hero {
   position: relative;
 
@@ -8,136 +12,133 @@
 
   display: flex;
   align-items: center;
-  justify-content: center;
+
+  background-color: $primary-dark;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 
   overflow: hidden;
 
-  text-align: center;
-
-  &__image {
-    position: absolute;
-
-    inset: 0;
-
-    width: 100%;
-    height: 100%;
-
-    object-fit: cover;
-  }
-
   &__overlay {
     position: absolute;
-
     inset: 0;
+    z-index: 1;
 
     background:
+      radial-gradient(
+        ellipse at 85% 110%,
+        rgba($secondary, 0.16) 0%,
+        transparent 55%
+      ),
       linear-gradient(
-        180deg,
-        rgba(0, 0, 0, 0.2) 0%,
-        rgba(3, 46, 32, 0.5) 40%,
-        rgba(3, 46, 32, 0.85) 100%
+        95deg,
+        rgba($primary-dark, 0.98) 0%,
+        rgba($primary-dark, 0.95) 50%,
+        rgba($primary, 0.6) 78%,
+        rgba(0, 0, 0, 0.35) 100%
       );
+  }
 
-    z-index: 1;
+  &__container {
+    @include container;
+
+    position: relative;
+    z-index: 2;
+
+    padding-top: 150px;
+    padding-bottom: 100px;
   }
 
   &__content {
-    position: relative;
+    max-width: 720px;
 
-    z-index: 2;
-
-    max-width: 900px;
-
-    width: 100%;
-
-    padding: 120px 20px 60px;
-
-    color: $text-light;
+    color: #fff;
   }
 
-  &__badge {
-    display: inline-flex;
+  &__breadcrumb {
+    @include hero-breadcrumb;
+  }
 
-    align-items: center;
-    justify-content: center;
-
-    padding: 10px 22px;
-
-    margin-bottom: 22px;
-
-    border-radius: 999px;
-
-    border: 2px solid $secondary;
-
-    color: $secondary;
-
-    font-size: 0.9rem;
-    font-weight: 700;
-
-    text-transform: uppercase;
-
-    letter-spacing: 1px;
-
-    background: rgba(255, 255, 255, 0.04);
-
-    backdrop-filter: blur(10px);
+  &__eyebrow {
+    @include eyebrow($on-dark: true, $spacing: 18px);
   }
 
   &__title {
-    font-size: clamp(2.4rem, 6vw, 4.4rem);
+    margin: 0 0 20px;
 
-    font-weight: 800;
+    color: #fff;
 
+    font-size: clamp(2.2rem, 4.6vw, 4rem);
+    font-weight: 700;
     line-height: 1.08;
+    letter-spacing: -0.02em;
 
-    margin-bottom: 20px;
-
-    color: $text-light;
+    text-wrap: balance;
   }
 
   &__description {
-    max-width: 720px;
+    margin: 0 0 26px;
 
-    margin: 0 auto;
+    max-width: 600px;
 
-    font-size: 1.15rem;
+    color: rgba(255, 255, 255, 0.88);
 
-    line-height: 1.7;
-
-    color: rgba(255, 255, 255, 0.92);
+    font-size: 1.1rem;
+    line-height: 1.75;
   }
 
   &__meta {
     display: flex;
-
     flex-wrap: wrap;
+    gap: 10px;
 
-    justify-content: center;
-
-    gap: 14px 28px;
-
-    margin-top: 30px;
+    margin: 0 0 30px;
+    padding: 0;
 
     list-style: none;
 
     li {
       display: inline-flex;
-
       align-items: center;
+      gap: 8px;
 
-      gap: 9px;
+      padding: 9px 16px;
 
-      padding: 10px 18px;
-
+      border: 1px solid rgba(255, 255, 255, 0.18);
       border-radius: 999px;
 
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.08);
 
-      backdrop-filter: blur(8px);
+      font-size: 0.9rem;
+      font-weight: 500;
 
-      font-size: 0.95rem;
-      font-weight: 600;
+      backdrop-filter: blur(6px);
     }
+
+    svg {
+      color: $secondary;
+    }
+  }
+
+  &__past {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    margin: 0 0 26px;
+    padding: 12px 18px;
+
+    max-width: 560px;
+
+    border-left: 3px solid $secondary;
+    border-radius: 10px;
+
+    background: rgba(0, 0, 0, 0.25);
+    color: rgba(255, 255, 255, 0.9);
+
+    font-size: 0.92rem;
+    line-height: 1.5;
 
     svg {
       flex-shrink: 0;
@@ -148,79 +149,24 @@
 
   &__actions {
     display: flex;
-
-    justify-content: center;
-
-    gap: 18px;
-
     flex-wrap: wrap;
-
-    margin-top: 36px;
+    gap: 14px;
   }
 
-  &__btn-primary,
-  &__btn-outline {
-    display: inline-flex;
+  &__cta {
+    @include pill-button(primary);
 
-    align-items: center;
-    justify-content: center;
+    &--ghost {
+      backdrop-filter: blur(6px);
 
-    gap: 10px;
-
-    height: 58px;
-
-    padding: 0 32px;
-
-    border-radius: 14px;
-
-    font-size: 1rem;
-    font-weight: 700;
-
-    text-decoration: none;
-
-    cursor: pointer;
-
-    transition: $transition;
-
-    &:hover {
-      transform: translateY(-3px);
-    }
-
-    &:focus-visible {
-      outline: 3px solid $secondary;
-
-      outline-offset: 3px;
+      @include pill-button(light);
     }
   }
 
-  &__btn-primary {
-    border: none;
-
-    background: $secondary;
-
-    color: #1a1a1a;
-
-    box-shadow: 0 12px 30px rgba(255, 193, 7, 0.25);
-  }
-
-  &__btn-outline {
-    background: transparent;
-
-    color: $text-light;
-
-    border: 2px solid rgba(255, 255, 255, 0.8);
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.08);
-    }
-  }
-}
-
-@media (max-width: 768px) {
-  .event-hero {
-
-    &__content {
-      padding: 100px 16px 50px;
+  @media (max-width: 768px) {
+    &__container {
+      padding-top: 120px;
+      padding-bottom: 70px;
     }
 
     &__description {
@@ -229,15 +175,7 @@
 
     &__actions {
       flex-direction: column;
-
-      align-items: center;
-    }
-
-    &__btn-primary,
-    &__btn-outline {
-      width: 100%;
-
-      max-width: 320px;
+      align-items: stretch;
     }
   }
 }

@@ -1,5 +1,6 @@
 @use "../../styles/variables" as *;
 @use "../../styles/mixins" as *;
+@use "../../styles/ui" as *;
 
 // Tout est imbriqué sous `.events-sidebar` : les noms de blocs
 // (`calendar`, `newsletter`, `proposal`) sont génériques et ne doivent pas
@@ -7,119 +8,81 @@
 .events-sidebar {
   display: flex;
   flex-direction: column;
-
   gap: 24px;
 
-  &__proposal {
-    background: white;
-
-    border: 1px solid #ececec;
-    border-radius: 22px;
-
-    padding: 28px;
-  }
+  // Pas de `position: sticky` : la colonne est plus haute qu'un écran
+  // portable, son bas deviendrait inaccessible pendant le défilement.
 
   /* ---- Encart newsletter ---- */
 
   &__newsletter {
     position: relative;
 
-    overflow: hidden;
-
-    border-radius: 22px;
-
-    background: linear-gradient(
-      135deg,
-      #014321,
-      #066232
-    );
-
-    color: white;
-
-    padding: 26px 0 26px 26px;
-
-    min-height: 300px;
-
     display: flex;
     align-items: center;
     justify-content: space-between;
 
+    padding: 28px 0 28px 26px;
+
+    border-radius: 22px;
+
+    background:
+      radial-gradient(
+        ellipse at 100% 0%,
+        rgba($secondary, 0.18) 0%,
+        transparent 50%
+      ),
+      linear-gradient(135deg, $primary-dark 0%, $primary 100%);
+    color: #fff;
+
+    overflow: hidden;
+
     img {
-      width: 230px;
-
-      margin-right: -10px;
-      margin-bottom: -30px;
-
+      display: block;
       align-self: flex-end;
 
-      display: block;
+      width: 150px;
+
+      margin: 0 -14px -40px 0;
     }
   }
 
   &__newsletter-content {
-    max-width: 260px;
+    flex: 1;
+
+    min-width: 0;
 
     h2 {
       margin: 0;
 
-      font-size: 2.1rem;
-      font-weight: 700;
+      color: #fff;
 
-      line-height: 1.15;
+      font-size: 1.4rem;
+      font-weight: 700;
+      line-height: 1.2;
     }
 
-    span {
+    // Filet décoratif sous le titre.
+    > span {
       display: block;
 
-      width: 60px;
-      height: 4px;
+      width: 44px;
+      height: 3px;
 
-      margin: 18px 0;
+      margin: 14px 0;
 
       border-radius: 999px;
 
-      background: #f4c61d;
+      background: $secondary;
     }
 
     p {
-      font-size: 1rem;
-      line-height: 1.75;
-    }
+      margin: 0 0 16px;
 
-    // Lien vers /contact présenté comme un bouton.
-    a {
-      margin-top: 12px;
+      color: rgba(255, 255, 255, 0.82);
 
-      border: none;
-      border-radius: 12px;
-
-      padding: 14px 24px;
-
-      background: #f4c61d;
-
-      color: #111;
-
-      font-weight: 700;
-
-      text-decoration: none;
-
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-
-      cursor: pointer;
-
-      transition: 0.3s;
-
-      &:hover {
-        transform: translateY(-2px);
-      }
-
-      &:focus-visible {
-        outline: 3px solid #fff;
-
-        outline-offset: 3px;
-      }
+      font-size: 0.92rem;
+      line-height: 1.65;
     }
   }
 
@@ -127,131 +90,77 @@
 
   &__proposal {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 18px;
 
+    padding: 26px 24px;
+
+    border: 1px solid rgba($primary, 0.08);
+    border-radius: 22px;
+
+    background: #fff;
+
+    box-shadow: 0 10px 30px rgba(8, 59, 42, 0.06);
+
     h2 {
-      margin: 0 0 10px;
+      margin: 0 0 8px;
 
-      color: #111;
+      color: $primary-dark;
 
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       font-weight: 700;
     }
 
     p {
-      margin: 0 0 15px;
+      margin: 0 0 16px;
 
-      color: #666;
+      color: #6b7280;
 
-      line-height: 1.7;
+      font-size: 0.92rem;
+      line-height: 1.65;
     }
 
-    // Lien vers /contact présenté comme un bouton.
     a {
-      height: 52px;
+      @include pill-button(outline);
 
-      padding: 0 24px;
+      // Bouton plus compact dans la colonne : après le mixin pour
+      // l'emporter, dans `& {}` pour ne pas suivre ses règles imbriquées.
+      & {
+        padding: 11px 20px;
 
-      border-radius: 12px;
-      border: 2px solid #014321;
-
-      background: white;
-
-      color: #014321;
-      font-weight: 700;
-
-      text-decoration: none;
-
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-
-      cursor: pointer;
-
-      transition: 0.3s;
-
-      &:hover {
-        background: #014321;
-        color: white;
-      }
-
-      &:focus-visible {
-        outline: 3px solid #f4c61d;
-
-        outline-offset: 3px;
+        font-size: 0.9rem;
       }
     }
   }
 
   &__proposal-icon {
-    font-size: 3.4rem;
-    color: #f4c61d;
-
     flex-shrink: 0;
 
-    display: flex;
-  }
-}
+    display: grid;
+    place-items: center;
 
-/* ---- Tablette large ---- */
-@media (max-width: 1200px) {
-  .events-sidebar__newsletter img {
-    width: 200px;
-  }
-}
+    width: 48px;
+    height: 48px;
 
-/* ---- Tablette : la colonne passe sous la liste ---- */
-@media (max-width: 992px) {
-  .events-sidebar {
-    gap: 22px;
-  }
-}
+    border-radius: 14px;
 
-/* ---- Mobile ---- */
-@media (max-width: 768px) {
-  .events-sidebar {
+    background: rgba($secondary, 0.25);
+    color: $secondary-dark;
+
+    font-size: 1.2rem;
+  }
+
+  @media (max-width: 768px) {
     &__newsletter {
-      flex-direction: column;
-      align-items: flex-start;
-
-      padding: 25px;
-
-      min-height: auto;
+      padding: 24px;
 
       img {
-        width: 260px;
-
-        margin: 20px auto -25px;
-        margin-right: -25px;
-
-        align-self: center;
-      }
-    }
-
-    &__newsletter-content {
-      max-width: 100%;
-
-      h2 {
-        font-size: 1.7rem;
-      }
-
-      a {
-        width: 100%;
-
-        justify-content: center;
+        display: none;
       }
     }
 
     &__proposal {
       flex-direction: column;
-      text-align: center;
-
-      a {
-        width: 100%;
-
-        justify-content: center;
-      }
     }
   }
 }

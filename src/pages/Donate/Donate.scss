@@ -1,7 +1,20 @@
 .donate-page {
   background: #f8f8f6;
 
+  overflow-x: hidden;
+
   section {
     position: relative;
   }
+
+  // Cibles des boutons du hero, sous la barre de navigation fixe.
+  section[id] {
+    scroll-margin-top: 90px;
+  }
+}
+
+// La page se termine sur le bandeau vert du verset : la marge haute du
+// pied de page (globale, `Footer.scss`) y laissait une bande blanche.
+.donate-page + .footer {
+  margin-top: 0;
 }

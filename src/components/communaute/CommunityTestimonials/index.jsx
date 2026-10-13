@@ -26,11 +26,6 @@ const CommunityTestimonials = () => {
           <span className="community-voices__eyebrow">Témoignages</span>
 
           <h2>Ce que la communauté a changé</h2>
-
-          <div
-            className="community-voices__line"
-            aria-hidden="true"
-          ></div>
         </header>
 
         <ul className="community-voices__grid">

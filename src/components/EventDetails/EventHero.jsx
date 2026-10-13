@@ -1,67 +1,133 @@
 import { Link } from "react-router-dom";
 
+import { motion } from "framer-motion";
+
 import {
+  FaArrowRight,
+  FaHistory,
+  FaMapMarkerAlt,
   FaRegCalendarAlt,
   FaRegClock,
-  FaMapMarkerAlt,
-  FaEnvelope,
 } from "react-icons/fa";
+
+import { eventDateLabel, isPastEvent } from "../../utils/eventDates";
 
 import "./EventHero.scss";
 
 const EventHero = ({ event }) => {
+  const past = isPastEvent(event);
+
+  const date = eventDateLabel(event);
+
+  const time = event.endTime ? `${event.time} - ${event.endTime}` : event.time;
+
   return (
-    <section className="event-hero">
-      <img
-        src={event.image}
-        alt={event.title}
-        className="event-hero__image"
+    <section
+      className="event-hero"
+      style={
+        event.image ? { backgroundImage: `url(${event.image})` } : undefined
+      }
+    >
+      <div
+        className="event-hero__overlay"
+        aria-hidden="true"
       />
 
-      <div className="event-hero__overlay" aria-hidden="true" />
+      <div className="event-hero__container">
+        <motion.div
+          className="event-hero__content"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
+          <nav
+            className="event-hero__breadcrumb"
+            aria-label="Fil d'Ariane"
+          >
+            <Link to="/">Accueil</Link>
 
-      <div className="event-hero__content">
-        <span className="event-hero__badge">Événement</span>
+            <span aria-hidden="true">/</span>
 
-        <h1 className="event-hero__title">{event.title}</h1>
+            <Link to="/events">Événements</Link>
 
-        <p className="event-hero__description">{event.description}</p>
+            <span aria-hidden="true">/</span>
 
-        <ul className="event-hero__meta">
-          <li>
-            <FaRegCalendarAlt aria-hidden="true" />
+            <span aria-current="page">{event.title}</span>
+          </nav>
 
-            <span className="sr-only">Date :</span>
-            {event.date}
-          </li>
+          <p className="event-hero__eyebrow">
+            {past ? "Événement passé" : "Événement"}
+          </p>
 
-          <li>
-            <FaRegClock aria-hidden="true" />
+          <h1 className="event-hero__title">{event.title}</h1>
 
-            <span className="sr-only">Horaire :</span>
-            {event.endTime
-              ? `${event.time} - ${event.endTime}`
-              : event.time}
-          </li>
+          {event.description && (
+            <p className="event-hero__description">{event.description}</p>
+          )}
 
-          <li>
-            <FaMapMarkerAlt aria-hidden="true" />
+          <ul className="event-hero__meta">
+            {date && (
+              <li>
+                <FaRegCalendarAlt aria-hidden="true" />
+                <span className="sr-only">Date :</span>
+                {date}
+              </li>
+            )}
 
-            <span className="sr-only">Lieu :</span>
-            {event.location}
-          </li>
-        </ul>
+            {time && (
+              <li>
+                <FaRegClock aria-hidden="true" />
+                <span className="sr-only">Horaire :</span>
+                {time}
+              </li>
+            )}
 
-        <div className="event-hero__actions">
-          <Link to="/contact" className="event-hero__btn-primary">
-            <FaEnvelope aria-hidden="true" />
-            Je participe
-          </Link>
+            {event.location && (
+              <li>
+                <FaMapMarkerAlt aria-hidden="true" />
+                <span className="sr-only">Lieu :</span>
+                {event.location}
+              </li>
+            )}
+          </ul>
 
-          <Link to="/events" className="event-hero__btn-outline">
-            Tous les événements
-          </Link>
-        </div>
+          {past && (
+            <p className="event-hero__past">
+              <FaHistory aria-hidden="true" />
+              Cet événement a eu lieu. Retrouvez les prochains rendez-vous
+              dans l&apos;agenda.
+            </p>
+          )}
+
+          <div className="event-hero__actions">
+            {past ? (
+              <Link
+                to="/events"
+                className="event-hero__cta"
+              >
+                Voir l&apos;agenda
+                <FaArrowRight aria-hidden="true" />
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/contact"
+                  className="event-hero__cta"
+                >
+                  Je participe
+                  <FaArrowRight aria-hidden="true" />
+                </Link>
+
+                <Link
+                  to="/events"
+                  className="event-hero__cta event-hero__cta--ghost"
+                >
+                  Tous les événements
+                </Link>
+              </>
+            )}
+          </div>
+        </motion.div>
       </div>
     </section>
   );

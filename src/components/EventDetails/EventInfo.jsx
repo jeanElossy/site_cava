@@ -7,6 +7,8 @@ import {
   FaUsers,
 } from "react-icons/fa";
 
+import { eventDateLabel } from "../../utils/eventDates";
+
 import "./EventInfo.scss";
 
 const EventInfo = ({ event }) => {
@@ -16,7 +18,7 @@ const EventInfo = ({ event }) => {
     {
       icon: <FaRegCalendarAlt />,
       label: "Date",
-      value: event.date,
+      value: eventDateLabel(event),
     },
     {
       icon: <FaRegClock />,
@@ -46,31 +48,31 @@ const EventInfo = ({ event }) => {
     <section className="event-info" aria-labelledby="event-info-title">
       <div className="event-info__container">
         <header className="event-info__header">
-          <h2 id="event-info-title">Informations pratiques</h2>
+          <span className="event-info__eyebrow">En pratique</span>
 
-          <div className="event-info__line" />
+          <h2 id="event-info-title">Informations pratiques</h2>
         </header>
 
         <ul className="event-info__grid">
           {items.map((item, index) => (
             <motion.li
               key={item.label}
-              className="info-card"
+              className="event-info__card"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.4, delay: index * 0.07 }}
             >
-              <div className="info-card__icon" aria-hidden="true">
+              <div className="event-info__icon" aria-hidden="true">
                 {item.icon}
               </div>
 
               <h3>{item.label}</h3>
 
-              <p className="info-card__value">{item.value}</p>
+              <p className="event-info__value">{item.value}</p>
 
               {item.detail && (
-                <p className="info-card__detail">{item.detail}</p>
+                <p className="event-info__detail">{item.detail}</p>
               )}
             </motion.li>
           ))}

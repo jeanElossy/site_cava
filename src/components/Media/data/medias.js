@@ -17,21 +17,38 @@
 
 import content from "../../../content/medias.json";
 
-// Chaîne de l'église : destination de repli, également utilisée par le
-// bandeau d'abonnement et le pied de page.
-export const CHANNEL_URL = "https://youtube.com";
+import { site } from "../../../content/settings";
+
+import { safeHttpUrl, safeMediaSrc } from "../../../utils/safeUrl";
+
+// Chaîne de l'église : destination de repli, lue dans les paramètres du
+// site comme le pied de page (elle était recopiée ici en dur).
+export const CHANNEL_URL = safeHttpUrl(
+  site.social.youtube,
+  "https://youtube.com"
+);
+
+// Même règle que le modèle `Media` de l'API.
+const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 
 export const messages = content.messages ?? [];
 export const louanges = content.louanges ?? [];
 export const temoignages = content.temoignages ?? [];
 
-// Un média se lit sur le site si sa vidéo est embarquable.
+// Un média se lit sur le site si sa vidéo est embarquable ET sûre :
+// identifiant YouTube conforme, ou fichier sur un chemin interne / https.
+// Une valeur douteuse en base ne doit pas atteindre l'iframe ni le
+// lecteur (voir utils/safeUrl.js).
 export const isPlayable = (item) =>
-  item?.video?.kind === "youtube" ||
-  item?.video?.kind === "file";
+  (item?.video?.kind === "youtube" && YOUTUBE_ID.test(item.video.id ?? "")) ||
+  (item?.video?.kind === "file" && Boolean(safeMediaSrc(item.video.src)));
 
-// Destination externe : lien explicite, ou repli sur la chaîne.
+// Source sûre d'un fichier vidéo, ou null.
+export const playableSrc = (item) => safeMediaSrc(item?.video?.src);
+
+// Destination externe : lien explicite s'il est en http(s), sinon repli
+// sur la chaîne.
 export const externalUrl = (item) =>
   item?.video?.kind === "link"
-    ? item.video.url
+    ? safeHttpUrl(item.video.url, CHANNEL_URL)
     : CHANNEL_URL;

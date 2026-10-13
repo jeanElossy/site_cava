@@ -7,6 +7,8 @@ import { RegistrationProvider } from "../../context/RegistrationContext";
 import RegistrationHero from "../../components/registration/RegistrationHero";
 import RegistrationForm from "../../components/registration/RegistrationForm";
 
+import "./Registration.scss";
+
 const Registration = () => {
   usePageMeta({
     title: "Inscription des membres",
@@ -18,11 +20,15 @@ const Registration = () => {
     <>
       <Navbar />
 
-      <RegistrationHero />
+      {/* `<main>` : repère de navigation pour les lecteurs d'écran, comme
+          sur les autres pages. */}
+      <main className="registration-page">
+        <RegistrationHero />
 
-      <RegistrationProvider>
-        <RegistrationForm />
-      </RegistrationProvider>
+        <RegistrationProvider>
+          <RegistrationForm />
+        </RegistrationProvider>
+      </main>
 
       <Footer />
     </>

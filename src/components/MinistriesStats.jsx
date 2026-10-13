@@ -1,13 +1,15 @@
-import "./MinistriesStats.scss";
+import { motion } from "framer-motion";
 
 import {
   FaUsers,
   FaHandsHelping,
   FaHeart,
-  FaGlobe
+  FaGlobe,
 } from "react-icons/fa";
 
 import allMinistries from "./MinistryDetails/data/ministries";
+
+import "./MinistriesStats.scss";
 
 const ministries = Object.values(allMinistries);
 
@@ -19,63 +21,76 @@ const leaderCount = ministries.reduce(
   0
 );
 
-// Ces deux chiffres étaient écrits en dur : « + 10 Ministères actifs »
-// alors qu'il y en a six, et « + 300 Serviteurs engagés ». Le premier
-// affichait donc une information fausse, que personne ne pensait à
-// corriger en ajoutant ou retirant un ministère.
+// Les deux premiers chiffres sont comptés dans les données (ils étaient
+// auparavant écrits en dur, et faux) ; les deux derniers sont des
+// formules, pas des mesures.
 const stats = [
   {
-    icon: <FaUsers />,
+    id: "ministeres",
+    icon: FaUsers,
     value: String(ministries.length),
     label:
-      ministries.length > 1
-        ? "Ministères actifs"
-        : "Ministère actif",
-    color: "green",
+      ministries.length > 1 ? "Ministères actifs" : "Ministère actif",
   },
   {
-    icon: <FaHandsHelping />,
+    id: "responsables",
+    icon: FaHandsHelping,
     value: leaderCount > 0 ? String(leaderCount) : "Nombreux",
     label: "Responsables engagés",
-    color: "gold",
   },
   {
-    icon: <FaHeart />,
+    id: "vies",
+    icon: FaHeart,
     value: "Des milliers",
     label: "de vies impactées",
-    color: "green",
   },
   {
-    icon: <FaGlobe />,
-    value: "Un seul but :",
-    label: "Gloire à Dieu",
-    color: "gold",
+    id: "but",
+    icon: FaGlobe,
+    value: "Un seul but",
+    label: "La gloire de Dieu",
   },
 ];
 
 const MinistriesStats = () => {
   return (
-    <section className="ministries-stats">
+    <section
+      className="ministries-stats"
+      aria-label="Les ministères en chiffres"
+    >
       <div className="ministries-stats__container">
+        <ul className="ministries-stats__panel">
+          {stats.map((stat, index) => {
+            const Icon = stat.icon;
 
-        {stats.map((stat, index) => (
-          <div
-            key={index}
-            className="ministries-stat"
-          >
-            <div
-              className={`ministries-stat__icon ministries-stat__icon--${stat.color}`}
-            >
-              {stat.icon}
-            </div>
+            return (
+              <motion.li
+                key={stat.id}
+                className="ministries-stats__item"
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.5 }}
+                transition={{ duration: 0.4, delay: index * 0.08 }}
+              >
+                <span
+                  className="ministries-stats__icon"
+                  aria-hidden="true"
+                >
+                  <Icon />
+                </span>
 
-            <div className="ministries-stat__content">
-              <h3>{stat.value}</h3>
-              <p>{stat.label}</p>
-            </div>
-          </div>
-        ))}
-
+                <span className="ministries-stats__figures">
+                  <span className="ministries-stats__value">
+                    {stat.value}
+                  </span>
+                  <span className="ministries-stats__label">
+                    {stat.label}
+                  </span>
+                </span>
+              </motion.li>
+            );
+          })}
+        </ul>
       </div>
     </section>
   );

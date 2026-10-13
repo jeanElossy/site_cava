@@ -7,65 +7,49 @@ import {
 
 import "./MinistryStats.scss";
 
-const iconMap = {
-  users: <FaUsers />,
-  calendar: <FaCalendarAlt />,
-  leaders: <FaUserTie />,
-  star: <FaStar />,
+const ICONS = {
+  users: FaUsers,
+  calendar: FaCalendarAlt,
+  leaders: FaUserTie,
+  star: FaStar,
 };
 
-const MinistryStats = ({
-  stats = [],
-  insideHero = false,
-}) => {
+// Chiffres d'un ministère, saisis dans l'administration. Bandeau blanc
+// qui chevauche le bas du hero ; sans chiffre, il ne s'affiche pas (il
+// affichait auparavant une carte « — Aucune statistique »).
+const MinistryStats = ({ stats = [] }) => {
+  if (stats.length === 0) return null;
+
   return (
     <section
-      className={`ministry-stats ${
-        insideHero
-          ? "ministry-stats--hero"
-          : ""
-      }`}
+      className="ministry-stats"
+      aria-label="Le ministère en chiffres"
     >
-      <div className="container">
+      <div className="ministry-stats__container">
+        <ul className="ministry-stats__panel">
+          {stats.map((stat, index) => {
+            const Icon = ICONS[stat.icon] ?? FaStar;
 
-        {stats.length > 0 ? (
-          stats.map(
-            (
-              stat,
-              index
-            ) => (
-              <div
-                key={index}
-                className="stat-card"
+            return (
+              <li
+                key={`${stat.label}-${index}`}
+                className="ministry-stats__item"
               >
-                <div className="stat-card__icon">
-                  {iconMap[stat.icon]}
-                </div>
-
-                <h3>
-                  {stat.value}
-                </h3>
-
-                <span>
-                  {stat.label}
+                <span
+                  className="ministry-stats__icon"
+                  aria-hidden="true"
+                >
+                  <Icon />
                 </span>
-              </div>
-            )
-          )
-        ) : (
-          <div className="stat-card">
 
-            <h3>
-              —
-            </h3>
-
-            <span>
-              Aucune statistique
-            </span>
-
-          </div>
-        )}
-
+                <span className="ministry-stats__figures">
+                  <span className="ministry-stats__value">{stat.value}</span>
+                  <span className="ministry-stats__label">{stat.label}</span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </section>
   );

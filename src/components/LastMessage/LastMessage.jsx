@@ -2,7 +2,9 @@ import { useState } from "react";
 
 import { Link } from "react-router-dom";
 
-import { Play, ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
+
+import { Play, ArrowRight, CalendarDays, Clock } from "lucide-react";
 
 import { messages, isPlayable } from "../Media/data/medias";
 
@@ -12,127 +14,154 @@ import fallbackImg from "../../assets/images/message.jpg";
 
 import "./LastMessage.scss";
 
-// Encart « Dernier message » de la page d'accueil.
-//
-// Le contenu était auparavant écrit en dur : une image fixe, la date
-// « Dimanche 25 Mai 2026 » et un titre invariable. Publier un nouveau
-// message depuis l'administration ne changeait donc rien ici, et
-// l'accueil finissait par annoncer un message qui n'était plus le
-// dernier.
+// Section « Dernier message » de l'accueil.
 //
 // Les messages arrivent déjà triés du plus récent au plus ancien
 // (`publicSort: { publishedAt: -1 }` côté API) : le premier fait foi.
+// Sans message publié, la section reste, mais sans annoncer un contenu
+// inexistant.
 const LastMessage = () => {
   const [playing, setPlaying] = useState(null);
 
   const latest = messages[0];
 
-  // Aucun message publié : on garde l'encart, mais sans annoncer un
-  // contenu inexistant.
-  if (!latest) {
-    return (
-      <div className="message-card">
-        <div className="message-image">
-          <img
-            src={fallbackImg}
-            alt=""
-            aria-hidden="true"
-          />
+  const playable = latest ? isPlayable(latest) : false;
 
-          <div className="overlay"></div>
+  // Un lecteur existe sur le site (MediaPlayerModal) : la lecture se fait
+  // sur place. Sans vidéo rattachée, le bouton renvoie vers la page
+  // Médias plutôt que de simuler une lecture.
+  const playLabel = latest
+    ? playable
+      ? `Regarder : ${latest.title}`
+      : `Voir « ${latest.title} » sur la page Médias`
+    : "Voir la page Médias";
 
-          <span className="badge">Messages</span>
-        </div>
-
-        <div className="message-content">
-          <h3>Nos enseignements</h3>
-
-          <p>
-            Les messages du Centre Apostolique Vie et Abondance seront
-            publiés ici.
-          </p>
-
-          <Link to="/media">
-            Voir la page Médias
-            <ArrowRight size={16} />
-          </Link>
-        </div>
-      </div>
+  const renderPlay = (className, children) =>
+    playable ? (
+      <button
+        type="button"
+        className={className}
+        onClick={() => setPlaying(latest)}
+        aria-label={playLabel}
+      >
+        {children}
+      </button>
+    ) : (
+      <Link
+        to="/media"
+        className={className}
+        aria-label={playLabel}
+      >
+        {children}
+      </Link>
     );
-  }
-
-  const playable = isPlayable(latest);
 
   return (
-    <div className="message-card">
-      <div className="message-image">
-        <img
-          src={latest.image || fallbackImg}
-          alt=""
-          aria-hidden="true"
-        />
+    <section
+      className="home-message"
+      aria-labelledby="home-message-title"
+    >
+      <div className="home-message__container">
+        <motion.div
+          className="home-message__media"
+          initial={{ opacity: 0, x: -30 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
+          <img
+            src={latest?.image || fallbackImg}
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />
 
-        <div className="overlay"></div>
-
-        {/* Un lecteur existe désormais sur le site (MediaPlayerModal),
-            et la CSP autorise youtube-nocookie : la lecture se fait
-            donc sur place. Sans vidéo rattachée, le bouton renvoie
-            vers la page Médias plutôt que de simuler une lecture. */}
-        {playable ? (
-          <button
-            type="button"
-            className="play-btn"
-            onClick={() => setPlaying(latest)}
-            aria-label={`Regarder : ${latest.title}`}
-          >
+          {renderPlay(
+            "home-message__play",
             <Play
               fill="currentColor"
-              size={28}
+              size={30}
               aria-hidden="true"
             />
-          </button>
-        ) : (
-          <Link
-            to="/media"
-            className="play-btn"
-            aria-label={`Voir « ${latest.title} » sur la page Médias`}
-          >
-            <Play
-              fill="currentColor"
-              size={28}
-              aria-hidden="true"
-            />
-          </Link>
-        )}
+          )}
+        </motion.div>
 
-        <span className="badge">Dernier message</span>
-      </div>
+        <div className="home-message__body">
+          <span className="home-message__eyebrow">
+            {latest ? "Dernier message" : "Enseignements"}
+          </span>
 
-      <div className="message-content">
-        <small>
-          {latest.date}
-          {latest.duration ? ` · ${latest.duration}` : ""}
-        </small>
+          <h2 id="home-message-title">
+            {latest ? latest.title : "Nos enseignements"}
+          </h2>
 
-        <h3>{latest.title}</h3>
+          {latest ? (
+            <>
+              {latest.author && (
+                <p className="home-message__author">
+                  Par {latest.author}
+                </p>
+              )}
 
-        <p>
-          {latest.author
-            ? `Par ${latest.author}.`
-            : "Dernier enseignement du Centre Apostolique Vie et Abondance."}
-        </p>
+              <ul className="home-message__meta">
+                {latest.date && (
+                  <li>
+                    <CalendarDays size={16} aria-hidden="true" />
+                    {latest.date}
+                  </li>
+                )}
 
-        <Link to="/media">
-          Voir tous les messages
-          <ArrowRight size={16} />
-        </Link>
+                {latest.duration && (
+                  <li>
+                    <Clock size={16} aria-hidden="true" />
+                    {latest.duration}
+                  </li>
+                )}
+              </ul>
+            </>
+          ) : (
+            <p className="home-message__author">
+              Les messages du Centre Apostolique Vie et Abondance seront
+              publiés ici.
+            </p>
+          )}
+
+          <p className="home-message__text">
+            Prédications, louanges et témoignages : retrouvez les
+            enseignements de l&apos;église et revivez les cultes où que
+            vous soyez.
+          </p>
+
+          <div className="home-message__actions">
+            {latest &&
+              renderPlay(
+                "home-message__cta",
+                <>
+                  {playable ? "Regarder le message" : "Voir le message"}
+                  <Play
+                    fill="currentColor"
+                    size={14}
+                    aria-hidden="true"
+                  />
+                </>
+              )}
+
+            <Link
+              to="/media"
+              className="home-message__cta home-message__cta--ghost"
+            >
+              Tous les médias
+              <ArrowRight size={16} aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
       </div>
 
       <MediaPlayerModal
         item={playing}
         onClose={() => setPlaying(null)}
       />
-    </div>
+    </section>
   );
 };
 

@@ -1,116 +1,104 @@
 @use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
 
-// `.quote` est un nom très générique : tout est imbriqué sous `.verse-card`.
-.verse-card {
+// Tout est imbriqué sous `.home-verse` (feuille de style unique, voir
+// CLAUDE.md).
+.home-verse {
   position: relative;
 
-  border-radius: 20px;
+  padding: 130px 0;
 
-  background: linear-gradient(
-    135deg,
-    #0d5b3e 0%,
-    #0a4a34 40%,
-    #083b2a 100%
-  );
-
-  color: white;
-
-  padding: 28px;
-
-  height: 400px;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 
   overflow: hidden;
 
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-
-  box-shadow: 0 15px 30px rgba(0, 0, 0, .12);
-
-  .quote {
-    color: #f4c41d;
-
-    font-size: 3.4rem;
-    font-weight: 700;
-
-    line-height: 1;
-
-    margin-bottom: 8px;
+  // `fixed` est ignoré, voire saccadé, sur la plupart des mobiles.
+  @media (max-width: 992px), (prefers-reduced-motion: reduce) {
+    background-attachment: scroll;
   }
 
-  h2 {
-    font-size: 1.45rem;
-
-    line-height: 1.45;
-
-    font-weight: 500;
-
-    max-width: 95%;
-
-    margin-bottom: 16px;
-  }
-
-  p {
-    color: #f4c41d;
-
-    font-size: 1.1rem;
-
-    font-weight: 700;
-
-    margin: 0;
-  }
-
-  .verse-decoration {
+  &__overlay {
     position: absolute;
+    inset: 0;
+    z-index: 1;
 
-    right: -50px;
-    bottom: -50px;
+    background: linear-gradient(
+      135deg,
+      rgba($primary-dark, 0.9) 0%,
+      rgba($primary, 0.78) 100%
+    );
+  }
 
-    width: 220px;
-    height: 220px;
+  &__inner {
+    @include container;
 
-    border-radius: 50%;
+    position: relative;
+    z-index: 2;
 
-    border: 1px solid rgba(244, 196, 29, .20);
+    max-width: 960px;
 
-    &::before {
-      content: "";
+    margin: 0 auto;
 
-      position: absolute;
+    color: #fff;
 
-      inset: 22px;
+    text-align: center;
 
-      border-radius: 50%;
+    blockquote {
+      margin: 0 0 26px;
 
-      border: 1px solid rgba(244, 196, 29, .18);
+      font-size: clamp(1.6rem, 3.4vw, 2.6rem);
+      font-weight: 600;
+      line-height: 1.35;
+      letter-spacing: -0.01em;
+
+      text-wrap: balance;
     }
 
-    &::after {
-      content: "";
+    figcaption {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
 
-      position: absolute;
+      color: $secondary;
 
-      inset: 44px;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
 
-      border-radius: 50%;
+      &::before,
+      &::after {
+        content: "";
 
-      border: 1px solid rgba(244, 196, 29, .15);
+        width: 36px;
+        height: 2px;
+
+        background: currentColor;
+      }
     }
   }
-}
 
-@media (max-width: 768px) {
-  .verse-card {
-    padding: 26px;
+  &__mark {
+    display: block;
 
-    .quote {
-      font-size: 3.5rem;
-    }
+    height: 70px;
 
-    h2 {
-      font-size: 1.4rem;
+    color: $secondary;
 
-      margin-bottom: 18px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 8rem;
+    line-height: 1;
+  }
+
+  @media (max-width: 768px) {
+    padding: 90px 0;
+
+    &__mark {
+      height: 50px;
+
+      font-size: 6rem;
     }
   }
 }

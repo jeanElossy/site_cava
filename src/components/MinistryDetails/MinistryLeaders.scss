@@ -1,153 +1,131 @@
 @use "../../styles/variables" as *;
 @use "../../styles/mixins" as *;
+@use "../../styles/ui" as *;
 
+// Tout est imbriqué sous `.ministry-leaders` (feuille de style unique,
+// voir CLAUDE.md).
 .ministry-leaders {
-  padding: 90px 0 40px;
+  padding: 100px 0;
 
-  background: $bg-light;
+  background: #f7f5ee;
 
   &__container {
     @include container;
   }
 
   &__header {
+    margin-bottom: 44px;
+
     text-align: center;
 
-    margin-bottom: 48px;
-
     h2 {
-      font-size: clamp(1.5rem, 3vw, 2rem);
-
-      font-weight: 800;
-
-      letter-spacing: 1px;
-
-      text-transform: uppercase;
-
-      color: $primary;
+      @include section-title;
     }
   }
 
-  &__line {
-    width: 70px;
-    height: 4px;
-
-    margin: 14px auto 0;
-
-    border-radius: 999px;
-
-    background: $secondary;
+  &__eyebrow {
+    @include eyebrow($rule: false);
   }
 
   &__grid {
     display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+    gap: 24px;
 
-    grid-template-columns: repeat(
-      auto-fit,
-      minmax(320px, 1fr)
-    );
+    max-width: 1000px;
 
-    gap: 28px;
+    margin: 0 auto;
+    padding: 0;
+
+    list-style: none;
   }
-}
 
-.leader-card {
-  display: flex;
+  &__card {
+    display: flex;
+    align-items: flex-start;
+    gap: 22px;
 
-  align-items: flex-start;
+    padding: 28px;
 
-  gap: 22px;
+    border: 1px solid rgba($primary, 0.08);
+    border-radius: 22px;
 
-  padding: 28px;
+    background: #fff;
 
-  background: #fff;
-
-  border: 1px solid $border-color;
-
-  border-radius: $radius;
-
-  box-shadow: $shadow;
-
-  transition: $transition;
-
-  &:hover {
-    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(8, 59, 42, 0.06);
   }
 
   &__avatar {
     flex-shrink: 0;
 
-    width: 96px;
-    height: 96px;
+    width: 76px;
+    height: 76px;
 
     border-radius: 50%;
 
     object-fit: cover;
 
-    border: 3px solid rgba(13, 91, 62, 0.15);
-  }
+    &--initials {
+      display: grid;
+      place-items: center;
 
-  &__avatar--initials {
-    @include flex-center;
+      background: linear-gradient(135deg, $primary-dark, $primary);
+      color: $secondary;
 
-    background: linear-gradient(
-      145deg,
-      $primary 0%,
-      $primary-dark 100%
-    );
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
 
-    color: $secondary;
-
-    font-size: 1.8rem;
-    font-weight: 800;
-
-    letter-spacing: 1px;
+      box-shadow: 0 0 0 5px rgba($primary, 0.1);
+    }
   }
 
   &__body {
+    min-width: 0;
+
     h3 {
-      font-size: 1.25rem;
+      margin: 4px 0 6px;
 
+      color: $primary-dark;
+
+      font-size: 1.15rem;
       font-weight: 700;
-
-      color: $primary;
-
-      margin-bottom: 4px;
     }
 
     p {
-      font-size: 0.95rem;
+      margin: 12px 0 0;
 
-      line-height: 1.6;
+      color: #4b5563;
 
-      color: rgba(31, 41, 55, 0.75);
+      font-size: 0.93rem;
+      line-height: 1.7;
     }
   }
 
   &__role {
-    display: block;
+    display: inline-block;
 
-    margin-bottom: 10px;
+    padding: 4px 12px;
 
-    font-size: 0.9rem;
-    font-weight: 600;
+    border-radius: 999px;
 
+    background: rgba($secondary, 0.25);
     color: $secondary-dark;
-  }
-}
 
-@media (max-width: 600px) {
-  .ministry-leaders {
-    padding: 60px 0 30px;
+    font-size: 0.78rem;
+    font-weight: 700;
   }
 
-  .leader-card {
-    flex-direction: column;
+  @media (max-width: 768px) {
+    padding: 80px 0;
 
-    align-items: center;
+    &__card {
+      padding: 22px;
+    }
 
-    text-align: center;
-
-    gap: 16px;
+    &__avatar {
+      width: 62px;
+      height: 62px;
+    }
   }
 }

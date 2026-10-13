@@ -32,6 +32,7 @@ const ContactSchedule = () => {
   return (
     <section
       className="contact-schedule"
+      id="horaires"
       aria-labelledby="contact-schedule-title"
     >
       <div className="contact-schedule__container">
@@ -50,25 +51,25 @@ const ContactSchedule = () => {
           {schedule.map((item, index) => (
             <motion.li
               key={`${item.label}-${item.day}-${index}`}
-              className="schedule-card"
+              className="contact-schedule__card"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.4, delay: index * 0.07 }}
             >
-              <div className="schedule-card__icon" aria-hidden="true">
+              <div className="contact-schedule__icon" aria-hidden="true">
                 {ICONS[index % ICONS.length]}
               </div>
 
               <h3>{item.label}</h3>
 
-              <p className="schedule-card__day">
+              <p className="contact-schedule__day">
                 {dayLabel(item.day)}
               </p>
 
-              <p className="schedule-card__time">{item.time}</p>
+              <p className="contact-schedule__time">{item.time}</p>
 
-              <p className="schedule-card__detail">
+              <p className="contact-schedule__detail">
                 {item.description}
               </p>
             </motion.li>

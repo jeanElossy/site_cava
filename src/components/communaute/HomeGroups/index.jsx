@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
 import {
-  FaClock,
+  FaArrowRight,
+  FaBookOpen,
   FaMapMarkerAlt,
   FaUserFriends,
 } from "react-icons/fa";
@@ -55,19 +56,20 @@ const groups = [
 
 const HomeGroups = () => {
   return (
-    <section className="home-groups">
+    <section
+      className="home-groups"
+      id="groupes"
+      aria-labelledby="home-groups-title"
+    >
       <div className="home-groups__container">
         <header className="home-groups__header">
-          <span className="home-groups__eyebrow">
-            Groupes de maison
-          </span>
+          <div>
+            <span className="home-groups__eyebrow">
+              Groupes de maison
+            </span>
 
-          <h2>Une église près de chez vous</h2>
-
-          <div
-            className="home-groups__line"
-            aria-hidden="true"
-          ></div>
+            <h2 id="home-groups-title">Une église près de chez vous</h2>
+          </div>
 
           <p>
             Chaque semaine, des foyers ouvrent leur porte pour un temps de
@@ -89,24 +91,21 @@ const HomeGroups = () => {
                 delay: index * 0.07,
               }}
             >
-              <span className="home-groups__district">
-                {group.district}
-              </span>
+              <p className="home-groups__when">
+                <span className="home-groups__day">{group.day}</span>
+                <span className="home-groups__time">{group.time}</span>
+              </p>
 
               <h3>{group.name}</h3>
-
-              <p className="home-groups__focus">{group.focus}</p>
 
               <dl className="home-groups__meta">
                 <div>
                   <dt>
-                    <FaClock aria-hidden="true" />
-                    <span className="sr-only">Horaire</span>
+                    <FaBookOpen aria-hidden="true" />
+                    <span className="sr-only">Thème</span>
                   </dt>
 
-                  <dd>
-                    {group.day}, {group.time}
-                  </dd>
+                  <dd>{group.focus}</dd>
                 </div>
 
                 <div>
@@ -131,11 +130,20 @@ const HomeGroups = () => {
           ))}
         </ul>
 
-        <p className="home-groups__note">
-          L&apos;adresse exacte du foyer est communiquée après un premier
-          contact.{" "}
-          <Link to="/contact">Écrivez-nous</Link> pour être mis en relation.
-        </p>
+        <div className="home-groups__note">
+          <p>
+            L&apos;adresse exacte du foyer est communiquée après un premier
+            contact. Pas de groupe près de chez vous&nbsp;? Dites-le-nous.
+          </p>
+
+          <Link
+            to="/contact"
+            className="home-groups__note-link"
+          >
+            Être mis en relation
+            <FaArrowRight aria-hidden="true" />
+          </Link>
+        </div>
       </div>
     </section>
   );

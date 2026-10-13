@@ -1,3 +1,10 @@
 .communaute-page {
   overflow-x: hidden;
 }
+
+// La page se termine sur une section vert foncé : la marge haute du
+// pied de page (globale, `Footer.scss`) y laissait une bande blanche.
+// Neutralisée ici seulement, les autres pages ne sont pas concernées.
+.communaute-page + .footer {
+  margin-top: 0;
+}

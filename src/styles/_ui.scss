@@ -1,0 +1,639 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+// Briques visuelles de la refonte (voir docs/SUIVI-REFONTE-SITE.md).
+//
+// Des MIXINS et non des classes : la feuille de style étant unique, une
+// classe utilitaire `.btn` serait globale et entrerait en collision avec
+// les dizaines de `.btn` déjà présents dans l'administration. Chaque
+// composant applique le mixin sous sa propre classe BEM.
+
+// Sur-titre en capitales espacées, précédé d'un filet.
+// `$on-dark` : jaune vif sur fond vert, jaune foncé (contraste AA) sur
+// fond clair.
+@mixin eyebrow($on-dark: false, $rule: true, $spacing: 14px) {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  margin: 0 0 $spacing;
+
+  @if $on-dark {
+    color: $secondary;
+  } @else {
+    color: $secondary-dark;
+  }
+
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+
+  @if $rule {
+    &::before {
+      content: "";
+
+      width: 28px;
+      height: 2px;
+
+      background: currentColor;
+    }
+  }
+}
+
+// Titre de section (h2).
+@mixin section-title($on-dark: false) {
+  margin: 0;
+
+  @if $on-dark {
+    color: #fff;
+  } @else {
+    color: $primary-dark;
+  }
+
+  font-size: clamp(1.9rem, 3.2vw, 2.7rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+
+  text-wrap: balance;
+}
+
+// Bouton en pilule.
+//   primary : jaune plein (action principale, fond vert ou clair)
+//   green   : vert plein (action principale sur fond clair)
+//   light   : contour blanc (action secondaire sur fond vert)
+//   outline : contour vert (action secondaire sur fond clair)
+@mixin pill-button($variant: primary) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  padding: 14px 28px;
+
+  border: 2px solid transparent;
+  border-radius: 999px;
+
+  font: inherit;
+  font-size: 0.97rem;
+  font-weight: 600;
+
+  text-decoration: none;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.25s ease,
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    box-shadow 0.25s ease;
+
+  // Couleurs de repos : déclarations AVANT toute règle imbriquée (Sass
+  // déprécie les déclarations placées après un `&:hover`).
+  @if $variant == primary {
+    border-color: $secondary;
+    background: $secondary;
+    color: $primary-dark;
+  } @else if $variant == green {
+    border-color: $primary;
+    background: $primary;
+    color: #fff;
+  } @else if $variant == light {
+    border-color: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+  } @else if $variant == outline {
+    border-color: rgba($primary, 0.3);
+    background: transparent;
+    color: $primary;
+  }
+
+  svg {
+    flex-shrink: 0;
+
+    transition: transform 0.25s ease;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+
+    @if $variant == primary {
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+    } @else if $variant == green {
+      border-color: $primary-dark;
+      background: $primary-dark;
+    } @else if $variant == light {
+      border-color: #fff;
+      background: rgba(255, 255, 255, 0.14);
+    } @else if $variant == outline {
+      border-color: $primary;
+      background: $primary;
+      color: #fff;
+    }
+
+    svg {
+      transform: translateX(3px);
+    }
+  }
+
+  &:focus-visible {
+    outline-offset: 3px;
+
+    @if $variant == light or $variant == primary {
+      outline: 3px solid #fff;
+    } @else {
+      outline: 3px solid $secondary;
+    }
+  }
+}
+
+// Fil d'Ariane des heros (fond sombre).
+@mixin hero-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+
+  margin-bottom: 26px;
+
+  color: rgba(255, 255, 255, 0.75);
+
+  font-size: 0.9rem;
+  font-weight: 500;
+
+  a {
+    color: inherit;
+
+    text-decoration: none;
+
+    transition: color 0.25s ease;
+
+    &:hover {
+      color: $secondary;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $secondary;
+      outline-offset: 3px;
+    }
+  }
+
+  [aria-current="page"] {
+    color: #fff;
+
+    font-weight: 600;
+  }
+}
+
+// Bandeau de chiffres vert, dans le conteneur de page, sur fond crème.
+// Partagé par les pages À propos (`.stats-section`) et Ministères
+// (`.ministries-stats`) ; les éléments suivent la convention
+// `&__container`, `&__panel`, `&__item`, `&__icon`, `&__figures`,
+// `&__value`, `&__label`.
+@mixin stats-band {
+  padding: 0 0 110px;
+
+  background: #f7f5ee;
+
+  &__container {
+    @include container;
+  }
+
+  &__panel {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+
+    margin: 0;
+    padding: 34px 20px;
+
+    border-radius: 24px;
+
+    background:
+      radial-gradient(
+        ellipse at 100% 0%,
+        rgba($secondary, 0.16) 0%,
+        transparent 50%
+      ),
+      linear-gradient(120deg, $primary-dark 0%, $primary 100%);
+
+    list-style: none;
+
+    box-shadow: 0 26px 56px rgba(8, 59, 42, 0.22);
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+
+    padding: 8px 20px;
+
+    border-left: 1px solid rgba(255, 255, 255, 0.14);
+
+    &:first-child {
+      border-left: 0;
+    }
+  }
+
+  &__icon {
+    flex-shrink: 0;
+
+    display: grid;
+    place-items: center;
+
+    width: 52px;
+    height: 52px;
+
+    border-radius: 16px;
+
+    background: rgba($secondary, 0.16);
+    color: $secondary;
+
+    font-size: 1.4rem;
+  }
+
+  &__figures {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__value {
+    color: #fff;
+
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+
+    white-space: nowrap;
+  }
+
+  &__label {
+    margin-top: 4px;
+
+    color: rgba(255, 255, 255, 0.75);
+
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 1100px) {
+    &__panel {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      row-gap: 26px;
+    }
+
+    &__item {
+      justify-content: flex-start;
+
+      &:nth-child(odd) {
+        border-left: 0;
+      }
+    }
+  }
+
+  @media (max-width: 600px) {
+    padding-bottom: 80px;
+
+    &__panel {
+      grid-template-columns: 1fr;
+      row-gap: 20px;
+
+      padding: 28px 22px;
+    }
+
+    &__item {
+      padding: 0;
+
+      border-left: 0;
+    }
+
+    &__value {
+      font-size: 1.7rem;
+    }
+  }
+}
+
+// Section d'appel final vert foncé : texte + boutons à gauche, photo à
+// droite. Partagée par `.join-family` (À propos) et `.ministries-cta`
+// (Ministères) ; éléments : `&__container`, `&__content`, `&__eyebrow`,
+// `h2`, `&__actions`, `&__button` (`--ghost`), `&__image`.
+@mixin cta-band {
+  padding: 110px 0;
+
+  background:
+    radial-gradient(
+      ellipse at 0% 100%,
+      rgba($secondary, 0.14) 0%,
+      transparent 45%
+    ),
+    linear-gradient(135deg, $primary-dark 0%, $primary 100%);
+
+  color: #fff;
+
+  &__container {
+    @include container;
+
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 70px;
+  }
+
+  &__eyebrow {
+    @include eyebrow($on-dark: true);
+  }
+
+  h2 {
+    @include section-title($on-dark: true);
+
+    font-size: clamp(2rem, 3.6vw, 3rem);
+  }
+
+  &__content > p {
+    margin: 18px 0 34px;
+
+    max-width: 500px;
+
+    color: rgba(255, 255, 255, 0.85);
+
+    font-size: 1.05rem;
+    line-height: 1.8;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  &__button {
+    @include pill-button(primary);
+
+    &--ghost {
+      @include pill-button(light);
+    }
+  }
+
+  &__image img {
+    display: block;
+
+    width: 100%;
+    aspect-ratio: 16 / 10;
+
+    border-radius: 28px;
+
+    object-fit: cover;
+
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+  }
+
+  @media (max-width: 992px) {
+    &__container {
+      grid-template-columns: 1fr;
+      gap: 48px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 80px 0;
+
+    &__actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+}
+
+// Appel final centré, vert foncé : sur-titre, titre, texte, boutons.
+// Partagé par `.ministry-cta` (fiche ministère) et `.event-cta` (fiche
+// événement) ; éléments : `&__container`, `&__eyebrow`, `h2`, `p`,
+// `&__actions`, `&__button` (`--ghost`).
+@mixin cta-centered {
+  padding: 110px 0;
+
+  background:
+    radial-gradient(
+      ellipse at 50% 120%,
+      rgba($secondary, 0.18) 0%,
+      transparent 55%
+    ),
+    linear-gradient(135deg, $primary-dark 0%, $primary 100%);
+
+  color: #fff;
+
+  text-align: center;
+
+  &__container {
+    @include container;
+
+    max-width: 860px;
+  }
+
+  &__eyebrow {
+    @include eyebrow($on-dark: true, $rule: false);
+  }
+
+  h2 {
+    @include section-title($on-dark: true);
+  }
+
+  p {
+    margin: 18px auto 34px;
+
+    max-width: 600px;
+
+    color: rgba(255, 255, 255, 0.85);
+
+    font-size: 1.05rem;
+    line-height: 1.8;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
+  }
+
+  &__button {
+    @include pill-button(primary);
+
+    &--ghost {
+      @include pill-button(light);
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 80px 0;
+
+    &__actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+}
+
+// État « introuvable » d'une page de détail (ministère, événement…).
+// Fond vert : la barre de navigation est transparente à texte blanc, elle
+// disparaissait sur fond blanc. À inclure sous `&--missing` ; le lien de
+// retour porte la classe `&__back` du bloc, stylée par `missing-back`.
+@mixin missing-state {
+  @include flex-center;
+
+  flex-direction: column;
+  gap: 16px;
+
+  min-height: 70vh;
+
+  padding: 160px 20px 100px;
+
+  background: linear-gradient(135deg, $primary-dark 0%, $primary 100%);
+
+  text-align: center;
+
+  h1 {
+    @include section-title($on-dark: true);
+  }
+
+  p {
+    margin: 0;
+
+    max-width: 480px;
+
+    color: rgba(255, 255, 255, 0.85);
+
+    line-height: 1.7;
+  }
+}
+
+@mixin missing-back {
+  margin-top: 10px;
+
+  @include pill-button(primary);
+}
+
+// Hero de page publique : image de fond voilée de vert, fil d'Ariane,
+// sur-titre, titre `h1`, texte d'introduction, boutons. Partagé par les
+// pages À propos, Événements et Médias. Éléments : `&__overlay`,
+// `&__container`, `&__content`, `&__breadcrumb`, `&__eyebrow`, `h1`,
+// `&__highlight`, `&__lead`, `&__actions`, `&__cta` (`--ghost`).
+@mixin page-hero($title-size: clamp(2.6rem, 5.4vw, 4.6rem)) {
+  position: relative;
+
+  @include hero-height;
+
+  display: flex;
+  align-items: center;
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  overflow: hidden;
+
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+
+    background:
+      radial-gradient(
+        ellipse at 75% 30%,
+        rgba($secondary, 0.12) 0%,
+        transparent 50%
+      ),
+      linear-gradient(
+        95deg,
+        rgba($primary-dark, 0.95) 0%,
+        rgba($primary-dark, 0.85) 40%,
+        rgba($primary, 0.45) 70%,
+        rgba(0, 0, 0, 0.2) 100%
+      );
+  }
+
+  &__container {
+    @include container;
+
+    position: relative;
+    z-index: 2;
+
+    padding-top: 150px;
+    padding-bottom: 100px;
+  }
+
+  &__content {
+    max-width: 720px;
+
+    color: #fff;
+  }
+
+  &__breadcrumb {
+    @include hero-breadcrumb;
+  }
+
+  &__eyebrow {
+    @include eyebrow($on-dark: true, $spacing: 18px);
+  }
+
+  h1 {
+    margin: 0 0 22px;
+
+    color: #fff;
+
+    font-size: $title-size;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+
+    text-wrap: balance;
+  }
+
+  &__highlight {
+    color: $secondary;
+  }
+
+  &__lead {
+    margin: 0 0 36px;
+
+    max-width: 540px;
+
+    color: rgba(255, 255, 255, 0.86);
+
+    font-size: 1.1rem;
+    line-height: 1.75;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  &__cta {
+    @include pill-button(primary);
+
+    &--ghost {
+      backdrop-filter: blur(6px);
+
+      @include pill-button(light);
+    }
+  }
+
+  @media (max-width: 768px) {
+    &__container {
+      padding-top: 120px;
+      padding-bottom: 70px;
+    }
+
+    &__lead {
+      font-size: 1rem;
+    }
+
+    &__actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+}

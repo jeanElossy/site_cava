@@ -24,7 +24,11 @@ const Events = () => {
 
         <EventsHero />
 
-        <section className="events-layout">
+        <section
+          className="events-layout"
+          id="agenda"
+          aria-label="Agenda des événements"
+        >
 
           <div className="events-layout__left">
             <UpcomingEvents />

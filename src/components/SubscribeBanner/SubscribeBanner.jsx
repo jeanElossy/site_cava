@@ -1,76 +1,79 @@
 import { ArrowRight } from "lucide-react";
-import "./SubscribeBanner.scss";
 
 import {
   FaYoutube,
   FaFacebookF,
-  FaInstagram
+  FaInstagram,
 } from "react-icons/fa";
 
-// Mêmes destinations que les liens sociaux du pied de page.
-// (Navigation externe : la CSP restreint le chargement de ressources,
-// pas les liens sortants.)
+import { site } from "../../content/settings";
+
+import { safeHttpUrl } from "../../utils/safeUrl";
+
+import "./SubscribeBanner.scss";
+
+// Mêmes destinations que le pied de page : les paramètres du site. Elles
+// étaient recopiées ici en dur. Un lien non conforme (autre chose que
+// http/https) n'est pas affiché.
 const socials = [
-  {
-    icon: <FaYoutube />,
-    label: "YouTube",
-    url: "https://youtube.com",
-  },
-  {
-    icon: <FaFacebookF />,
-    label: "Facebook",
-    url: "https://facebook.com",
-  },
-  {
-    icon: <FaInstagram />,
-    label: "Instagram",
-    url: "https://instagram.com",
-  },
-];
+  { icon: FaYoutube, label: "YouTube", url: site.social.youtube },
+  { icon: FaFacebookF, label: "Facebook", url: site.social.facebook },
+  { icon: FaInstagram, label: "Instagram", url: site.social.instagram },
+]
+  .map((social) => ({ ...social, url: safeHttpUrl(social.url) }))
+  .filter((social) => social.url);
+
+const youtube = socials.find((social) => social.label === "YouTube");
 
 const SubscribeBanner = () => {
   return (
-    <section className="subscribe-banner">
-
+    <section
+      className="subscribe-banner"
+      aria-labelledby="subscribe-banner-title"
+    >
       <div className="subscribe-banner__content">
-
-        <div>
-
-          <h2>Ne manquez rien</h2>
+        <div className="subscribe-banner__text">
+          <h2 id="subscribe-banner-title">Ne manquez rien</h2>
 
           <p>
-            Abonnez-vous à notre chaîne YouTube
-            et suivez-nous sur nos réseaux sociaux.
+            Abonnez-vous à notre chaîne YouTube et suivez-nous sur nos
+            réseaux sociaux.
           </p>
-
         </div>
 
-        <a
-          className="subscribe-banner__cta"
-          href="https://youtube.com"
-          target="_blank"
-          rel="noreferrer"
-        >
-          S'abonner
-          <ArrowRight size={18} aria-hidden="true" />
-        </a>
-
-        <div className="subscribe-banner__socials">
-          {socials.map((social) => (
+        <div className="subscribe-banner__actions">
+          {youtube && (
             <a
-              key={social.label}
-              href={social.url}
+              className="subscribe-banner__cta"
+              href={youtube.url}
               target="_blank"
-              rel="noreferrer"
-              aria-label={social.label}
+              rel="noopener noreferrer"
             >
-              {social.icon}
+              S&apos;abonner
+              <ArrowRight size={18} aria-hidden="true" />
             </a>
-          ))}
+          )}
+
+          <ul className="subscribe-banner__socials">
+            {socials.map((social) => {
+              const Icon = social.icon;
+
+              return (
+                <li key={social.label}>
+                  <a
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${social.label} (nouvel onglet)`}
+                  >
+                    <Icon aria-hidden="true" />
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
         </div>
-
       </div>
-
     </section>
   );
 };

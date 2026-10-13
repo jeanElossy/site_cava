@@ -29,47 +29,59 @@ const MinistryLeaders = ({ leaders = [] }) => {
     >
       <div className="ministry-leaders__container">
         <header className="ministry-leaders__header">
-          <h2 id="ministry-leaders-title">Nos Responsables</h2>
+          <span className="ministry-leaders__eyebrow">L&apos;équipe</span>
 
-          <div className="ministry-leaders__line" />
+          <h2 id="ministry-leaders-title">Nos responsables</h2>
         </header>
 
-        <div className="ministry-leaders__grid">
-          {leaders.map((leader, index) => (
-            <motion.article
-              key={leader.name}
-              className="leader-card"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.4, delay: index * 0.08 }}
-            >
-              {leader.image ? (
-                <img
-                  className="leader-card__avatar"
-                  src={leader.image}
-                  alt={leader.name}
-                  loading="lazy"
-                />
-              ) : (
-                <div
-                  className="leader-card__avatar leader-card__avatar--initials"
-                  aria-hidden="true"
-                >
-                  {getInitials(leader.name)}
+        <ul className="ministry-leaders__grid">
+          {leaders.map((leader, index) => {
+            // Le modèle nomme la présentation `bio` ; `description` était
+            // le nom de l'ancien contenu en dur. Ne lire que `description`
+            // masquait toutes les présentations.
+            const bio = leader.bio ?? leader.description;
+
+            return (
+              <motion.li
+                key={leader.name}
+                className="ministry-leaders__card"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.4, delay: index * 0.08 }}
+              >
+                {leader.image ? (
+                  <img
+                    className="ministry-leaders__avatar"
+                    src={leader.image}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : (
+                  <span
+                    className="ministry-leaders__avatar ministry-leaders__avatar--initials"
+                    aria-hidden="true"
+                  >
+                    {getInitials(leader.name)}
+                  </span>
+                )}
+
+                <div className="ministry-leaders__body">
+                  <h3>{leader.name}</h3>
+
+                  {leader.role && (
+                    <span className="ministry-leaders__role">
+                      {leader.role}
+                    </span>
+                  )}
+
+                  {bio && <p>{bio}</p>}
                 </div>
-              )}
-
-              <div className="leader-card__body">
-                <h3>{leader.name}</h3>
-
-                <span className="leader-card__role">{leader.role}</span>
-
-                {leader.description && <p>{leader.description}</p>}
-              </div>
-            </motion.article>
-          ))}
-        </div>
+              </motion.li>
+            );
+          })}
+        </ul>
       </div>
     </section>
   );

@@ -1,138 +1,118 @@
 @use "../../styles/variables" as *;
 @use "../../styles/mixins" as *;
+@use "../../styles/ui" as *;
 
+// Tout est imbriqué sous `.event-speaker` (feuille de style unique, voir
+// CLAUDE.md). La carte s'appelait `.speaker-card`, déclarée à la racine.
 .event-speaker {
-  padding: 40px 0 70px;
+  padding: 100px 0;
 
-  background: $bg-light;
+  background: #f7f5ee;
 
   &__container {
     @include container;
+
+    max-width: 900px;
   }
 
   &__header {
+    margin-bottom: 36px;
+
     text-align: center;
 
-    margin-bottom: 40px;
-
     h2 {
-      font-size: clamp(1.5rem, 3vw, 2rem);
-
-      font-weight: 800;
-
-      letter-spacing: 1px;
-
-      text-transform: uppercase;
-
-      color: $primary;
+      @include section-title;
     }
   }
 
-  &__line {
-    width: 70px;
-    height: 4px;
-
-    margin: 14px auto 0;
-
-    border-radius: 999px;
-
-    background: $secondary;
+  &__eyebrow {
+    @include eyebrow($rule: false);
   }
-}
 
-.speaker-card {
-  display: flex;
+  &__card {
+    display: flex;
+    align-items: center;
+    gap: 28px;
 
-  align-items: flex-start;
+    padding: 32px;
 
-  gap: 26px;
+    border: 1px solid rgba($primary, 0.08);
+    border-radius: 24px;
 
-  max-width: 760px;
+    background: #fff;
 
-  margin: 0 auto;
-
-  padding: 32px;
-
-  background: #fff;
-
-  border: 1px solid $border-color;
-
-  border-radius: $radius;
-
-  box-shadow: $shadow;
+    box-shadow: 0 10px 30px rgba(8, 59, 42, 0.06);
+  }
 
   &__avatar {
     flex-shrink: 0;
 
-    width: 104px;
-    height: 104px;
+    width: 110px;
+    height: 110px;
 
     border-radius: 50%;
 
     object-fit: cover;
 
-    border: 3px solid rgba(13, 91, 62, 0.15);
-  }
+    &--initials {
+      display: grid;
+      place-items: center;
 
-  &__avatar--initials {
-    @include flex-center;
+      background: linear-gradient(135deg, $primary-dark, $primary);
+      color: $secondary;
 
-    background: linear-gradient(
-      145deg,
-      $primary 0%,
-      $primary-dark 100%
-    );
+      font-size: 2rem;
+      font-weight: 700;
 
-    color: $secondary;
-
-    font-size: 1.9rem;
-    font-weight: 800;
-
-    letter-spacing: 1px;
+      box-shadow: 0 0 0 6px rgba($primary, 0.1);
+    }
   }
 
   &__body {
+    min-width: 0;
+
     h3 {
+      margin: 0 0 8px;
+
+      color: $primary-dark;
+
       font-size: 1.35rem;
-
       font-weight: 700;
-
-      color: $primary;
-
-      margin-bottom: 4px;
     }
 
     p {
-      font-size: 0.97rem;
+      margin: 14px 0 0;
 
-      line-height: 1.7;
+      color: #4b5563;
 
-      color: rgba(31, 41, 55, 0.78);
+      font-size: 0.98rem;
+      line-height: 1.75;
     }
   }
 
   &__role {
-    display: block;
+    display: inline-block;
 
-    margin-bottom: 12px;
+    padding: 4px 12px;
 
-    font-size: 0.9rem;
-    font-weight: 600;
+    border-radius: 999px;
 
+    background: rgba($secondary, 0.25);
     color: $secondary-dark;
+
+    font-size: 0.8rem;
+    font-weight: 700;
   }
-}
 
-@media (max-width: 600px) {
-  .speaker-card {
-    flex-direction: column;
+  @media (max-width: 640px) {
+    padding: 80px 0;
 
-    align-items: center;
+    &__card {
+      flex-direction: column;
 
-    text-align: center;
+      padding: 26px 22px;
 
-    gap: 18px;
-
-    padding: 26px 22px;
+      text-align: center;
+    }
   }
 }

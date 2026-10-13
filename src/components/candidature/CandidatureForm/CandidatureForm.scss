@@ -1,4 +1,5 @@
 @use "../../../styles/variables" as *;
+@use "../../../styles/ui" as *;
 
 .candidature-form {
   padding: 70px 0 90px;
@@ -10,13 +11,12 @@
     padding: 0 24px;
   }
 
+  // Titre de section commun au site (mixin `section-title`) : les
+  // capitales grasses de l'affiche détonnaient avec les autres pages.
   &__title {
-    margin: 0;
+    @include section-title;
+
     text-align: center;
-    font-size: clamp(1.7rem, 3.6vw, 2.6rem);
-    font-weight: 800;
-    text-transform: uppercase;
-    color: $primary;
 
     span {
       color: $secondary-dark;

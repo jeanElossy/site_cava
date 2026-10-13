@@ -33,3 +33,7 @@ design-page-enfant/
 
 # Transcriptions de session déposées à la racine
 /20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]-*.txt
+
+# Exports PDF/XLSX produits en local (`npm run export:membres`) : ils
+# contiennent des données personnelles de membres, jamais dans le dépôt.
+backend/exports/

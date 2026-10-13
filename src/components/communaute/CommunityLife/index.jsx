@@ -10,6 +10,7 @@ import {
 import "./CommunityLife.scss";
 
 import lifeImage from "../../../assets/images/family.jpg";
+import prayerImage from "../../../assets/images/event-2.jpg";
 
 const pillars = [
   {
@@ -40,40 +41,54 @@ const pillars = [
 
 const CommunityLife = () => {
   return (
-    <section className="community-life">
+    <section
+      className="community-life"
+      aria-labelledby="community-life-title"
+    >
       <div className="community-life__container">
-        <div className="community-life__media">
+        <motion.div
+          className="community-life__media"
+          initial={{ opacity: 0, x: -30 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
           <img
+            className="community-life__photo community-life__photo--main"
             src={lifeImage}
             alt="Membres de la communauté CAVA réunis après le culte"
             loading="lazy"
             decoding="async"
           />
-        </div>
+
+          <img
+            className="community-life__photo community-life__photo--inset"
+            src={prayerImage}
+            alt="Un groupe de prière autour d'une table, Bibles ouvertes"
+            loading="lazy"
+            decoding="async"
+          />
+
+          <p className="community-life__badge">
+            <FaUsers aria-hidden="true" />
+            <span>Personne ne traverse seul ce qu&apos;il a à traverser</span>
+          </p>
+        </motion.div>
 
         <div className="community-life__body">
           <span className="community-life__eyebrow">
             La vie communautaire
           </span>
 
-          <h2>Grandir ensemble, au quotidien</h2>
+          <h2 id="community-life-title">
+            Grandir ensemble, au quotidien
+          </h2>
 
-          <div
-            className="community-life__line"
-            aria-hidden="true"
-          ></div>
-
-          <p>
+          <p className="community-life__intro">
             Au Centre Apostolique Vie et Abondance, la communauté n&apos;est
             pas un supplément au dimanche : c&apos;est le lieu où la foi se
             vit en semaine. Elle se construit dans les groupes de maison, les
             temps de prière, les services rendus et les repas partagés.
-          </p>
-
-          <p>
-            Quel que soit votre point de départ, il existe une place pour
-            vous. Notre objectif est simple : que personne ne traverse seul
-            ce qu&apos;il a à traverser.
           </p>
 
           <ul className="community-life__pillars">

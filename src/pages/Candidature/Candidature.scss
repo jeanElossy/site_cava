@@ -1,0 +1,14 @@
+.candidature-page {
+  overflow-x: hidden;
+
+  // Cibles des boutons du hero, sous la barre de navigation fixe.
+  section[id] {
+    scroll-margin-top: 90px;
+  }
+}
+
+// La page se termine sur le bandeau vert des valeurs : la marge haute du
+// pied de page (globale, `Footer.scss`) y laissait une bande blanche.
+.candidature-page + .footer {
+  margin-top: 0;
+}

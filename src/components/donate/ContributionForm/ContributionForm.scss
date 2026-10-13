@@ -1490,8 +1490,17 @@
 
 @media (max-width: 480px) {
 
+  // Trois colonnes et des boutons moins hauts : en une seule colonne,
+  // les cinq montants prenaient tout un écran de téléphone.
   .contribution-form .amount-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+
+    button {
+      height: 56px;
+
+      font-size: 0.9rem;
+    }
   }
 
   .contribution-form .summary-total {

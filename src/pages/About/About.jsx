@@ -27,8 +27,6 @@ const About = () => {
         <ValuesSection />
         <StatsSection />
         <JoinFamilySection />
-
-        {/* Les autres sections seront ajoutées ensuite */}
       </main>
 
       <Footer />

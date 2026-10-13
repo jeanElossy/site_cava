@@ -1,26 +1,43 @@
 import { Link } from "react-router-dom";
 
-import { FaUsers } from "react-icons/fa";
+import { FaArrowRight } from "react-icons/fa";
 
 import "./MinistryCTA.scss";
 
 const MinistryCTA = ({ ministry }) => {
   return (
-    <section className="ministry-cta">
-      <div className="overlay" aria-hidden="true" />
+    <section
+      className="ministry-cta"
+      aria-labelledby="ministry-cta-title"
+    >
+      <div className="ministry-cta__container">
+        <span className="ministry-cta__eyebrow">Servir avec nous</span>
 
-      <div className="container">
-        <h2>Rejoignez le ministère {ministry.title}</h2>
+        <h2 id="ministry-cta-title">
+          Rejoignez le ministère {ministry.title}
+        </h2>
 
         <p>
           Découvrez votre appel et servez avec nous pour impacter des vies et
           faire avancer le Royaume de Dieu.
         </p>
 
-        <Link to="/contact" className="ministry-cta__button">
-          Rejoindre maintenant
-          <FaUsers aria-hidden="true" />
-        </Link>
+        <div className="ministry-cta__actions">
+          <Link
+            to="/contact"
+            className="ministry-cta__button"
+          >
+            Rejoindre maintenant
+            <FaArrowRight aria-hidden="true" />
+          </Link>
+
+          <Link
+            to="/ministries"
+            className="ministry-cta__button ministry-cta__button--ghost"
+          >
+            Voir les autres ministères
+          </Link>
+        </div>
       </div>
     </section>
   );

@@ -1,253 +1,312 @@
 @use "../styles/variables" as *;
 @use "../styles/mixins" as *;
+@use "../styles/ui" as *;
 
-// Tout est imbriqué sous `.upcoming-events`. Ce fichier déclarait
-// auparavant `.section-title`, `.event-card`, `.event-date`, `.event-image`,
-// `.event-content`, `.event-meta` et `.event-arrow` à la racine de la
-// feuille globale — des noms trop génériques pour rester non cloisonnés.
+// Tout est imbriqué sous `.upcoming-events` (feuille de style unique,
+// voir CLAUDE.md).
 .upcoming-events {
-  &__title {
-    display: flex;
-    align-items: center;
-    gap: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 60px;
 
-    margin-bottom: 30px;
+  &__header {
+    margin-bottom: 26px;
 
     h2 {
-      margin: 0;
+      @include section-title;
 
-      color: #0c4d2f;
-      font-size: 2.3rem;
-      font-weight: 700;
-    }
+      display: flex;
+      align-items: center;
+      gap: 12px;
 
-    span {
-      display: block;
+      svg {
+        color: $secondary-dark;
 
-      width: 70px;
-      height: 4px;
-
-      margin-top: 12px;
-
-      border-radius: 999px;
-
-      background: #f4c61d;
+        font-size: 0.7em;
+      }
     }
   }
 
-  &__title-icon {
-    width: 72px;
-    height: 72px;
+  &__eyebrow {
+    @include eyebrow;
+  }
 
-    flex-shrink: 0;
-
-    border-radius: 50%;
-
-    @include flex-center;
-
-    background: #014321;
-    color: white;
-
-    font-size: 1.6rem;
+  &__past h2 {
+    font-size: clamp(1.5rem, 2.4vw, 1.9rem);
   }
 
   &__list {
     display: flex;
     flex-direction: column;
-
-    gap: 18px;
-
-    list-style: none;
+    gap: 20px;
 
     margin: 0;
     padding: 0;
+
+    list-style: none;
   }
 
-  // Chaque carte est un lien vers /events/<slug>.
   &__card {
-    background: white;
-
-    border-radius: 20px;
-    border: 1px solid #ececec;
-
-    padding: 16px;
-
     display: grid;
-    grid-template-columns: 70px 140px 1fr 40px;
-    gap: 16px;
+    grid-template-columns: 240px minmax(0, 1fr);
 
-    align-items: center;
+    border: 1px solid rgba($primary, 0.08);
+    border-radius: 22px;
+
+    background: #fff;
+    color: inherit;
 
     text-decoration: none;
 
-    color: inherit;
+    box-shadow: 0 10px 30px rgba(8, 59, 42, 0.06);
 
-    transition: all 0.3s ease;
+    overflow: hidden;
+
+    transition:
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
 
     &:hover {
       transform: translateY(-4px);
 
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 22px 44px rgba(8, 59, 42, 0.12);
+
+      img {
+        transform: scale(1.06);
+      }
+
+      .upcoming-events__more svg {
+        transform: translateX(4px);
+      }
     }
 
     &:focus-visible {
-      outline: 3px solid #f4c61d;
-
+      outline: 3px solid $secondary;
       outline-offset: 3px;
     }
 
-    &:hover .upcoming-events__arrow {
-      transform: translateX(4px);
+    // Un événement passé reste consultable, mais en retrait.
+    &--past {
+      box-shadow: none;
+
+      img {
+        filter: grayscale(0.6);
+      }
+
+      .upcoming-events__date {
+        background: #6b7280;
+      }
+    }
+  }
+
+  &__media {
+    position: relative;
+
+    min-height: 190px;
+
+    background: $primary;
+
+    overflow: hidden;
+
+    img {
+      position: absolute;
+      inset: 0;
+
+      width: 100%;
+      height: 100%;
+
+      object-fit: cover;
+
+      transition:
+        transform 0.6s ease,
+        filter 0.3s ease;
     }
   }
 
   &__date {
-    text-align: center;
+    position: absolute;
+    top: 14px;
+    left: 14px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    min-width: 60px;
+    padding: 9px 8px;
+
+    border-radius: 14px;
+
+    background: $primary;
+    color: #fff;
+
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2);
 
     strong {
-      display: block;
-
-      font-size: 2.1rem;
-      font-weight: 800;
-
-      color: #014321;
+      font-size: 1.45rem;
+      line-height: 1;
     }
 
     span {
-      font-size: 1.1rem;
+      margin-top: 3px;
+
+      color: $secondary;
+
+      font-size: 0.72rem;
       font-weight: 700;
-
-      color: #555;
-    }
-  }
-
-  &__image {
-    img {
-      width: 100%;
-      height: 95px;
-
-      object-fit: cover;
-
-      border-radius: 14px;
+      text-transform: uppercase;
     }
   }
 
   &__content {
+    display: flex;
+    flex-direction: column;
+
+    padding: 24px 26px;
+
     h3 {
       margin: 0 0 8px;
 
-      color: #111;
-      font-size: 1.55rem;
+      color: $primary-dark;
+
+      font-size: 1.2rem;
       font-weight: 700;
+      line-height: 1.3;
     }
 
-    p {
-      margin: 0 0 12px;
+    > p {
+      margin: 0 0 16px;
 
-      color: #666;
+      color: #4b5563;
 
-      line-height: 1.7;
+      font-size: 0.93rem;
+      line-height: 1.65;
+
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-clamp: 2;
+
+      overflow: hidden;
     }
+  }
+
+  &__past-tag {
+    align-self: flex-start;
+
+    margin-bottom: 10px;
+    padding: 3px 10px;
+
+    border-radius: 999px;
+
+    background: #f3f4f6;
+    color: #6b7280;
+
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
 
   &__meta {
     display: flex;
-    gap: 18px;
     flex-wrap: wrap;
+    gap: 6px 18px;
 
-    span {
-      display: flex;
+    margin: 0 0 16px;
+    padding: 0;
+
+    list-style: none;
+
+    li {
+      display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
 
-      color: #555;
-      font-size: 0.92rem;
+      color: #6b7280;
+
+      font-size: 0.86rem;
+    }
+
+    svg {
+      color: $primary;
     }
   }
 
-  // Chevron décoratif : la carte entière porte le lien.
-  &__arrow {
-    width: 42px;
-    height: 42px;
+  &__more {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 
-    @include flex-center;
+    margin-top: auto;
 
-    color: #014321;
+    color: $primary;
 
-    font-size: 1.2rem;
+    font-size: 0.9rem;
+    font-weight: 600;
 
-    transition: 0.3s;
-  }
-}
-
-/* ---- Tablette large ---- */
-@media (max-width: 1200px) {
-  .upcoming-events__card {
-    grid-template-columns: 64px 120px 1fr 32px;
-
-    gap: 14px;
-  }
-
-  .upcoming-events__content h3 {
-    font-size: 1.35rem;
-  }
-}
-
-/* ---- Tablette ---- */
-@media (max-width: 992px) {
-  .upcoming-events__title {
-    margin-bottom: 24px;
-
-    h2 {
-      font-size: 2rem;
+    svg {
+      transition: transform 0.25s ease;
     }
   }
-}
 
-/* ---- Mobile : la carte s'empile ---- */
-@media (max-width: 768px) {
-  .upcoming-events {
-    &__title {
-      gap: 14px;
+  &__empty {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
 
-      h2 {
-        font-size: 1.8rem;
-      }
+    padding: 30px;
+
+    border: 1px dashed rgba($primary, 0.25);
+    border-radius: 22px;
+
+    background: #fff;
+
+    > svg {
+      flex-shrink: 0;
+
+      margin-top: 4px;
+
+      color: $primary;
+
+      font-size: 1.6rem;
     }
 
-    &__title-icon {
-      width: 58px;
-      height: 58px;
+    h3 {
+      margin: 0 0 6px;
 
-      font-size: 1.3rem;
+      color: $primary-dark;
+
+      font-size: 1.08rem;
     }
 
+    p {
+      margin: 0;
+
+      color: #6b7280;
+
+      font-size: 0.93rem;
+      line-height: 1.65;
+    }
+  }
+
+  @media (max-width: 640px) {
     &__card {
       grid-template-columns: 1fr;
+    }
 
-      text-align: center;
+    &__media {
+      min-height: 0;
 
+      aspect-ratio: 16 / 9;
+    }
+
+    &__content {
       padding: 20px;
     }
 
-    &__date {
-      margin-bottom: 10px;
-    }
-
-    &__image img {
-      height: 180px;
-    }
-
-    &__content h3 {
-      font-size: 1.25rem;
-    }
-
-    &__meta {
-      justify-content: center;
-    }
-
-    &__arrow {
-      margin: auto;
+    &__empty {
+      padding: 24px 20px;
     }
   }
 }

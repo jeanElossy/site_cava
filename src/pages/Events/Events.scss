@@ -1,8 +1,9 @@
 @use "../../styles/mixins" as *;
 
 .events-page {
-  background: #f8f8f6;
-  min-height: 100vh;
+  background: #f7f5ee;
+
+  overflow-x: hidden;
 }
 
 // Grille à deux colonnes de la page : liste à gauche, colonne
@@ -12,56 +13,39 @@
 .events-layout {
   @include container;
 
-  margin: 60px auto;
-
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
-
-  gap: 35px;
-
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
   align-items: start;
+  gap: 40px;
+
+  padding-top: 100px;
+  padding-bottom: 110px;
+
+  // Cible du lien « Voir l'agenda » du hero, sous la navigation fixe.
+  scroll-margin-top: 40px;
 
   &__left,
   &__right {
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
-
     // Empêche les cartes de déborder de leur colonne.
     min-width: 0;
   }
-}
 
-/* ---- Tablette large ---- */
-@media (max-width: 1200px) {
-  .events-layout {
-    grid-template-columns: 1.4fr 1fr;
+  @media (max-width: 1200px) {
+    gap: 28px;
+  }
 
-    gap: 26px;
+  // La colonne de droite passe sous la liste.
+  @media (max-width: 992px) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 50px;
+
+    padding-top: 70px;
+    padding-bottom: 80px;
   }
 }
 
-/* ---- Tablette : la colonne de droite passe sous la liste ---- */
-@media (max-width: 992px) {
-  .events-layout {
-    grid-template-columns: 1fr;
-
-    margin: 45px auto;
-
-    gap: 30px;
-  }
-}
-
-/* ---- Mobile ---- */
-@media (max-width: 768px) {
-  .events-layout {
-    margin: 32px auto;
-
-    gap: 24px;
-
-    &__left,
-    &__right {
-      gap: 24px;
-    }
-  }
+// Fond crème jusqu'au pied de page : sa marge haute globale
+// (`Footer.scss`) laisserait une bande blanche.
+.events-page + .footer {
+  margin-top: 0;
 }

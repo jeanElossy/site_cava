@@ -1,10 +1,6 @@
-import {
-  Users,
-  Heart,
-  BookOpen,
-  Globe,
-  ArrowRight,
-} from "lucide-react";
+import { motion } from "framer-motion";
+
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 
 import { Link } from "react-router-dom";
 
@@ -12,89 +8,89 @@ import allMinistries from "../MinistryDetails/data/ministries";
 
 import "./Ministries.scss";
 
-// Les quatre premiers ministères, lus depuis les données réelles.
-//
-// Cette liste était auparavant recopiée en dur ici, avec ses propres
-// titres, descriptions et liens. C'est exactement la duplication que
-// CLAUDE.md signale : renommer un ministère dans l'administration
-// laissait l'accueil afficher l'ancien libellé, et modifier un slug
-// menait au message « Ministère introuvable ».
-//
-// Les ministères sont déjà triés par `order` côté API.
-const ICONS = [Users, Heart, BookOpen, Globe];
-
-// La couleur alterne pour conserver le rythme visuel d'origine, que le
-// champ `color` du modèle (vert ou doré) ne reproduit pas exactement.
-const cardColor = (index) => (index % 2 === 0 ? "green" : "yellow");
+// Les ministères de l'accueil, lus depuis la source unique
+// (`MinistryDetails/data/ministries.js`, déjà triée par `order`) : ne
+// jamais recopier ici titres ou liens, voir CLAUDE.md.
+const featured = Object.values(allMinistries).slice(0, 6);
 
 const Ministries = () => {
-  const featured = Object.values(allMinistries).slice(0, 4);
-
-
   return (
-    <section className="ministries">
+    <section
+      className="home-ministries"
+      aria-labelledby="home-ministries-title"
+    >
+      <div className="home-ministries__container">
+        <header className="home-ministries__header">
+          <div>
+            <span className="home-ministries__eyebrow">
+              Nos ministères
+            </span>
 
-      <div className="ministries__left">
+            <h2 id="home-ministries-title">
+              Des ministères pour bâtir des vies
+            </h2>
+          </div>
 
-        <span className="section-tag">
-          NOS MINISTÈRES
-        </span>
+          <div className="home-ministries__intro">
+            <p>
+              Chacun peut trouver sa place pour servir, grandir et impacter
+              pour le Royaume.
+            </p>
 
-        <h2>
-          Des ministères pour
-          bâtir des vies
-        </h2>
-
-        <div className="line"></div>
-
-        <p>
-          Découvrez les différents ministères où chacun
-          peut servir, grandir et impacter pour le Royaume.
-        </p>
-
-        <Link
-          to="/ministries"
-          className="ministries-btn"
-        >
-          Découvrir tous les ministères
-          <ArrowRight size={18} />
-        </Link>
-
-      </div>
-
-      <div className="ministries__grid">
-
-        {featured.map((item, index) => {
-          const Icon = ICONS[index % ICONS.length];
-
-          return (
-            <div
-              className="card"
-              key={item.slug}
+            <Link
+              to="/ministries"
+              className="home-ministries__all"
             >
+              Tous les ministères
+              <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+          </div>
+        </header>
 
-              <div className={`icon ${cardColor(index)}`}>
-                <Icon />
-              </div>
-
-              <h3>{item.title}</h3>
-
-              <p>{item.description}</p>
-
+        <ul className="home-ministries__grid">
+          {featured.map((item, index) => (
+            <motion.li
+              key={item.slug}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.45, delay: (index % 3) * 0.08 }}
+            >
               <Link
                 to={`/ministries/${item.slug}`}
-                className="card-link"
+                className="home-ministries__card"
               >
-                En savoir plus
-                <ArrowRight size={16} />
+                {item.image && (
+                  <img
+                    src={item.image}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
+                )}
+
+                <span
+                  className="home-ministries__shade"
+                  aria-hidden="true"
+                ></span>
+
+                <div className="home-ministries__content">
+                  <h3>{item.title}</h3>
+
+                  {item.description && <p>{item.description}</p>}
+                </div>
+
+                <span
+                  className="home-ministries__arrow"
+                  aria-hidden="true"
+                >
+                  <ArrowUpRight size={20} />
+                </span>
               </Link>
-
-            </div>
-          );
-        })}
-
+            </motion.li>
+          ))}
+        </ul>
       </div>
-
     </section>
   );
 };

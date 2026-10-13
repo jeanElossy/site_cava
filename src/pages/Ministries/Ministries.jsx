@@ -24,8 +24,8 @@ const Ministries = () => {
       <main className="ministries-page">
         <MinistriesHero />
         <MinistriesGrid />
-        <MinistriesCallToAction />
         <MinistriesStats />
+        <MinistriesCallToAction />
       </main>
 
       <Footer />

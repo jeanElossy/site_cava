@@ -1,22 +1,22 @@
 @use "../../../styles/variables" as *;
+@use "../../../styles/mixins" as *;
+@use "../../../styles/ui" as *;
 
 .candidature-process {
   padding: 70px 0 50px;
   background: #ffffff;
 
   &__container {
-    width: min(1400px, 100%);
-    margin: 0 auto;
-    padding: 0 24px;
+    // Conteneur commun du site (gouttières 60 / 32 / 20 px).
+    @include container;
   }
 
+  // Titre de section commun au site (mixin `section-title`) : les
+  // capitales grasses de l'affiche détonnaient avec les autres pages.
   &__title {
-    margin: 0 0 40px;
+    @include section-title;
+
     text-align: center;
-    font-size: clamp(1.7rem, 3.6vw, 2.6rem);
-    font-weight: 800;
-    text-transform: uppercase;
-    color: $primary;
 
     span {
       color: $secondary-dark;

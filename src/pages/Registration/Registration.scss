@@ -1,0 +1,9 @@
+.registration-page {
+  overflow-x: hidden;
+}
+
+// Pas de bande blanche entre le formulaire et le pied de page : sa marge
+// haute est globale (`Footer.scss`).
+.registration-page + .footer {
+  margin-top: 0;
+}

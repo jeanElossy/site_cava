@@ -32,11 +32,27 @@ const videoSchema = new mongoose.Schema(
       ],
     },
 
-    // Chemin d'un fichier hébergé par nos soins.
-    src: { type: String, trim: true },
+    // Chemin d'un fichier hébergé par nos soins (`/videos/…`), ou adresse
+    // https (Cloudinary). `//hote` est refusé : c'est un autre site.
+    src: {
+      type: String,
+      trim: true,
+      match: [
+        /^(\/(?!\/)|https:\/\/)/i,
+        "Source vidéo attendue : chemin commençant par « / » ou adresse https.",
+      ],
+    },
 
-    // URL externe complète.
-    url: { type: String, trim: true },
+    // URL externe complète. Elle finit dans un lien public : seul
+    // http(s) est accepté, jamais `javascript:` ni `data:`.
+    url: {
+      type: String,
+      trim: true,
+      match: [
+        /^https?:\/\//i,
+        "Lien vidéo attendu : adresse commençant par http:// ou https://.",
+      ],
+    },
   },
   { _id: false }
 );

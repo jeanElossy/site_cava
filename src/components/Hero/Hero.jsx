@@ -1,11 +1,18 @@
-import { ArrowRight, CalendarDays } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+
+import { site, dayLabel } from "../../content/settings";
 
 import heroBg from "../../assets/images/hero-bg.jpg";
 import logoCava from "../../assets/logo/logo_cava.gif";
 
 import "./Hero.scss";
+
+// Les trois premiers horaires réguliers : c'est la première question
+// d'un visiteur (« quand venir ? »), elle mérite d'être visible sans
+// défiler. Ils viennent des paramètres du site, administrables.
+const services = site.serviceTimes.slice(0, 3);
 
 const Hero = () => {
   return (
@@ -15,62 +22,89 @@ const Hero = () => {
         backgroundImage: `url(${heroBg})`,
       }}
     >
-      <div className="hero__overlay"></div>
+      <div
+        className="hero__overlay"
+        aria-hidden="true"
+      ></div>
 
       <div className="hero__container">
-
         <motion.div
           className="hero__content"
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1 }}
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
         >
-          <span className="hero__subtitle">
-            BIENVENUE AU
-          </span>
+          <p className="hero__eyebrow">Bienvenue au</p>
 
           <h1>
-            Centre Apostolique
-            <br />
-            Vie et Abondance
+            Centre Apostolique{" "}
+            <span className="hero__highlight">Vie et Abondance</span>
           </h1>
 
-          <div className="hero__line"></div>
-
-          <p>
-            Une église qui communique la vie abondante de Dieu
-            par la parole et par le Saint Esprit.
+          <p className="hero__lead">
+            Une église qui communique la vie abondante de Dieu par la
+            Parole et par le Saint-Esprit.
           </p>
 
-          <div className="hero__buttons">
-
+          <div className="hero__actions">
             <Link
               to="/about"
-              className="btn-yellow"
+              className="hero__cta"
             >
               Nous découvrir
-              <ArrowRight size={20} />
+              <ArrowRight size={18} aria-hidden="true" />
             </Link>
 
             <Link
               to="/events"
-              className="btn-outline"
+              className="hero__cta hero__cta--ghost"
             >
-              Nos cultes
-              <CalendarDays size={18} />
+              Nos rendez-vous
+              <CalendarDays size={18} aria-hidden="true" />
             </Link>
-
           </div>
-
         </motion.div>
 
-        <img
+        <motion.img
           src={logoCava}
-          alt="Logo CAVA"
+          alt=""
+          aria-hidden="true"
           className="hero__logo"
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
         />
-
       </div>
+
+      {services.length > 0 && (
+        <div className="hero__services">
+          <div className="hero__services-inner">
+            <h2 className="hero__services-title">
+              <Clock size={18} aria-hidden="true" />
+              Nos horaires
+            </h2>
+
+            <ul className="hero__services-list">
+              {services.map((service) => (
+                <li key={`${service.label}-${service.day}`}>
+                  <span className="hero__service-day">
+                    {dayLabel(service.day)} · {service.time}
+                  </span>
+
+                  <span className="hero__service-label">
+                    {service.label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <p className="hero__services-address">
+              <MapPin size={16} aria-hidden="true" />
+              {site.address.trim()}
+            </p>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

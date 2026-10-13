@@ -7,11 +7,20 @@
   align-items: center;
   justify-content: center;
 
-  min-height: 60vh;
+  min-height: 70vh;
 
-  padding: 80px 20px;
+  // Haut large : la barre de navigation est fixe et transparente.
+  padding: 160px 20px 100px;
 
-  background: $bg-light;
+  // Fond vert : la navigation (texte blanc, transparente) était invisible
+  // sur l'ancien fond clair. La carte blanche reste lisible dessus.
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      rgba($secondary, 0.14) 0%,
+      transparent 55%
+    ),
+    linear-gradient(135deg, $primary-dark 0%, $primary 100%);
 
   &__card {
     width: 100%;
@@ -19,12 +28,11 @@
 
     padding: 44px 38px;
 
-    border: 1px solid $border-color;
-    border-radius: $radius;
+    border-radius: 24px;
 
     background: #fff;
 
-    box-shadow: $shadow;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.25);
 
     text-align: center;
 
@@ -129,4 +137,10 @@
       padding: 32px 22px;
     }
   }
+}
+
+// Fond vert jusqu'au pied de page : sa marge haute globale
+// (`Footer.scss`) laisserait une bande blanche.
+.unsubscribe + .footer {
+  margin-top: 0;
 }

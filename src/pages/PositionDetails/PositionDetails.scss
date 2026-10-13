@@ -1,14 +1,23 @@
 @use "../../styles/variables" as *;
 @use "../../styles/mixins" as *;
+@use "../../styles/ui" as *;
 
 .position-details {
   background: #ffffff;
 
+  // Conteneur commun du site : le contenu s'aligne sur la navigation.
   &__container {
     position: relative;
-    width: min(1100px, 100%);
-    margin: 0 auto;
-    padding: 0 24px;
+
+    @include container;
+  }
+
+  &__breadcrumb {
+    @include hero-breadcrumb;
+  }
+
+  &__eyebrow {
+    @include eyebrow($on-dark: true, $spacing: 12px);
   }
 
   // Le voile : sans lui, le texte blanc devient illisible dès que la
@@ -102,12 +111,14 @@
     margin-bottom: 14px;
   }
 
+  // Titre de hero commun au site (les capitales forcées venaient de
+  // l'affiche de la campagne).
   &__title {
     margin: 0;
-    font-size: clamp(1.9rem, 5vw, 3rem);
-    font-weight: 800;
-    text-transform: uppercase;
-    line-height: 1.1;
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
   }
 
   &__subtitle {

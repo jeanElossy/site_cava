@@ -16,9 +16,11 @@ const MinistryTestimonials = ({ testimonials = [] }) => {
     >
       <div className="ministry-testimonials__container">
         <header className="ministry-testimonials__header">
-          <h2 id="ministry-testimonials-title">Témoignages</h2>
+          <span className="ministry-testimonials__eyebrow">
+            Ils en parlent
+          </span>
 
-          <div className="ministry-testimonials__line" />
+          <h2 id="ministry-testimonials-title">Témoignages</h2>
         </header>
 
         <div className="ministry-testimonials__grid">
@@ -28,14 +30,14 @@ const MinistryTestimonials = ({ testimonials = [] }) => {
             return (
               <motion.figure
                 key={testimonial.author}
-                className="testimonial-card"
+                className="ministry-testimonials__card"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 0.4, delay: index * 0.08 }}
               >
                 <div
-                  className="testimonial-card__rating"
+                  className="ministry-testimonials__rating"
                   role="img"
                   aria-label={`Note : ${rating} sur 5`}
                 >
@@ -44,11 +46,14 @@ const MinistryTestimonials = ({ testimonials = [] }) => {
                   ))}
                 </div>
 
-                <blockquote className="testimonial-card__quote">
-                  <p>« {testimonial.message} »</p>
+                <blockquote className="ministry-testimonials__quote">
+                  {/* Le modèle nomme le texte `quote` ; `message` était le
+                      nom de l'ancien contenu en dur. Lire seulement
+                      `message` affichait des guillemets vides. */}
+                  <p>« {testimonial.quote ?? testimonial.message} »</p>
                 </blockquote>
 
-                <figcaption className="testimonial-card__author">
+                <figcaption className="ministry-testimonials__author">
                   — {testimonial.author}
                 </figcaption>
               </motion.figure>

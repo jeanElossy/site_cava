@@ -1,15 +1,19 @@
-@use "../../styles/variables" as *;
-
-// Enchaînement des sections de la page Contact.
-// Le détail visuel de chaque bloc vit dans le SCSS de son composant
-// (ContactHero, ContactForm, ContactSchedule, MinistryContacts, VisitMap) :
-// ce fichier ne gère que le fond et les raccords entre sections.
+// Page Contact. Chaque bloc porte son propre style sous sa classe racine
+// (ContactHero, ContactForm, ContactSchedule, MinistryContacts, VisitMap).
 .contact-page {
-  background: $bg-light;
+  background: #f7f5ee;
+
+  overflow-x: hidden;
 
   // Compense la hauteur de la navbar fixe lors d'un saut d'ancre
-  // (« Envoyer une demande de prière » → formulaire).
+  // (« Écrire un message », « Envoyer une demande de prière »…).
   section[id] {
-    scroll-margin-top: 100px;
+    scroll-margin-top: 90px;
   }
+}
+
+// Fond crème jusqu'au pied de page : sa marge haute globale
+// (`Footer.scss`) laisserait une bande blanche.
+.contact-page + .footer {
+  margin-top: 0;
 }

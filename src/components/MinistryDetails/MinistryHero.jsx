@@ -1,64 +1,76 @@
 import { Link } from "react-router-dom";
 
-import { FaUsers, FaEnvelope } from "react-icons/fa";
+import { motion } from "framer-motion";
+
+import { FaArrowRight } from "react-icons/fa";
 
 import "./MinistryHero.scss";
 
-import MinistryStats from "./MinistryStats";
-
-const MinistryHero = ({
-  ministry,
-}) => {
+const MinistryHero = ({ ministry }) => {
   return (
-    <section className="ministry-hero">
-
-      <img
-        src={ministry.image}
-        alt={ministry.title}
-        className="ministry-hero__image"
+    <section
+      className="ministry-hero"
+      style={
+        ministry.image
+          ? { backgroundImage: `url(${ministry.image})` }
+          : undefined
+      }
+    >
+      <div
+        className="ministry-hero__overlay"
+        aria-hidden="true"
       />
 
-      <div className="ministry-hero__overlay" />
+      <div className="ministry-hero__container">
+        <motion.div
+          className="ministry-hero__content"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
+          <nav
+            className="ministry-hero__breadcrumb"
+            aria-label="Fil d'Ariane"
+          >
+            <Link to="/">Accueil</Link>
 
-      <div className="ministry-hero__content">
+            <span aria-hidden="true">/</span>
 
-        <span className="ministry-hero__badge">
-          Ministère
-        </span>
+            <Link to="/ministries">Ministères</Link>
 
-        <h1 className="ministry-hero__title">
-          {ministry.title}
-        </h1>
+            <span aria-hidden="true">/</span>
 
-        <p className="ministry-hero__description">
-          {ministry.description}
-        </p>
+            <span aria-current="page">{ministry.title}</span>
+          </nav>
 
-        <div className="ministry-hero__stats">
+          <p className="ministry-hero__eyebrow">Ministère</p>
 
-          <MinistryStats
-            stats={ministry.stats || []}
-            insideHero
-          />
+          <h1 className="ministry-hero__title">{ministry.title}</h1>
 
-        </div>
+          {ministry.description && (
+            <p className="ministry-hero__description">
+              {ministry.description}
+            </p>
+          )}
 
-        <div className="ministry-hero__actions">
+          <div className="ministry-hero__actions">
+            <Link
+              to="/contact"
+              className="ministry-hero__cta"
+            >
+              Rejoindre le ministère
+              <FaArrowRight aria-hidden="true" />
+            </Link>
 
-          <Link to="/contact" className="btn-primary">
-            <FaUsers aria-hidden="true" />
-            Rejoindre le ministère
-          </Link>
-
-          <Link to="/contact" className="btn-outline">
-            <FaEnvelope aria-hidden="true" />
-            Nous contacter
-          </Link>
-
-        </div>
-
+            <Link
+              to="/ministries"
+              className="ministry-hero__cta ministry-hero__cta--ghost"
+            >
+              Tous les ministères
+            </Link>
+          </div>
+        </motion.div>
       </div>
-
     </section>
   );
 };

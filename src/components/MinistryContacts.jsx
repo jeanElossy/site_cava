@@ -41,10 +41,14 @@ const ministries = Object.values(allMinistries).map(
 
 const MinistryContacts = () => {
   return (
-    <section className="ministry-contacts">
+    <section
+      className="ministry-contacts"
+      aria-labelledby="ministry-contacts-title"
+    >
       <div className="ministry-contacts__container">
         <div className="ministry-contacts__header">
-          <h2>Contactez un ministère</h2>
+          <span className="ministry-contacts__eyebrow">Ministères</span>
+          <h2 id="ministry-contacts-title">Contactez un ministère</h2>
 
           <p>
             Besoin d'informations spécifiques ? Contactez directement le

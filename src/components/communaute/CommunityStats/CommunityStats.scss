@@ -1,109 +1,76 @@
 @use "../../../styles/variables" as *;
+@use "../../../styles/mixins" as *;
 
-// Tout est imbriqué sous `.community-stats`.
-//
-// Il n'y a pas de CSS modules dans ce projet : une classe déclarée à la
-// racine d'un fichier est GLOBALE et s'applique à tout le site. Des noms
-// comme `.card`, `.icon` ou `.value` ont déjà cassé silencieusement
-// d'autres pages ici (voir CLAUDE.md).
-
+// Bandeau blanc qui chevauche le bas du hero. Tout est imbriqué sous
+// `.community-stats` (feuille de style unique, voir CLAUDE.md).
 .community-stats {
   position: relative;
+  z-index: 3;
 
-  padding: 100px 0;
-
-  overflow: hidden;
-
-  background: linear-gradient(
-    135deg,
-    #06301f 0%,
-    #0d5b3e 55%,
-    #06301f 100%
-  );
-
-  color: #fff;
-
-  // Halo doré diffus, pour éviter l'aplat de vert.
-  &::before {
-    content: "";
-
-    position: absolute;
-    top: -180px;
-    right: -140px;
-
-    width: 480px;
-    height: 480px;
-
-    border-radius: 50%;
-
-    background: radial-gradient(
-      circle,
-      rgba(255, 210, 46, 0.16) 0%,
-      transparent 70%
-    );
-
-    pointer-events: none;
-  }
+  margin-top: -90px;
 
   &__container {
-    position: relative;
-    z-index: 1;
+    @include container;
+  }
 
-    max-width: 1400px;
-    margin: auto;
+  &__panel {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.9fr) minmax(0, 3fr);
+    align-items: center;
+    gap: 40px;
 
-    padding: 0 60px;
+    padding: 38px 44px;
+
+    border: 1px solid rgba($primary, 0.08);
+    border-radius: 24px;
+
+    background: #fff;
+
+    box-shadow:
+      0 30px 70px rgba(8, 59, 42, 0.14),
+      0 4px 14px rgba(8, 59, 42, 0.06);
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: $secondary-dark;
+
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
   }
 
   &__header {
-    max-width: 640px;
-    margin: 0 auto 60px;
-
-    text-align: center;
-
     h2 {
-      margin: 0 0 18px;
+      margin: 0 0 8px;
 
-      font-size: 2.4rem;
+      color: $primary-dark;
+
+      font-size: 1.45rem;
       font-weight: 700;
-      line-height: 1.2;
-
-      color: #fff;
+      line-height: 1.25;
     }
 
     p {
       margin: 0;
 
-      color: rgba(255, 255, 255, 0.78);
+      color: #6b7280;
 
-      font-size: 1.02rem;
-      line-height: 1.8;
+      font-size: 0.88rem;
+      line-height: 1.6;
     }
   }
 
-  &__eyebrow {
-    display: inline-block;
-
-    margin-bottom: 18px;
-    padding: 7px 18px;
-
-    border: 1px solid rgba(255, 210, 46, 0.35);
-    border-radius: 50px;
-
-    background: rgba(255, 210, 46, 0.1);
-
-    color: $secondary;
-
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  &__grid {
+  // Autant de colonnes que de chiffres publiés (2 à 4) : une grille
+  // figée à 4 colonnes laissait un trou quand un chiffre est masqué.
+  &__list {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 26px;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
 
     margin: 0;
     padding: 0;
@@ -111,135 +78,116 @@
     list-style: none;
   }
 
-  &__card {
+  &__item {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
+    gap: 16px;
 
-    padding: 40px 26px 34px;
+    padding: 6px 24px;
 
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 20px;
-
-    background: rgba(255, 255, 255, 0.06);
-
-    text-align: center;
-
-    transition: transform 0.35s ease, border-color 0.35s ease,
-      background 0.35s ease;
-
-    &:hover {
-      transform: translateY(-6px);
-
-      border-color: rgba(255, 210, 46, 0.45);
-
-      background: rgba(255, 255, 255, 0.1);
-    }
+    border-left: 1px solid $border-color;
   }
 
   &__icon {
+    flex-shrink: 0;
+
+    display: grid;
+    place-items: center;
+
+    width: 46px;
+    height: 46px;
+
+    border-radius: 14px;
+
+    background: rgba($primary, 0.08);
+    color: $primary;
+
+    font-size: 1.15rem;
+  }
+
+  &__figures {
     display: flex;
-    align-items: center;
-    justify-content: center;
-
-    width: 60px;
-    height: 60px;
-
-    margin-bottom: 22px;
-
-    border-radius: 50%;
-
-    background: rgba(255, 210, 46, 0.14);
-
-    color: $secondary;
-
-    font-size: 1.5rem;
+    flex-direction: column;
   }
 
   &__value {
-    display: flex;
-    align-items: flex-start;
+    color: $primary-dark;
 
-    color: #fff;
-
-    font-size: 3.1rem;
-    font-weight: 800;
+    font-size: 2.3rem;
+    font-weight: 700;
     line-height: 1;
+    letter-spacing: -0.02em;
 
-    // Chiffres de largeur fixe : sans cela, la carte tressaute pendant
-    // le décompte, chaque chiffre n'ayant pas la même largeur.
+    // Chiffres à chasse fixe : le compteur ne fait pas « danser » la
+    // ligne pendant l'animation.
     font-variant-numeric: tabular-nums;
   }
 
   &__plus {
-    margin-left: 3px;
+    margin-left: 2px;
 
-    color: $secondary;
+    color: $secondary-dark;
 
-    font-size: 1.6rem;
-    line-height: 1.2;
+    font-size: 1.4rem;
+    vertical-align: top;
   }
 
   &__label {
-    margin-top: 12px;
+    margin-top: 8px;
 
-    color: #fff;
+    color: $text-dark;
 
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     font-weight: 600;
   }
 
   &__hint {
-    margin-top: 9px;
+    margin-top: 2px;
 
-    color: rgba(255, 255, 255, 0.62);
+    color: #6b7280;
 
-    font-size: 0.85rem;
-    line-height: 1.6;
+    font-size: 0.8rem;
+    line-height: 1.45;
   }
 
-  @media (max-width: 992px) {
-    padding: 80px 0;
-
-    &__container {
-      padding: 0 30px;
-    }
-
-    &__grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 20px;
-    }
-
-    &__header h2 {
-      font-size: 2rem;
-    }
-  }
-
-  @media (max-width: 560px) {
-    padding: 64px 0;
-
-    &__container {
-      padding: 0 18px;
-    }
-
-    &__grid {
+  @media (max-width: 1100px) {
+    &__panel {
       grid-template-columns: 1fr;
+      gap: 26px;
     }
 
-    &__card {
-      padding: 32px 22px 28px;
+    &__item:first-child {
+      padding-left: 0;
+
+      border-left: 0;
+    }
+  }
+
+  @media (max-width: 768px) {
+    margin-top: -70px;
+
+    &__panel {
+      padding: 28px 22px;
+
+      border-radius: 20px;
     }
 
-    &__header {
-      margin-bottom: 42px;
+    &__list {
+      grid-auto-flow: row;
+      grid-auto-columns: auto;
+      gap: 18px;
+    }
 
-      h2 {
-        font-size: 1.7rem;
-      }
+    &__item {
+      align-items: center;
+
+      padding: 0;
+
+      border-left: 0;
     }
 
     &__value {
-      font-size: 2.6rem;
+      font-size: 1.9rem;
     }
   }
 }

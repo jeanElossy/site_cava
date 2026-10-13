@@ -5,7 +5,7 @@ import {
 
 import { X, ExternalLink } from "lucide-react";
 
-import { externalUrl } from "../Media/data/medias";
+import { externalUrl, isPlayable, playableSrc } from "../Media/data/medias";
 
 import "./MediaPlayerModal.scss";
 
@@ -126,7 +126,9 @@ const MediaPlayerModal = ({ item, onClose }) => {
         </div>
 
         <div className="media-modal__player">
-          {video?.kind === "youtube" && (
+          {/* `isPlayable` revalide identifiant et source : le lecteur ne
+              doit jamais charger une valeur que l'adaptateur refuse. */}
+          {video?.kind === "youtube" && isPlayable(item) && (
             <iframe
               src={`https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&rel=0`}
               title={item.title}
@@ -135,9 +137,9 @@ const MediaPlayerModal = ({ item, onClose }) => {
             />
           )}
 
-          {video?.kind === "file" && (
+          {video?.kind === "file" && isPlayable(item) && (
             <video
-              src={video.src}
+              src={playableSrc(item) ?? undefined}
               poster={item.image}
               controls
               autoPlay
