@@ -15,9 +15,10 @@ import entrepriseImage from "../assets/images/pillars/entreprise.jpg";
 //
 // Photos : recadrages portrait (720 × 900) importés depuis `src/assets`,
 // donc vérifiés au build et servis par le site lui-même (aucun domaine
-// tiers dans la CSP). École et Armée viennent des images du site ;
-// Famille (Pexels, photo 33134547) et Entreprise (Pexels, 30688596) sont
-// des photos libres de droits sous licence Pexels.
+// tiers dans la CSP). École, Armée et Famille viennent des images du
+// site (Famille : recadrage de `assets/images/famille.png`, fournie par
+// l'église) ; Entreprise (Pexels, photo 30688596) est une photo libre
+// de droits sous licence Pexels.
 
 export const PILLARS = [
   {
@@ -116,7 +117,7 @@ export const PILLARS = [
     name: "Famille",
     title: "La Famille",
     image: familleImage,
-    alt: "Un père, une mère et leur petite fille, souriants",
+    alt: "Un père, une mère et leurs enfants réunis autour d'une Bible ouverte",
     verbs: ["Aimer", "Soutenir", "Restaurer"],
     summary:
       "La dimension relationnelle, pastorale, sociale et communautaire de ÇA.VA.",
