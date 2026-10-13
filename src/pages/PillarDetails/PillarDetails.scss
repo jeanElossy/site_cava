@@ -1,0 +1,944 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+@use "../../styles/ui" as *;
+
+// Page d'un pilier (`/piliers/:slug`). Tout est imbriqué sous
+// `.pillar-page` (feuille de style unique, voir CLAUDE.md).
+//
+// Rythme des fonds : vert (hero) → blanc (définition) → crème
+// (objectifs) → blanc (structures) → vert (application) → crème
+// (autres piliers).
+.pillar-page {
+  background: #fff;
+
+  overflow-x: hidden;
+
+  // État « pilier introuvable » (mixin partagé, `styles/_ui.scss`).
+  &--missing {
+    @include missing-state;
+  }
+
+  &__missing-back {
+    @include missing-back;
+  }
+
+  &__container {
+    @include container;
+  }
+
+  // Sur-titre de section, réutilisé partout.
+  &__section-eyebrow {
+    @include eyebrow;
+
+    &--on-dark {
+      @include eyebrow($on-dark: true);
+    }
+  }
+
+  h2 {
+    @include section-title;
+  }
+
+  // ------------------------------------------------------------------
+  // HERO
+  // ------------------------------------------------------------------
+  &__hero {
+    position: relative;
+
+    padding: 150px 0 100px;
+
+    background:
+      radial-gradient(
+        ellipse at 0% 100%,
+        rgba(255, 255, 255, 0.06) 0%,
+        transparent 45%
+      ),
+      linear-gradient(135deg, $primary-dark 0%, #0b4a33 60%, $primary 100%);
+
+    color: #fff;
+
+    overflow: hidden;
+  }
+
+  &__hero-glow {
+    position: absolute;
+    top: -20%;
+    right: -10%;
+
+    width: 60vw;
+    height: 60vw;
+
+    border-radius: 50%;
+
+    background: radial-gradient(
+      circle,
+      rgba($secondary, 0.16) 0%,
+      transparent 60%
+    );
+
+    pointer-events: none;
+  }
+
+  &__hero-inner {
+    @include container;
+
+    position: relative;
+    z-index: 1;
+
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 80px;
+  }
+
+  &__breadcrumb {
+    @include hero-breadcrumb;
+  }
+
+  &__eyebrow {
+    @include eyebrow($on-dark: true, $spacing: 18px);
+  }
+
+  &__hero h1 {
+    margin: 0 0 24px;
+
+    color: #fff;
+
+    font-size: clamp(2.6rem, 5.4vw, 4.6rem);
+    font-weight: 700;
+    line-height: 1.04;
+    letter-spacing: -0.025em;
+  }
+
+  &__highlight {
+    color: $secondary;
+  }
+
+  // Les trois verbes, séparés par un filet jaune.
+  &__verbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 0;
+
+    margin: 0 0 28px;
+    padding: 0;
+
+    list-style: none;
+
+    li {
+      color: #fff;
+
+      font-size: clamp(1rem, 1.6vw, 1.2rem);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    li:not(:last-child)::after {
+      content: "";
+
+      display: inline-block;
+
+      width: 22px;
+      height: 2px;
+
+      margin: 0 14px;
+
+      background: $secondary;
+
+      vertical-align: middle;
+    }
+  }
+
+  &__lead {
+    max-width: 560px;
+
+    margin: 0 0 36px;
+
+    color: rgba(255, 255, 255, 0.86);
+
+    font-size: 1.1rem;
+    line-height: 1.75;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  &__cta {
+    @include pill-button(primary);
+
+    &--ghost {
+      @include pill-button(light);
+    }
+  }
+
+  // Photo en portrait, encadrée, avec son étiquette en verre.
+  &__figure {
+    position: relative;
+
+    justify-self: end;
+
+    width: 100%;
+    max-width: 440px;
+
+    margin: 0;
+
+    img {
+      position: relative;
+      z-index: 1;
+
+      display: block;
+
+      width: 100%;
+      height: auto;
+      aspect-ratio: 4 / 5;
+
+      border-radius: 28px;
+
+      object-fit: cover;
+
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.4);
+    }
+
+    // Cadre décalé, derrière la photo.
+    &::before {
+      content: "";
+
+      position: absolute;
+      inset: 22px -22px -22px 22px;
+
+      border: 2px solid rgba($secondary, 0.55);
+      border-radius: 28px;
+    }
+  }
+
+  &__figure-caption {
+    position: absolute;
+    bottom: 26px;
+    left: -30px;
+    z-index: 2;
+
+    padding: 16px 22px;
+
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 18px;
+
+    background: rgba(8, 59, 42, 0.72);
+    color: #fff;
+
+    font-size: 1.15rem;
+    font-weight: 700;
+
+    backdrop-filter: blur(12px);
+
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+
+    span {
+      display: block;
+
+      margin-bottom: 2px;
+
+      color: $secondary;
+
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // DÉFINITION + VISION
+  // ------------------------------------------------------------------
+  &__intro {
+    padding: 110px 0;
+  }
+
+  &__intro-inner {
+    @include container;
+
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 70px;
+  }
+
+  &__definition {
+    h2 {
+      margin-bottom: 24px;
+    }
+
+    p:not(.pillar-page__section-eyebrow) {
+      margin: 0 0 16px;
+
+      color: #4b5563;
+
+      font-size: 1.05rem;
+      line-height: 1.85;
+    }
+  }
+
+  &__vision {
+    position: relative;
+
+    padding: 44px 40px;
+
+    border-radius: 28px;
+
+    background:
+      radial-gradient(
+        ellipse at 100% 0%,
+        rgba($secondary, 0.2) 0%,
+        transparent 55%
+      ),
+      $primary-dark;
+    color: #fff;
+
+    box-shadow: 0 30px 60px rgba(8, 59, 42, 0.25);
+
+    h2 {
+      margin: 0 0 16px;
+
+      color: $secondary;
+
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      line-height: 1.4;
+      text-transform: uppercase;
+    }
+
+    p {
+      margin: 0;
+
+      color: rgba(255, 255, 255, 0.92);
+
+      font-size: 1.2rem;
+      font-weight: 500;
+      line-height: 1.7;
+    }
+  }
+
+  &__vision-icon {
+    display: grid;
+    place-items: center;
+
+    width: 56px;
+    height: 56px;
+
+    margin-bottom: 22px;
+
+    border-radius: 16px;
+
+    background: $secondary;
+    color: $primary-dark;
+  }
+
+  // ------------------------------------------------------------------
+  // OBJECTIFS
+  // ------------------------------------------------------------------
+  &__objectives {
+    padding: 110px 0;
+
+    background: #f7f5ee;
+
+    scroll-margin-top: 80px;
+  }
+
+  &__section-head {
+    max-width: 640px;
+
+    margin: 0 auto 54px;
+
+    text-align: center;
+
+    > p:last-child {
+      margin: 16px 0 0;
+
+      color: #4b5563;
+
+      font-size: 1.05rem;
+    }
+  }
+
+  // En flex et non en grille : la dernière ligne, incomplète avec sept
+  // objectifs, se centre au lieu de laisser une case vide.
+  &__objective-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+
+    li {
+      position: relative;
+
+      display: flex;
+      flex: 0 1 calc((100% - 60px) / 4);
+      flex-direction: column;
+      gap: 18px;
+
+      padding: 28px 26px;
+
+      border: 1px solid rgba($primary, 0.08);
+      border-radius: 22px;
+
+      background: #fff;
+
+      box-shadow: 0 12px 30px rgba(8, 59, 42, 0.06);
+
+      transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease;
+
+      &:hover {
+        transform: translateY(-4px);
+
+        box-shadow: 0 22px 44px rgba(8, 59, 42, 0.12);
+      }
+
+      p {
+        margin: 0;
+
+        color: $primary-dark;
+
+        font-size: 1.02rem;
+        font-weight: 600;
+        line-height: 1.5;
+      }
+    }
+  }
+
+  &__objective-number {
+    display: grid;
+    place-items: center;
+
+    width: 46px;
+    height: 46px;
+
+    border-radius: 14px;
+
+    background: $primary;
+    color: $secondary;
+
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  // ------------------------------------------------------------------
+  // STRUCTURES
+  // ------------------------------------------------------------------
+  &__structures {
+    padding: 110px 0;
+  }
+
+  &__structures-inner {
+    @include container;
+
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    align-items: start;
+    gap: 70px;
+  }
+
+  // L'en-tête reste visible pendant qu'on parcourt la liste.
+  &__structures-head {
+    position: sticky;
+    top: 110px;
+
+    > p:last-child {
+      margin: 16px 0 0;
+
+      color: #4b5563;
+
+      font-size: 1.05rem;
+    }
+  }
+
+  &__structures-icon {
+    display: grid;
+    place-items: center;
+
+    width: 60px;
+    height: 60px;
+
+    margin-bottom: 24px;
+
+    border-radius: 18px;
+
+    background: rgba($primary, 0.08);
+    color: $primary;
+  }
+
+  &__structure-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+
+    li {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+
+      padding: 20px 22px;
+
+      border: 1px solid rgba($primary, 0.1);
+      border-radius: 18px;
+
+      background: #fff;
+
+      color: $primary-dark;
+
+      font-size: 0.98rem;
+      font-weight: 600;
+      line-height: 1.45;
+
+      transition:
+        border-color 0.3s ease,
+        background-color 0.3s ease;
+
+      &:hover {
+        border-color: rgba($primary, 0.3);
+
+        background: #f7f5ee;
+      }
+
+      svg {
+        flex-shrink: 0;
+
+        margin-top: 1px;
+
+        color: $secondary-dark;
+      }
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // APPLICATION À ÇA.VA.
+  // ------------------------------------------------------------------
+  &__application {
+    padding: 120px 0;
+
+    background:
+      radial-gradient(
+        ellipse at 50% 120%,
+        rgba($secondary, 0.18) 0%,
+        transparent 55%
+      ),
+      linear-gradient(135deg, $primary-dark 0%, $primary 100%);
+
+    color: #fff;
+  }
+
+  &__application-inner {
+    @include container;
+
+    max-width: 900px;
+
+    text-align: center;
+  }
+
+  &__application-lead {
+    position: relative;
+
+    margin: 0 0 28px;
+
+    color: #fff;
+
+    font-size: clamp(1.7rem, 3.4vw, 2.6rem);
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+
+    text-wrap: balance;
+
+    &::before {
+      content: "“";
+
+      display: block;
+
+      height: 0.6em;
+
+      color: $secondary;
+
+      font-size: 4rem;
+      line-height: 1;
+    }
+  }
+
+  &__application-body p {
+    max-width: 720px;
+
+    margin: 0 auto 16px;
+
+    color: rgba(255, 255, 255, 0.85);
+
+    font-size: 1.08rem;
+    line-height: 1.85;
+  }
+
+  // La priorité ministérielle soutenue par le pilier, mise en exergue.
+  &__priority {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+
+    max-width: 760px;
+
+    margin: 26px 0 0;
+    padding: 18px 26px;
+
+    border: 1px solid rgba($secondary, 0.45);
+    border-radius: 18px;
+
+    background: rgba(255, 255, 255, 0.07);
+
+    color: #fff;
+
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.55;
+    text-align: left;
+
+    svg {
+      flex-shrink: 0;
+
+      color: $secondary;
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // LES AUTRES PILIERS
+  // ------------------------------------------------------------------
+  &__others {
+    padding: 110px 0;
+
+    background: #f7f5ee;
+  }
+
+  &__others-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+
+    margin-bottom: 44px;
+  }
+
+  &__others-all {
+    @include pill-button(outline);
+  }
+
+  &__others-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+  }
+
+  &__other {
+    position: relative;
+
+    display: block;
+
+    aspect-ratio: 4 / 3.2;
+
+    border-radius: 22px;
+
+    overflow: hidden;
+
+    isolation: isolate;
+
+    color: #fff;
+
+    text-decoration: none;
+
+    box-shadow: 0 18px 40px rgba(8, 59, 42, 0.15);
+
+    transition:
+      transform 0.35s ease,
+      box-shadow 0.35s ease;
+
+    img {
+      position: absolute;
+      inset: 0;
+
+      width: 100%;
+      height: 100%;
+
+      object-fit: cover;
+
+      transition: transform 0.6s ease;
+    }
+
+    &::after {
+      content: "";
+
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+
+      background: linear-gradient(
+        180deg,
+        rgba(4, 30, 21, 0.05) 20%,
+        rgba(4, 30, 21, 0.9) 100%
+      );
+    }
+
+    &:hover,
+    &:focus-visible {
+      transform: translateY(-6px);
+
+      box-shadow: 0 28px 54px rgba(8, 59, 42, 0.25);
+
+      img {
+        transform: scale(1.06);
+      }
+
+      .pillar-page__other-arrow {
+        background: $secondary;
+        color: $primary-dark;
+
+        transform: rotate(45deg);
+      }
+    }
+
+    &:focus-visible {
+      outline: 3px solid $secondary-dark;
+      outline-offset: 4px;
+    }
+  }
+
+  &__other-arrow {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 2;
+
+    display: grid;
+    place-items: center;
+
+    width: 40px;
+    height: 40px;
+
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+
+    background: rgba(4, 30, 21, 0.35);
+
+    backdrop-filter: blur(8px);
+
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease,
+      transform 0.3s ease;
+  }
+
+  &__other-body {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    padding: 22px 24px;
+  }
+
+  &__other-number {
+    color: $secondary;
+
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  &__other-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+  }
+
+  &__other-verbs {
+    color: rgba(255, 255, 255, 0.8);
+
+    font-size: 0.88rem;
+  }
+
+  // ------------------------------------------------------------------
+  // RESPONSIVE
+  // ------------------------------------------------------------------
+  @media (max-width: 1100px) {
+    &__hero-inner {
+      gap: 60px;
+    }
+
+    &__figure-caption {
+      left: -16px;
+    }
+
+    &__structures-inner {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+
+    &__structures-head {
+      position: static;
+    }
+  }
+
+  @media (max-width: 960px) {
+    &__hero-inner,
+    &__intro-inner {
+      grid-template-columns: 1fr;
+    }
+
+    &__figure {
+      justify-self: center;
+
+      max-width: 400px;
+    }
+
+    &__others-list {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    &__objective-list li {
+      flex-basis: calc((100% - 20px) / 2);
+    }
+  }
+
+  @media (max-width: 768px) {
+    &__hero {
+      padding: 120px 0 80px;
+    }
+
+    &__actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    &__intro,
+    &__objectives,
+    &__structures,
+    &__others {
+      padding: 80px 0;
+    }
+
+    &__application {
+      padding: 90px 0;
+    }
+
+    &__vision {
+      padding: 34px 26px;
+
+      p {
+        font-size: 1.08rem;
+      }
+    }
+
+    &__structure-list {
+      grid-template-columns: 1fr;
+    }
+
+    &__priority {
+      padding: 16px 18px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    // Le cadre décalé débordait de l'écran.
+    &__figure {
+      max-width: none;
+
+      &::before {
+        inset: 14px -10px -14px 10px;
+      }
+    }
+
+    &__figure-caption {
+      left: 14px;
+      bottom: 16px;
+    }
+
+    &__others-list {
+      grid-template-columns: 1fr;
+    }
+
+    // En ligne sur téléphone : numéro à gauche, texte à droite. Sept
+    // cartes empilées en colonne faisaient défiler plus d'un écran.
+    &__objective-list {
+      gap: 12px;
+
+      li {
+        flex-basis: 100%;
+        flex-direction: row;
+        align-items: center;
+        gap: 16px;
+
+        padding: 16px 18px;
+      }
+    }
+
+    &__objective-number {
+      flex-shrink: 0;
+
+      width: 40px;
+      height: 40px;
+
+      border-radius: 12px;
+    }
+
+    &__others-all {
+      width: 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__objective-list li,
+    &__structure-list li,
+    &__other,
+    &__other img,
+    &__other-arrow {
+      transition: none;
+    }
+
+    &__objective-list li:hover,
+    &__other:hover,
+    &__other:focus-visible {
+      transform: none;
+
+      img,
+      .pillar-page__other-arrow {
+        transform: none;
+      }
+    }
+  }
+}
+
+// La page se termine sur une section crème : la marge haute du pied de
+// page (globale, `Footer.scss`) y laisserait une bande blanche.
+.pillar-page + .footer {
+  margin-top: 0;
+}

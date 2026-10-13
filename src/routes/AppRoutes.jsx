@@ -12,6 +12,7 @@ import Media from "../pages/Media/Media";
 import Communaute from "../pages/Communaute/Communaute";
 import Candidature from "../pages/Candidature/Candidature";
 import PositionDetails from "../pages/PositionDetails/PositionDetails";
+import PillarDetails from "../pages/PillarDetails/PillarDetails";
 
 // Remonte la page de détail à chaque changement de poste.
 //
@@ -24,6 +25,15 @@ const PositionDetailsRoute = () => {
   const { slug } = useParams();
 
   return <PositionDetails key={slug} />;
+};
+
+// Même raison pour la page d'un pilier : passer d'un pilier à l'autre
+// (liens « Découvrir les autres piliers ») doit remonter la page, et
+// donc la ramener en haut.
+const PillarDetailsRoute = () => {
+  const { slug } = useParams();
+
+  return <PillarDetails key={slug} />;
 };
 import Contact from "../pages/Contact/Contact";
 import Donate from "../pages/Donate/Donate";
@@ -104,6 +114,11 @@ const AppRoutes = () => {
       <Route
         path="/about"
         element={<About />}
+      />
+
+      <Route
+        path="/piliers/:slug"
+        element={<PillarDetailsRoute />}
       />
 
       <Route
