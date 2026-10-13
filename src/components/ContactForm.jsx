@@ -336,7 +336,13 @@ const ContactForm = () => {
                 <div>
                   <h3>E-mail</h3>
 
-                  <a href={`mailto:${site.email}`}>{site.email}</a>
+                  {/* Coupure permise juste avant « @ » : sur un téléphone,
+                      l'adresse se coupait au milieu d'un mot. */}
+                  <a href={`mailto:${site.email}`}>
+                    {site.email.split("@")[0]}
+                    <wbr />
+                    {site.email.includes("@") ? `@${site.email.split("@").slice(1).join("@")}` : ""}
+                  </a>
 
                   <span>Nous répondons sous 24h.</span>
                 </div>

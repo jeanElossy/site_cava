@@ -131,7 +131,7 @@ const StepIdentity = ({ state, dispatch, updateDonor, onEdit }) => {
               aria-pressed={state.amount === amount}
               onClick={() => dispatch({ type: "SET_AMOUNT", payload: amount })}
             >
-              {amount.toLocaleString()}
+              {amount.toLocaleString("fr-FR")}
             </button>
           ))}
         </div>

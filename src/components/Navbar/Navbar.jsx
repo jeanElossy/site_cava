@@ -1,51 +1,111 @@
-import { useEffect, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import {
-  Menu,
-  X,
+  Briefcase,
+  Calendar,
+  ChevronDown,
+  Church,
+  Clock,
   Heart,
   Home,
   Info,
-  Church,
-  Calendar,
-  PlayCircle,
-  Users,
+  Menu,
   Phone,
+  PlayCircle,
   UserPlus,
-  Briefcase
+  Users,
+  X,
 } from "lucide-react";
 
 import {
   FaFacebookF,
   FaInstagram,
-  FaYoutube
+  FaWhatsapp,
+  FaYoutube,
 } from "react-icons/fa";
+
+import { dayLabel, site } from "../../content/settings";
+import { safeHttpUrl } from "../../utils/safeUrl";
 
 import logo from "../../assets/logo/logo_cava.gif";
 
 import "./Navbar.scss";
 
+// Liens du menu mobile. Le menu de bureau garde son balisage propre
+// (sous-menu au survol) ; ces listes ne servent qu'au panneau mobile.
+const MOBILE_LINKS = [
+  { to: "/", label: "Accueil", icon: Home, end: true },
+  { to: "/about", label: "À propos", icon: Info },
+  { to: "/ministries", label: "Ministères", icon: Church },
+  { to: "/events", label: "Événements", icon: Calendar },
+  { to: "/media", label: "Médias", icon: PlayCircle },
+];
+
+const COMMUNITY_LINKS = [
+  { to: "/communaute", label: "Notre communauté", icon: Users, end: true },
+  { to: "/inscription", label: "Devenir membre", icon: UserPlus },
+  { to: "/appel-a-candidature", label: "Appel à candidatures", icon: Briefcase },
+];
+
+// Réseaux : seulement des adresses http(s) valides (voir utils/safeUrl).
+const SOCIALS = [
+  { key: "facebook", label: "Facebook", icon: FaFacebookF },
+  { key: "instagram", label: "Instagram", icon: FaInstagram },
+  { key: "youtube", label: "YouTube", icon: FaYoutube },
+  { key: "whatsapp", label: "WhatsApp", icon: FaWhatsapp },
+]
+  .map((item) => ({ ...item, href: safeHttpUrl(site.social?.[item.key]) }))
+  .filter((item) => item.href);
+
+const isCommunityPath = (pathname) =>
+  COMMUNITY_LINKS.some(
+    (link) => pathname === link.to || pathname.startsWith(`${link.to}/`)
+  );
+
 const Navbar = () => {
   const [open, setOpen] = useState(false);
 
+  const { pathname } = useLocation();
+
+  // Sous-liste « Communauté » : dépliée d'office quand on se trouve sur
+  // l'une de ses pages, pour que le lien actif soit visible.
+  const [communityOpen, setCommunityOpen] = useState(() =>
+    isCommunityPath(pathname)
+  );
+
+  const toggleRef = useRef(null);
+  const closeRef = useRef(null);
+
   const closeMenu = () => setOpen(false);
 
-  // Le bouton de fermeture appartient à l'en-tête (position: absolute),
-  // pas au panneau du menu lui-même (position: fixed) : si la page
-  // sous-jacente continue de défiler pendant que le menu est ouvert,
-  // l'en-tête — et donc ce bouton — défile avec elle, pendant que le
-  // panneau reste fixé à l'écran. Bloquer le défilement tant que le
-  // menu est ouvert règle les deux à la fois (même mécanisme que
-  // AdminModal, ailleurs dans ce projet).
+  // Menu ouvert : défilement de la page gelé (sinon la page défile sous
+  // le panneau), Échap referme, et le focus entre dans le panneau. À la
+  // fermeture, il revient sur le bouton qui l'a ouvert.
   useEffect(() => {
     if (!open) return undefined;
 
+    const toggle = toggleRef.current;
+    const root = document.documentElement;
     const previousOverflow = document.body.style.overflow;
+    const previousRootOverflow = root.style.overflow;
 
+    // `html` autant que `body` : iOS Safari ignore le blocage posé sur
+    // `body` seul, et la page défilait encore sous le panneau.
     document.body.style.overflow = "hidden";
+    root.style.overflow = "hidden";
+    closeRef.current?.focus();
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("keydown", onKeyDown);
 
     return () => {
       document.body.style.overflow = previousOverflow;
+      root.style.overflow = previousRootOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+      toggle?.focus();
     };
   }, [open]);
 
@@ -56,6 +116,7 @@ const Navbar = () => {
         <div
           className="navbar__overlay"
           onClick={closeMenu}
+          aria-hidden="true"
         />
       )}
 
@@ -138,102 +199,164 @@ const Navbar = () => {
           <Heart size={18} />
         </NavLink>
 
-        {/* Bouton Mobile */}
-
+        {/* Bouton d'ouverture du menu mobile. La fermeture se fait
+            depuis le panneau lui-même (croix), par Échap ou par un
+            toucher sur le voile. */}
         <button
+          ref={toggleRef}
+          type="button"
           className="navbar__toggle"
-          onClick={() => setOpen(!open)}
-          aria-label="Menu"
+          onClick={() => setOpen(true)}
+          aria-label="Ouvrir le menu"
+          aria-expanded={open}
+          aria-controls="navbar-mobile"
         >
-          {open ? <X size={30} /> : <Menu size={30} />}
+          <Menu aria-hidden="true" />
         </button>
 
-        {/* Menu Mobile */}
-
-        <nav className={`navbar__mobile ${open ? "active" : ""}`}>
-
-          <div className="navbar__mobile-header">
-            <img src={logo} alt="CAVA" />
-          </div>
-
-          <div className="navbar__mobile-line" />
-
-          <div className="navbar__mobile-links">
-
-            <NavLink to="/" onClick={closeMenu}>
-              <Home size={20} />
-              <span>Accueil</span>
-            </NavLink>
-
-            <NavLink to="/about" onClick={closeMenu}>
-              <Info size={20} />
-              <span>À propos</span>
-            </NavLink>
-
-            <NavLink to="/ministries" onClick={closeMenu}>
-              <Church size={20} />
-              <span>Ministères</span>
-            </NavLink>
-
-            <NavLink to="/events" onClick={closeMenu}>
-              <Calendar size={20} />
-              <span>Événements</span>
-            </NavLink>
-
-            <NavLink to="/media" onClick={closeMenu}>
-              <PlayCircle size={20} />
-              <span>Médias</span>
-            </NavLink>
-
-            <NavLink to="/communaute" onClick={closeMenu}>
-              <Users size={20} />
-              <span>Communauté</span>
-            </NavLink>
-
-            {/* Pas de survol sur mobile : les entrées du sous-menu sont
-                affichées en clair, simplement décalées sous leur
-                parent. */}
+        {/* Panneau mobile. `inert` quand il est fermé : hors écran, ses
+            liens restaient atteignables à la tabulation. */}
+        <div
+          id="navbar-mobile"
+          className={`navbar__mobile${open ? " navbar__mobile--open" : ""}`}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu principal"
+          inert={!open}
+        >
+          <div className="navbar__mobile-head">
             <NavLink
-              to="/inscription"
-              className="navbar__mobile-sublink"
+              to="/"
+              className="navbar__mobile-logo"
               onClick={closeMenu}
             >
-              <UserPlus size={20} />
-              <span>Devenir membre</span>
+              <img src={logo} alt="CAVA — accueil" />
             </NavLink>
 
-            <NavLink
-              to="/appel-a-candidature"
-              className="navbar__mobile-sublink"
+            <button
+              ref={closeRef}
+              type="button"
+              className="navbar__mobile-close"
               onClick={closeMenu}
+              aria-label="Fermer le menu"
             >
-              <Briefcase size={20} />
-              <span>Appel à candidatures</span>
-            </NavLink>
-
-            <NavLink to="/contact" onClick={closeMenu}>
-              <Phone size={20} />
-              <span>Contact</span>
-            </NavLink>
-
+              <X aria-hidden="true" />
+            </button>
           </div>
 
-          <NavLink
-            to="/donate"
-            className="navbar__mobile-don"
-            onClick={closeMenu}
+          <nav
+            className="navbar__mobile-body"
+            aria-label="Navigation principale"
           >
-            <Heart size={18} />
-            Faire un don
-          </NavLink>
+            <ul className="navbar__mobile-links">
+              {MOBILE_LINKS.map(({ to, label, icon: Icon, end }) => (
+                <li key={to}>
+                  <NavLink
+                    to={to}
+                    end={end}
+                    onClick={closeMenu}
+                  >
+                    <span className="navbar__mobile-icon">
+                      <Icon aria-hidden="true" />
+                    </span>
+                    <span>{label}</span>
+                  </NavLink>
+                </li>
+              ))}
 
-          <div className="navbar__socials">
-            <FaFacebookF />
-            <FaInstagram />
-            <FaYoutube />
+              <li>
+                <button
+                  type="button"
+                  className={`navbar__mobile-group${
+                    isCommunityPath(pathname) ? " navbar__mobile-group--current" : ""
+                  }`}
+                  onClick={() => setCommunityOpen((value) => !value)}
+                  aria-expanded={communityOpen}
+                  aria-controls="navbar-mobile-community"
+                >
+                  <span className="navbar__mobile-icon">
+                    <Users aria-hidden="true" />
+                  </span>
+                  <span>Communauté</span>
+                  <ChevronDown
+                    className="navbar__mobile-chevron"
+                    aria-hidden="true"
+                  />
+                </button>
+
+                <ul
+                  id="navbar-mobile-community"
+                  className="navbar__mobile-sublinks"
+                  hidden={!communityOpen}
+                >
+                  {COMMUNITY_LINKS.map(({ to, label, icon: Icon, end }) => (
+                    <li key={to}>
+                      <NavLink
+                        to={to}
+                        end={end}
+                        onClick={closeMenu}
+                      >
+                        <Icon aria-hidden="true" />
+                        <span>{label}</span>
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+
+              <li>
+                <NavLink
+                  to="/contact"
+                  onClick={closeMenu}
+                >
+                  <span className="navbar__mobile-icon">
+                    <Phone aria-hidden="true" />
+                  </span>
+                  <span>Contact</span>
+                </NavLink>
+              </li>
+            </ul>
+          </nav>
+
+          <div className="navbar__mobile-foot">
+            {site.serviceTimes.length > 0 && (
+              <p className="navbar__mobile-times">
+                <Clock aria-hidden="true" />
+                <span>
+                  {site.serviceTimes
+                    .map((service) => `${dayLabel(service.day)} ${service.time}`)
+                    .join(" · ")}
+                </span>
+              </p>
+            )}
+
+            <NavLink
+              to="/donate"
+              className="navbar__mobile-don"
+              onClick={closeMenu}
+            >
+              <Heart aria-hidden="true" />
+              Faire un don
+            </NavLink>
+
+            {SOCIALS.length > 0 && (
+              <ul className="navbar__socials">
+                {SOCIALS.map(({ key, label, icon: Icon, href }) => (
+                  <li key={key}>
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${label} (nouvel onglet)`}
+                    >
+                      <Icon aria-hidden="true" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-
-        </nav>
+        </div>
 
       </div>
 

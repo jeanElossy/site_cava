@@ -130,8 +130,11 @@
     }
   }
 
+  // Marge haute conservée sur mobile : la barre de navigation (logo et
+  // bouton du menu) est posée par-dessus la page, la carte passait
+  // dessous.
   @media (max-width: 560px) {
-    padding: 48px 16px;
+    padding: 160px 16px 56px;
 
     &__card {
       padding: 32px 22px;

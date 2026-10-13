@@ -133,128 +133,331 @@
       align-items: center;
       justify-content: center;
 
-      width: 40px;
-      height: 40px;
+      width: 46px;
+      height: 46px;
 
       padding: 0;
 
-      border: none;
-      outline: none;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 14px;
 
-      background: transparent;
+      background: rgba(4, 23, 15, 0.35);
+      backdrop-filter: blur(6px);
 
       color: white;
       cursor: pointer;
 
-      z-index: 2000;
+      transition: background 0.2s ease, border-color 0.2s ease;
 
       svg {
-        width: 32px;
-        height: 32px;
+        width: 24px;
+        height: 24px;
       }
 
-      &:focus,
+      &:hover {
+        background: rgba(4, 23, 15, 0.55);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+
       &:focus-visible {
-        outline: none;
-        box-shadow: none;
+        outline: 2px solid #f4c41d;
+        outline-offset: 3px;
       }
     }
 
+    // ---- Panneau mobile ------------------------------------------
+    //
+    // Trois zones : en-tête (logo, fermeture), liste qui DÉFILE, pied
+    // (horaires, don, réseaux). Le panneau ne défilait pas : sur un
+    // petit écran, Contact, le bouton de don et les réseaux étaient
+    // coupés et inaccessibles.
     &__mobile {
       position: fixed;
-
       top: 0;
-      right: -100%;
-
-      width: 360px;
-      max-width: 90%;
-
-      height: 100vh;
-
-      overflow: hidden;
-
-      // background-image:
-      //   url("/images/mobile-menu-bg.jpg");
-
-      background-image:
-        linear-gradient(
-          rgba(13, 91, 62, .45),
-          rgba(8, 59, 42, .55)
-        ),
-        url("/images/mobile-menu-bg.jpg");
-
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-
-      display: flex;
-      flex-direction: column;
-
-      padding: 15px;
-
-      transition: right .4s ease;
-
+      right: 0;
+      bottom: 0;
       z-index: 1001;
 
-      box-shadow: -15px 0 50px rgba(0, 0, 0, .35);
-
-      &.active {
-        right: 0;
-      }
-    }
-
-    &__mobile-header {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-
-      img {
-        width: 170px;
-        height: auto;
-        display: block;
-      }
-    }
-
-    &__mobile-line {
-      width: 55px;
-      height: 2px;
-
-      background: #f4c41d;
-    }
-
-    &__mobile-links {
       display: flex;
       flex-direction: column;
 
-      gap: 8px;
+      width: min(380px, 88vw);
+      height: 100vh;
+      height: 100dvh;
+
+      // Photo de l'assemblée sous un voile vert : assez présente pour
+      // l'ambiance, assez couverte pour que les liens restent lisibles
+      // (le voile s'épaissit vers le bas, où sont les liens et le don).
+      background:
+        radial-gradient(circle at 100% 0%, rgba(244, 196, 29, 0.18), transparent 45%),
+        linear-gradient(
+          180deg,
+          rgba(13, 91, 62, 0.62) 0%,
+          rgba(8, 59, 42, 0.84) 45%,
+          rgba(4, 23, 15, 0.94) 100%
+        ),
+        url("/images/mobile-menu-bg.jpg") center / cover no-repeat,
+        #083b2a;
+
+      color: #fff;
+
+      box-shadow: -20px 0 60px rgba(0, 0, 0, 0.4);
+
+      transform: translateX(105%);
+      visibility: hidden;
+
+      // `visibility` change APRÈS la sortie (fermeture) et AVANT
+      // l'entrée (ouverture) : le panneau reste visible le temps de
+      // son animation.
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s linear 0.35s;
+
+      &--open {
+        transform: translateX(0);
+        visibility: visible;
+
+        transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+          visibility 0s;
+      }
+    }
+
+    &__mobile-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+
+      padding: 16px 18px 14px;
+
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    &__mobile-logo img {
+      display: block;
+
+      height: 84px;
+      width: auto;
+    }
+
+    &__mobile-close {
+      display: grid;
+      place-items: center;
+
+      width: 44px;
+      height: 44px;
+
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 14px;
+
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+
+      cursor: pointer;
+
+      transition: background 0.2s ease;
+
+      svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.16);
+      }
+
+      &:focus-visible {
+        outline: 2px solid #f4c41d;
+        outline-offset: 2px;
+      }
+    }
+
+    &__mobile-body {
+      flex: 1;
+      min-height: 0;
+
+      padding: 14px 14px 10px;
+
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    &__mobile-links,
+    &__mobile-sublinks {
+      display: grid;
+      gap: 4px;
+
+      margin: 0;
+      padding: 0;
+
+      list-style: none;
+    }
+
+    // Lien principal et bouton « Communauté » : même gabarit.
+    &__mobile-links > li > a,
+    &__mobile-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+
+      width: 100%;
+      min-height: 52px;
+      padding: 8px 12px;
+
+      border: 1px solid transparent;
+      border-radius: 14px;
+
+      background: transparent;
+      color: rgba(255, 255, 255, 0.92);
+
+      font: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      text-align: left;
+
+      cursor: pointer;
+
+      transition: background 0.2s ease, color 0.2s ease,
+        border-color 0.2s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      &:focus-visible {
+        outline: 2px solid #f4c41d;
+        outline-offset: -2px;
+      }
+    }
+
+    &__mobile-links > li > a.active,
+    &__mobile-group--current {
+      border-color: rgba(244, 196, 29, 0.45);
+
+      background: rgba(244, 196, 29, 0.12);
+      color: #f4c41d;
+
+      .navbar__mobile-icon {
+        background: #f4c41d;
+        color: #083b2a;
+      }
+    }
+
+    &__mobile-icon {
+      display: grid;
+      flex-shrink: 0;
+      place-items: center;
+
+      width: 36px;
+      height: 36px;
+
+      border-radius: 11px;
+
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    &__mobile-chevron {
+      width: 20px;
+      height: 20px;
+      margin-left: auto;
+
+      opacity: 0.7;
+
+      transition: transform 0.25s ease;
+
+      [aria-expanded="true"] > & {
+        transform: rotate(180deg);
+      }
+    }
+
+    &__mobile-sublinks {
+      margin: 4px 0 6px 30px;
+      padding-left: 16px;
+
+      border-left: 2px solid rgba(255, 255, 255, 0.14);
+
+      // `display: grid` (plus haut) l'emporterait sur l'attribut
+      // `hidden`, simple `display: none` de la feuille du navigateur :
+      // la liste repliée restait affichée.
+      &[hidden] {
+        display: none;
+      }
 
       a {
         display: flex;
         align-items: center;
         gap: 12px;
 
-        padding: 12px 14px;
+        min-height: 46px;
+        padding: 8px 12px;
 
         border-radius: 12px;
 
-        background: rgba(255, 255, 255, .08);
-        border: 1px solid rgba(255, 255, 255, .12);
+        color: rgba(255, 255, 255, 0.82);
 
-        color: white;
-        font-weight: 600;
+        font-size: 0.94rem;
+        font-weight: 500;
 
-        transition: .3s;
+        transition: background 0.2s ease, color 0.2s ease;
+
+        svg {
+          flex-shrink: 0;
+
+          width: 17px;
+          height: 17px;
+
+          opacity: 0.8;
+        }
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.08);
+          color: #fff;
+        }
+
+        &.active {
+          background: rgba(244, 196, 29, 0.12);
+          color: #f4c41d;
+        }
+
+        &:focus-visible {
+          outline: 2px solid #f4c41d;
+          outline-offset: -2px;
+        }
       }
+    }
 
-      a:hover {
-        background: rgba(255, 255, 255, .15);
-        transform: translateX(4px);
-      }
+    &__mobile-foot {
+      display: grid;
+      gap: 12px;
 
-      a.active {
-        background: rgba(244, 196, 29, 0.15);
+      padding: 14px 18px calc(18px + env(safe-area-inset-bottom, 0px));
 
-        border-color: #f4c41d;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+      background: rgba(4, 23, 15, 0.35);
+    }
+
+    &__mobile-times {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      margin: 0;
+
+      color: rgba(255, 255, 255, 0.75);
+
+      font-size: 0.82rem;
+
+      svg {
+        flex-shrink: 0;
+
+        width: 16px;
+        height: 16px;
 
         color: #f4c41d;
       }
@@ -262,43 +465,86 @@
 
     &__mobile-don {
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       gap: 10px;
 
-      margin-top: 15px;
+      min-height: 52px;
+
+      border-radius: 14px;
 
       background: #f4c41d;
       color: #083b2a;
 
-      padding: 14px;
-
-      border-radius: 12px;
-
       font-weight: 700;
+
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+
+      transition: filter 0.2s ease;
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      &:hover {
+        filter: brightness(1.05);
+      }
+
+      &:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 3px;
+      }
     }
 
     &__socials {
       display: flex;
       justify-content: center;
-      gap: 20px;
+      gap: 10px;
 
-      margin-top: 20px;
+      margin: 0;
+      padding: 0;
 
-      svg {
-        color: white;
-        font-size: 20px;
+      list-style: none;
 
-        cursor: pointer;
+      a {
+        display: grid;
+        place-items: center;
 
-        transition: .3s;
-      }
+        width: 42px;
+        height: 42px;
 
-      svg:hover {
-        color: #f4c41d;
-        transform: translateY(-3px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 50%;
+
+        color: #fff;
+
+        transition: background 0.2s ease, color 0.2s ease;
+
+        svg {
+          width: 17px;
+          height: 17px;
+        }
+
+        &:hover {
+          background: #f4c41d;
+          color: #083b2a;
+        }
+
+        &:focus-visible {
+          outline: 2px solid #f4c41d;
+          outline-offset: 2px;
+        }
       }
     }
+  }
+}
+
+@media (max-width: 992px) and (prefers-reduced-motion: reduce) {
+  .navbar__mobile,
+  .navbar__mobile--open,
+  .navbar__mobile-chevron {
+    transition: none;
   }
 }
 
@@ -405,10 +651,5 @@
         display: none;
       }
     }
-  }
-
-  &__mobile-sublink {
-    padding-left: 22px;
-    opacity: 0.92;
   }
 }
